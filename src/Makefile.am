@@ -10,15 +10,14 @@ bin_PROGRAMS = \
 	alsdorf			\
 	$(NULL)
 
-alsdorf_sources =			\
+alsdorf_sources =		\
 	main.c			\
-	notifications.c		\
 	$(NULL)
 
-alsdorf_headers =			\
+alsdorf_headers =		\
 	$(NULL)
 
-alsdorf_SOURCES =			\
+alsdorf_SOURCES =		\
 	$(alsdorf_sources)	\
 	$(alsdorf_headers)	\
 	$(NULL)
@@ -29,7 +28,7 @@ alsdorf_LDADD =			\
 	$(GTK_LIBS) 		\
 	$(NULL)
 
-alsdorf_CFLAGS = 			\
+alsdorf_CFLAGS = 		\
 	$(GTK_CFLAGS) 		\
 	$(NULL)
 
