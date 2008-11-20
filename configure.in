@@ -1,0 +1,47 @@
+AC_INIT(alsdorf, 0.1, dx-team@canonical.com)
+
+AC_CONFIG_SRCDIR(src/main.c)
+AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_MACRO_DIR([m4])
+
+AM_INIT_AUTOMAKE
+GNOME_COMMON_INIT
+GNOME_COMPILE_WARNINGS(maximum)
+
+AM_MAINTAINER_MODE
+AM_DISABLE_STATIC
+AM_PROG_LIBTOOL
+AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
+AC_PROG_CC
+AC_PROG_INSTALL
+
+
+#
+# Gnome/GTK checks
+#
+
+AM_PATH_GTK_2_0
+
+
+#
+# Check for Python & pygtk
+#
+AM_PATH_PYTHON
+AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
+PYTHON_LIBS_DIR="-L/usr/lib/python2.5/config"
+AC_SUBST(PYTHON_LIBS_DIR)
+PYTHON_LIBS="-lpython2.5"
+AC_SUBST(PYTHON_LIBS)
+PKG_CHECK_MODULES(panel, 
+		  gtk+-2.0 >= 2.6
+		  pygtk-2.0 >= 2.6
+		  libgnome-menu >= 2.18)
+AC_SUBST(PANEL_CFLAGS)
+AC_SUBST(PANEL_LIBS)
+# example python module
+# AM_CHECK_PYMOD(gobject)
+
+AC_OUTPUT([
+Makefile
+src/Makefile
+])
