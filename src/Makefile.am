@@ -12,6 +12,8 @@ bin_PROGRAMS = \
 
 alsdorf_sources =		\
 	main.c			\
+	stack-display.c		\
+	bubble.c		\
 	$(NULL)
 
 alsdorf_headers =		\
