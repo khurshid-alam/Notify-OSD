@@ -11,12 +11,20 @@ bin_PROGRAMS = \
 	$(NULL)
 
 alsdorf_sources =		\
-	main.c			\
-	stack-display.c		\
 	bubble.c		\
+	defaults.c		\
+	main.c			\
+	observer.c		\
+	stack-display.c		\
+	stack.c			\
 	$(NULL)
 
 alsdorf_headers =		\
+	bubble.h		\
+	defaults.h		\
+	observer.h		\
+	stack-display.h		\
+	stack.h			\
 	$(NULL)
 
 alsdorf_SOURCES =		\
@@ -31,6 +39,7 @@ alsdorf_LDADD =			\
 	$(NULL)
 
 alsdorf_CFLAGS = 		\
+	-Wall -Werror -std=c99	\
 	$(GTK_CFLAGS) 		\
 	$(NULL)
 

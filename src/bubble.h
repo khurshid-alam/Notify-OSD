@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    stack-display.c
+**    bubble.h
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,16 +16,8 @@
 **
 *******************************************************************************/
 
-#include <gtk/gtk.h>
-
-#include "bubble.h"
-
-void
-stack_push_notification (gchar *title,
-	                 gchar *message)
-{
-	GtkWidget* window = NULL;
-
-	window = bubble_new (30, 30, 300, 100);
-	gtk_widget_show_all (window);
-}
+GtkWidget*
+bubble_new (gint x,
+	    gint y,
+	    gint width,
+	    gint height);

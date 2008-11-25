@@ -22,6 +22,8 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
 
+#include "stack-display.h"
+
 int 
 main (int    argc,
       char** argv)
