@@ -16,3 +16,14 @@
 **
 *******************************************************************************/
 
+#include <gtk/gtk.h>
+
+void
+stack_push_notification (char *title,
+	                 char *message)
+{
+	GtkWidget*      window            = NULL;
+
+	window = bubble_new (30, 30, 300, 100);
+	gtk_widget_show_all (window);
+}

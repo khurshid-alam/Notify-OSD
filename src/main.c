@@ -26,7 +26,6 @@ int
 main (int    argc,
       char** argv)
 {
-	GtkWidget*      window            = NULL;
 	gint            x                 = 0;
 	gint            y                 = 0;
 	gint            width             = 0;
@@ -76,8 +75,7 @@ main (int    argc,
 	g_option_context_parse (option_context, &argc, &argv, NULL);
 	g_option_context_free (option_context);
 
-	window = bubble_new (x, y, width, height);
-	gtk_widget_show_all (window);
+	stack_push_notification ("test", "example message");
 
 	gtk_main ();
 
