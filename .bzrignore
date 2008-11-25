@@ -28,3 +28,6 @@ m4/lt~obsolete.m4
 .tm_project2.cache
 TODO.tasks
 alsdorf.anjuta
+.anjuta
+src/.libs
+src/alsdorf
