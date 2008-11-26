@@ -16,6 +16,15 @@ AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_INSTALL
 
+#
+# pkg-config
+#
+PKG_PROG_PKG_CONFIG
+
+#
+# glib, we need 2.16.0 for the unit-tests
+#
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0])
 
 #
 # Gnome/GTK checks
@@ -45,4 +54,5 @@ AC_SUBST(ALSDORF_LIBS)
 AC_OUTPUT([
 Makefile
 src/Makefile
+tests/Makefile
 ])
