@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    stack-display.h
+**    python.h
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,7 +16,8 @@
 **
 *******************************************************************************/
 
-void stack_push_notification (gchar *title,
-	                 gchar *message);
+void python_init(int argc, char *argv[]);
 
-void stack_init_python_interface (void);
+int python_load_script(char *filename);
+
+void python_exit();

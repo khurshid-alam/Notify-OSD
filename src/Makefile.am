@@ -26,6 +26,7 @@ alsdorf_headers =		\
 	observer.h		\
 	stack-display.h		\
 	stack.h			\
+	python.h		\
 	$(NULL)
 
 alsdorf_SOURCES =		\
