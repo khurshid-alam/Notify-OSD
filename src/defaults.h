@@ -39,7 +39,6 @@ struct _Defaults
 	GObject parent;
 
 	/* private */
-	gboolean initialized;
 	gint     desktop_width;
 	gint     desktop_height;
 	gint     bubble_width;
@@ -64,9 +63,6 @@ defaults_new (void);
 
 void
 defaults_del (Defaults* self);
-
-gboolean
-defaults_initialized (Defaults* self);
 
 gint
 defaults_get_desktop_width (Defaults* self);

@@ -48,7 +48,10 @@ observer_finalize (GObject* gobject)
 static void
 observer_init (Observer* self)
 {
-	/* here we assume gtk_init() has been issued before by the caller */
+	/* this should not be here, but I don't know yet how do deal with
+        ** the distinction between class-members and instance-members
+	** also I do not know if an instance can have properties too or
+	** only a class */
 	self->window            = NULL;
 	self->timeout_frequency = 0;
 	self->timeout_id        = 0;
@@ -87,6 +90,32 @@ observer_get_property (GObject*    gobject,
 }
 
 static void
+observer_set_property (GObject*      gobject,
+		       guint         prop,
+		       const GValue* value,
+		       GParamSpec*   spec)
+{
+	Observer* observer;
+
+	observer = OBSERVER (gobject);
+
+	switch (prop)
+	{
+		case PROP_X:
+			observer->pointer_x = g_value_get_int (value);
+		break;
+
+		case PROP_Y:
+			observer->pointer_y = g_value_get_int (value);
+		break;
+
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
 observer_class_init (ObserverClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
@@ -96,6 +125,7 @@ observer_class_init (ObserverClass* klass)
 	gobject_class->dispose      = observer_dispose;
 	gobject_class->finalize     = observer_finalize;
 	gobject_class->get_property = observer_get_property;
+	gobject_class->set_property = observer_set_property;
 
 	property_x = g_param_spec_int (
 				"pointer-x",
@@ -105,7 +135,7 @@ observer_class_init (ObserverClass* klass)
 				4096,
 				0,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_X,
 					 property_x);
@@ -118,7 +148,7 @@ observer_class_init (ObserverClass* klass)
 				4096,
 				0,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_Y,
 					 property_y);

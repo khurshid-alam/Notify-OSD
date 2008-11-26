@@ -41,23 +41,12 @@ test_defaults_del ()
 }
 
 void
-test_defaults_initialized ()
-{
-	Defaults* defaults = NULL;
-
-	defaults = defaults_new ();
-	g_assert_cmpint (defaults_initialized (defaults), ==, TRUE);
-	defaults_del (defaults);
-}
-
-void
 test_defaults_get_desktop_width ()
 {
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_width (defaults), <=, 4096);
-	g_assert_cmpint (defaults_get_desktop_width (defaults), ==, 800);
 	g_assert_cmpint (defaults_get_desktop_width (defaults), >=, 640);
 	defaults_del (defaults);
 }
@@ -69,7 +58,6 @@ test_defaults_get_desktop_height ()
 
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_height (defaults), <=, 4096);
-	g_assert_cmpint (defaults_get_desktop_height (defaults), ==, 600);
 	g_assert_cmpint (defaults_get_desktop_height (defaults), >=, 600);
 	defaults_del (defaults);
 }
@@ -81,7 +69,6 @@ test_defaults_get_bubble_width ()
 
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_bubble_width (defaults), <=, 1024);
-	g_assert_cmpint (defaults_get_bubble_width (defaults), ==, 300);
 	g_assert_cmpint (defaults_get_bubble_width (defaults), >=, 200);
 	defaults_del (defaults);
 }
@@ -93,7 +80,6 @@ test_defaults_get_bubble_height ()
 
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_bubble_height (defaults), <=, 300);
-	g_assert_cmpint (defaults_get_bubble_height (defaults), ==, 100);
 	g_assert_cmpint (defaults_get_bubble_height (defaults), >=, 50);
 	defaults_del (defaults);
 }
@@ -105,7 +91,6 @@ test_defaults_get_bubble_opacity ()
 
 	defaults = defaults_new ();
 	g_assert_cmpfloat (defaults_get_bubble_opacity (defaults), <=, 1.0f);
-	g_assert_cmpfloat (defaults_get_bubble_opacity (defaults), ==, 0.75f);
 	g_assert_cmpfloat (defaults_get_bubble_opacity (defaults), >=, 0.1f);
 	defaults_del (defaults);
 }
@@ -119,13 +104,10 @@ test_defaults_get_bubble_color ()
 	defaults = defaults_new ();
 	defaults_get_bubble_color (defaults, &color[0], &color[1], &color[2]);
 	g_assert_cmpfloat (color[0], <=, 1.0f);
-	g_assert_cmpfloat (color[0], ==, 0.1f);
 	g_assert_cmpfloat (color[0], >=, 0.0f);
 	g_assert_cmpfloat (color[1], <=, 1.0f);
-	g_assert_cmpfloat (color[1], ==, 0.1f);
 	g_assert_cmpfloat (color[1], >=, 0.0f);
 	g_assert_cmpfloat (color[2], <=, 1.0f);
-	g_assert_cmpfloat (color[2], ==, 0.1f);
 	g_assert_cmpfloat (color[2], >=, 0.0f);
 	defaults_del (defaults);
 }
@@ -137,7 +119,6 @@ test_defaults_get_font_dpi ()
 
 	defaults = defaults_new ();
 	g_assert_cmpfloat (defaults_get_font_dpi (defaults), <=, 300.0f);
-	g_assert_cmpfloat (defaults_get_font_dpi (defaults), ==, 72.0f);
 	g_assert_cmpfloat (defaults_get_font_dpi (defaults), >=, 72.0f);
 	defaults_del (defaults);
 }
@@ -149,7 +130,6 @@ test_defaults_get_font_size ()
 
 	defaults = defaults_new ();
 	g_assert_cmpfloat (defaults_get_font_size (defaults), <=, 144.0f);
-	g_assert_cmpfloat (defaults_get_font_size (defaults), ==, 10.0f);
 	g_assert_cmpfloat (defaults_get_font_size (defaults), >=, 5.0f);
 	defaults_del (defaults);
 }
@@ -158,12 +138,13 @@ void
 test_defaults_get_font_face ()
 {
 	Defaults* defaults = NULL;
-	gchar*    face     = NULL;
+	gchar*    face;
 
 	defaults = defaults_new ();
 	face = defaults_get_font_face (defaults);
 	g_assert (face != NULL);
 	g_assert_cmpstr (face, ==, "DejaVu Sans");
 	defaults_del (defaults);
+	g_free (face);
 }
 

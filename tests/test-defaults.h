@@ -23,9 +23,6 @@ void
 test_defaults_del ();
 
 void
-test_defaults_initialized ();
-
-void
 test_defaults_get_desktop_width ();
 
 void

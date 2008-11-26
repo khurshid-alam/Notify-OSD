@@ -25,7 +25,6 @@ G_DEFINE_TYPE (Defaults, defaults, G_TYPE_OBJECT);
 enum
 {
 	PROP_DUMMY = 0,
-	PROP_INITIALIZED,
 	PROP_DESKTOP_WIDTH,
 	PROP_DESKTOP_HEIGHT,
 	PROP_BUBBLE_WIDTH,
@@ -65,22 +64,6 @@ defaults_finalize (GObject* gobject)
 static void
 defaults_init (Defaults* self)
 {
-	GdkScreen* screen = gdk_screen_get_default ();
-
-	/* here we assume gtk_init() has been issued before by the caller */
-	self->initialized     = TRUE;
-	self->desktop_width   = gdk_screen_get_width (screen);
-	self->desktop_height  = gdk_screen_get_height (screen);
-	self->bubble_width    = self->desktop_width / 5;
-	self->bubble_height   = self->desktop_height / 10;
-	self->bubble_opacity  = 0.85f;
-	self->bubble_color[R] = 0.15f;
-	self->bubble_color[G] = 0.15f;
-	self->bubble_color[B] = 0.15f;
-	self->font_dpi        = 72.0f;
-	self->font_size       = 10.0f;
-	self->font_face       = g_string_new ("DejaVu Sans");
-
 	/* If you need specific construction properties to complete
 	** initialization, delay initialization completion until the
 	** property is set. */
@@ -98,10 +81,6 @@ defaults_get_property (GObject*    gobject,
 
 	switch (prop)
 	{
-		case PROP_INITIALIZED:
-			g_value_set_boolean (value, defaults->initialized);
-		break;
-
 		case PROP_DESKTOP_WIDTH:
 			g_value_set_int (value, defaults->desktop_width);
 		break;
@@ -153,10 +132,73 @@ defaults_get_property (GObject*    gobject,
 }
 
 static void
+defaults_set_property (GObject*      gobject,
+		       guint         prop,
+		       const GValue* value,
+		       GParamSpec*   spec)
+{
+	Defaults* defaults;
+
+	defaults = DEFAULTS (gobject);
+
+	switch (prop)
+	{
+		case PROP_DESKTOP_WIDTH:
+			defaults->desktop_width = g_value_get_int (value);
+		break;
+
+		case PROP_DESKTOP_HEIGHT:
+			defaults->desktop_height = g_value_get_int (value);
+		break;
+
+		case PROP_BUBBLE_WIDTH:
+			defaults->bubble_width = g_value_get_int (value);
+		break;
+
+		case PROP_BUBBLE_HEIGHT:
+			defaults->bubble_height = g_value_get_int (value);
+		break;
+
+		case PROP_BUBBLE_OPACITY:
+			defaults->bubble_opacity = g_value_get_double (value);
+		break;
+
+		case PROP_BUBBLE_RED:
+			defaults->bubble_color[R] = g_value_get_double (value);
+		break;
+
+		case PROP_BUBBLE_GREEN:
+			defaults->bubble_color[G] = g_value_get_double (value);
+		break;
+
+		case PROP_BUBBLE_BLUE:
+			defaults->bubble_color[B] = g_value_get_double (value);
+		break;
+
+		case PROP_FONT_DPI:
+			defaults->font_dpi = g_value_get_double (value);
+		break;
+
+		case PROP_FONT_SIZE:
+			defaults->font_size = g_value_get_double (value);
+		break;
+
+		case PROP_FONT_FACE:
+			defaults->font_face = g_string_new (g_value_get_string
+								(value));
+		break;
+
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
 defaults_class_init (DefaultsClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
-	GParamSpec*   property_initialized;
+	GdkScreen*    screen        = gdk_screen_get_default ();
 	GParamSpec*   property_desktop_width;
 	GParamSpec*   property_desktop_height;
 	GParamSpec*   property_bubble_width;
@@ -172,17 +214,7 @@ defaults_class_init (DefaultsClass* klass)
 	gobject_class->dispose      = defaults_dispose;
 	gobject_class->finalize     = defaults_finalize;
 	gobject_class->get_property = defaults_get_property;
-
-	property_initialized = g_param_spec_boolean (
-				"initialized",
-				"initialized",
-				"Defaults already initialized?",
-				FALSE,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
-	g_object_class_install_property (gobject_class,
-					 PROP_INITIALIZED,
-					 property_initialized);
+	gobject_class->set_property = defaults_set_property;
 
 	property_desktop_width = g_param_spec_int (
 				"desktop-width",
@@ -190,9 +222,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Width of desktop in pixels",
 				640,
 				4096,
-				800,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				gdk_screen_get_width (screen),
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_WIDTH,
 					 property_desktop_width);
@@ -203,9 +235,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Height of desktop in pixels",
 				600,
 				4096,
-				600,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				gdk_screen_get_height (screen),
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_HEIGHT,
 					 property_desktop_height);
@@ -216,9 +248,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Width of bubble in pixels",
 				200,
 				1024,
-				300,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				gdk_screen_get_width (screen) / 5,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_WIDTH,
 					 property_bubble_width);
@@ -229,9 +261,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Height of bubble in pixels",
 				50,
 				300,
-				100,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				gdk_screen_get_height (screen) / 10,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_HEIGHT,
 					 property_bubble_height);
@@ -242,9 +274,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Opacity of bubble",
 				0.1f,
 				1.0f,
-				0.75f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				0.85f,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_OPACITY,
 					 property_bubble_opacity);
@@ -255,9 +287,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Red-component of bubble color",
 				0.0f,
 				1.0f,
-				0.1f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				0.15f,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_RED,
 					 property_bubble_red);
@@ -268,9 +300,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Green-component of bubble color",
 				0.0f,
 				1.0f,
-				0.1f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				0.15f,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_GREEN,
 					 property_bubble_green);
@@ -281,9 +313,9 @@ defaults_class_init (DefaultsClass* klass)
 				"Blue-component of bubble color",
 				0.0f,
 				1.0f,
-				0.1f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				0.15f,
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_BLUE,
 					 property_bubble_blue);
@@ -295,8 +327,8 @@ defaults_class_init (DefaultsClass* klass)
 				72.0f,
 				300.0f,
 				72.0f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_DPI,
 					 property_font_dpi);
@@ -308,8 +340,8 @@ defaults_class_init (DefaultsClass* klass)
 				5.0f,
 				144.0f,
 				10.0f,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_SIZE,
 					 property_font_size);
@@ -319,8 +351,8 @@ defaults_class_init (DefaultsClass* klass)
 				"font-face",
 				"Face of the font",
 				"DejaVu Sans",
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READABLE);
+				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_FACE,
 					 property_font_face);
@@ -340,16 +372,6 @@ void
 defaults_del (Defaults* self)
 {
 	g_object_unref (self);
-}
-
-gboolean
-defaults_initialized (Defaults* self)
-{
-	gboolean flag;
-
-	g_object_get (self, "initialized", &flag, NULL);
-
-	return flag;
 }
 
 gint
@@ -441,7 +463,8 @@ defaults_get_font_face (Defaults* self)
 {
 	gchar* face = NULL;
 
-	g_object_get (self, "font-face", face, NULL);
+	g_object_get (self, "font-face", &face, NULL);
 
 	return face;
 }
+

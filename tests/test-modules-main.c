@@ -42,8 +42,6 @@ main (int    argc,
 			 test_defaults_new);
 	g_test_add_func ("/defaults/test del",
 			 test_defaults_del);
-	g_test_add_func ("/defaults/test initialized",
-			 test_defaults_initialized);
 	g_test_add_func ("/defaults/test get_desktop_width",
 			 test_defaults_get_desktop_width);
 	g_test_add_func ("/defaults/test get_desktop_height",
