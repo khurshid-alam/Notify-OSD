@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    bubble.h
+**    test-defaults.h
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,9 +16,39 @@
 **
 *******************************************************************************/
 
-GtkWidget*
-bubble_new (gint x,
-	    gint y,
-	    gint width,
-	    gint height);
+void
+test_defaults_new ();
+
+void
+test_defaults_del ();
+
+void
+test_defaults_initialized ();
+
+void
+test_defaults_get_desktop_width ();
+
+void
+test_defaults_get_desktop_height ();
+
+void
+test_defaults_get_bubble_width ();
+
+void
+test_defaults_get_bubble_height ();
+
+void
+test_defaults_get_bubble_opacity ();
+
+void
+test_defaults_get_bubble_color ();
+
+void
+test_defaults_get_font_dpi ();
+
+void
+test_defaults_get_font_size ();
+
+void
+test_defaults_get_font_face ();
 

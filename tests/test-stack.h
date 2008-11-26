@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    bubble.h
+**    test-stack.h
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,9 +16,24 @@
 **
 *******************************************************************************/
 
-GtkWidget*
-bubble_new (gint x,
-	    gint y,
-	    gint width,
-	    gint height);
+void
+test_stack_new ();
+
+void
+test_stack_del ();
+
+void
+test_stack_get_next_id ();
+
+void
+test_stack_add_async ();
+
+void
+test_stack_remove_async ();
+
+void
+test_stack_add_sync ();
+
+void
+test_stack_remove_sync ();
 

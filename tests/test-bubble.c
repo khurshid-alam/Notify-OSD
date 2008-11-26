@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    bubble.h
+**    test-bubble.c
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,9 +16,20 @@
 **
 *******************************************************************************/
 
-GtkWidget*
-bubble_new (gint x,
-	    gint y,
-	    gint width,
-	    gint height);
+#include <glib.h>
+#include <gtk/gtk.h>
+
+#include "bubble.h"
+
+void
+test_bubble_new ()
+{
+	GtkWidget* bubble;
+
+	bubble = bubble_new (20, 20, 200, 50);
+
+	g_assert (bubble != NULL);
+
+	g_object_unref (bubble);
+}
 

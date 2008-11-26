@@ -39,6 +39,8 @@ stack_finalize (GObject* gobject)
 static void
 stack_init (Stack* self)
 {
+	self->next_id = 1;
+
 	/* If you need specific construction properties to complete
 	** initialization, delay initialization completion until the
 	** property is set. */
@@ -91,7 +93,7 @@ stack_del (Stack* self)
 guint
 stack_get_next_id (Stack* self)
 {
-	return 0;
+	return self->next_id++;
 }
 
 void

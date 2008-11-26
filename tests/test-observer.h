@@ -6,7 +6,7 @@
 **    alsdorf
 **
 ** file:
-**    bubble.h
+**    test-observer.h
 **
 ** author(s):
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
@@ -16,9 +16,15 @@
 **
 *******************************************************************************/
 
-GtkWidget*
-bubble_new (gint x,
-	    gint y,
-	    gint width,
-	    gint height);
+void
+test_observer_new ();
+
+void
+test_observer_del ();
+
+void
+test_observer_get_x ();
+
+void
+test_observer_get_y ();
 
