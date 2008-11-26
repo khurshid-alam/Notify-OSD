@@ -23,6 +23,7 @@
 #include <gdk/gdkkeysyms.h>
 
 #include "stack-display.h"
+#include "python.h"
 
 int 
 main (int    argc,

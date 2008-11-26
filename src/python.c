@@ -7,10 +7,11 @@
  *
  */
 
+#include <err.h>
+#include <libgen.h>
 #include <gtk/gtk.h>
 #include "Python.h"
-
-void initxyzzy(void); /* Forward */
+#include "stack-display.h"
 
 void
 python_init(int argc, char *argv[])
@@ -50,7 +51,7 @@ remove_suffix(char *name, const char *suffix)
 int
 python_load_script(char *filename)
 {
-	char *file = basename(strdup(filename));
+	char *file = basename(g_strdup(filename));
 	remove_suffix(file, ".py");
 
 	PyObject *pname = PyString_FromString(file);
@@ -61,8 +62,9 @@ python_load_script(char *filename)
 		PyErr_Print();
 		warn("%s: could not load python module: %s",
 		    __func__, filename);
-		return (NULL);
+		return 0;
 	}
+	return 1;
 }
 
 void
@@ -73,25 +75,3 @@ python_exit()
 	/*NOTREACHED*/
 }
 
-/* A static module */
-
-/* 'self' is not used */
-static PyObject *
-xyzzy_foo(PyObject *self, PyObject *args)
-{
-	if (!PyArg_ParseTuple(args, ":numargs"))
-		return NULL;
-	return PyInt_FromLong(42L);
-}
-
-static PyMethodDef xyzzy_methods[] = {
-	{"foo",		xyzzy_foo,	METH_VARARGS, "Return something"},
-	{NULL,		NULL}		/* sentinel */
-};
-
-void
-initxyzzy(void)
-{
-	PyImport_AddModule("xyzzy");
-	Py_InitModule("xyzzy", xyzzy_methods);
-}
