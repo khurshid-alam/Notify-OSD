@@ -65,6 +65,8 @@ main (int    argc,
 
 	gtk_init (&argc, &argv);
 
+	python_init(argc, argv);
+
 	/* handle commandline options */
 	x      = 30;
 	y      = 30;
@@ -77,9 +79,11 @@ main (int    argc,
 	g_option_context_parse (option_context, &argc, &argv, NULL);
 	g_option_context_free (option_context);
 
-	stack_push_notification ("test", "example message");
+	python_load_script("dbus-link.py");
 
 	gtk_main ();
+
+	python_exit();
 
 	return 0;
 }

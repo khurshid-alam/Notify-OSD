@@ -17,6 +17,7 @@ alsdorf_sources =		\
 	observer.c		\
 	stack-display.c		\
 	stack.c			\
+	python.c		\
 	$(NULL)
 
 alsdorf_headers =		\
