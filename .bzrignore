@@ -31,3 +31,7 @@ alsdorf.anjuta
 .anjuta
 src/.libs
 src/alsdorf
+tests/test-modules
+tests/test-modules.xml
+tests/.deps
+tests/.libs
