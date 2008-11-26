@@ -25,10 +25,14 @@ void
 stack_push_notification (gchar *title,
 	                 gchar *message)
 {
-	GtkWidget* window = NULL;
+	Bubble* bubble = NULL;
 
-	window = bubble_new (30, 30, 300, 100);
-	gtk_widget_show_all (window);
+	bubble = bubble_new ();
+	bubble_move (bubble, 30, 30);
+	bubble_set_size (bubble, 300, 100);
+	bubble_set_title(bubble, title);
+	bubble_set_message_body(bubble, message);
+	bubble_display (bubble);
 }
 
 static PyObject *

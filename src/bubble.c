@@ -19,14 +19,31 @@
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
+#include <glib/gprintf.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+
+#include "bubble.h"
+
+G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
+
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
+
+struct _BubblePrivate {
+	GtkWidget *widget;
+
+	char *title;
+	char *message_body;
+};
+
+
+/*-- private functions  --------------------------------------------------------------*/
 
 double   g_alpha   = 0.95f;
 gboolean g_entered = FALSE;
 gboolean g_left    = FALSE;
 gint     g_pointer[2];
-
 
 static
 void
@@ -96,6 +113,7 @@ draw_round_rect (cairo_t* cr,
                    270.0f * G_PI / 180.0f);
 }
 
+static
 void
 screen_changed_handler (GtkWidget* window,
 			GdkScreen* old_screen,
@@ -110,6 +128,7 @@ screen_changed_handler (GtkWidget* window,
 	gtk_widget_set_colormap (window, colormap);
 }
 
+static
 gboolean
 delete_handler (GtkWidget* window,
 		GdkEvent*  event,
@@ -119,6 +138,7 @@ delete_handler (GtkWidget* window,
 	return TRUE;
 }
 
+static
 gboolean
 key_press_handler (GtkWidget*   window,
 		   GdkEventKey* event,
@@ -133,6 +153,7 @@ key_press_handler (GtkWidget*   window,
 	return TRUE;
 }
 
+static
 void
 update_input_shape (GtkWidget* window,
 		    gint       width,
@@ -177,12 +198,16 @@ update_input_shape (GtkWidget* window,
 	}
 }
 
+static
 gboolean
 expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
+	Bubble* bubble;
 	cairo_t* cr;
+
+	bubble = (Bubble *)G_OBJECT(data);
 
 	cr = gdk_cairo_create (window->window);
 
@@ -207,7 +232,7 @@ expose_handler (GtkWidget*      window,
 				CAIRO_FONT_WEIGHT_NORMAL);
 	cairo_set_font_size (cr, 24.0f);
 	cairo_move_to (cr, 50.0f, 50.0f);
-	cairo_text_path (cr, "GTK+ bubble");
+	cairo_text_path (cr, GET_PRIVATE(bubble)->title);
 	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.5f);
 	cairo_fill (cr);
 
@@ -216,6 +241,7 @@ expose_handler (GtkWidget*      window,
 	return TRUE;
 }
 
+static
 gboolean
 redraw_handler (GtkWidget* window)
 {
@@ -230,6 +256,7 @@ redraw_handler (GtkWidget* window)
 	return TRUE;
 }
 
+static
 gboolean
 pointer_update (GtkWidget* window)
 {
@@ -267,20 +294,91 @@ pointer_update (GtkWidget* window)
 	return TRUE;
 }
 
-GtkWidget*
-bubble_new (gint x,
-	    gint y,
-	    gint width,
-	    gint height)
+/*-- internal API ------------------------------------------------------------*/
+
+static void
+bubble_dispose (GObject* gobject)
 {
+	/* chain up to the parent class */
+	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
+}
+
+static void
+bubble_finalize (GObject* gobject)
+{
+	/* chain up to the parent class */
+	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
+}
+
+static void
+bubble_init (Bubble* self)
+{
+	/* If you need specific construction properties to complete
+	** initialization, delay initialization completion until the
+	** property is set. */
+
+	BubblePrivate *priv;
+
+	self->priv = priv      = GET_PRIVATE (self);
+	priv->title            = NULL;
+	priv->message_body     = NULL;
+}
+
+static void
+bubble_get_property (GObject*    gobject,
+		    guint       prop,
+		    GValue*     value,
+		    GParamSpec* spec)
+{
+	Bubble* bubble;
+
+	bubble = BUBBLE (gobject);
+
+	switch (prop)
+	{
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
+bubble_class_init (BubbleClass* klass)
+{
+	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (BubblePrivate));
+
+	gobject_class->dispose      = bubble_dispose;
+	gobject_class->finalize     = bubble_finalize;
+	gobject_class->get_property = bubble_get_property;
+}
+
+/*-- public API --------------------------------------------------------------*/
+
+Bubble*
+bubble_new (void)
+{
+	Bubble*         this              = NULL;
 	GtkWidget*      window            = NULL;
 	GError*         error             = NULL;
 	guint           draw_handler_id   = 0;
 	guint           pointer_update_id = 0;
+	gint            x                 = 30; /* dummy defaults */
+	gint            y                 = 30;
+	gint            width             = 100;
+	gint            height            = 50;
 
+
+	this = g_object_new (BUBBLE_TYPE, NULL);
+	if (!this)
+		return NULL;
+	
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	if (!window)
 		return NULL;
+
+	g_object_set_data (G_OBJECT(window), "bubble", (gpointer)&this);
 
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
@@ -313,7 +411,7 @@ bubble_new (gint x,
 	g_signal_connect (G_OBJECT (window),
 			  "expose-event",
 			  G_CALLBACK (expose_handler),
-			  NULL);
+			  this);
 
 	/* do nasty busy-polling rendering in the drawing-area */
 	draw_handler_id = g_timeout_add (1000/60,
@@ -336,6 +434,60 @@ bubble_new (gint x,
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 
-	return window;
+	GET_PRIVATE(this)->widget           = window;
+	GET_PRIVATE(this)->title            = g_strdup("GTK+ Notification");
+	GET_PRIVATE(this)->message_body     = g_strdup("Courtesy of the new Canonical notification sub-system");
+
+	return this;
+}
+
+
+void
+bubble_set_title (Bubble* self,
+		  char *title)
+{
+	GET_PRIVATE(self)->title = g_strdup(title);
+}
+
+void
+bubble_set_message_body (Bubble* self,
+			 char *body)
+{
+	GET_PRIVATE(self)->message_body = g_strdup(body);
+}
+
+void
+bubble_set_size(Bubble* self,
+	      gint width,
+	      gint height)
+{
+	gtk_widget_set_size_request (GET_PRIVATE(self)->widget, width, height);
+}
+
+void
+bubble_move (Bubble* self,
+	     gint x,
+	     gint y)
+{
+	gtk_window_move (GTK_WINDOW(GET_PRIVATE(self)->widget), x, y);
+}
+
+void
+bubble_display (Bubble* self)
+{
+	gtk_widget_show_all (GET_PRIVATE(self)->widget);
+}
+
+void
+bubble_hide (Bubble* self)
+{
+	gtk_widget_hide (GET_PRIVATE(self)->widget);
+}
+
+void
+bubble_del (Bubble* self)
+{
+	g_object_unref (self);
+	/* TODO: dispose of the struct members (widget, etc.) */
 }
 
