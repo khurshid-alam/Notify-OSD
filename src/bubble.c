@@ -270,9 +270,9 @@ pointer_update (GtkWidget* window)
 
 GtkWidget*
 bubble_new (gint x,
-	       gint y,
-	       gint width,
-	       gint height)
+	    gint y,
+	    gint width,
+	    gint height)
 {
 	GtkWidget*      window            = NULL;
 	GError*         error             = NULL;

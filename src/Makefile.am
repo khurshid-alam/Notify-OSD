@@ -14,6 +14,7 @@ alsdorf_sources =		\
 	main.c			\
 	stack-display.c		\
 	bubble.c		\
+	python.c		\
 	$(NULL)
 
 alsdorf_headers =		\
