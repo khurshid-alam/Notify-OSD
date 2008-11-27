@@ -20,6 +20,7 @@
 
 #include "stack.h"
 
+static
 void
 test_stack_new ()
 {
@@ -30,6 +31,7 @@ test_stack_new ()
 	stack_del (stack);
 }
 
+static
 void
 test_stack_del ()
 {
@@ -40,6 +42,7 @@ test_stack_del ()
 	/*g_assert (stack == NULL);*/
 }
 
+static
 void
 test_stack_get_next_id ()
 {
@@ -56,3 +59,18 @@ test_stack_get_next_id ()
 	stack_del (stack);
 }
 
+GTestSuite *
+test_stack_create_test_suite (void)
+{
+	GTestSuite *ts = NULL;
+
+	ts = g_test_create_suite (__FILE__);
+
+#define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
+
+	g_test_suite_add(ts, TC(test_stack_new));
+	g_test_suite_add(ts, TC(test_stack_del));
+	g_test_suite_add(ts, TC(test_stack_get_next_id));
+
+	return ts;
+}

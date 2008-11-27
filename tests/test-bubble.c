@@ -21,12 +21,13 @@
 
 #include "bubble.h"
 
+static
 void
-test_bubble_new ()
+test_bubble_new (void)
 {
-	GtkWidget* bubble;
+	Bubble* bubble;
 
-	bubble = bubble_new (20, 20, 200, 50);
+	bubble = bubble_new ();
 
 	g_assert (bubble != NULL);
 
@@ -34,3 +35,20 @@ test_bubble_new ()
 	/*g_object_unref (bubble);*/
 }
 
+GTestSuite *
+test_bubble_create_test_suite (void)
+{
+	GTestSuite *ts = NULL;
+	GTestCase  *tc = NULL;
+
+	ts = g_test_create_suite ("bubble");
+	tc = g_test_create_case ("bubble_new",
+				 0,
+				 NULL,
+				 NULL,
+				 test_bubble_new,
+				 NULL);
+	g_test_suite_add(ts, tc);
+
+	return ts;
+}

@@ -20,6 +20,7 @@
 
 #include "defaults.h"
 
+static
 void
 test_defaults_new ()
 {
@@ -30,6 +31,7 @@ test_defaults_new ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_del ()
 {
@@ -40,6 +42,7 @@ test_defaults_del ()
 	/*g_assert (defaults == NULL);*/
 }
 
+static
 void
 test_defaults_get_desktop_width ()
 {
@@ -51,6 +54,7 @@ test_defaults_get_desktop_width ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_desktop_height ()
 {
@@ -62,6 +66,7 @@ test_defaults_get_desktop_height ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_bubble_width ()
 {
@@ -73,6 +78,7 @@ test_defaults_get_bubble_width ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_bubble_height ()
 {
@@ -84,6 +90,7 @@ test_defaults_get_bubble_height ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_bubble_opacity ()
 {
@@ -95,6 +102,7 @@ test_defaults_get_bubble_opacity ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_bubble_color ()
 {
@@ -112,6 +120,7 @@ test_defaults_get_bubble_color ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_font_dpi ()
 {
@@ -123,6 +132,7 @@ test_defaults_get_font_dpi ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_font_size ()
 {
@@ -134,6 +144,7 @@ test_defaults_get_font_size ()
 	defaults_del (defaults);
 }
 
+static
 void
 test_defaults_get_font_face ()
 {
@@ -148,3 +159,27 @@ test_defaults_get_font_face ()
 	g_free (face);
 }
 
+GTestSuite *
+test_defaults_create_test_suite (void)
+{
+	GTestSuite *ts = NULL;
+
+	ts = g_test_create_suite (__FILE__);
+
+#define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
+
+	g_test_suite_add(ts, TC(test_defaults_get_font_size));
+	g_test_suite_add(ts, TC(test_defaults_new));
+	g_test_suite_add(ts, TC(test_defaults_del));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_width));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_height));
+	g_test_suite_add(ts, TC(test_defaults_get_bubble_width));
+	g_test_suite_add(ts, TC(test_defaults_get_bubble_height));
+	g_test_suite_add(ts, TC(test_defaults_get_bubble_opacity));
+	g_test_suite_add(ts, TC(test_defaults_get_bubble_color));
+	g_test_suite_add(ts, TC(test_defaults_get_font_dpi));
+	g_test_suite_add(ts, TC(test_defaults_get_font_size));
+	g_test_suite_add(ts, TC(test_defaults_get_font_face));
+
+	return ts;
+}
