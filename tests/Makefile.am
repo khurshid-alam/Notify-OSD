@@ -1,5 +1,8 @@
 noinst_PROGRAMS = test-modules
 
+check_PROGRAMS = test-modules
+TESTS = test-modules
+
 test_modules_SOURCES =		\
 	../src/bubble.c		\
 	../src/defaults.c	\
@@ -14,19 +17,21 @@ test_modules_SOURCES =		\
 test_modules_CFLAGS =		\
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
+	$(LIBRSVG_CFLAGS)	\
 	$(GTK_CFLAGS)		\
 	-I$(top_srcdir)/src
 
 test_modules_LDADD =		\
 	$(GLIB_LIBS)		\
+	$(LIBRSVG_LIBS)		\
 	$(GTK_LIBS)
 
-test:
+test: test-modules
 	gtester -o=test-modules.xml ./test-modules
 
 test-report-html: test
 	gtester-report test-modules.xml >test-modules.html
 
 test-report-display: test-report-html
-	epiphany test-modules.html
+	gnome-open test-modules.html
 

@@ -19,40 +19,44 @@
 #include <glib.h>
 
 #include "stack.h"
+#include "defaults.h"
 
+static
 void
 test_stack_new ()
 {
-	Stack* stack = NULL;
+	Stack*    stack = NULL;
+	Defaults* defaults = defaults_new ();
 
-	stack = stack_new ();
+	stack = stack_new (defaults);
 	g_assert (stack != NULL);
 	stack_del (stack);
 }
 
+static
 void
 test_stack_del ()
 {
-	Stack* stack = NULL;
+	Stack*    stack = NULL;
+	Defaults* defaults = defaults_new ();
 
-	stack = stack_new ();
+	stack = stack_new (defaults);
 	stack_del (stack);
 	/*g_assert (stack == NULL);*/
 }
 
-void
-test_stack_get_next_id ()
+GTestSuite *
+test_stack_create_test_suite (void)
 {
-	Stack* stack = NULL;
-	guint  id;
+	GTestSuite *ts = NULL;
 
-	stack = stack_new ();
-	id = stack_get_next_id (stack);
-	g_assert_cmpint (id, ==, 1);
-	id = stack_get_next_id (stack);
-	g_assert_cmpint (id, ==, 2);
-	id = stack_get_next_id (stack);
-	g_assert_cmpint (id, ==, 3);
-	stack_del (stack);
+	ts = g_test_create_suite (__FILE__);
+
+#define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
+
+	g_test_suite_add(ts, TC(test_stack_new));
+	g_test_suite_add(ts, TC(test_stack_del));
+
+	return ts;
 }
 

@@ -20,6 +20,7 @@
 
 #include "observer.h"
 
+static
 void
 test_observer_new ()
 {
@@ -30,6 +31,7 @@ test_observer_new ()
 	observer_del (observer);
 }
 
+static
 void
 test_observer_del ()
 {
@@ -40,6 +42,7 @@ test_observer_del ()
 	/*g_assert (observer == NULL);*/
 }
 
+static
 void
 test_observer_get_x ()
 {
@@ -51,6 +54,7 @@ test_observer_get_x ()
 	observer_del (observer);
 }
 
+static
 void
 test_observer_get_y ()
 {
@@ -62,3 +66,19 @@ test_observer_get_y ()
 	observer_del (observer);
 }
 
+GTestSuite *
+test_observer_create_test_suite (void)
+{
+	GTestSuite *ts = NULL;
+
+	ts = g_test_create_suite (__FILE__);
+
+#define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
+
+	g_test_suite_add(ts, TC(test_observer_new));
+	g_test_suite_add(ts, TC(test_observer_del));
+	g_test_suite_add(ts, TC(test_observer_get_x));
+	g_test_suite_add(ts, TC(test_observer_get_y));
+
+	return ts;
+}
