@@ -22,8 +22,8 @@
 #include "bubble.h"
 
 void
-stack_push_notification (gchar *title,
-	                 gchar *message)
+stack_push_notification (gchar* title,
+	                 gchar* message)
 {
 	Bubble* bubble = NULL;
 
@@ -32,7 +32,8 @@ stack_push_notification (gchar *title,
 	bubble_set_size (bubble, 300, 100);
 	bubble_set_title(bubble, title);
 	bubble_set_message_body(bubble, message);
-	bubble_display (bubble);
+	bubble_set_icon (bubble, "./icons/avatar.svg");
+	bubble_show (bubble);
 }
 
 static PyObject *

@@ -29,8 +29,8 @@ G_BEGIN_DECLS
 #define IS_BUBBLE_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), BUBBLE_TYPE))
 #define BUBBLE_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), BUBBLE_TYPE, BubbleClass))
 
-typedef struct _Bubble      Bubble;
-typedef struct _BubbleClass BubbleClass;
+typedef struct _Bubble        Bubble;
+typedef struct _BubbleClass   BubbleClass;
 typedef struct _BubblePrivate BubblePrivate;
 
 
@@ -60,7 +60,11 @@ bubble_set_title (Bubble* self,
 
 void
 bubble_set_message_body (Bubble* self,
-			 char *body);
+			 gchar*  body);
+
+void
+bubble_set_icon (Bubble* self,
+		 gchar*  filename);
 
 void
 bubble_set_size(Bubble* self,
@@ -73,13 +77,26 @@ bubble_move (Bubble* self,
 	     gint y);
 
 void
-bubble_display (Bubble* self);
+bubble_show (Bubble* self);
 
 void
 bubble_hide (Bubble* self);
 
 void
 bubble_del (Bubble* self);
+
+void
+bubble_set_id (Bubble* self,
+	       guint   id);
+
+guint
+bubble_get_id (Bubble* self);
+
+gboolean
+bubble_is_visible (Bubble* self);
+
+void
+bubble_reset_timeout (Bubble* self);
 
 G_END_DECLS
 

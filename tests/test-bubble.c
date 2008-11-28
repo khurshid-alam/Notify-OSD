@@ -21,6 +21,36 @@
 
 #include "bubble.h"
 
+Bubble*
+bubble_new (void);
+
+void
+bubble_set_title (Bubble* self,
+		  char *title);
+
+void
+bubble_set_message_body (Bubble* self,
+			 char *body);
+
+void
+bubble_set_size(Bubble* self,
+	      gint width,
+	      gint height);
+
+void
+bubble_move (Bubble* self,
+	     gint x,
+	     gint y);
+
+void
+bubble_display (Bubble* self);
+
+void
+bubble_hide (Bubble* self);
+
+void
+bubble_del (Bubble* self);
+
 void
 test_bubble_new ()
 {

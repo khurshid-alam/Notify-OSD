@@ -17,8 +17,16 @@
 *******************************************************************************/
 
 #include "stack.h"
+#include "bubble.h"
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
+
+/* a convenience-structure for the handling of entries in the stack-list */
+typedef struct _Entry
+{
+	guint   notification_id;
+	Bubble* bubble;
+} Entry;
 
 /*-- internal API ------------------------------------------------------------*/
 
@@ -39,8 +47,6 @@ stack_finalize (GObject* gobject)
 static void
 stack_init (Stack* self)
 {
-	self->next_id = 1;
-
 	/* If you need specific construction properties to complete
 	** initialization, delay initialization completion until the
 	** property is set. */
@@ -74,12 +80,63 @@ stack_class_init (StackClass* klass)
 	gobject_class->get_property = stack_get_property;
 }
 
+void
+delete_entry (gpointer data,
+	      gpointer user_data)
+{
+}
+
+Bubble*
+find_bubble_by_id (Stack* self,
+		   guint  id)
+{
+	Bubble* bubble = NULL;
+
+	/* sanity check */
+	if (!self)
+		return NULL;
+
+	return bubble;
+}
+
+GList*
+find_entry_by_id (Stack* self,
+		  guint  id)
+{
+	GList* entry = NULL;
+
+	/* sanity check */
+	if (!self)
+		return NULL;
+
+	return entry;
+}
+
+void
+layout (Stack* self)
+{
+	/* sanity check */
+	if (!self)
+		return;
+}
+
 /*-- public API --------------------------------------------------------------*/
 
 Stack*
-stack_new (void)
+stack_new (Defaults* defaults)
 {
-	Stack* this = g_object_new (STACK_TYPE, NULL);
+	Stack* this;
+
+	if (!defaults)
+		return NULL;
+
+	this = g_object_new (STACK_TYPE, NULL);
+	if (!this)
+		return NULL;
+
+	this->defaults = defaults;
+	this->list     = NULL;
+	this->next_id  = 1;
 
 	return this;
 }
@@ -87,35 +144,89 @@ stack_new (void)
 void
 stack_del (Stack* self)
 {
+	if (!self)
+		return;
+
+	g_list_foreach (self->list, delete_entry, NULL);
+	g_object_unref (self->defaults);
 	g_object_unref (self);
 }
 
+/* since notification-ids are unsigned integers the first id index is 1, 0 is
+** used to indicate an error */
 guint
-stack_get_next_id (Stack* self)
+stack_push (Stack* self,
+	    guint  id,
+	    gchar* title,
+	    gchar* body,
+	    gchar* icon)
 {
-	return self->next_id++;
+	guint   notification_id = id;
+	Bubble* bubble          = NULL;
+	Entry*  entry           = NULL;
+
+	/* sanity check */
+	if (!self)
+		return 0;
+
+	/* check if there is an existing bubble */
+	if (notification_id != 0)
+	{
+		bubble = find_bubble_by_id (self, notification_id);
+		bubble_set_title (bubble, title);
+		bubble_set_message_body (bubble, body);
+		bubble_set_icon (bubble, icon);
+		bubble_reset_timeout (bubble);
+	}
+	else
+	{
+		/* grab id for new bubble */
+		notification_id = self->next_id++;
+
+		/* create and setup bubble */
+		bubble = bubble_new ();
+		bubble_set_title (bubble, title);
+		bubble_set_message_body (bubble, body);
+		bubble_set_icon (bubble, icon);
+		bubble_set_id (bubble, notification_id);
+
+		/* add bubble/id to stack */
+		entry = (Entry*) g_malloc0 (sizeof (Entry));
+		entry->notification_id = notification_id;
+		entry->bubble = bubble;
+		self->list = g_list_append (self->list, (gpointer) entry);
+	}
+
+	/* recalculate layout of current stack, will open new bubble */
+	layout (self);
+
+	/* return current/new id to caller (usually our DBus-dispatcher) */
+	return notification_id;
 }
 
 void
-stack_add_async (Stack* self,
-		 guint  id)
+stack_pop (Stack* self,
+	   guint  id)
 {
-}
+	Bubble* bubble;
+	GList*  entry;
 
-void
-stack_remove_async (Stack* self,
-		    guint  id)
-{
-}
+	/* sanity check */
+	if (!self)
+		return;
 
-void
-stack_add_sync (Stack* self,
-		guint  id)
-{
-}
+	/* find bubble corresponding to id */
+	bubble = find_bubble_by_id (self, id);
+	if (!bubble)
+		return;
 
-void
-stack_remove_sync (Stack* self,
-		   guint  id)
-{
+	/* close/hide/fade-out bubble */
+	bubble_hide (bubble);
+
+	/* find entry in list corresponding to id and remove it */
+	entry = find_entry_by_id (self, id);
+	self->list = g_list_delete_link (self->list, entry);
+
+	/* recalculate layout of current stack */
+	layout (self);
 }

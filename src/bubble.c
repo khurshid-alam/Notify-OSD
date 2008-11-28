@@ -22,8 +22,11 @@
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <librsvg/rsvg.h>
+#include <librsvg/rsvg-cairo.h>
 
 #include "bubble.h"
+#include "stack.h"
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -33,8 +36,12 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 struct _BubblePrivate {
 	GtkWidget *widget;
 
-	char *title;
-	char *message_body;
+	gchar*           title;
+	gchar*           message_body;
+	guint            id;
+	cairo_surface_t* icon_surface;
+	gboolean         visible;
+	guint            timeout;
 };
 
 
@@ -204,10 +211,10 @@ expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	Bubble* bubble;
+	Bubble*  bubble;
 	cairo_t* cr;
 
-	bubble = (Bubble *)G_OBJECT(data);
+	bubble = (Bubble*) G_OBJECT (data);
 
 	cr = gdk_cairo_create (window->window);
 
@@ -226,15 +233,34 @@ expose_handler (GtkWidget*      window,
 
 	cairo_fill (cr);
 
+	/* render title */
+	cairo_select_font_face (cr,
+				"DejaVu Sans",
+				CAIRO_FONT_SLANT_NORMAL,
+				CAIRO_FONT_WEIGHT_BOLD);
+	cairo_set_font_size (cr, 16.0f);
+	cairo_move_to (cr, 80.0f, 35.0f);
+	cairo_text_path (cr, GET_PRIVATE(bubble)->title);
+	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
+	cairo_fill (cr);
+
+	/* render body-message */
 	cairo_select_font_face (cr,
 				"DejaVu Sans",
 				CAIRO_FONT_SLANT_NORMAL,
 				CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size (cr, 24.0f);
-	cairo_move_to (cr, 50.0f, 50.0f);
-	cairo_text_path (cr, GET_PRIVATE(bubble)->title);
+	cairo_set_font_size (cr, 12.0f);
+	cairo_move_to (cr, 80.0f, 55.0f);
+	cairo_text_path (cr, GET_PRIVATE(bubble)->message_body);
 	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.5f);
 	cairo_fill (cr);
+
+	/* render icon */
+	cairo_set_source_surface (cr,
+				  GET_PRIVATE(bubble)->icon_surface,
+				  15.0f,
+				  20.0f);
+	cairo_paint (cr);
 
 	cairo_destroy (cr);
 
@@ -254,6 +280,110 @@ redraw_handler (GtkWidget* window)
 	gtk_window_set_opacity (GTK_WINDOW (window), g_alpha);
 
 	return TRUE;
+}
+
+/*static cairo_surface_t*
+load_pixmap_icon (gchar* filename)
+{
+	cairo_surface_t*  surf   = NULL;
+	gint              width  = 64;
+	gint              height = 64;
+	cairo_t*          cr     = NULL;
+	GError*           error  = NULL;
+	GdkPixbuf* pixbuf = NULL;
+
+	* sanity check *
+	if (!filename)
+		return NULL;
+
+	* load image into pixbuf *
+	pixbuf = gdk_pixbuf_new_from_file_at_size (filename,
+						   width,
+						   height,
+						   &error);
+	if (!pixbuf)
+		return NULL;
+
+	* create image-surface from pixbuf *
+	surf = cairo_image_surface_create_for_data (
+			gdk_pixbuf_get_pixels (pixbuf),
+			CAIRO_FORMAT_ARGB32,
+			gdk_pixbuf_get_width (pixbuf),
+			gdk_pixbuf_get_height (pixbuf),
+			gdk_pixbuf_get_rowstride (pixbuf));
+	if (cairo_surface_status (surf) != CAIRO_STATUS_SUCCESS)
+	{
+		g_object_unref (pixbuf);
+		return NULL;
+	}
+
+	g_object_unref (pixbuf);
+
+	* create cairo-context from image-surface *
+	cr = cairo_create (surf);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (surf);
+		return NULL;
+	}
+
+	cairo_destroy (cr);
+
+	return surf;
+}*/
+
+static cairo_surface_t*
+load_svg_icon (gchar* filename)
+{
+	cairo_surface_t*  surf      = NULL;
+	gint              cr_width  = 64;
+	gint              cr_height = 64;
+	cairo_t*          cr        = NULL;
+	RsvgHandle*       svg       = NULL;
+	GError*           error     = NULL;
+	RsvgDimensionData dim;
+
+	if (!filename)
+		return NULL;
+
+	surf = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+					   cr_width,
+					   cr_height);
+	if (cairo_surface_status (surf) != CAIRO_STATUS_SUCCESS)
+		return NULL;
+
+	cr = cairo_create (surf);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (surf);
+		return NULL;
+	}
+
+	rsvg_init ();
+
+	svg = rsvg_handle_new_from_file (filename, &error);
+	if (!svg)
+	{
+		cairo_surface_destroy (surf);
+		rsvg_term ();
+		cairo_destroy (cr);
+		return NULL;
+	}
+
+	rsvg_handle_get_dimensions (svg, &dim);
+	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr);
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_scale (cr,
+		     (gdouble) cr_width / (gdouble) dim.width,
+		     (gdouble) cr_height / (gdouble) dim.height);
+	rsvg_handle_render_cairo (svg, cr);
+	g_object_unref (svg);
+
+	rsvg_term ();
+	cairo_destroy (cr);
+
+	return surf;
 }
 
 static
@@ -322,13 +452,14 @@ bubble_init (Bubble* self)
 	self->priv = priv      = GET_PRIVATE (self);
 	priv->title            = NULL;
 	priv->message_body     = NULL;
+	priv->visible          = FALSE;
 }
 
 static void
 bubble_get_property (GObject*    gobject,
-		    guint       prop,
-		    GValue*     value,
-		    GParamSpec* spec)
+		     guint       prop,
+		     GValue*     value,
+		     GParamSpec* spec)
 {
 	Bubble* bubble;
 
@@ -361,7 +492,6 @@ bubble_new (void)
 {
 	Bubble*         this              = NULL;
 	GtkWidget*      window            = NULL;
-	GError*         error             = NULL;
 	guint           draw_handler_id   = 0;
 	guint           pointer_update_id = 0;
 	gint            x                 = 30; /* dummy defaults */
@@ -369,11 +499,10 @@ bubble_new (void)
 	gint            width             = 100;
 	gint            height            = 50;
 
-
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
 		return NULL;
-	
+
 	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	if (!window)
 		return NULL;
@@ -427,16 +556,15 @@ bubble_new (void)
 	update_input_shape (window, 1, 1);
 	gtk_widget_set_app_paintable (window, TRUE);
 	gtk_window_set_title (GTK_WINDOW (window), "notification-test-cairo");
-	gtk_window_set_icon_from_file (GTK_WINDOW (window),
-				       "cairo-logo.png",
-				       &error);
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
+	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 
-	GET_PRIVATE(this)->widget           = window;
-	GET_PRIVATE(this)->title            = g_strdup("GTK+ Notification");
-	GET_PRIVATE(this)->message_body     = g_strdup("Courtesy of the new Canonical notification sub-system");
+	GET_PRIVATE(this)->widget       = window;
+	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
+	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
+	GET_PRIVATE(this)->visible      = FALSE;
 
 	return this;
 }
@@ -446,48 +574,118 @@ void
 bubble_set_title (Bubble* self,
 		  char *title)
 {
-	GET_PRIVATE(self)->title = g_strdup(title);
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->title = g_strdup (title);
 }
 
 void
 bubble_set_message_body (Bubble* self,
-			 char *body)
+			 gchar*  body)
 {
-	GET_PRIVATE(self)->message_body = g_strdup(body);
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->message_body = g_strdup (body);
+}
+
+void
+bubble_set_icon (Bubble* self,
+		 gchar*  filename)
+{
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->icon_surface = load_svg_icon (filename);
 }
 
 void
 bubble_set_size(Bubble* self,
-	      gint width,
-	      gint height)
+		gint    width,
+		gint    height)
 {
+	if (!self)
+		return;
+
 	gtk_widget_set_size_request (GET_PRIVATE(self)->widget, width, height);
 }
 
 void
 bubble_move (Bubble* self,
-	     gint x,
-	     gint y)
+	     gint    x,
+	     gint    y)
 {
-	gtk_window_move (GTK_WINDOW(GET_PRIVATE(self)->widget), x, y);
+	if (!self)
+		return;
+
+	gtk_window_move (GTK_WINDOW (GET_PRIVATE (self)->widget), x, y);
 }
 
 void
-bubble_display (Bubble* self)
+bubble_show (Bubble* self)
 {
-	gtk_widget_show_all (GET_PRIVATE(self)->widget);
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->visible = TRUE;
+	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 }
 
 void
 bubble_hide (Bubble* self)
 {
-	gtk_widget_hide (GET_PRIVATE(self)->widget);
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->visible = FALSE;
+	gtk_widget_hide (GET_PRIVATE (self)->widget);
 }
 
 void
 bubble_del (Bubble* self)
 {
+	if (!self)
+		return;
+
+	if (GET_PRIVATE (self)->icon_surface)
+		cairo_surface_destroy (GET_PRIVATE (self)->icon_surface);
+
 	g_object_unref (self);
 	/* TODO: dispose of the struct members (widget, etc.) */
 }
 
+void
+bubble_set_id (Bubble* self,
+	       guint   id)
+{
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->id = id;
+}
+
+guint
+bubble_get_id (Bubble* self)
+{
+	if (!self)
+		return 0;
+
+	return GET_PRIVATE (self)->id;
+}
+
+gboolean
+bubble_is_visible (Bubble* self)
+{
+	if (!self)
+		return FALSE;
+
+	return GET_PRIVATE (self)->visible;
+}
+
+void
+bubble_reset_timeout (Bubble* self)
+{
+	if (!self)
+		return;
+}

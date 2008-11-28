@@ -27,6 +27,11 @@ PKG_PROG_PKG_CONFIG
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0])
 
 #
+# librsvg, used for loading and rendering SVGs
+#
+PKG_CHECK_MODULES([LIBRSVG], [librsvg-2.0 >= 2.14.0])
+
+#
 # Gnome/GTK checks
 #
 

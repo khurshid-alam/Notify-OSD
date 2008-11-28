@@ -21,7 +21,7 @@ python_init(int argc, char *argv[])
 	Py_InitializeEx(0);
 
 	PyRun_SimpleString("import sys");
-	PyRun_SimpleString("sys.path.append(\"/home/dbarth/devel/alsdorf/src\")");
+	PyRun_SimpleString("sys.path.append(\"/home/mirco/src/alsdorf/src\")");
 
 	/* Add hooks into internal modules */
 	stack_init_python_interface();

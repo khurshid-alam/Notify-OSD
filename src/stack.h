@@ -21,6 +21,9 @@
 
 #include <glib-object.h>
 
+#include "defaults.h"
+#include "bubble.h"
+
 G_BEGIN_DECLS
 
 #define STACK_TYPE             (stack_get_type ())
@@ -39,10 +42,9 @@ struct _Stack
 	GObject parent;
 
 	/* private */
-	GList* synchronous;
-	GList* asynchronous;
-	guint  next_id;
-	GList* timers;
+	Defaults* defaults;
+	GList*    list;
+	guint     next_id;
 };
 
 /* class structure */
@@ -54,29 +56,21 @@ struct _StackClass
 GType stack_get_type (void);
 
 Stack*
-stack_new (void);
+stack_new (Defaults* defaults);
 
 void
 stack_del (Stack* self);
 
 guint
-stack_get_next_id (Stack* self);
+stack_push (Stack* self,
+	    guint  id,
+	    gchar* title,
+	    gchar* body,
+	    gchar* icon);
 
 void
-stack_add_async (Stack* self,
-		 guint  id);
-
-void
-stack_remove_async (Stack* self,
-		    guint  id);
-
-void
-stack_add_sync (Stack* self,
-		guint  id);
-
-void
-stack_remove_sync (Stack* self,
-		   guint  id);
+stack_pop (Stack* self,
+	   guint  id);
 
 G_END_DECLS
 

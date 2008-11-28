@@ -16,7 +16,7 @@
 **
 *******************************************************************************/
 
-void stack_push_notification (gchar *title,
-	                 gchar *message);
+void stack_push_notification (gchar* title,
+			      gchar* message);
 
 void stack_init_python_interface (void);
