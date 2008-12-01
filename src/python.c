@@ -13,6 +13,38 @@
 #include "Python.h"
 #include "stack-display.h"
 
+/*-- Bindings ----------------------------------------------------------------*/
+
+static PyObject *
+stack_push_notification_py (PyObject *self,
+			    PyObject *args)
+{
+	char *title = NULL;
+	char *message = NULL;
+
+	if (!PyArg_ParseTuple(args, "ss", &title, &message))
+		return NULL;
+	stack_push_notification(title, message);
+
+	return Py_BuildValue("");
+}
+
+
+static PyMethodDef notification_methods[] = {
+	{"push", stack_push_notification_py, METH_VARARGS, "Insert a new message in the notification stack"},
+	{NULL,		NULL}		/* sentinel */
+};
+
+void
+stack_init_python_interface (void)
+{
+	PyImport_AddModule("notifications");
+	Py_InitModule("notifications", notification_methods);
+}
+
+
+/*-- Generic Python embedded interpreter -------------------------------------*/
+
 void
 python_init(int argc, char *argv[])
 {
@@ -21,7 +53,9 @@ python_init(int argc, char *argv[])
 	Py_InitializeEx(0);
 
 	PyRun_SimpleString("import sys");
-	PyRun_SimpleString("sys.path.append(\"/home/mirco/src/alsdorf/src\")");
+	/* FIXME: package that correctly */
+	PyRun_SimpleString("sys.path.append(\".\")");
+	PyRun_SimpleString("sys.path.append(\"./src\")");
 
 	/* Add hooks into internal modules */
 	stack_init_python_interface();
