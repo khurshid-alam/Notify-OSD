@@ -42,6 +42,10 @@ struct _BubblePrivate {
 	cairo_surface_t* icon_surface;
 	gboolean         visible;
 	guint            timeout;
+	gint             sliding_to_x;
+	gint             sliding_to_y;
+	gint             inc_x;
+	gint             inc_y;
 };
 
 
@@ -424,6 +428,28 @@ pointer_update (GtkWidget* window)
 	return TRUE;
 }
 
+static
+void
+calculate_default_size (guint *width,
+			guint *height)
+{
+	/* FIXME: Mirco, please implement the cairo code here */
+	*width  = 250;
+	*height = 100;
+}
+
+static
+void
+calculate_default_position (guint *x,
+			    guint *y)
+{
+	/* FIXME: Mirco, please implement the cairo code here */
+	*x = 1400 - 250 - 10;
+	*y = 30;
+}
+
+
+
 /*-- internal API ------------------------------------------------------------*/
 
 static void
@@ -494,10 +520,10 @@ bubble_new (void)
 	GtkWidget*      window            = NULL;
 	guint           draw_handler_id   = 0;
 	guint           pointer_update_id = 0;
-	gint            x                 = 30; /* dummy defaults */
-	gint            y                 = 30;
-	gint            width             = 100;
-	gint            height            = 50;
+	gint            x                 = 0;
+	gint            y                 = 0;
+	gint            width             = 0;
+	gint            height            = 0;
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
@@ -528,7 +554,11 @@ bubble_new (void)
 			  G_CALLBACK (screen_changed_handler),
 			  NULL);
 
+	/* size and position the window depending on the screen resolution */
+	calculate_default_size (&width, &height);
+	calculate_default_position (&x, &y);
 	gtk_widget_set_size_request (window, width, height);
+	
 	gtk_window_move (GTK_WINDOW (window), x, y);
 
 	/* make sure the window opens with a RGBA-visual */
@@ -542,15 +572,16 @@ bubble_new (void)
 			  G_CALLBACK (expose_handler),
 			  this);
 
-	/* do nasty busy-polling rendering in the drawing-area */
+	/* FIXME: do nasty busy-polling rendering in the drawing-area */
 	draw_handler_id = g_timeout_add (1000/60,
 					 (GSourceFunc) redraw_handler,
 					 window);
 
-	/* read out current mouse-pointer position every 1/10 second */
+	/* FIXME: read out current mouse-pointer position every 1/10 second */
         pointer_update_id = g_timeout_add (100,
 					   (GSourceFunc) pointer_update,
 					   window);
+       
 
 	/*  "clear" input-mask, set title/icon/attributes */
 	update_input_shape (window, 1, 1);
@@ -565,6 +596,9 @@ bubble_new (void)
 	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
 	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
 	GET_PRIVATE(this)->visible      = FALSE;
+	GET_PRIVATE(this)->timeout      = 10*1000; /* 10s */
+	GET_PRIVATE(this)->sliding_to_x = -1;
+	GET_PRIVATE(this)->sliding_to_y = -1;
 
 	return this;
 }
@@ -625,21 +659,102 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
+	/* TODO: move that into the Bubble gobject */
+	guint timer_id = 0;
+
 	if (!self)
 		return;
 
 	GET_PRIVATE (self)->visible = TRUE;
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
+
+	/* and now let the timer tick... */
+	timer_id = g_timeout_add (GET_PRIVATE (self)->timeout,
+				  (GSourceFunc) bubble_hide,
+				  self);
+}
+
+
+static
+gboolean
+do_slide_bubble (Bubble *self)
+{
+	gint x         = 0;
+	gint y         = 0;
+
+	if (!self) return FALSE;
+
+	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
+				 &x, &y);
+
+	/* check if we arrived at the destination */
+	if ((x == GET_PRIVATE (self)->sliding_to_x) &&
+	    (y == GET_PRIVATE (self)->sliding_to_y))
+		return FALSE;
+
+#if 0
+	g_printf ("moving from (%d, %d) to (%d, %d) by (%d, %d)\n",
+		  x, y,
+		  GET_PRIVATE (self)->sliding_to_x,
+		  GET_PRIVATE (self)->sliding_to_y,
+		  GET_PRIVATE (self)->inc_x,
+		  GET_PRIVATE (self)->inc_y);
+#endif
+	bubble_move(self,
+		    x + GET_PRIVATE (self)->inc_x,
+		    y + GET_PRIVATE (self)->inc_y);
+
+	return TRUE; /* keep going */
 }
 
 void
+bubble_slide_to (Bubble* self,
+		 gint    x,
+		 gint    y)
+{
+	guint timer_id = 0;
+	gint delta_x   = 0;
+	gint delta_y   = 0;
+	gint inc_x   = 0;
+	gint inc_y   = 0;
+
+	if (!self) return;
+
+	GET_PRIVATE (self)->sliding_to_x = x;
+	GET_PRIVATE (self)->sliding_to_y = y;
+
+	/* determine direction to take */
+	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
+				 &x, &y);
+
+	delta_x = GET_PRIVATE (self)->sliding_to_x - x;
+	delta_y = GET_PRIVATE (self)->sliding_to_y - y;
+	inc_x   = (GET_PRIVATE (self)->sliding_to_x - x) /
+		abs( GET_PRIVATE (self)->sliding_to_x -x);
+	inc_y   = (GET_PRIVATE (self)->sliding_to_y - y) /
+		abs( GET_PRIVATE (self)->sliding_to_y -y);
+	/* TODO: put some sin() here to get a smoother effect */
+	inc_x   *= delta_x / 5;
+	inc_y   *= delta_y / 5;
+
+	GET_PRIVATE (self)->inc_x = inc_x;
+	GET_PRIVATE (self)->inc_y = inc_y;
+
+	/* and now let the timer tick... */
+	timer_id = g_timeout_add (100,
+				  (GSourceFunc) do_slide_bubble,
+				  self);
+}
+
+gboolean
 bubble_hide (Bubble* self)
 {
-	if (!self)
-		return;
+	if (!self) return FALSE;
 
 	GET_PRIVATE (self)->visible = FALSE;
 	gtk_widget_hide (GET_PRIVATE (self)->widget);
+
+	return FALSE; /* this also instructs the timer to stop */
 }
 
 void
@@ -688,4 +803,13 @@ bubble_reset_timeout (Bubble* self)
 {
 	if (!self)
 		return;
+}
+
+void
+bubble_get_position (Bubble* self,
+		     gint*   x,
+		     gint*   y)
+{
+	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
+				 x, y);
 }

@@ -79,7 +79,7 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self);
 
-void
+gboolean
 bubble_hide (Bubble* self);
 
 void
@@ -98,6 +98,15 @@ bubble_is_visible (Bubble* self);
 void
 bubble_reset_timeout (Bubble* self);
 
+void
+bubble_slide_to (Bubble* self,
+		 gint    x,
+		 gint    y);
+
+void
+bubble_get_position (Bubble* self,
+		     gint*   x,
+		     gint*   y);
 G_END_DECLS
 
 #endif /* __BUBBLE_H */

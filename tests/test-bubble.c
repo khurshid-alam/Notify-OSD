@@ -16,41 +16,51 @@
 **
 *******************************************************************************/
 
+#include <unistd.h>
 #include <glib.h>
 #include <gtk/gtk.h>
 
+
 #include "bubble.h"
 
-Bubble*
-bubble_new (void);
 
+static
+gboolean
+stop_main_loop (GMainLoop *loop)
+{
+	g_main_loop_quit (loop);
+
+	return FALSE;
+}
+
+static
 void
-bubble_set_title (Bubble* self,
-		  char *title);
+test_bubble_slide (void)
+{
+        GMainLoop *loop;
+	Bubble* bubble;
+	gint x         = 0;
+	gint y         = 0;
 
-void
-bubble_set_message_body (Bubble* self,
-			 char *body);
+	bubble = bubble_new ();
+	g_assert (bubble != NULL);
 
-void
-bubble_set_size(Bubble* self,
-	      gint width,
-	      gint height);
+	bubble_move (bubble, 0, 0);
+	bubble_slide_to (bubble, 100, 200);
 
-void
-bubble_move (Bubble* self,
-	     gint x,
-	     gint y);
+	/* let the main loop run to have the slide being performed */
+        loop = g_main_loop_new(NULL, FALSE);
+        g_timeout_add(2000, (GSourceFunc)stop_main_loop, loop);
+        g_main_loop_run(loop);
 
-void
-bubble_display (Bubble* self);
+	/* check position */
+	bubble_get_position (bubble, &x, &y);
 
-void
-bubble_hide (Bubble* self);
+	g_assert_cmpint (x, ==, 100);
+}
 
-void
-bubble_del (Bubble* self);
 
+static
 void
 test_bubble_new (void)
 {
@@ -71,13 +81,22 @@ test_bubble_create_test_suite (void)
 	GTestCase  *tc = NULL;
 
 	ts = g_test_create_suite ("bubble");
-	tc = g_test_create_case ("bubble_new",
+	tc = g_test_create_case ("can create a new bubble",
 				 0,
 				 NULL,
 				 NULL,
 				 test_bubble_new,
 				 NULL);
 	g_test_suite_add(ts, tc);
+
+	g_test_suite_add(ts,
+			 g_test_create_case ("can slide a bubble to a new position",
+					     0,
+					     NULL,
+					     NULL,
+					     test_bubble_slide,
+					     NULL)
+		);
 
 	return ts;
 }
