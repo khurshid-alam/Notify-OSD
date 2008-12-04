@@ -27,7 +27,6 @@
 #include "defaults.h"
 #include "stack.h"
 #include "observer.h"
-#include "stack-display.h"
 
 #define DBUS_PATH "/org/freedesktop/Notifications"
 
