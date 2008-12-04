@@ -21,71 +21,63 @@
 #include <glib.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-bindings.h>
 
+#include "defaults.h"
+#include "stack.h"
+#include "observer.h"
 #include "stack-display.h"
-#include "python.h"
 
-int 
+#define DBUS_PATH "/org/freedesktop/Notifications"
+
+int
 main (int    argc,
       char** argv)
 {
-	gint            x                 = 0;
-	gint            y                 = 0;
-	gint            width             = 0;
-	gint            height            = 0;
-	GOptionContext* option_context    = NULL;
-	GOptionEntry    options[]         = {{"xposition",
-					      'x',
-					      0,
-					      G_OPTION_ARG_INT,
-					      &x,
-					      "x-pos of the top-left corner",
-					      "X"},
-					     {"yposition",
-					      'y',
-					      0,
-					      G_OPTION_ARG_INT,
-					      &y,
-					      "y-pos of the top-left corner",
-					      "Y"},
-					     {"width",
-					      'w',
-					      0,
-					      G_OPTION_ARG_INT,
-					      &width,
-					      "open window with this width",
-					      "WIDTH"},
-					     {"height",
-					      'h',
-					      0,
-					      G_OPTION_ARG_INT,
-					      &height,
-					      "open window with this height",
-					      "HEIGHT"},
-					     {NULL}};
+	Defaults*        defaults   = NULL;
+	Stack*           stack      = NULL;
+	Observer*        observer   = NULL;
+	DBusGConnection* connection = NULL;
+	DBusGProxy*      proxy      = NULL;
+	guint            request_name_result;
+	GError*          error      = NULL;
 
 	gtk_init (&argc, &argv);
 
-	python_init(argc, argv);
+	dbus_g_thread_init ();
 
-	/* handle commandline options */
-	x      = 30;
-	y      = 30;
-	width  = 300;
-	height = 100;
-	option_context = g_option_context_new ("- prototype for some new tech");
-	g_option_context_add_main_entries (option_context,
-					   options,
-					   "notification test");
-	g_option_context_parse (option_context, &argc, &argv, NULL);
-	g_option_context_free (option_context);
+	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	if (error)
+	{
+		g_print ("%s", error->message);
+		g_error_free (error);
+	}
 
-	python_load_script("dbus-link.py");
+	proxy = dbus_g_proxy_new_for_name (connection,
+					   "org.freedesktop.DBus",
+					   "/org/freedesktop/Dbus",
+					   "org.freedesktop.DBus");
+	if (!dbus_g_proxy_call (proxy,
+				"RequestName",
+				&error,
+				G_TYPE_STRING, "org.freedesktop.Notifications",
+				G_TYPE_UINT, 0,
+				G_TYPE_INVALID,
+				G_TYPE_UINT, &request_name_result,
+				G_TYPE_INVALID))
+	{
+		g_error ("Could not aquire name: %s", error->message);
+	}
+
+	defaults = defaults_new ();
+	observer = observer_new ();
+	stack = stack_new (defaults, observer);
+	dbus_g_connection_register_g_object (connection,
+					     DBUS_PATH,
+					     G_OBJECT (stack));
 
 	gtk_main ();
 
-	python_exit();
-
 	return 0;
 }
-

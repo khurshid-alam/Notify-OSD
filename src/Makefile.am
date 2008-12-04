@@ -3,7 +3,6 @@ NULL =
 INCLUDES =			\
 	-I.			\
 	-I$(srcdir)		\
-	$(PYTHON_INCLUDES)	\
 	$(NULL)
 
 bin_PROGRAMS = \
@@ -15,18 +14,15 @@ alsdorf_sources =		\
 	defaults.c		\
 	main.c			\
 	observer.c		\
-	stack-display.c		\
 	stack.c			\
-	python.c		\
 	$(NULL)
 
 alsdorf_headers =		\
 	bubble.h		\
 	defaults.h		\
 	observer.h		\
-	stack-display.h		\
 	stack.h			\
-	python.h		\
+	stack-glue.h		\
 	$(NULL)
 
 alsdorf_SOURCES =		\
@@ -36,26 +32,32 @@ alsdorf_SOURCES =		\
 
 alsdorf_LDADD =			\
 	$(X_LIBS)		\
-	$(PYTHON_LIBS)		\
 	$(GTK_LIBS) 		\
 	$(LIBRSVG_LIBS) 	\
+	$(DBUS_LIBS)     	\
 	$(NULL)
 
 alsdorf_CFLAGS = 		\
 	-Wall -Werror -std=c99	\
 	$(GTK_CFLAGS) 		\
 	$(LIBRSVG_CFLAGS) 	\
+	$(DBUS_CFLAGS)		\
 	$(NULL)
 
 alsdorf_LDFLAGS = 		\
-	$(PYTHON_LIBS_DIR)	\
 	-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions \
 	$(NULL)
 
 # this comes from distutils.sysconfig.get_config_var('LINKFORSHARED')
 
+stack-glue.h: alsdorf.xml Makefile
+	$(LIBTOOL) --mode=execute $(DBUS_GLIB_BIN)/dbus-binding-tool --prefix=stack --mode=glib-server --output=$@ $<
+
+BUILT_SOURCES =			\
+	stack-glue.h
 
 EXTRA_DIST =			\
+	alsdorf.xml		\
 	$(NULL)
 
 CLEANFILES = 			\

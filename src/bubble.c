@@ -34,8 +34,7 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
 struct _BubblePrivate {
-	GtkWidget *widget;
-
+	GtkWidget*       widget;
 	gchar*           title;
 	gchar*           message_body;
 	guint            id;
@@ -48,7 +47,6 @@ struct _BubblePrivate {
 	gint             inc_y;
 };
 
-
 /*-- private functions  --------------------------------------------------------------*/
 
 double   g_alpha   = 0.95f;
@@ -56,8 +54,7 @@ gboolean g_entered = FALSE;
 gboolean g_left    = FALSE;
 gint     g_pointer[2];
 
-static
-void
+static void
 draw_round_rect (cairo_t* cr,
 		 double   aspect,         /* aspect-ratio            */
 		 double   x,              /* top-left corner         */
@@ -337,7 +334,7 @@ load_pixmap_icon (gchar* filename)
 }*/
 
 static cairo_surface_t*
-load_svg_icon (gchar* filename)
+load_svg_icon (const gchar* filename)
 {
 	cairo_surface_t*  surf      = NULL;
 	gint              cr_width  = 64;
@@ -428,25 +425,25 @@ pointer_update (GtkWidget* window)
 	return TRUE;
 }
 
-static
+/*static
 void
 calculate_default_size (guint *width,
 			guint *height)
 {
-	/* FIXME: Mirco, please implement the cairo code here */
+	* FIXME: Mirco, please implement the cairo code here *
 	*width  = 250;
 	*height = 100;
-}
+}*/
 
-static
+/*static
 void
 calculate_default_position (guint *x,
 			    guint *y)
 {
-	/* FIXME: Mirco, please implement the cairo code here */
+	* FIXME: Mirco, please implement the cairo code here *
 	*x = 1400 - 250 - 10;
 	*y = 30;
-}
+}*/
 
 
 
@@ -555,8 +552,8 @@ bubble_new (void)
 			  NULL);
 
 	/* size and position the window depending on the screen resolution */
-	calculate_default_size (&width, &height);
-	calculate_default_position (&x, &y);
+	/*calculate_default_size (&width, &height);
+	calculate_default_position (&x, &y);*/
 	gtk_widget_set_size_request (window, width, height);
 	
 	gtk_window_move (GTK_WINDOW (window), x, y);
@@ -605,8 +602,8 @@ bubble_new (void)
 
 
 void
-bubble_set_title (Bubble* self,
-		  char *title)
+bubble_set_title (Bubble*      self,
+		  const gchar* title)
 {
 	if (!self)
 		return;
@@ -615,8 +612,8 @@ bubble_set_title (Bubble* self,
 }
 
 void
-bubble_set_message_body (Bubble* self,
-			 gchar*  body)
+bubble_set_message_body (Bubble*      self,
+			 const gchar* body)
 {
 	if (!self)
 		return;
@@ -625,8 +622,8 @@ bubble_set_message_body (Bubble* self,
 }
 
 void
-bubble_set_icon (Bubble* self,
-		 gchar*  filename)
+bubble_set_icon (Bubble*      self,
+		 const gchar* filename)
 {
 	if (!self)
 		return;
@@ -673,7 +670,6 @@ bubble_show (Bubble* self)
 				  (GSourceFunc) bubble_hide,
 				  self);
 }
-
 
 static
 gboolean

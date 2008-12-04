@@ -19,11 +19,13 @@ test_modules_CFLAGS =		\
 	$(GLIB_CFLAGS)		\
 	$(LIBRSVG_CFLAGS)	\
 	$(GTK_CFLAGS)		\
+	$(DBUS_CFLAGS)		\
 	-I$(top_srcdir)/src
 
 test_modules_LDADD =		\
 	$(GLIB_LIBS)		\
 	$(LIBRSVG_LIBS)		\
+	$(DBUS_LIBS)		\
 	$(GTK_LIBS)
 
 test: test-modules

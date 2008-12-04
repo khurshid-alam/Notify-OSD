@@ -55,16 +55,16 @@ Bubble*
 bubble_new (void);
 
 void
-bubble_set_title (Bubble* self,
-		  char *title);
+bubble_set_title (Bubble*      self,
+		  const gchar* title);
 
 void
-bubble_set_message_body (Bubble* self,
-			 gchar*  body);
+bubble_set_message_body (Bubble*      self,
+			 const gchar* body);
 
 void
-bubble_set_icon (Bubble* self,
-		 gchar*  filename);
+bubble_set_icon (Bubble*      self,
+		 const gchar* filename);
 
 void
 bubble_set_size(Bubble* self,

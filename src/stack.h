@@ -20,9 +20,12 @@
 #define __STACK_H
 
 #include <glib-object.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-bindings.h>
 
 #include "defaults.h"
 #include "bubble.h"
+#include "observer.h"
 
 G_BEGIN_DECLS
 
@@ -43,6 +46,7 @@ struct _Stack
 
 	/* private */
 	Defaults* defaults;
+	Observer* observer;
 	GList*    list;
 	guint     next_id;
 };
@@ -56,7 +60,8 @@ struct _StackClass
 GType stack_get_type (void);
 
 Stack*
-stack_new (Defaults* defaults);
+stack_new (Defaults* defaults,
+	   Observer* observer);
 
 void
 stack_del (Stack* self);
@@ -71,6 +76,34 @@ stack_push (Stack* self,
 void
 stack_pop (Stack* self,
 	   guint  id);
+
+gboolean
+stack_notify_handler (Stack*                 self,
+		      const gchar*           app_name,
+		      guint                  id,
+		      const gchar*           icon,
+		      const gchar*           summary,
+		      const gchar*           body,
+		      gchar**                actions,
+		      GHashTable*            hints,
+		      gint                   timeout,
+		      DBusGMethodInvocation* context);
+
+gboolean
+stack_close_notification_handler (Stack*   self,
+				  guint    id,
+				  GError** error);
+
+gboolean
+stack_get_capabilities (Stack*   self,
+			gchar*** out_caps);
+
+gboolean
+stack_get_server_information (Stack*  self,
+			      gchar** out_name,
+			      gchar** out_vendor,
+			      gchar** out_version,
+			      gchar** out_spec_ver);
 
 G_END_DECLS
 

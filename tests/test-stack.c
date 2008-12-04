@@ -27,8 +27,9 @@ test_stack_new ()
 {
 	Stack*    stack = NULL;
 	Defaults* defaults = defaults_new ();
+	Observer* observer = observer_new ();
 
-	stack = stack_new (defaults);
+	stack = stack_new (defaults, observer);
 	g_assert (stack != NULL);
 	stack_del (stack);
 }
@@ -39,8 +40,9 @@ test_stack_del ()
 {
 	Stack*    stack = NULL;
 	Defaults* defaults = defaults_new ();
+	Observer* observer = observer_new ();
 
-	stack = stack_new (defaults);
+	stack = stack_new (defaults, observer);
 	stack_del (stack);
 	/*g_assert (stack == NULL);*/
 }

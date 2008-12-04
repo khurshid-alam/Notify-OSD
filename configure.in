@@ -32,24 +32,21 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0])
 PKG_CHECK_MODULES([LIBRSVG], [librsvg-2.0 >= 2.14.0])
 
 #
+# dbus
+#
+PKG_CHECK_MODULES([DBUS], [dbus-glib-1 >= 0.76])
+DBUS_GLIB_BIN="`$PKG_CONFIG --variable=exec_prefix dbus-glib-1`/bin"
+AC_SUBST(DBUS_GLIB_BIN)
+
+#
 # Gnome/GTK checks
 #
 
 AM_PATH_GTK_2_0
 
 
-#
-# Check for Python & pygtk
-#
-AM_PATH_PYTHON
-AM_CHECK_PYTHON_HEADERS(,[AC_MSG_ERROR(could not find Python headers)])
-PYTHON_LIBS_DIR="-L/usr/lib/python2.5/config"
-AC_SUBST(PYTHON_LIBS_DIR)
-PYTHON_LIBS="-lpython2.5"
-AC_SUBST(PYTHON_LIBS)
 PKG_CHECK_MODULES(alsdorf, 
 		  gtk+-2.0 >= 2.6
-		  pygtk-2.0 >= 2.6
 		  libgnome-menu >= 2.18)
 AC_SUBST(ALSDORF_CFLAGS)
 AC_SUBST(ALSDORF_LIBS)

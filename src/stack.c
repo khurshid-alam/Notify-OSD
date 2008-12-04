@@ -70,6 +70,8 @@ stack_get_property (GObject*    gobject,
 	}
 }
 
+#include "stack-glue.h"
+
 static void
 stack_class_init (StackClass* klass)
 {
@@ -78,6 +80,9 @@ stack_class_init (StackClass* klass)
 	gobject_class->dispose      = stack_dispose;
 	gobject_class->finalize     = stack_finalize;
 	gobject_class->get_property = stack_get_property;
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+					 &dbus_glib_stack_object_info);
 }
 
 void
@@ -123,11 +128,12 @@ layout (Stack* self)
 /*-- public API --------------------------------------------------------------*/
 
 Stack*
-stack_new (Defaults* defaults)
+stack_new (Defaults* defaults,
+	   Observer* observer)
 {
 	Stack* this;
 
-	if (!defaults)
+	if (!defaults || !observer)
 		return NULL;
 
 	this = g_object_new (STACK_TYPE, NULL);
@@ -135,6 +141,7 @@ stack_new (Defaults* defaults)
 		return NULL;
 
 	this->defaults = defaults;
+	this->observer = observer;
 	this->list     = NULL;
 	this->next_id  = 1;
 
@@ -229,4 +236,71 @@ stack_pop (Stack* self,
 
 	/* recalculate layout of current stack */
 	layout (self);
+}
+
+gboolean
+stack_notify_handler (Stack*                 self,
+		      const gchar*           app_name,
+		      guint                  id,
+		      const gchar*           icon,
+		      const gchar*           summary,
+		      const gchar*           body,
+		      gchar**                actions,
+		      GHashTable*            hints,
+		      gint                   timeout,
+		      DBusGMethodInvocation* context)
+{
+	Bubble* bubble = NULL;
+
+	g_print ("%s", G_STRLOC);
+
+	bubble = bubble_new ();
+	bubble_set_size (bubble,
+			 defaults_get_bubble_width (self->defaults),
+			 defaults_get_bubble_height (self->defaults));
+	bubble_move (bubble,
+		     defaults_get_desktop_width (self->defaults) -
+		     defaults_get_bubble_width (self->defaults) - 10,
+		     30);
+
+	bubble_set_title (bubble, summary);
+	bubble_set_message_body (bubble, body);
+        // bubble_set_icon (bubble, "./icons/avatar.svg");
+	bubble_set_icon (bubble, "./icons/chat.svg");
+	bubble_show (bubble);
+    
+	dbus_g_method_return (context, self->next_id++);
+
+	return TRUE;
+}
+
+gboolean
+stack_close_notification_handler (Stack*   self,
+				  guint    id,
+				  GError** error)
+{
+	g_print ("%s", G_STRLOC);
+
+	return TRUE;
+}
+
+gboolean
+stack_get_capabilities (Stack*   self,
+			gchar*** out_caps)
+{
+	g_print ("%s", G_STRLOC);
+
+	return TRUE;
+}
+
+gboolean
+stack_get_server_information (Stack*  self,
+			      gchar** out_name,
+			      gchar** out_vendor,
+			      gchar** out_version,
+			      gchar** out_spec_ver)
+{
+	g_print ("%s", G_STRLOC);
+
+	return TRUE;
 }
