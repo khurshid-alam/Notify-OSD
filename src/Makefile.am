@@ -5,7 +5,8 @@ INCLUDES =			\
 	-I$(srcdir)		\
 	$(NULL)
 
-bin_PROGRAMS = \
+alsdorfdir = $(libexecdir)/aachen
+alsdorf_PROGRAMS = \
 	alsdorf			\
 	$(NULL)
 
