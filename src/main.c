@@ -42,6 +42,8 @@ main (int    argc,
 	guint            request_name_result;
 	GError*          error      = NULL;
 
+	g_thread_init (NULL);
+
 	gtk_init (&argc, &argv);
 
 	dbus_g_thread_init ();

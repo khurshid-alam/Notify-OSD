@@ -24,7 +24,7 @@ PKG_PROG_PKG_CONFIG
 #
 # glib, we need 2.16.0 for the unit-tests
 #
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0 gthread-2.0])
 
 #
 # librsvg, used for loading and rendering SVGs
@@ -57,4 +57,5 @@ AC_OUTPUT([
 Makefile
 src/Makefile
 tests/Makefile
+data/Makefile
 ])

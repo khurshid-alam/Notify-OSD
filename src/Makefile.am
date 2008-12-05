@@ -5,7 +5,9 @@ INCLUDES =			\
 	-I$(srcdir)		\
 	$(NULL)
 
-bin_PROGRAMS = \
+alsdorfdir = $(libexecdir)
+
+alsdorf_PROGRAMS = \
 	alsdorf			\
 	$(NULL)
 
@@ -32,6 +34,7 @@ alsdorf_SOURCES =		\
 
 alsdorf_LDADD =			\
 	$(X_LIBS)		\
+	$(GLIB_LIBS) 		\
 	$(GTK_LIBS) 		\
 	$(LIBRSVG_LIBS) 	\
 	$(DBUS_LIBS)     	\
