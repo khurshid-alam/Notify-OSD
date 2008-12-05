@@ -37,3 +37,4 @@ tests/.deps
 tests/.libs
 tests/test-modules.html
 src/stack-glue.h
+data/org.freedesktop.Notifications.service
