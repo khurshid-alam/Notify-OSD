@@ -38,7 +38,7 @@ struct _BubblePrivate {
 	gchar*           title;
 	gchar*           message_body;
 	guint            id;
-	cairo_surface_t* icon_surface;
+	GdkPixbuf*       icon_pixbuf;
 	gboolean         visible;
 	guint            timeout;
 	gint             sliding_to_x;
@@ -219,49 +219,94 @@ expose_handler (GtkWidget*      window,
 
 	cr = gdk_cairo_create (window->window);
 
+        /* clear and render bubble-background */
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr, 0.05f, 0.05f, 0.05f, g_alpha);
-
 	draw_round_rect (cr,
 			 1.0f,
 			 0.0f, 0.0f,
 			 10.0f,
-			 (double) window->allocation.width,
-			 (double) window->allocation.height);
-
+			 (gdouble) window->allocation.width,
+			 (gdouble) window->allocation.height);
 	cairo_fill (cr);
 
 	/* render title */
-	cairo_select_font_face (cr,
-				"DejaVu Sans",
-				CAIRO_FONT_SLANT_NORMAL,
-				CAIRO_FONT_WEIGHT_BOLD);
-	cairo_set_font_size (cr, 16.0f);
-	cairo_move_to (cr, 80.0f, 35.0f);
-	cairo_text_path (cr, GET_PRIVATE(bubble)->title);
-	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
-	cairo_fill (cr);
+	if (GET_PRIVATE (bubble)->title)
+	{
+		PangoFontDescription* desc   = NULL;
+		PangoLayout*          layout = NULL;
+
+		layout = pango_cairo_create_layout (cr);
+		desc = pango_font_description_new ();
+		pango_font_description_set_absolute_size (desc, 16 * PANGO_SCALE);
+		pango_font_description_set_family_static (desc, "Candara");
+		pango_font_description_set_weight (desc, PANGO_WEIGHT_BOLD);
+		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+		pango_layout_set_font_description (layout, desc);
+		pango_font_description_free (desc);
+		pango_layout_set_width (layout, 210 * PANGO_SCALE);
+
+		/* print and layout string (pango-wise) */
+		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
+
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		/*cairo_set_line_width (cr, 0.0025f);*/
+		cairo_move_to (cr, 80.0f, 15.0f);
+
+		/* draw pango-text as path to our cairo-context */
+		pango_cairo_layout_path (cr, layout);
+
+		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
+		cairo_fill (cr);
+		g_object_unref (layout);
+	}
 
 	/* render body-message */
-	cairo_select_font_face (cr,
-				"DejaVu Sans",
-				CAIRO_FONT_SLANT_NORMAL,
-				CAIRO_FONT_WEIGHT_NORMAL);
-	cairo_set_font_size (cr, 12.0f);
-	cairo_move_to (cr, 80.0f, 55.0f);
-	cairo_text_path (cr, GET_PRIVATE(bubble)->message_body);
-	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.5f);
-	cairo_fill (cr);
+	if (GET_PRIVATE (bubble)->message_body)
+	{
+		PangoFontDescription* desc   = NULL;
+		PangoLayout*          layout = NULL;
+
+		layout = pango_cairo_create_layout (cr);
+		desc = pango_font_description_new ();
+		pango_font_description_set_absolute_size (desc, 12 * PANGO_SCALE);
+		pango_font_description_set_family_static (desc, "Candara");
+		pango_font_description_set_weight (desc, PANGO_WEIGHT_NORMAL);
+		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+		pango_layout_set_font_description (layout, desc);
+		pango_font_description_free (desc);
+		pango_layout_set_width (layout, 200 * PANGO_SCALE);
+
+		/* print and layout string (pango-wise) */
+		pango_layout_set_text (layout,
+				       GET_PRIVATE (bubble)->message_body,
+				       -1);
+
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		/*cairo_set_line_width (cr, 0.0025f);*/
+		cairo_move_to (cr, 80.0f, 35.0f);
+
+		/* draw pango-text as path to our cairo-context */
+		pango_cairo_layout_path (cr, layout);
+		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.5f);
+		cairo_fill (cr);
+		g_object_unref (layout);
+	}
 
 	/* render icon */
-	cairo_set_source_surface (cr,
-				  GET_PRIVATE(bubble)->icon_surface,
-				  15.0f,
-				  20.0f);
-	cairo_paint (cr);
+	if (GET_PRIVATE (bubble)->icon_pixbuf)
+	{
+		gdk_cairo_set_source_pixbuf (cr,
+					     GET_PRIVATE (bubble)->icon_pixbuf,
+					     15.0f,
+					     20.0f);
+		cairo_paint (cr);
+	}
 
 	cairo_destroy (cr);
 
@@ -272,6 +317,9 @@ static
 gboolean
 redraw_handler (GtkWidget* window)
 {
+	if (!GTK_IS_WINDOW (window))
+		return FALSE;
+
 	if (g_left && g_alpha < 0.95f)
 		g_alpha += 0.05f;
 
@@ -283,108 +331,30 @@ redraw_handler (GtkWidget* window)
 	return TRUE;
 }
 
-/*static cairo_surface_t*
-load_pixmap_icon (gchar* filename)
+static
+GdkPixbuf*
+load_bitmap_icon (const gchar* filename)
 {
-	cairo_surface_t*  surf   = NULL;
-	gint              width  = 64;
-	gint              height = 64;
-	cairo_t*          cr     = NULL;
+	/*cairo_surface_t*  surf   = NULL;*/
+	gint              width  = BUBBLE_ICON_WIDTH;
+	gint              height = BUBBLE_ICON_HEIGHT;
 	GError*           error  = NULL;
-	GdkPixbuf* pixbuf = NULL;
+	GdkPixbuf*        pixbuf = NULL;
 
-	* sanity check *
+	/* sanity check */
 	if (!filename)
 		return NULL;
 
-	* load image into pixbuf *
-	pixbuf = gdk_pixbuf_new_from_file_at_size (filename,
-						   width,
-						   height,
-						   &error);
+	/* load image into pixbuf */
+	pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
+						    width,
+						    height,
+						    TRUE,
+						    &error);
 	if (!pixbuf)
 		return NULL;
 
-	* create image-surface from pixbuf *
-	surf = cairo_image_surface_create_for_data (
-			gdk_pixbuf_get_pixels (pixbuf),
-			CAIRO_FORMAT_ARGB32,
-			gdk_pixbuf_get_width (pixbuf),
-			gdk_pixbuf_get_height (pixbuf),
-			gdk_pixbuf_get_rowstride (pixbuf));
-	if (cairo_surface_status (surf) != CAIRO_STATUS_SUCCESS)
-	{
-		g_object_unref (pixbuf);
-		return NULL;
-	}
-
-	g_object_unref (pixbuf);
-
-	* create cairo-context from image-surface *
-	cr = cairo_create (surf);
-	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
-	{
-		cairo_surface_destroy (surf);
-		return NULL;
-	}
-
-	cairo_destroy (cr);
-
-	return surf;
-}*/
-
-static cairo_surface_t*
-load_svg_icon (const gchar* filename)
-{
-	cairo_surface_t*  surf      = NULL;
-	gint              cr_width  = 64;
-	gint              cr_height = 64;
-	cairo_t*          cr        = NULL;
-	RsvgHandle*       svg       = NULL;
-	GError*           error     = NULL;
-	RsvgDimensionData dim;
-
-	if (!filename)
-		return NULL;
-
-	surf = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-					   cr_width,
-					   cr_height);
-	if (cairo_surface_status (surf) != CAIRO_STATUS_SUCCESS)
-		return NULL;
-
-	cr = cairo_create (surf);
-	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
-	{
-		cairo_surface_destroy (surf);
-		return NULL;
-	}
-
-	rsvg_init ();
-
-	svg = rsvg_handle_new_from_file (filename, &error);
-	if (!svg)
-	{
-		cairo_surface_destroy (surf);
-		rsvg_term ();
-		cairo_destroy (cr);
-		return NULL;
-	}
-
-	rsvg_handle_get_dimensions (svg, &dim);
-	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-	cairo_paint (cr);
-	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	cairo_scale (cr,
-		     (gdouble) cr_width / (gdouble) dim.width,
-		     (gdouble) cr_height / (gdouble) dim.height);
-	rsvg_handle_render_cairo (svg, cr);
-	g_object_unref (svg);
-
-	rsvg_term ();
-	cairo_destroy (cr);
-
-	return surf;
+	return pixbuf;
 }
 
 static
@@ -399,6 +369,9 @@ pointer_update (GtkWidget* window)
 	gint win_y;
 	gint width;
 	gint height;
+
+	if (!GTK_IS_WINDOW (window))
+		return FALSE;
 
 	if (GTK_WIDGET_REALIZED (window))
 	{
@@ -459,6 +432,30 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
+	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
+	{
+		gtk_widget_destroy (GTK_WIDGET (BUBBLE (gobject)->priv->widget));
+		BUBBLE (gobject)->priv->widget = NULL;
+	}
+
+    	if (GET_PRIVATE (gobject)->title)
+	{
+		g_free ((gpointer) GET_PRIVATE (gobject)->title);
+		GET_PRIVATE (gobject)->title = NULL;
+	}
+
+    	if (GET_PRIVATE (gobject)->message_body)
+	{
+		g_free ((gpointer) GET_PRIVATE (gobject)->message_body);
+		GET_PRIVATE (gobject)->message_body = NULL;
+	}
+
+	if (GET_PRIVATE (gobject)->icon_pixbuf)
+	{
+		g_object_unref (GET_PRIVATE (gobject)->icon_pixbuf);
+		GET_PRIVATE (gobject)->icon_pixbuf = NULL;
+	}
+
 	/* chain up to the parent class */
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
@@ -476,6 +473,7 @@ bubble_init (Bubble* self)
 	priv->title            = NULL;
 	priv->message_body     = NULL;
 	priv->visible          = FALSE;
+	priv->icon_pixbuf      = NULL;
 }
 
 static void
@@ -526,7 +524,8 @@ bubble_new (void)
 	if (!this)
 		return NULL;
 
-	window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	GET_PRIVATE (this)->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	window = GET_PRIVATE (this)->widget;
 	if (!window)
 		return NULL;
 
@@ -588,7 +587,8 @@ bubble_new (void)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-
+	
+	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->widget       = window;
 	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
 	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
@@ -628,13 +628,16 @@ bubble_set_icon (Bubble*      self,
 	if (!self)
 		return;
 
-	GET_PRIVATE (self)->icon_surface = load_svg_icon (filename);
+	if (GET_PRIVATE (self)->icon_pixbuf)
+		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
+
+	GET_PRIVATE (self)->icon_pixbuf = load_bitmap_icon (filename);
 }
 
 void
-bubble_set_size(Bubble* self,
-		gint    width,
-		gint    height)
+bubble_set_size (Bubble* self,
+		 gint    width,
+		 gint    height)
 {
 	if (!self)
 		return;
@@ -751,19 +754,6 @@ bubble_hide (Bubble* self)
 	gtk_widget_hide (GET_PRIVATE (self)->widget);
 
 	return FALSE; /* this also instructs the timer to stop */
-}
-
-void
-bubble_del (Bubble* self)
-{
-	if (!self)
-		return;
-
-	if (GET_PRIVATE (self)->icon_surface)
-		cairo_surface_destroy (GET_PRIVATE (self)->icon_surface);
-
-	g_object_unref (self);
-	/* TODO: dispose of the struct members (widget, etc.) */
 }
 
 void

@@ -57,6 +57,8 @@ test_bubble_slide (void)
 	bubble_get_position (bubble, &x, &y);
 
 	g_assert_cmpint (x, ==, 100);
+
+	g_object_unref (bubble);
 }
 
 
@@ -70,8 +72,30 @@ test_bubble_new (void)
 
 	g_assert (bubble != NULL);
 
-	/* I've no idea why unref'ing bubble here causes a SIGABRT */
-	/*g_object_unref (bubble);*/
+	g_object_unref (bubble);
+}
+
+static
+void
+test_bubble_set_attributes (void)
+{
+	Bubble*    bubble;
+        GMainLoop* loop;
+
+	bubble = bubble_new ();
+	bubble_set_icon (bubble, "../icons/chat.svg");
+	bubble_set_title (bubble, "Unit Testing");
+	bubble_set_message_body (bubble, "Long text that is hopefully wrapped");
+	bubble_set_size (bubble, 300, 100);
+	bubble_move (bubble, 30, 30);
+	bubble_show (bubble);
+
+	/* let the main loop run to have the slide being performed */
+        loop = g_main_loop_new (NULL, FALSE);
+        g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
+        g_main_loop_run (loop);
+
+	g_object_unref (bubble);
 }
 
 GTestSuite *
@@ -87,7 +111,7 @@ test_bubble_create_test_suite (void)
 				 NULL,
 				 test_bubble_new,
 				 NULL);
-	g_test_suite_add(ts, tc);
+	g_test_suite_add (ts, tc);
 
 	g_test_suite_add(ts,
 			 g_test_create_case ("can slide a bubble to a new position",
@@ -97,6 +121,14 @@ test_bubble_create_test_suite (void)
 					     test_bubble_slide,
 					     NULL)
 		);
+
+	g_test_suite_add (ts,
+			  g_test_create_case ("can set bubble attributes",
+					      0,
+					      NULL,
+					      NULL,
+					      test_bubble_set_attributes,
+					      NULL));
 
 	return ts;
 }

@@ -252,8 +252,6 @@ stack_notify_handler (Stack*                 self,
 {
 	Bubble* bubble = NULL;
 
-	g_print ("%s", G_STRLOC);
-
 	bubble = bubble_new ();
 	bubble_set_size (bubble,
 			 defaults_get_bubble_width (self->defaults),
@@ -263,10 +261,12 @@ stack_notify_handler (Stack*                 self,
 		     defaults_get_bubble_width (self->defaults) - 10,
 		     30);
 
-	bubble_set_title (bubble, summary);
-	bubble_set_message_body (bubble, body);
-        // bubble_set_icon (bubble, "./icons/avatar.svg");
-	bubble_set_icon (bubble, "./icons/chat.svg");
+	if (summary)
+		bubble_set_title (bubble, summary);
+	if (body)
+		bubble_set_message_body (bubble, body);
+	if (icon)
+		bubble_set_icon (bubble, icon);
 	bubble_show (bubble);
     
 	dbus_g_method_return (context, self->next_id++);
@@ -279,7 +279,7 @@ stack_close_notification_handler (Stack*   self,
 				  guint    id,
 				  GError** error)
 {
-	g_print ("%s", G_STRLOC);
+	g_print ("stack_close_notification_handler() called, %s\n", G_STRLOC);
 
 	return TRUE;
 }
@@ -288,7 +288,7 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	g_print ("%s", G_STRLOC);
+	g_print ("stack_get_capabilities() called, %s\n", G_STRLOC);
 
 	return TRUE;
 }
@@ -300,7 +300,7 @@ stack_get_server_information (Stack*  self,
 			      gchar** out_version,
 			      gchar** out_spec_ver)
 {
-	g_print ("%s", G_STRLOC);
+	g_print ("stack_get_server_information() called, %s\n", G_STRLOC);
 
 	return TRUE;
 }
