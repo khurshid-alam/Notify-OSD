@@ -45,6 +45,7 @@ struct _BubblePrivate {
 	gint             sliding_to_y;
 	gint             inc_x;
 	gint             inc_y;
+	gint             value; /* "empty": -1, valid range: 0 - 100 */
 };
 
 /*-- private functions  --------------------------------------------------------------*/
@@ -308,6 +309,29 @@ expose_handler (GtkWidget*      window,
 		cairo_paint (cr);
 	}
 
+	/* render value */
+	if (GET_PRIVATE (bubble)->value >= 0 &&
+	    GET_PRIVATE (bubble)->value <= 100)
+	{
+		int step;
+
+		for (step = 0; step < 10; step++)
+		{
+			if (step * 10 >= GET_PRIVATE (bubble)->value)
+				cairo_set_source_rgba (cr, 0.3f, 0.3f, 0.3f, 0.5f);
+			else
+				cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.25f);
+			draw_round_rect (cr,
+					 1.0f,
+					 70.0f + 13.0f * (gdouble) step,
+					 80.0f - 7.0f * (gdouble) step,
+					 2.0f,
+					 10.0f,
+					 7.0f * (gdouble) step);
+			cairo_fill (cr);
+		}
+	}
+
 	cairo_destroy (cr);
 
 	return TRUE;
@@ -474,6 +498,7 @@ bubble_init (Bubble* self)
 	priv->message_body     = NULL;
 	priv->visible          = FALSE;
 	priv->icon_pixbuf      = NULL;
+	priv->value            = -1;
 }
 
 static void
@@ -632,6 +657,16 @@ bubble_set_icon (Bubble*      self,
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
 
 	GET_PRIVATE (self)->icon_pixbuf = load_bitmap_icon (filename);
+}
+
+void
+bubble_set_value (Bubble* self,
+		  gint    value)
+{
+	if (!self)
+		return;
+
+	GET_PRIVATE (self)->value = value;
 }
 
 void

@@ -251,6 +251,7 @@ stack_notify_handler (Stack*                 self,
 		      DBusGMethodInvocation* context)
 {
 	Bubble* bubble = NULL;
+	GValue* data   = NULL;
 
 	bubble = bubble_new ();
 	bubble_set_size (bubble,
@@ -261,6 +262,13 @@ stack_notify_handler (Stack*                 self,
 		     defaults_get_bubble_width (self->defaults) - 10,
 		     30);
 
+	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "value");
+		if (G_VALUE_HOLDS_INT (data))
+			bubble_set_value (bubble, g_value_get_int (data));
+	}
+
 	if (summary)
 		bubble_set_title (bubble, summary);
 	if (body)
@@ -268,7 +276,7 @@ stack_notify_handler (Stack*                 self,
 	if (icon)
 		bubble_set_icon (bubble, icon);
 	bubble_show (bubble);
-    
+
 	dbus_g_method_return (context, self->next_id++);
 
 	return TRUE;

@@ -69,6 +69,10 @@ bubble_set_icon (Bubble*      self,
 		 const gchar* filename);
 
 void
+bubble_set_value (Bubble* self,
+		  gint    value);
+
+void
 bubble_set_size (Bubble* self,
 		 gint    width,
 		 gint    height);
