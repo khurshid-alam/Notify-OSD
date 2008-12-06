@@ -554,7 +554,10 @@ bubble_new (void)
 	if (!window)
 		return NULL;
 
-	g_object_set_data (G_OBJECT(window), "bubble", (gpointer)&this);
+	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) &this);
+
+	gtk_window_set_type_hint (GTK_WINDOW (window),
+				  GDK_WINDOW_TYPE_HINT_DOCK);
 
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
