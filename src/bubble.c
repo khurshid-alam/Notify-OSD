@@ -215,6 +215,11 @@ expose_handler (GtkWidget*      window,
 {
 	Bubble*  bubble;
 	cairo_t* cr;
+	gdouble  width       = (gdouble) window->allocation.width;
+	gdouble  height      = (gdouble) window->allocation.height;
+	gdouble  margin_gap  = 15.0f;
+	gdouble  left_margin = 15.0f;
+	gdouble  top_margin  = 15.0f;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
@@ -230,48 +235,67 @@ expose_handler (GtkWidget*      window,
 			 1.0f,
 			 0.0f, 0.0f,
 			 10.0f,
-			 (gdouble) window->allocation.width,
-			 (gdouble) window->allocation.height);
+			 width,
+			 height);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, 0.15f, 0.15f, 0.15f, g_alpha);
 	draw_round_rect (cr,
 			 1.0f,
 			 1.0f, 1.0f,
 			 9.5f,
-			 (gdouble) window->allocation.width - 2.0f,
-			 (gdouble) window->allocation.height / 2.0f);
+			 width - 2.0f,
+			 height / 2.0f);
 	cairo_fill (cr);
+
+	/* render icon */
+	if (GET_PRIVATE (bubble)->icon_pixbuf)
+	{
+		gdk_cairo_set_source_pixbuf (cr,
+					     GET_PRIVATE (bubble)->icon_pixbuf,
+					     left_margin,
+					     top_margin);
+		cairo_paint (cr);
+		left_margin += margin_gap;
+		left_margin += gdk_pixbuf_get_width (GET_PRIVATE (bubble)->icon_pixbuf);
+	}
 
 	/* render title */
 	if (GET_PRIVATE (bubble)->title)
 	{
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
+		PangoRectangle        ink_rect;
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		pango_font_description_set_absolute_size (desc, 16 * PANGO_SCALE);
+		pango_font_description_set_absolute_size (desc,
+							  16 * PANGO_SCALE);
 		pango_font_description_set_family_static (desc, "Candara");
 		pango_font_description_set_weight (desc, PANGO_WEIGHT_BOLD);
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
-		pango_layout_set_width (layout, 210 * PANGO_SCALE);
+		pango_layout_set_width (layout,
+					(width - left_margin - margin_gap) *
+					PANGO_SCALE);
+		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 		/* print and layout string (pango-wise) */
 		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
 
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		/*cairo_set_line_width (cr, 0.0025f);*/
-		cairo_move_to (cr, 80.0f, 15.0f);
+		cairo_move_to (cr, left_margin, top_margin);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
 
 		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
 		cairo_fill (cr);
+		pango_layout_get_extents (layout, &ink_rect, NULL);
 		g_object_unref (layout);
+
+		top_margin += 1.25f * ((gdouble) ink_rect.height / PANGO_SCALE);
 	}
 
 	/* render body-message */
@@ -282,14 +306,21 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		pango_font_description_set_absolute_size (desc, 12 * PANGO_SCALE);
+		pango_font_description_set_absolute_size (desc,
+							  12 * PANGO_SCALE);
 		pango_font_description_set_family_static (desc, "Candara");
 		pango_font_description_set_weight (desc, PANGO_WEIGHT_NORMAL);
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
-		pango_layout_set_width (layout, 200 * PANGO_SCALE);
+		pango_layout_set_width (layout,
+					(width - left_margin - margin_gap) *
+					PANGO_SCALE);
+		pango_layout_set_height (layout,
+					 (height - top_margin - margin_gap) *
+					 PANGO_SCALE);
 
 		/* print and layout string (pango-wise) */
 		pango_layout_set_text (layout,
@@ -297,8 +328,7 @@ expose_handler (GtkWidget*      window,
 				       -1);
 
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		/*cairo_set_line_width (cr, 0.0025f);*/
-		cairo_move_to (cr, 80.0f, 35.0f);
+		cairo_move_to (cr, left_margin, top_margin);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
@@ -307,25 +337,15 @@ expose_handler (GtkWidget*      window,
 		g_object_unref (layout);
 	}
 
-	/* render icon */
-	if (GET_PRIVATE (bubble)->icon_pixbuf)
-	{
-		gdk_cairo_set_source_pixbuf (cr,
-					     GET_PRIVATE (bubble)->icon_pixbuf,
-					     15.0f,
-					     20.0f);
-		cairo_paint (cr);
-	}
-
 	/* render value */
 	if (GET_PRIVATE (bubble)->value >= 0 &&
 	    GET_PRIVATE (bubble)->value <= 100)
 	{
 		gint    step;
-		gdouble x        = (gdouble) window->allocation.width / 3.5f;
-		gdouble y        = (gdouble) window->allocation.height / 1.5f;
-		gdouble w        = (gdouble) window->allocation.width / 2.5f;
-		gdouble h        = (gdouble) window->allocation.height / 2.0f;
+		gdouble x        = width / 3.5f;
+		gdouble y        = height / 1.5f;
+		gdouble w        = width / 2.5f;
+		gdouble h        = height / 2.0f;
 		gdouble radius   = 3.0f;
 		gdouble x_gap    = 3.0f;
 		gdouble y_start  = 0.1f;
