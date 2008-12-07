@@ -233,6 +233,14 @@ expose_handler (GtkWidget*      window,
 			 (gdouble) window->allocation.width,
 			 (gdouble) window->allocation.height);
 	cairo_fill (cr);
+	cairo_set_source_rgba (cr, 0.15f, 0.15f, 0.15f, g_alpha);
+	draw_round_rect (cr,
+			 1.0f,
+			 1.0f, 1.0f,
+			 9.5f,
+			 (gdouble) window->allocation.width - 2.0f,
+			 (gdouble) window->allocation.height / 2.0f);
+	cairo_fill (cr);
 
 	/* render title */
 	if (GET_PRIVATE (bubble)->title)
@@ -313,21 +321,42 @@ expose_handler (GtkWidget*      window,
 	if (GET_PRIVATE (bubble)->value >= 0 &&
 	    GET_PRIVATE (bubble)->value <= 100)
 	{
-		int step;
+		gint    step;
+		gdouble x        = (gdouble) window->allocation.width / 3.5f;
+		gdouble y        = (gdouble) window->allocation.height / 1.5f;
+		gdouble w        = (gdouble) window->allocation.width / 2.5f;
+		gdouble h        = (gdouble) window->allocation.height / 2.0f;
+		gdouble radius   = 3.0f;
+		gdouble x_gap    = 3.0f;
+		gdouble y_start  = 0.1f;
+		gdouble x_step;
+		gdouble y_step;
 
-		for (step = 0; step < 10; step++)
+		x_step = (w - (8 * x_gap))/ 9;
+		y_step = (h - (h * y_start)) / 9;
+
+		for (step = 1; step < 10; step++)
 		{
 			if (step * 10 >= GET_PRIVATE (bubble)->value)
-				cairo_set_source_rgba (cr, 0.3f, 0.3f, 0.3f, 0.5f);
+			{
+				cairo_set_source_rgba (cr,
+						       0.3f,
+						       0.3f,
+						       0.3f,
+						       0.5f);
+			}
 			else
+			{
 				cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.25f);
+			}
+
 			draw_round_rect (cr,
 					 1.0f,
-					 70.0f + 13.0f * (gdouble) step,
-					 80.0f - 7.0f * (gdouble) step,
-					 2.0f,
-					 10.0f,
-					 7.0f * (gdouble) step);
+					 x + (x_step + x_gap) * (gdouble) step,
+					 y - y_step * (gdouble) step,
+					 radius,
+					 x_step,
+					 y_start * h + y_step * (gdouble) step);
 			cairo_fill (cr);
 		}
 	}
