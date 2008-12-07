@@ -258,9 +258,11 @@ stack_notify_handler (Stack*                 self,
 			 defaults_get_bubble_width (self->defaults),
 			 defaults_get_bubble_height (self->defaults));
 	bubble_move (bubble,
-		     defaults_get_desktop_width (self->defaults) -
-		     defaults_get_bubble_width (self->defaults) - 10,
-		     30);
+		     defaults_get_desktop_right (self->defaults) -
+		     defaults_get_bubble_gap (self->defaults) -
+		     defaults_get_bubble_width (self->defaults),
+		     defaults_get_desktop_top (self->defaults) +
+		     defaults_get_bubble_gap (self->defaults));
 
 	if (hints)
 	{

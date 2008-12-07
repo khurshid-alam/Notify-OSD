@@ -68,6 +68,66 @@ test_defaults_get_desktop_height ()
 
 static
 void
+test_defaults_get_desktop_top ()
+{
+	Defaults* defaults = NULL;
+
+	defaults = defaults_new ();
+	g_assert_cmpint (defaults_get_desktop_top (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_top (defaults), >=, 0);
+	defaults_del (defaults);
+}
+
+static
+void
+test_defaults_get_desktop_bottom ()
+{
+	Defaults* defaults = NULL;
+
+	defaults = defaults_new ();
+	g_assert_cmpint (defaults_get_desktop_bottom (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_bottom (defaults), >=, 0);
+	defaults_del (defaults);
+}
+
+static
+void
+test_defaults_get_desktop_left ()
+{
+	Defaults* defaults = NULL;
+
+	defaults = defaults_new ();
+	g_assert_cmpint (defaults_get_desktop_left (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_left (defaults), >=, 0);
+	defaults_del (defaults);
+}
+
+static
+void
+test_defaults_get_desktop_right ()
+{
+	Defaults* defaults = NULL;
+
+	defaults = defaults_new ();
+	g_assert_cmpint (defaults_get_desktop_right (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_right (defaults), >=, 0);
+	defaults_del (defaults);
+}
+
+static
+void
+test_defaults_get_bubble_gap ()
+{
+	Defaults* defaults = NULL;
+
+	defaults = defaults_new ();
+	g_assert_cmpint (defaults_get_bubble_gap (defaults), <=, 50);
+	g_assert_cmpint (defaults_get_bubble_gap (defaults), >=, 0);
+	defaults_del (defaults);
+}
+
+static
+void
 test_defaults_get_bubble_width ()
 {
 	Defaults* defaults = NULL;
@@ -173,6 +233,11 @@ test_defaults_create_test_suite (void)
 	g_test_suite_add(ts, TC(test_defaults_del));
 	g_test_suite_add(ts, TC(test_defaults_get_desktop_width));
 	g_test_suite_add(ts, TC(test_defaults_get_desktop_height));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_top));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_bottom));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_left));
+	g_test_suite_add(ts, TC(test_defaults_get_desktop_right));
+	g_test_suite_add(ts, TC(test_defaults_get_bubble_gap));
 	g_test_suite_add(ts, TC(test_defaults_get_bubble_width));
 	g_test_suite_add(ts, TC(test_defaults_get_bubble_height));
 	g_test_suite_add(ts, TC(test_defaults_get_bubble_opacity));

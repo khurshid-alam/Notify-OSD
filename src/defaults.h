@@ -41,6 +41,11 @@ struct _Defaults
 	/* private */
 	gint     desktop_width;
 	gint     desktop_height;
+	gint     desktop_top;
+	gint     desktop_bottom;
+	gint     desktop_left;
+	gint     desktop_right;
+	gint     bubble_gap;
 	gint     bubble_width;
 	gint     bubble_height;
 	gdouble  bubble_opacity;
@@ -69,6 +74,21 @@ defaults_get_desktop_width (Defaults* self);
 
 gint
 defaults_get_desktop_height (Defaults* self);
+
+gint
+defaults_get_desktop_top (Defaults* self);
+
+gint
+defaults_get_desktop_bottom (Defaults* self);
+
+gint
+defaults_get_desktop_left (Defaults* self);
+
+gint
+defaults_get_desktop_right (Defaults* self);
+
+gint
+defaults_get_bubble_gap (Defaults* self);
 
 gint
 defaults_get_bubble_width (Defaults* self);

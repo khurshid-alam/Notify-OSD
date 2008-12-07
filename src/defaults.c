@@ -16,7 +16,10 @@
 **
 *******************************************************************************/
 
+#include <X11/Xlib.h>
+#include <X11/Xatom.h>
 #include <gdk/gdk.h>
+#include <gdk/gdkx.h>
 
 #include "defaults.h"
 
@@ -27,6 +30,11 @@ enum
 	PROP_DUMMY = 0,
 	PROP_DESKTOP_WIDTH,
 	PROP_DESKTOP_HEIGHT,
+	PROP_DESKTOP_TOP,
+	PROP_DESKTOP_BOTTOM,
+	PROP_DESKTOP_LEFT,
+	PROP_DESKTOP_RIGHT,
+	PROP_BUBBLE_GAP,
 	PROP_BUBBLE_WIDTH,
 	PROP_BUBBLE_HEIGHT,
 	PROP_BUBBLE_OPACITY,
@@ -48,6 +56,79 @@ enum
 /*-- internal API ------------------------------------------------------------*/
 
 static void
+defaults_constructed (GObject* gobject)
+{
+	Atom      real_type;
+	gint      result;
+	gint      real_format;
+	gulong    items_read;
+	gulong    items_left;
+	glong*    coords;
+	Atom      workarea_atom;
+	Defaults* self;
+
+	self = DEFAULTS (gobject);
+
+	workarea_atom = gdk_x11_get_xatom_by_name ("_NET_WORKAREA");
+  
+	gdk_error_trap_push ();
+	result = XGetWindowProperty (GDK_DISPLAY (),
+				     GDK_ROOT_WINDOW (),
+				     workarea_atom,
+				     0L,
+				     4L,
+				     False,
+				     XA_CARDINAL,
+				     &real_type,
+				     &real_format,
+				     &items_read,
+				     &items_left,
+				     (guchar **) (void*) &coords);
+	gdk_error_trap_pop ();
+
+	if (result == Success && items_read)
+	{
+		g_object_set (self,
+			      "desktop-width",
+			      (gint) coords[2],
+			      NULL);
+		g_object_set (self,
+			      "desktop-height",
+			      (gint) coords[3],
+			      NULL);
+		g_object_set (self,
+			      "desktop-top",
+			      (gint) coords[1],
+			      NULL);
+		g_object_set (self,
+			      "desktop-bottom",
+			      (gint) coords[3],
+			      NULL);
+		g_object_set (self,
+			      "desktop-left",
+			      (gint) coords[0],
+			      NULL);
+		g_object_set (self,
+			      "desktop-right",
+			      (gint) coords[2],
+			      NULL);
+		g_object_set (self,
+			      "bubble-width",
+			      (gint) (coords[2] * 0.2f),
+			      NULL);
+		g_object_set (self,
+			      "bubble-height",
+			      (gint) (coords[3] * 0.1f),
+			      NULL);
+		XFree (coords);
+	}
+
+	/* FIXME: calling this here causes a segfault */
+	/* chain up to the parent class */
+	/*G_OBJECT_CLASS (defaults_parent_class)->constructed (gobject);*/
+}
+
+static void
 defaults_dispose (GObject* gobject)
 {
 	/* chain up to the parent class */
@@ -64,9 +145,6 @@ defaults_finalize (GObject* gobject)
 static void
 defaults_init (Defaults* self)
 {
-	/* If you need specific construction properties to complete
-	** initialization, delay initialization completion until the
-	** property is set. */
 }
 
 static void
@@ -87,6 +165,26 @@ defaults_get_property (GObject*    gobject,
 
 		case PROP_DESKTOP_HEIGHT:
 			g_value_set_int (value, defaults->desktop_height);
+		break;
+
+		case PROP_DESKTOP_TOP:
+			g_value_set_int (value, defaults->desktop_top);
+		break;
+
+		case PROP_DESKTOP_BOTTOM:
+			g_value_set_int (value, defaults->desktop_bottom);
+		break;
+
+		case PROP_DESKTOP_LEFT:
+			g_value_set_int (value, defaults->desktop_left);
+		break;
+
+		case PROP_DESKTOP_RIGHT:
+			g_value_set_int (value, defaults->desktop_right);
+		break;
+
+		case PROP_BUBBLE_GAP:
+			g_value_set_int (value, defaults->bubble_gap);
 		break;
 
 		case PROP_BUBBLE_WIDTH:
@@ -151,8 +249,28 @@ defaults_set_property (GObject*      gobject,
 			defaults->desktop_height = g_value_get_int (value);
 		break;
 
+		case PROP_DESKTOP_TOP:
+			defaults->desktop_top = g_value_get_int (value);
+		break;
+
+		case PROP_DESKTOP_BOTTOM:
+			defaults->desktop_bottom = g_value_get_int (value);
+		break;
+
+		case PROP_DESKTOP_LEFT:
+			defaults->desktop_left = g_value_get_int (value);
+		break;
+
+		case PROP_DESKTOP_RIGHT:
+			defaults->desktop_right = g_value_get_int (value);
+		break;
+
 		case PROP_BUBBLE_WIDTH:
 			defaults->bubble_width = g_value_get_int (value);
+		break;
+
+		case PROP_BUBBLE_GAP:
+			defaults->bubble_gap = g_value_get_int (value);
 		break;
 
 		case PROP_BUBBLE_HEIGHT:
@@ -201,6 +319,11 @@ defaults_class_init (DefaultsClass* klass)
 	GdkScreen*    screen        = gdk_screen_get_default ();
 	GParamSpec*   property_desktop_width;
 	GParamSpec*   property_desktop_height;
+	GParamSpec*   property_desktop_top;
+	GParamSpec*   property_desktop_bottom;
+	GParamSpec*   property_desktop_left;
+	GParamSpec*   property_desktop_right;
+	GParamSpec*   property_bubble_gap;
 	GParamSpec*   property_bubble_width;
 	GParamSpec*   property_bubble_height;
 	GParamSpec*   property_bubble_opacity;
@@ -211,6 +334,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_font_size;
 	GParamSpec*   property_font_face;
 
+	gobject_class->constructed  = defaults_constructed;
 	gobject_class->dispose      = defaults_dispose;
 	gobject_class->finalize     = defaults_finalize;
 	gobject_class->get_property = defaults_get_property;
@@ -220,10 +344,10 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-width",
 				"desktop-width",
 				"Width of desktop in pixels",
-				640,
+				0,
 				4096,
 				gdk_screen_get_width (screen),
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_WIDTH,
@@ -233,23 +357,88 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-height",
 				"desktop-height",
 				"Height of desktop in pixels",
-				600,
+				0,
 				4096,
 				gdk_screen_get_height (screen),
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_HEIGHT,
 					 property_desktop_height);
 
+	property_desktop_top = g_param_spec_int (
+				"desktop-top",
+				"desktop-top",
+				"Top of desktop in pixels",
+				0,
+				4096,
+				0,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_DESKTOP_TOP,
+					 property_desktop_top);
+
+	property_desktop_bottom = g_param_spec_int (
+				"desktop-bottom",
+				"desktop-bottom",
+				"Bottom of desktop in pixels",
+				0,
+				4096,
+				4096,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_DESKTOP_BOTTOM,
+					 property_desktop_bottom);
+
+	property_desktop_left = g_param_spec_int (
+				"desktop-left",
+				"desktop-left",
+				"Left of desktop in pixels",
+				0,
+				4096,
+				0,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_DESKTOP_LEFT,
+					 property_desktop_left);
+
+	property_desktop_right = g_param_spec_int (
+				"desktop-right",
+				"desktop-right",
+				"Right of desktop in pixels",
+				0,
+				4096,
+				4096,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_DESKTOP_RIGHT,
+					 property_desktop_right);
+
+    	property_bubble_gap = g_param_spec_int (
+				"bubble-gap",
+				"bubble-gap",
+				"Gap between bubbles and screen edges",
+				0,
+				50,
+				10,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_BUBBLE_GAP,
+					 property_bubble_gap);
+
 	property_bubble_width = g_param_spec_int (
 				"bubble-width",
 				"bubble-width",
 				"Width of bubble in pixels",
-				200,
+				0,
 				1024,
 				gdk_screen_get_width (screen) / 5,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_WIDTH,
@@ -262,7 +451,7 @@ defaults_class_init (DefaultsClass* klass)
 				50,
 				300,
 				gdk_screen_get_height (screen) / 10,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_HEIGHT,
@@ -275,7 +464,7 @@ defaults_class_init (DefaultsClass* klass)
 				0.1f,
 				1.0f,
 				0.85f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_OPACITY,
@@ -288,7 +477,7 @@ defaults_class_init (DefaultsClass* klass)
 				0.0f,
 				1.0f,
 				0.15f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_RED,
@@ -301,7 +490,7 @@ defaults_class_init (DefaultsClass* klass)
 				0.0f,
 				1.0f,
 				0.15f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_GREEN,
@@ -314,7 +503,7 @@ defaults_class_init (DefaultsClass* klass)
 				0.0f,
 				1.0f,
 				0.15f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_BLUE,
@@ -327,7 +516,7 @@ defaults_class_init (DefaultsClass* klass)
 				72.0f,
 				300.0f,
 				72.0f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_DPI,
@@ -340,7 +529,7 @@ defaults_class_init (DefaultsClass* klass)
 				5.0f,
 				144.0f,
 				10.0f,
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_SIZE,
@@ -351,7 +540,7 @@ defaults_class_init (DefaultsClass* klass)
 				"font-face",
 				"Face of the font",
 				"DejaVu Sans",
-				G_PARAM_CONSTRUCT_ONLY |
+				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_FONT_FACE,
@@ -392,6 +581,56 @@ defaults_get_desktop_height (Defaults* self)
 	g_object_get (self, "desktop-height", &height, NULL);
 
 	return height;
+}
+
+gint
+defaults_get_desktop_top (Defaults* self)
+{
+	gint top_edge;
+
+	g_object_get (self, "desktop-top", &top_edge, NULL);
+
+	return top_edge;
+}
+
+gint
+defaults_get_desktop_bottom (Defaults* self)
+{
+	gint bottom_edge;
+
+	g_object_get (self, "desktop-bottom", &bottom_edge, NULL);
+
+	return bottom_edge;
+}
+
+gint
+defaults_get_desktop_left (Defaults* self)
+{
+	gint left_edge;
+
+	g_object_get (self, "desktop-left", &left_edge, NULL);
+
+	return left_edge;
+}
+
+gint
+defaults_get_desktop_right (Defaults* self)
+{
+	gint right_edge;
+
+	g_object_get (self, "desktop-right", &right_edge, NULL);
+
+	return right_edge;
+}
+
+gint
+defaults_get_bubble_gap (Defaults* self)
+{
+	gint gap;
+
+	g_object_get (self, "bubble-gap", &gap, NULL);
+
+	return gap;
 }
 
 gint
