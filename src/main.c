@@ -68,8 +68,11 @@ main (int    argc,
 				G_TYPE_UINT, &request_name_result,
 				G_TYPE_INVALID))
 	{
-		g_error ("Could not aquire name: %s", error->message);
+		g_error ("Could not acquire name: %s", error->message);
 	}
+
+	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
+		g_error ("Another notification manager is running");
 
 	defaults = defaults_new ();
 	observer = observer_new ();
