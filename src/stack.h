@@ -49,6 +49,8 @@ struct _Stack
 	Observer* observer;
 	GList*    list;
 	guint     next_id;
+
+	Bubble*   feedback_bubble;
 };
 
 /* class structure */
@@ -69,6 +71,10 @@ stack_del (Stack* self);
 guint
 stack_push_bubble (Stack* self,
 		   Bubble* bubble);
+
+void
+stack_show_feedback_bubble (Stack* self,
+			    Bubble* bubble);
 
 gboolean
 stack_notify_handler (Stack*                 self,

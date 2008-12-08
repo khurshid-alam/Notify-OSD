@@ -849,6 +849,11 @@ bubble_new (void)
 	return this;
 }
 
+void
+bubble_del (Bubble* self)
+{
+	g_object_unref (self);
+}
 
 void
 bubble_set_title (Bubble*      self,

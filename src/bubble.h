@@ -57,6 +57,9 @@ Bubble*
 bubble_new (void);
 
 void
+bubble_del (Bubble* self);
+
+void
 bubble_set_title (Bubble*      self,
 		  const gchar* title);
 

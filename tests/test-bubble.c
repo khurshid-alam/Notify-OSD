@@ -77,6 +77,21 @@ test_bubble_new (void)
 
 static
 void
+test_bubble_del (void)
+{
+	Bubble* bubble;
+
+	bubble = bubble_new ();
+
+	g_assert (bubble != NULL);
+
+	g_object_unref (bubble);
+
+	g_assert (bubble == NULL);
+}
+
+static
+void
 test_bubble_set_attributes (void)
 {
 	Bubble*    bubble;
@@ -112,6 +127,15 @@ test_bubble_create_test_suite (void)
 				 test_bubble_new,
 				 NULL);
 	g_test_suite_add (ts, tc);
+
+	g_test_suite_add(ts,
+			 g_test_create_case ("can delete a bubble",
+					     0,
+					     NULL,
+					     NULL,
+					     test_bubble_del,
+					     NULL)
+		);
 
 	g_test_suite_add(ts,
 			 g_test_create_case ("can slide a bubble to a new position",

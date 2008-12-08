@@ -50,6 +50,8 @@ stack_init (Stack* self)
 	/* If you need specific construction properties to complete
 	** initialization, delay initialization completion until the
 	** property is set. */
+
+	self->feedback_bubble = NULL;
 }
 
 static void
@@ -85,6 +87,7 @@ stack_class_init (StackClass* klass)
 					 &dbus_glib_stack_object_info);
 }
 
+static
 void
 delete_entry (gpointer data,
 	      gpointer user_data)
@@ -166,11 +169,11 @@ stack_push_bubble (Stack* self,
 		   Bubble* bubble)
 {
 	Entry*  entry           = NULL;
-	guint notification_id   = 0;
+	guint notification_id   = -1;
 
 	/* sanity check */
 	if (!self)
-		return 0;
+		return -1;
 
 	notification_id = self->next_id++;
 
@@ -189,6 +192,29 @@ stack_push_bubble (Stack* self,
 	/* return current/new id to caller (usually our DBus-dispatcher) */
 	return notification_id;
 }
+
+void
+stack_show_feedback_bubble (Stack* self,
+			    Bubble* bubble)
+{
+	/* sanity check */
+	if (!self)
+		return;
+
+	if (self->feedback_bubble != NULL)
+	{
+		bubble_del(self->feedback_bubble);
+	}
+
+	/* add bubble/id to stack */
+	self->feedback_bubble = bubble;
+
+	/* recalculate layout of current stack, will open new bubble */
+	layout (self);
+	bubble_show (bubble); // temp. easier to do here now
+}
+
+
 
 /* dbarth: turned static, because it is the stack's business to manage its list of bubbles
  */
