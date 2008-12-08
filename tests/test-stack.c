@@ -20,6 +20,7 @@
 
 #include "stack.h"
 #include "defaults.h"
+#include "bubble.h"
 
 static
 void
@@ -47,6 +48,21 @@ test_stack_del ()
 	/*g_assert (stack == NULL);*/
 }
 
+static
+void
+test_stack_push ()
+{
+	Stack*       stack = NULL;
+	Defaults* defaults = defaults_new ();
+	Observer* observer = observer_new ();
+	Bubble*     bubble = bubble_new ();
+	guint           id = -1;
+
+	stack = stack_new (defaults, observer);
+	id = stack_push_bubble (stack, bubble);
+	g_assert (id > 0);
+}
+
 GTestSuite *
 test_stack_create_test_suite (void)
 {
@@ -58,6 +74,7 @@ test_stack_create_test_suite (void)
 
 	g_test_suite_add(ts, TC(test_stack_new));
 	g_test_suite_add(ts, TC(test_stack_del));
+	g_test_suite_add(ts, TC(test_stack_push));
 
 	return ts;
 }

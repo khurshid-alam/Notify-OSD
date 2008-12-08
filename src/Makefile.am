@@ -17,6 +17,7 @@ alsdorf_sources =		\
 	main.c			\
 	observer.c		\
 	stack.c			\
+	dbus.c			\
 	$(NULL)
 
 alsdorf_headers =		\
@@ -25,6 +26,7 @@ alsdorf_headers =		\
 	observer.h		\
 	stack.h			\
 	stack-glue.h		\
+	dbus.h			\
 	$(NULL)
 
 alsdorf_SOURCES =		\

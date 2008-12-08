@@ -162,58 +162,41 @@ stack_del (Stack* self)
 /* since notification-ids are unsigned integers the first id index is 1, 0 is
 ** used to indicate an error */
 guint
-stack_push (Stack* self,
-	    guint  id,
-	    gchar* title,
-	    gchar* body,
-	    gchar* icon)
+stack_push_bubble (Stack* self,
+		   Bubble* bubble)
 {
-	guint   notification_id = id;
-	Bubble* bubble          = NULL;
 	Entry*  entry           = NULL;
+	guint notification_id   = 0;
 
 	/* sanity check */
 	if (!self)
 		return 0;
 
-	/* check if there is an existing bubble */
-	if (notification_id != 0)
-	{
-		bubble = find_bubble_by_id (self, notification_id);
-		bubble_set_title (bubble, title);
-		bubble_set_message_body (bubble, body);
-		bubble_set_icon (bubble, icon);
-		bubble_reset_timeout (bubble);
-	}
-	else
-	{
-		/* grab id for new bubble */
-		notification_id = self->next_id++;
+	notification_id = self->next_id++;
 
-		/* create and setup bubble */
-		bubble = bubble_new ();
-		bubble_set_title (bubble, title);
-		bubble_set_message_body (bubble, body);
-		bubble_set_icon (bubble, icon);
-		bubble_set_id (bubble, notification_id);
+	/* add bubble/id to stack */
+	bubble_set_id (bubble, notification_id);
 
-		/* add bubble/id to stack */
-		entry = (Entry*) g_malloc0 (sizeof (Entry));
-		entry->notification_id = notification_id;
-		entry->bubble = bubble;
-		self->list = g_list_append (self->list, (gpointer) entry);
-	}
+	entry = (Entry*) g_malloc0 (sizeof (Entry));
+	entry->notification_id = notification_id;
+	entry->bubble = bubble;
+	self->list = g_list_append (self->list, (gpointer) entry);
 
 	/* recalculate layout of current stack, will open new bubble */
 	layout (self);
+	bubble_show (bubble); // temp.; easier to do here
 
 	/* return current/new id to caller (usually our DBus-dispatcher) */
 	return notification_id;
 }
 
+/* dbarth: turned static, because it is the stack's business to manage its list of bubbles
+ */
+#if 0 // FIXME FIXME FIXME (-Wall)
+static 
 void
-stack_pop (Stack* self,
-	   guint  id)
+stack_pop_bubble_by_id (Stack* self,
+			guint  id)
 {
 	Bubble* bubble;
 	GList*  entry;
@@ -237,6 +220,7 @@ stack_pop (Stack* self,
 	/* recalculate layout of current stack */
 	layout (self);
 }
+#endif
 
 gboolean
 stack_notify_handler (Stack*                 self,
@@ -277,7 +261,8 @@ stack_notify_handler (Stack*                 self,
 		bubble_set_message_body (bubble, body);
 	if (icon)
 		bubble_set_icon (bubble, icon);
-	bubble_show (bubble);
+
+	stack_push_bubble(self, bubble);
 
 	dbus_g_method_return (context, self->next_id++);
 

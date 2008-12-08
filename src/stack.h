@@ -67,15 +67,8 @@ void
 stack_del (Stack* self);
 
 guint
-stack_push (Stack* self,
-	    guint  id,
-	    gchar* title,
-	    gchar* body,
-	    gchar* icon);
-
-void
-stack_pop (Stack* self,
-	   guint  id);
+stack_push_bubble (Stack* self,
+		   Bubble* bubble);
 
 gboolean
 stack_notify_handler (Stack*                 self,
