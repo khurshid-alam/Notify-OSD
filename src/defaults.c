@@ -114,11 +114,11 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 		g_object_set (self,
 			      "bubble-width",
-			      (gint) (coords[2] * 0.2f),
+			      (gint) (coords[2] * 0.25f),
 			      NULL);
 		g_object_set (self,
 			      "bubble-height",
-			      (gint) (coords[3] * 0.1f),
+			      (gint) (coords[3] * 0.125f),
 			      NULL);
 		XFree (coords);
 	}

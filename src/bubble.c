@@ -24,9 +24,15 @@
 #include <gdk/gdkkeysyms.h>
 #include <librsvg/rsvg.h>
 #include <librsvg/rsvg-cairo.h>
+#include <pixman.h>
+#include <math.h>
 
 #include "bubble.h"
 #include "stack.h"
+
+#define BLUR_SIGMA  10.0f
+#define BLUR_ALPHA   0.5f
+#define BLUR_RADIUS 10.0f
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -207,56 +213,209 @@ update_input_shape (GtkWidget* window,
 	}
 }
 
+static pixman_fixed_t*
+create_gaussian_blur_kernel (gint    radius,
+                             gdouble sigma,
+                             gint*   length)
+{
+	const gdouble   scale2 = 2.0f * sigma * sigma;
+	const gdouble   scale1 = 1.0f / (G_PI * scale2);
+	const gint      size = 2 * radius + 1;
+	const gint      n_params = size * size;
+	pixman_fixed_t* params;
+	gdouble*        tmp;
+	gdouble         sum;
+	gint            x;
+	gint            y;
+	gint            i;
+
+        tmp = g_newa (double, n_params);
+
+        /* caluclate gaussian kernel in floating point format */
+        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
+                for (y = -radius; y <= radius; ++y, ++i) {
+                        const gdouble u = x * x;
+                        const gdouble v = y * y;
+
+                        tmp[i] = scale1 * exp (-(u+v)/scale2);
+
+                        sum += tmp[i];
+                }
+        }
+
+        /* normalize gaussian kernel and convert to fixed point format */
+        params = g_new (pixman_fixed_t, n_params + 2);
+
+        params[0] = pixman_int_to_fixed (size);
+        params[1] = pixman_int_to_fixed (size);
+
+        for (i = 0; i < n_params; ++i)
+                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
+
+        if (length)
+                *length = n_params + 2;
+
+        return params;
+}
+static cairo_surface_t *
+blur_image_surface (cairo_surface_t *surface,
+                    int              radius,
+                    double           sigma)
+{
+        static cairo_user_data_key_t data_key;
+        pixman_fixed_t *params = NULL;
+        int n_params;
+
+        pixman_image_t *src, *dst;
+        int w, h, s;
+        gpointer p;
+
+        /*g_return_val_if_fail
+          (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE,
+           NULL);*/
+
+        w = cairo_image_surface_get_width (surface);
+        h = cairo_image_surface_get_height (surface);
+        s = cairo_image_surface_get_stride (surface);
+
+        /* create pixman image for cairo image surface */
+        p = cairo_image_surface_get_data (surface);
+        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+
+        /* attach gaussian kernel to pixman image */
+        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
+        pixman_image_set_filter (src, PIXMAN_FILTER_CONVOLUTION, params, n_params);
+        g_free (params);
+
+        /* render blured image to new pixman image */
+        p = g_malloc0 (s * h);
+        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+        pixman_image_composite (PIXMAN_OP_SRC, src, NULL, dst, 0, 0, 0, 0, 0, 0, w, h);
+        pixman_image_unref (src);
+
+        /* create new cairo image for blured pixman image */
+        surface = cairo_image_surface_create_for_data (p, CAIRO_FORMAT_ARGB32, w, h, s);
+        cairo_surface_set_user_data (surface, &data_key, p, g_free);
+        pixman_image_unref (dst);
+
+        return surface;
+}
+
+/*static cairo_surface_t *
+create_shadow_surface (double     w,
+                       double     h,
+                       double     r,
+                       GdkPixbuf *pixbuf)
+{
+        cairo_surface_t *surface, *blured_surface;
+        cairo_pattern_t *pattern;
+        cairo_t *cr;
+
+        * create cairo context for image surface *
+        surface = cairo_image_surface_create (CAIRO_FORMAT_A8, w + r + r, h + r + r);
+        cr = cairo_create (surface);
+
+        * pixbuf to mask pattern *
+        cairo_push_group_with_content (cr, CAIRO_CONTENT_ALPHA);
+        draw_pixbuf_with_mask (cr, r, r, w, h, pixbuf);
+        pattern = cairo_pop_group (cr);
+
+        * fill image surface, considering mask pattern from pixbuf *
+        cairo_set_source_rgba (cr, 1, 1, 1, BLUR_ALPHA);
+        cairo_mask (cr, pattern);
+
+        cairo_pattern_destroy (pattern);
+        cairo_destroy (cr);
+
+        * render blured surface image surface *
+        blured_surface = blur_image_surface (surface, BLUR_RADIUS, BLUR_SIGMA);
+        cairo_surface_destroy (surface);
+
+        return blured_surface;
+}*/
+
 static
 gboolean
 expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	Bubble*  bubble;
-	cairo_t* cr;
-	gdouble  width       = (gdouble) window->allocation.width;
-	gdouble  height      = (gdouble) window->allocation.height;
-	gdouble  margin_gap  = 15.0f;
-	gdouble  left_margin = 15.0f;
-	gdouble  top_margin  = 15.0f;
+	Bubble*          bubble;
+	cairo_t*         cr;
+	gdouble          width       = (gdouble) window->allocation.width;
+	gdouble          height      = (gdouble) window->allocation.height;
+	gdouble          margin_gap  = 25.0f;
+	gdouble          left_margin = 25.0f;
+	gdouble          top_margin  = 25.0f;
+	cairo_surface_t* surface     = NULL;
+	cairo_surface_t* shadow      = NULL;
+	cairo_t*         cr2         = NULL;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
 	cr = gdk_cairo_create (window->window);
+
+	/* create drop-shadow */
+	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+                                              (gint) width,
+                                              (gint) height);
+	cr2 = cairo_create (surface);
+	cairo_scale (cr2, 1.0f, 1.0f);
+	cairo_set_operator (cr2, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr2);
+	cairo_set_operator (cr2, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr2, 0.05f, 0.05f, 0.05f, g_alpha);
+	draw_round_rect (cr2,
+			 1.0f,
+			 10.0f, 10.0f,
+			 10.0f,
+			 width - 20.0f,
+			 height - 20.0f);
+	cairo_fill (cr2);
+	shadow = blur_image_surface (surface,
+				     BLUR_RADIUS,
+				     BLUR_SIGMA);
+	cairo_destroy (cr2);
+	cairo_surface_destroy (surface);
 
         /* clear and render bubble-background */
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_surface (cr, shadow, 0.0f, 0.0f);
+	cairo_paint (cr);
 	cairo_set_source_rgba (cr, 0.05f, 0.05f, 0.05f, g_alpha);
 	draw_round_rect (cr,
 			 1.0f,
-			 0.0f, 0.0f,
+			 10.0f, 10.0f,
 			 10.0f,
-			 width,
-			 height);
+			 width - 20.0f,
+			 height - 20.0f);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, 0.15f, 0.15f, 0.15f, g_alpha);
 	draw_round_rect (cr,
 			 1.0f,
-			 1.0f, 1.0f,
+			 11.0f, 11.0f,
 			 9.5f,
-			 width - 2.0f,
-			 height / 2.0f);
+			 width - 20.0f - 2.0f,
+			 (height - 20.0f) / 2.0f);
 	cairo_fill (cr);
 
 	/* render icon */
 	if (GET_PRIVATE (bubble)->icon_pixbuf)
 	{
-		gdk_cairo_set_source_pixbuf (cr,
-					     GET_PRIVATE (bubble)->icon_pixbuf,
-					     left_margin,
-					     top_margin);
+		gint icon_width = gdk_pixbuf_get_width (
+					GET_PRIVATE (bubble)->icon_pixbuf);
+		gint icon_height = gdk_pixbuf_get_height (
+					GET_PRIVATE (bubble)->icon_pixbuf);
+		gdk_cairo_set_source_pixbuf (
+					cr,
+					GET_PRIVATE (bubble)->icon_pixbuf,
+					((gint) width / 4 - icon_width / 2) / 2,
+					((gint) height - icon_height) / 2);
 		cairo_paint (cr);
-		left_margin += margin_gap;
-		left_margin += gdk_pixbuf_get_width (GET_PRIVATE (bubble)->icon_pixbuf);
+		left_margin += (gint) width / 4;
 	}
 
 	/* render title */
@@ -265,6 +424,9 @@ expose_handler (GtkWidget*      window,
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
 		PangoRectangle        ink_rect;
+		GString*              string;
+
+		string = g_string_new (GET_PRIVATE (bubble)->message_body);
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
@@ -283,16 +445,26 @@ expose_handler (GtkWidget*      window,
 
 		/* print and layout string (pango-wise) */
 		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
+		pango_layout_get_extents (layout, &ink_rect, NULL);
 
-		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		cairo_move_to (cr, left_margin, top_margin);
+		if (string->len == 0)
+		{
+			cairo_move_to (cr,
+				       width / 4 + (width * 0.75f - ink_rect.width / PANGO_SCALE) / 2,
+				       (height - ink_rect.height / PANGO_SCALE) / 2);
+		}
+		else
+		{
+			cairo_move_to (cr, left_margin, top_margin);
+		}
+		g_string_free (string, TRUE);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
 
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
 		cairo_fill (cr);
-		pango_layout_get_extents (layout, &ink_rect, NULL);
 		g_object_unref (layout);
 
 		top_margin += 1.25f * ((gdouble) ink_rect.height / PANGO_SCALE);
@@ -360,9 +532,9 @@ expose_handler (GtkWidget*      window,
 			if (step * 10 >= GET_PRIVATE (bubble)->value)
 			{
 				cairo_set_source_rgba (cr,
-						       0.3f,
-						       0.3f,
-						       0.3f,
+						       0.5f,
+						       0.5f,
+						       0.5f,
 						       0.5f);
 			}
 			else
