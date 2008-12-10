@@ -18,6 +18,7 @@
 
 #include "stack.h"
 #include "bubble.h"
+#include "apport.h"
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
@@ -296,6 +297,9 @@ stack_notify_handler (Stack*                 self,
 		bubble_set_message_body (bubble, body);
 	if (icon)
 		bubble_set_icon (bubble, icon);
+
+	if (timeout || actions != NULL)
+		apport_report (app_name, summary, actions, timeout);
 
 	/* push the bubble and try to display it */
 	stack_push_bubble(self, bubble);
