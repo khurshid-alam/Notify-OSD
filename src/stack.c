@@ -187,6 +187,13 @@ stack_push_bubble (Stack* self,
 
 	/* recalculate layout of current stack, will open new bubble */
 	layout (self);
+	bubble_move (bubble,
+		     defaults_get_desktop_right (self->defaults) -
+		     defaults_get_bubble_gap (self->defaults) -
+		     defaults_get_bubble_width (self->defaults),
+		     defaults_get_desktop_top (self->defaults) +
+		     defaults_get_bubble_gap (self->defaults));
+
 	bubble_show (bubble); // temp.; easier to do here
 
 	/* return current/new id to caller (usually our DBus-dispatcher) */
@@ -263,16 +270,18 @@ stack_notify_handler (Stack*                 self,
 	Bubble* bubble = NULL;
 	GValue* data   = NULL;
 
-	bubble = bubble_new ();
+	/* check if a bubble exists with same id */
+	bubble = find_bubble_by_id (self, id);
+	if (!bubble)
+	{
+		bubble = bubble_new ();
+		bubble_set_id (bubble, self->next_id++);
+	}
+
+	/* set/update the bubble attributes */
 	bubble_set_size (bubble,
 			 defaults_get_bubble_width (self->defaults),
 			 defaults_get_bubble_height (self->defaults));
-	bubble_move (bubble,
-		     defaults_get_desktop_right (self->defaults) -
-		     defaults_get_bubble_gap (self->defaults) -
-		     defaults_get_bubble_width (self->defaults),
-		     defaults_get_desktop_top (self->defaults) +
-		     defaults_get_bubble_gap (self->defaults));
 
 	if (hints)
 	{
@@ -288,9 +297,10 @@ stack_notify_handler (Stack*                 self,
 	if (icon)
 		bubble_set_icon (bubble, icon);
 
+	/* push the bubble and try to display it */
 	stack_push_bubble(self, bubble);
 
-	dbus_g_method_return (context, self->next_id++);
+	dbus_g_method_return (context, bubble_get_id (bubble));
 
 	return TRUE;
 }
