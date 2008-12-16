@@ -18,6 +18,7 @@
 
 #include "stack.h"
 #include "bubble.h"
+#include "apport.h"
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
@@ -51,6 +52,7 @@ stack_init (Stack* self)
 	** initialization, delay initialization completion until the
 	** property is set. */
 
+	self->list = NULL;
 	self->feedback_bubble = NULL;
 }
 
@@ -94,19 +96,6 @@ delete_entry (gpointer data,
 {
 }
 
-Bubble*
-find_bubble_by_id (Stack* self,
-		   guint  id)
-{
-	Bubble* bubble = NULL;
-
-	/* sanity check */
-	if (!self)
-		return NULL;
-
-	return bubble;
-}
-
 GList*
 find_entry_by_id (Stack* self,
 		  guint  id)
@@ -120,12 +109,74 @@ find_entry_by_id (Stack* self,
 	return entry;
 }
 
+Bubble*
+find_bubble_by_id (Stack* self,
+		   guint  id)
+{
+	Bubble* bubble = NULL;
+
+	/* sanity check */
+	if (!self)
+		return NULL;
+
+	return bubble;
+}
+
+
+static
+guint
+bubble_get_height (Bubble *bubble)
+{
+	return 30;
+}
+
 void
 layout (Stack* self)
 {
+	GList*  list = NULL;
+	guint height = 0;
+	guint      y = 0;
+	guint   hreq = 0;
+
+	y  = defaults_get_desktop_top (self->defaults);
+	y += defaults_get_bubble_gap (self->defaults);
+
 	/* sanity check */
 	if (!self)
 		return;
+
+
+	/* consider the special case of the feedback synchronous bubble */
+	if (self->feedback_bubble)
+	{
+		y += bubble_get_height (self->feedback_bubble);
+		y += defaults_get_bubble_gap (self->defaults);
+	}
+
+	/* 1. check if we need to expire bubbles early because the feedback bubble needs room */
+	for (list = self->list; list != NULL; list = g_list_next (self->list))
+		hreq += defaults_get_bubble_gap (self->defaults) +
+			bubble_get_height (((Entry *)(list->data))->bubble);
+
+	if (hreq > defaults_get_desktop_height (self->defaults))
+	{
+		/* FIXME */
+	}
+
+	/* 2. walk through the list of the current bubbles on the stack
+	      by order of arrival, ie by id,
+	      !!!!! except when the ids loop! *** NEED A SPECIFIC TEST HERE ***
+	      and compute the new position for the bubbles
+	      as long as there is room available on the stack
+	 */
+	for (list = self->list; list != NULL; list = g_list_next (self->list))
+	{
+		height += defaults_get_bubble_gap (self->defaults);
+	}
+
+	/* 3. now that we have computed the future position for each bubble
+	      ask every bubble to slide to its new position
+	 */	
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -296,6 +347,9 @@ stack_notify_handler (Stack*                 self,
 		bubble_set_message_body (bubble, body);
 	if (icon)
 		bubble_set_icon (bubble, icon);
+
+	if (timeout || actions != NULL)
+		apport_report (app_name, summary, actions, timeout);
 
 	/* push the bubble and try to display it */
 	stack_push_bubble(self, bubble);

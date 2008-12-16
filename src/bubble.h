@@ -113,6 +113,7 @@ void
 bubble_get_position (Bubble* self,
 		     gint*   x,
 		     gint*   y);
+
 G_END_DECLS
 
 #endif /* __BUBBLE_H */

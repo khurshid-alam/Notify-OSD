@@ -9,7 +9,9 @@ test_modules_SOURCES =		\
 	../src/observer.c	\
 	../src/stack.c		\
 	../src/dbus.c		\
+	../src/apport.c		\
 	test-modules-main.c     \
+	test-apport.c		\
 	test-dbus.c		\
 	test-bubble.c		\
 	test-defaults.c		\

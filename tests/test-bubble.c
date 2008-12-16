@@ -86,8 +86,6 @@ test_bubble_del (void)
 	g_assert (bubble != NULL);
 
 	g_object_unref (bubble);
-
-	g_assert (bubble == NULL);
 }
 
 static
