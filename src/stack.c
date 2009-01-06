@@ -16,6 +16,7 @@
 **
 *******************************************************************************/
 
+#include <assert.h>
 #include "stack.h"
 #include "bubble.h"
 #include "apport.h"
@@ -122,30 +123,27 @@ find_bubble_by_id (Stack* self,
 	return bubble;
 }
 
-
-static
-guint
-bubble_get_height (Bubble *bubble)
-{
-	return 30;
-}
-
 void
 layout (Stack* self)
 {
-	GList*  list = NULL;
-	guint height = 0;
-	guint      y = 0;
-	guint   hreq = 0;
-
-	y  = defaults_get_desktop_top (self->defaults);
-	y += defaults_get_bubble_gap (self->defaults);
+	GList*     list = NULL;
+	Bubble*  bubble = NULL;
+	guint         y = 0;
+	guint         x = 0;
+	guint      hreq = 0;
+	guint stack_top = 0;
 
 	/* sanity check */
-	if (!self)
-		return;
+	g_return_if_fail(self);
 
-
+	y  =  defaults_get_desktop_top (self->defaults);
+	y  += defaults_get_bubble_gap (self->defaults);
+	x  =  defaults_get_desktop_right (self->defaults) -
+	      defaults_get_bubble_gap (self->defaults) -
+	      defaults_get_bubble_width (self->defaults);
+	hreq = y;
+	stack_top = y;
+	
 	/* consider the special case of the feedback synchronous bubble */
 	if (self->feedback_bubble)
 	{
@@ -154,7 +152,7 @@ layout (Stack* self)
 	}
 
 	/* 1. check if we need to expire bubbles early because the feedback bubble needs room */
-	for (list = self->list; list != NULL; list = g_list_next (self->list))
+	for (list = g_list_first (self->list); list != NULL; list = g_list_next (list))
 		hreq += defaults_get_bubble_gap (self->defaults) +
 			bubble_get_height (((Entry *)(list->data))->bubble);
 
@@ -169,14 +167,15 @@ layout (Stack* self)
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
 	 */
-	for (list = self->list; list != NULL; list = g_list_next (self->list))
+	for (list = g_list_first (self->list); list != NULL; list = g_list_next (list))
 	{
-		height += defaults_get_bubble_gap (self->defaults);
+		bubble = (((Entry *)(list->data))->bubble);
+		bubble_move (bubble, x, y);
+		// bubble_slide_to (bubble, x, y);
+		bubble_show (bubble);
+		y += bubble_get_height (((Entry *)(list->data))->bubble)
+		     + defaults_get_bubble_gap (self->defaults);
 	}
-
-	/* 3. now that we have computed the future position for each bubble
-	      ask every bubble to slide to its new position
-	 */	
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -238,14 +237,6 @@ stack_push_bubble (Stack* self,
 
 	/* recalculate layout of current stack, will open new bubble */
 	layout (self);
-	bubble_move (bubble,
-		     defaults_get_desktop_right (self->defaults) -
-		     defaults_get_bubble_gap (self->defaults) -
-		     defaults_get_bubble_width (self->defaults),
-		     defaults_get_desktop_top (self->defaults) +
-		     defaults_get_bubble_gap (self->defaults));
-
-	bubble_show (bubble); // temp.; easier to do here
 
 	/* return current/new id to caller (usually our DBus-dispatcher) */
 	return notification_id;
@@ -269,7 +260,6 @@ stack_show_feedback_bubble (Stack* self,
 
 	/* recalculate layout of current stack, will open new bubble */
 	layout (self);
-	bubble_show (bubble); // temp. easier to do here now
 }
 
 

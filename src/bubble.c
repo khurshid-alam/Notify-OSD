@@ -1063,3 +1063,16 @@ bubble_get_position (Bubble* self,
 	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
 				 x, y);
 }
+
+
+gint
+bubble_get_height (Bubble *self)
+{
+
+	gint width;
+	gint height;
+
+	gtk_window_get_size (GTK_WINDOW (GET_PRIVATE (self)->widget), &width, &height);
+
+	return height;
+}
