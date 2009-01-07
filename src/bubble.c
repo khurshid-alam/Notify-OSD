@@ -394,6 +394,8 @@ expose_handler (GtkWidget*      window,
 			 width - 20.0f,
 			 height - 20.0f);
 	cairo_fill (cr);
+
+	/* draw the gloss *
 	cairo_set_source_rgba (cr, 0.15f, 0.15f, 0.15f, g_alpha);
 	draw_round_rect (cr,
 			 1.0f,
@@ -401,7 +403,7 @@ expose_handler (GtkWidget*      window,
 			 9.5f,
 			 width - 20.0f - 2.0f,
 			 (height - 20.0f) / 2.0f);
-	cairo_fill (cr);
+	cairo_fill (cr);*/
 
 	/* render icon */
 	if (GET_PRIVATE (bubble)->icon_pixbuf)
