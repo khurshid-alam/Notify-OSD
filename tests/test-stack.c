@@ -60,6 +60,7 @@ test_stack_push ()
 
 	stack = stack_new (defaults, observer);
 	id = stack_push_bubble (stack, bubble);
+
 	g_assert (id > 0);
 }
 
@@ -68,7 +69,7 @@ test_stack_create_test_suite (void)
 {
 	GTestSuite *ts = NULL;
 
-	ts = g_test_create_suite (__FILE__);
+	ts = g_test_create_suite ("stack");
 
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
 

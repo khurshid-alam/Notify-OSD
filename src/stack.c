@@ -110,7 +110,7 @@ find_entry_by_id (Stack* self,
 	return entry;
 }
 
-Bubble*
+static Bubble*
 find_bubble_by_id (Stack* self,
 		   guint  id)
 {
@@ -123,27 +123,33 @@ find_bubble_by_id (Stack* self,
 	return bubble;
 }
 
-void
+static void
 layout (Stack* self)
 {
 	GList*     list = NULL;
 	Bubble*  bubble = NULL;
-	guint         y = 0;
-	guint         x = 0;
 	guint      hreq = 0;
 	guint stack_top = 0;
+	gint          y = 0;
+	gint          x = 0;
 
 	/* sanity check */
 	g_return_if_fail(self);
 
+	/* position the top left corner of the stack  */
 	y  =  defaults_get_desktop_top (self->defaults);
 	y  += defaults_get_bubble_gap (self->defaults);
-	x  =  defaults_get_desktop_right (self->defaults) -
-	      defaults_get_bubble_gap (self->defaults) -
-	      defaults_get_bubble_width (self->defaults);
+	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
+		defaults_get_desktop_right (self->defaults) -
+		defaults_get_bubble_gap (self->defaults) -
+		defaults_get_bubble_width (self->defaults)
+		:
+		defaults_get_bubble_gap (self->defaults)
+		;
+ 
 	hreq = y;
 	stack_top = y;
-	
+
 	/* consider the special case of the feedback synchronous bubble */
 	if (self->feedback_bubble)
 	{
@@ -161,6 +167,7 @@ layout (Stack* self)
 		/* FIXME */
 	}
 
+
 	/* 2. walk through the list of the current bubbles on the stack
 	      by order of arrival, ie by id,
 	      !!!!! except when the ids loop! *** NEED A SPECIFIC TEST HERE ***
@@ -170,9 +177,15 @@ layout (Stack* self)
 	for (list = g_list_first (self->list); list != NULL; list = g_list_next (list))
 	{
 		bubble = (((Entry *)(list->data))->bubble);
+
+		/* set/update the bubble attributes */
+		bubble_set_size (bubble,
+				 defaults_get_bubble_width (self->defaults),
+				 defaults_get_bubble_height (self->defaults));
 		bubble_move (bubble, x, y);
 		// bubble_slide_to (bubble, x, y);
 		bubble_show (bubble);
+
 		y += bubble_get_height (((Entry *)(list->data))->bubble)
 		     + defaults_get_bubble_gap (self->defaults);
 	}
@@ -318,11 +331,6 @@ stack_notify_handler (Stack*                 self,
 		bubble = bubble_new ();
 		bubble_set_id (bubble, self->next_id++);
 	}
-
-	/* set/update the bubble attributes */
-	bubble_set_size (bubble,
-			 defaults_get_bubble_width (self->defaults),
-			 defaults_get_bubble_height (self->defaults));
 
 	if (hints)
 	{
