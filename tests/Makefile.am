@@ -16,6 +16,7 @@ test_modules_SOURCES =		\
 	test-bubble.c		\
 	test-defaults.c		\
 	test-observer.c		\
+	test-i18n.c		\
 	test-stack.c
 
 test_modules_CFLAGS =		\
@@ -33,7 +34,10 @@ test_modules_LDADD =		\
 	$(GTK_LIBS)
 
 test: test-modules
-	gtester -o=test-modules.xml ./test-modules
+	gtester -o=test-modules.xml -k ./test-modules
+
+i18n: test-modules
+	gtester --verbose -p=/i18n -k ./test-modules
 
 test-report-html: test
 	gtester-report test-modules.xml >test-modules.html

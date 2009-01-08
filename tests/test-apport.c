@@ -24,7 +24,9 @@ static
 void
 test_apport ()
 {
-	g_assert (0 == 1); // ie, fail...
+	if (g_test_thorough ()) {
+		g_assert (0 == 1); // ie, fail...
+	}
 }
 
 GTestSuite *
