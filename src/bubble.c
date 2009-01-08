@@ -764,10 +764,6 @@ bubble_new (void)
 	GtkWidget*      window            = NULL;
 	guint           draw_handler_id   = 0;
 	guint           pointer_update_id = 0;
-	gint            x                 = 0;
-	gint            y                 = 0;
-	gint            width             = 0;
-	gint            height            = 0;
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
@@ -802,12 +798,7 @@ bubble_new (void)
 			  G_CALLBACK (screen_changed_handler),
 			  NULL);
 
-	/* size and position the window depending on the screen resolution */
-	/*calculate_default_size (&width, &height);
-	calculate_default_position (&x, &y);*/
-	gtk_widget_set_size_request (window, width, height);
-	
-	gtk_window_move (GTK_WINDOW (window), x, y);
+	gtk_window_move (GTK_WINDOW (window), 0, 0);
 
 	/* make sure the window opens with a RGBA-visual */
 	screen_changed_handler (window, NULL, NULL);
