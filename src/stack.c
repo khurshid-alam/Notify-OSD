@@ -371,7 +371,11 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	g_print ("stack_get_capabilities() called, %s\n", G_STRLOC);
+	*out_caps      = g_malloc0 (3 * sizeof(char *));
+
+	(*out_caps)[0] = g_strdup ("body");
+	(*out_caps)[1] = g_strdup ("icon-static");
+	(*out_caps)[2] = NULL;
 
 	return TRUE;
 }
@@ -383,7 +387,10 @@ stack_get_server_information (Stack*  self,
 			      gchar** out_version,
 			      gchar** out_spec_ver)
 {
-	g_print ("stack_get_server_information() called, %s\n", G_STRLOC);
+	*out_name     = g_strdup ("alsdorf (Canonical's Notification Daemon");
+	*out_vendor   = g_strdup ("Canonical Ltd");
+	*out_version  = g_strdup ("0.1");
+	*out_spec_ver = g_strdup ("1.0-with-twists");
 
 	return TRUE;
 }

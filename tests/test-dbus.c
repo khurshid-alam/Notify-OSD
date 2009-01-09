@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include "dbus.h"
+#include "stack.h"
 
 #define DBUS_NAME "org.freedesktop.Notificationstest"
 
@@ -28,7 +29,6 @@ test_dbus_instance (void)
 	DBusGConnection* connection = NULL;
 
 	connection = dbus_create_service_instance (DBUS_NAME);
-
 	g_assert (connection != NULL);
 }
 
@@ -50,6 +50,37 @@ test_dbus_collision (void)
 	g_test_trap_assert_failed();
 }
 
+
+static void
+test_dbus_get_capabilities (void)
+{
+	char **caps = NULL;
+	gboolean ret = FALSE;
+
+	ret = stack_get_capabilities (NULL, &caps);
+
+	g_assert (ret);
+	g_assert (!g_strcmp0 (caps[0], "body"));
+
+	int i = 0;
+	while (caps[i] != NULL)
+	{
+		g_assert (!g_strrstr (caps[i++], "actions"));
+	}
+}
+
+static void
+test_dbus_get_server_information (void)
+{
+	gchar *name = NULL, *vendor = NULL, *version = NULL, *specver = NULL;
+	gboolean ret = FALSE;
+
+	ret = stack_get_server_information (NULL, &name, &vendor,
+					    &version, &specver);
+	g_assert (ret);
+	g_assert (g_strrstr (name, "alsdorf"));
+	g_assert (g_strrstr (specver, "1.0"));
+}
 
 GTestSuite *
 test_dbus_create_test_suite (void)
@@ -76,5 +107,22 @@ test_dbus_create_test_suite (void)
 					     NULL)
 		);
 
+	g_test_suite_add(ts,
+			 g_test_create_case ("can get server capabilities",
+					     0,
+					     NULL,
+					     NULL,
+					     test_dbus_get_capabilities,
+					     NULL)
+		);
+
+	g_test_suite_add(ts,
+			 g_test_create_case ("can get server info",
+					     0,
+					     NULL,
+					     NULL,
+					     test_dbus_get_server_information,
+					     NULL)
+		);
 	return ts;
 }
