@@ -81,13 +81,6 @@ bubble_set_size (Bubble* self,
 		 gint    height);
 
 void
-bubble_set_timeout (Bubble* self,
-		    guint   timeout);
-
-guint
-bubble_get_timeout (Bubble* self);
-
-void
 bubble_move (Bubble* self,
 	     gint x,
 	     gint y);

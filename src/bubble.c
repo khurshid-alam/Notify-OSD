@@ -853,7 +853,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	GET_PRIVATE (self)->title = g_strdup (title);
@@ -863,7 +863,7 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	GET_PRIVATE (self)->message_body = g_strdup (body);
@@ -873,7 +873,7 @@ void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	if (GET_PRIVATE (self)->icon_pixbuf)
@@ -886,7 +886,7 @@ void
 bubble_set_value (Bubble* self,
 		  gint    value)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	GET_PRIVATE (self)->value = value;
@@ -897,29 +897,10 @@ bubble_set_size (Bubble* self,
 		 gint    width,
 		 gint    height)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	gtk_widget_set_size_request (GET_PRIVATE(self)->widget, width, height);
-}
-
-void
-bubble_set_timeout (Bubble* self,
-		    guint   timeout)
-{
-	if (!IS_BUBBLE (self))
-		return;
-
-	GET_PRIVATE (self)->timeout = timeout;
-}
-
-guint
-bubble_get_timeout (Bubble* self)
-{
-	if (!IS_BUBBLE (self))
-		return 0;
-
-	return GET_PRIVATE(self)->timeout;
 }
 
 void
@@ -927,7 +908,7 @@ bubble_move (Bubble* self,
 	     gint    x,
 	     gint    y)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	gtk_window_move (GTK_WINDOW (GET_PRIVATE (self)->widget), x, y);
@@ -939,7 +920,7 @@ bubble_show (Bubble* self)
 	/* TODO: move that into the Bubble gobject */
 	guint timer_id = 0;
 
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	GET_PRIVATE (self)->visible = TRUE;
@@ -958,8 +939,7 @@ do_slide_bubble (Bubble *self)
 	gint x         = 0;
 	gint y         = 0;
 
-	if (!IS_BUBBLE (self))
-		return FALSE;
+	if (!self) return FALSE;
 
 	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
 				 &x, &y);
@@ -995,8 +975,7 @@ bubble_slide_to (Bubble* self,
 	gint inc_x   = 0;
 	gint inc_y   = 0;
 
-	if (!IS_BUBBLE (self))
-		return;
+	if (!self) return;
 
 	GET_PRIVATE (self)->sliding_to_x = x;
 	GET_PRIVATE (self)->sliding_to_y = y;
@@ -1027,8 +1006,7 @@ bubble_slide_to (Bubble* self,
 gboolean
 bubble_hide (Bubble* self)
 {
-	if (!IS_BUBBLE (self))
-		return FALSE;
+	if (!self) return FALSE;
 
 	GET_PRIVATE (self)->visible = FALSE;
 	gtk_widget_hide (GET_PRIVATE (self)->widget);
@@ -1040,7 +1018,7 @@ void
 bubble_set_id (Bubble* self,
 	       guint   id)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 
 	GET_PRIVATE (self)->id = id;
@@ -1049,7 +1027,7 @@ bubble_set_id (Bubble* self,
 guint
 bubble_get_id (Bubble* self)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return 0;
 
 	return GET_PRIVATE (self)->id;
@@ -1058,7 +1036,7 @@ bubble_get_id (Bubble* self)
 gboolean
 bubble_is_visible (Bubble* self)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return FALSE;
 
 	return GET_PRIVATE (self)->visible;
@@ -1067,7 +1045,7 @@ bubble_is_visible (Bubble* self)
 void
 bubble_reset_timeout (Bubble* self)
 {
-	if (!IS_BUBBLE (self))
+	if (!self)
 		return;
 }
 
@@ -1076,9 +1054,6 @@ bubble_get_position (Bubble* self,
 		     gint*   x,
 		     gint*   y)
 {
-	if (!IS_BUBBLE (self))
-		return;
-
 	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
 				 x, y);
 }
@@ -1087,11 +1062,9 @@ bubble_get_position (Bubble* self,
 gint
 bubble_get_height (Bubble *self)
 {
+
 	gint width;
 	gint height;
-
-	if (!IS_BUBBLE (self))
-		return 0;
 
 	gtk_window_get_size (GTK_WINDOW (GET_PRIVATE (self)->widget), &width, &height);
 

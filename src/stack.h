@@ -73,10 +73,6 @@ stack_push_bubble (Stack* self,
 		   Bubble* bubble);
 
 void
-stack_pop_bubble (Stack* self,
-		  Bubble* bubble);
-
-void
 stack_show_feedback_bubble (Stack* self,
 			    Bubble* bubble);
 
