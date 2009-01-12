@@ -1118,7 +1118,9 @@ bubble_get_height (Bubble *self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	gtk_window_get_size (GTK_WINDOW (GET_PRIVATE (self)->widget), &width, &height);
+	gtk_window_get_size (GTK_WINDOW (GET_PRIVATE (self)->widget),
+			     &width,
+			     &height);
 
 	return height;
 }
