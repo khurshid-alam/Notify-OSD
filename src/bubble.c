@@ -1051,7 +1051,7 @@ bubble_slide_to (Bubble* self,
 gboolean
 bubble_hide (Bubble* self)
 {
-	if (!self || !IS_BUBBLE (self))
+	if (!self || !IS_BUBBLE (self) || !bubble_is_visible (self))
 		return FALSE;
 
 	GET_PRIVATE (self)->visible = FALSE;
