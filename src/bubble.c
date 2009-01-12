@@ -46,6 +46,7 @@ struct _BubblePrivate {
 	guint            id;
 	GdkPixbuf*       icon_pixbuf;
 	gboolean         visible;
+	guint            timer_id;
 	guint            timeout;
 	gint             sliding_to_x;
 	gint             sliding_to_y;
@@ -907,6 +908,47 @@ bubble_set_size (Bubble* self,
 }
 
 void
+bubble_set_timeout (Bubble* self,
+		    guint   timeout)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE (self)->timeout = timeout;
+}
+
+/* a timeout of 0 doesn't make much sense now does it, thus 0 indicates an
+** error */
+guint
+bubble_get_timeout (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return 0;
+
+	return GET_PRIVATE(self)->timeout;
+}
+
+void
+bubble_set_timer_id (Bubble* self,
+		     guint   timer_id)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE(self)->timer_id = timer_id;
+}
+
+/* a valid GLib timer-id is always > 0, thus 0 indicates an error */
+guint
+bubble_get_timer_id (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return 0;
+
+	return GET_PRIVATE(self)->timer_id;
+}
+
+void
 bubble_move (Bubble* self,
 	     gint    x,
 	     gint    y)
@@ -920,9 +962,6 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
-	/* TODO: move that into the Bubble gobject */
-	guint timer_id = 0;
-
 	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -930,9 +969,10 @@ bubble_show (Bubble* self)
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 
 	/* and now let the timer tick... */
-	timer_id = g_timeout_add (GET_PRIVATE (self)->timeout,
-				  (GSourceFunc) bubble_hide,
-				  self);
+	bubble_set_timer_id (self,
+			     g_timeout_add (bubble_get_timeout (self),
+					    (GSourceFunc) bubble_hide,
+					    self));
 }
 
 static
