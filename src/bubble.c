@@ -55,12 +55,19 @@ struct _BubblePrivate {
 	gint             value; /* "empty": -1, valid range: 0 - 100 */
 };
 
+enum
+{
+	TIMED_OUT,
+	LAST_SIGNAL
+};
+ 		
 /*-- private functions  --------------------------------------------------------------*/
 
-double   g_alpha   = 0.95f;
-gboolean g_entered = FALSE;
-gboolean g_left    = FALSE;
-gint     g_pointer[2];
+static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
+double       g_alpha                       = 0.95f;
+gboolean     g_entered                     = FALSE;
+gboolean     g_left                        = FALSE;
+gint         g_pointer[2];
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -754,6 +761,17 @@ bubble_class_init (BubbleClass* klass)
 	gobject_class->dispose      = bubble_dispose;
 	gobject_class->finalize     = bubble_finalize;
 	gobject_class->get_property = bubble_get_property;
+
+	g_bubble_signals[TIMED_OUT] = g_signal_new ("timed-out",
+						    G_OBJECT_CLASS_TYPE (gobject_class),
+						    G_SIGNAL_RUN_LAST,
+						    G_STRUCT_OFFSET (BubbleClass,
+								     timed_out),
+						    NULL,
+						    NULL,
+						    g_cclosure_marshal_VOID__VOID,
+						    G_TYPE_NONE,
+						    0);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -971,7 +989,7 @@ bubble_show (Bubble* self)
 	/* and now let the timer tick... */
 	bubble_set_timer_id (self,
 			     g_timeout_add (bubble_get_timeout (self),
-					    (GSourceFunc) bubble_hide,
+					    (GSourceFunc) bubble_timed_out,
 					    self));
 }
 
@@ -1046,6 +1064,17 @@ bubble_slide_to (Bubble* self,
 	timer_id = g_timeout_add (100,
 				  (GSourceFunc) do_slide_bubble,
 				  self);
+}
+
+gboolean
+bubble_timed_out (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return FALSE;
+
+	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);
+
+	return FALSE;
 }
 
 gboolean

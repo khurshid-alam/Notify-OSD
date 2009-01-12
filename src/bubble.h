@@ -49,6 +49,9 @@ struct _Bubble
 struct _BubbleClass
 {
 	GObjectClass parent;
+
+	/*< signals >*/
+	void (*timed_out) (Bubble* bubble);
 };
 
 GType bubble_get_type (void);
@@ -98,6 +101,9 @@ void
 bubble_move (Bubble* self,
 	     gint x,
 	     gint y);
+
+gboolean
+bubble_timed_out (Bubble* self);
 
 void
 bubble_show (Bubble* self);
