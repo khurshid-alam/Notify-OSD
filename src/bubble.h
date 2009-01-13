@@ -98,6 +98,13 @@ guint
 bubble_get_timer_id (Bubble* self);
 
 void
+bubble_set_mouse_over (Bubble*  self,
+		       gboolean flag);
+
+gboolean
+bubble_is_mouse_over (Bubble* self);
+
+void
 bubble_move (Bubble* self,
 	     gint x,
 	     gint y);

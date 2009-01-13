@@ -48,6 +48,7 @@ struct _BubblePrivate {
 	gboolean         visible;
 	guint            timer_id;
 	guint            timeout;
+	gboolean         mouse_over;
 	gint             sliding_to_x;
 	gint             sliding_to_y;
 	gint             inc_x;
@@ -64,9 +65,6 @@ enum
 /*-- private functions  --------------------------------------------------------------*/
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
-double       g_alpha                       = 0.95f;
-gboolean     g_entered                     = FALSE;
-gboolean     g_left                        = FALSE;
 gint         g_pointer[2];
 
 static void
@@ -469,7 +467,11 @@ expose_handler (GtkWidget*      window,
 			 height - 20.0f);
 	cairo_fill (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr, 0.05f, 0.05f, 0.05f, g_alpha);
+	cairo_set_source_rgba (cr,
+			       0.05f,
+			       0.05f,
+			       0.05f,
+			       gtk_window_get_opacity (GTK_WINDOW (window)));
 	draw_round_rect (cr,
 			 1.0f,
 			 10.0f, 10.0f,
@@ -636,18 +638,25 @@ expose_handler (GtkWidget*      window,
 
 static
 gboolean
-redraw_handler (GtkWidget* window)
+redraw_handler (Bubble* bubble)
 {
+	gdouble    opacity;
+	GtkWindow* window;
+
+	window = GTK_WINDOW (GET_PRIVATE(bubble)->widget);
+
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	if (g_left && g_alpha < 0.95f)
-		g_alpha += 0.05f;
+	opacity = gtk_window_get_opacity (window);
 
-	if (g_entered && g_alpha > 0.1f)
-		g_alpha -= 0.05f;
+	if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
+		opacity += 0.05f;
 
-	gtk_window_set_opacity (GTK_WINDOW (window), g_alpha);
+	if (bubble_is_mouse_over (bubble) && opacity > 0.1f)
+		opacity -= 0.05f;
+
+	gtk_window_set_opacity (window, opacity);
 
 	return TRUE;
 }
@@ -680,16 +689,19 @@ load_bitmap_icon (const gchar* filename)
 
 static
 gboolean
-pointer_update (GtkWidget* window)
+pointer_update (Bubble* bubble)
 {
-	gint pointer_rel_x;
-	gint pointer_rel_y;
-	gint pointer_abs_x;
-	gint pointer_abs_y;
-	gint win_x;
-	gint win_y;
-	gint width;
-	gint height;
+	gint       pointer_rel_x;
+	gint       pointer_rel_y;
+	gint       pointer_abs_x;
+	gint       pointer_abs_y;
+	gint       win_x;
+	gint       win_y;
+	gint       width;
+	gint       height;
+	GtkWidget* window;
+
+	window = GET_PRIVATE(bubble)->widget;
 
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
@@ -706,13 +718,11 @@ pointer_update (GtkWidget* window)
 		    pointer_abs_y >= win_y &&
 		    pointer_abs_y <= win_y + height)
 		{
-			g_entered = TRUE;
-			g_left    = FALSE;
+			bubble_set_mouse_over (bubble, TRUE);
 		}
 		else
 		{
-			g_entered = FALSE;
-			g_left    = TRUE;
+			bubble_set_mouse_over (bubble, FALSE);
 		}
 	}
 
@@ -893,18 +903,7 @@ bubble_new (void)
 	g_signal_connect (G_OBJECT (window),
 			  "expose-event",
 			  G_CALLBACK (expose_handler),
-			  this);
-
-	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	draw_handler_id = g_timeout_add (1000/60,
-					 (GSourceFunc) redraw_handler,
-					 window);
-
-	/* FIXME: read out current mouse-pointer position every 1/10 second */
-        pointer_update_id = g_timeout_add (100,
-					   (GSourceFunc) pointer_update,
-					   window);
-       
+			  this);       
 
 	/*  "clear" input-mask, set title/icon/attributes */
 	update_input_shape (window, 1, 1);
@@ -914,15 +913,27 @@ bubble_new (void)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	
+	gtk_window_set_opacity (GTK_WINDOW (window), 0.95f);
+
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->widget       = window;
 	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
 	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
 	GET_PRIVATE(this)->visible      = FALSE;
 	GET_PRIVATE(this)->timeout      = 10*1000; /* 10s */
+	GET_PRIVATE(this)->mouse_over   = FALSE;
 	GET_PRIVATE(this)->sliding_to_x = -1;
 	GET_PRIVATE(this)->sliding_to_y = -1;
+
+	/* FIXME: do nasty busy-polling rendering in the drawing-area */
+	draw_handler_id = g_timeout_add (1000/60,
+					 (GSourceFunc) redraw_handler,
+					 this);
+
+	/* FIXME: read out current mouse-pointer position every 1/10 second */
+        pointer_update_id = g_timeout_add (100,
+					   (GSourceFunc) pointer_update,
+					   this);
 
 	return this;
 }
@@ -1029,6 +1040,25 @@ bubble_get_timer_id (Bubble* self)
 		return 0;
 
 	return GET_PRIVATE(self)->timer_id;
+}
+
+void
+bubble_set_mouse_over (Bubble*  self,
+		       gboolean flag)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE(self)->mouse_over = flag;
+}
+
+gboolean
+bubble_is_mouse_over (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return FALSE;
+
+	return GET_PRIVATE(self)->mouse_over;
 }
 
 void
