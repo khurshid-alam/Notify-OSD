@@ -13,6 +13,7 @@ test_modules_SOURCES =		\
 	test-modules-main.c     \
 	test-apport.c		\
 	test-dbus.c		\
+	test-withlib.c		\
 	test-bubble.c		\
 	test-defaults.c		\
 	test-observer.c		\
@@ -31,7 +32,8 @@ test_modules_LDADD =		\
 	$(GLIB_LIBS)		\
 	$(LIBRSVG_LIBS)		\
 	$(DBUS_LIBS)		\
-	$(GTK_LIBS)
+	$(GTK_LIBS)		\
+	-lnotify
 
 test: test-modules
 	gtester -o=test-modules.xml -k ./test-modules
