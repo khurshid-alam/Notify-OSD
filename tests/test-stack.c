@@ -32,7 +32,6 @@ test_stack_new ()
 
 	stack = stack_new (defaults, observer);
 	g_assert (stack != NULL);
-	stack_del (stack);
 }
 
 static
@@ -45,7 +44,6 @@ test_stack_del ()
 
 	stack = stack_new (defaults, observer);
 	stack_del (stack);
-	/*g_assert (stack == NULL);*/
 }
 
 static
@@ -57,11 +55,20 @@ test_stack_push ()
 	Observer* observer = observer_new ();
 	Bubble*     bubble = bubble_new ();
 	guint           id = -1;
+	guint  replaced_id = -1;
 
 	stack = stack_new (defaults, observer);
 	id = stack_push_bubble (stack, bubble);
 
 	g_assert (id > 0);
+
+	replaced_id = stack_push_bubble (stack, bubble);
+
+	g_assert (replaced_id == id);
+
+	g_object_unref (G_OBJECT (defaults));
+	g_object_unref (G_OBJECT (observer));
+	g_object_unref (G_OBJECT (stack));
 }
 
 GTestSuite *

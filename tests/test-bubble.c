@@ -110,6 +110,9 @@ test_bubble_set_attributes (void)
 	g_object_unref (bubble);
 }
 
+
+
+
 GTestSuite *
 test_bubble_create_test_suite (void)
 {

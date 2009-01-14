@@ -155,7 +155,7 @@ find_bubble_by_id (Stack* self,
 }
 
 static void
-layout (Stack* self)
+stack_layout (Stack* self)
 {
 	GList*     list = NULL;
 	Bubble*  bubble = NULL;
@@ -276,14 +276,21 @@ stack_push_bubble (Stack*  self,
 	guint notification_id = -1;
 
 	/* sanity check */
-	if (!self)
+	if (!self || !IS_BUBBLE (bubble))
 		return -1;
 
-	notification_id = self->next_id++;
+	/* check if this is just an update */
+	if (find_bubble_by_id (self, bubble_get_id (bubble)))		
+	{
+		bubble_reset_timeout (bubble);
+		bubble_refresh (bubble);
+
+		return bubble_get_id (bubble);
+	}
 
 	/* add bubble/id to stack */
+	notification_id = self->next_id++;
 	bubble_set_id (bubble, notification_id);
-
 	self->list = g_list_append (self->list, (gpointer) bubble);
 
 	g_signal_connect (G_OBJECT (bubble),
@@ -312,13 +319,9 @@ stack_show_feedback_bubble (Stack* self,
 	self->feedback_bubble = bubble;
 
 	/* recalculate layout of current stack, will open new bubble */
-	layout (self);
+	stack_layout (self);
 }
 
-
-
-/* dbarth: turned static, because it is the stack's business to manage its list of bubbles
- */
 void
 stack_pop_bubble_by_id (Stack* self,
 			guint  id)
@@ -342,8 +345,8 @@ stack_pop_bubble_by_id (Stack* self,
 	self->list = g_list_delete_link (self->list,
 					 find_entry_by_id (self, id));
 
-	/* recalculate layout of current stack */
-	layout (self);
+	/* immediately refresh the layout of the stack */
+	stack_layout (self);
 }
 
 static GdkPixbuf*
@@ -408,7 +411,6 @@ stack_notify_handler (Stack*                 self,
 	Bubble*    bubble = NULL;
 	GValue*      data = NULL;
 	GdkPixbuf* pixbuf = NULL;
-	gboolean  replace = FALSE;
 
 	/* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
@@ -416,9 +418,6 @@ stack_notify_handler (Stack*                 self,
 	{
 		bubble = bubble_new ();
 		bubble_set_id (bubble, self->next_id++);
-	} else {
-		bubble_reset_timeout (bubble);
-		replace = TRUE;
 	}
 
 	if (hints)
@@ -445,11 +444,12 @@ stack_notify_handler (Stack*                 self,
 		apport_report (app_name, summary, actions, timeout);
 
 	/* push the bubble in the stack */
-	if (!replace)
-		stack_push_bubble(self, bubble);
+	stack_push_bubble(self, bubble);
 
-	/* recalculate layout of current stack, will open new bubble */
-	layout (self);
+	/* update the layout of the stack;
+	   this will also open the new bubble
+	*/
+	stack_layout (self);
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
 

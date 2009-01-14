@@ -17,6 +17,7 @@
 *******************************************************************************/
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <libnotify/notify.h>
 #include "dbus.h"
 
@@ -49,18 +50,41 @@ static void
 test_withlib_show_notification (void)
 {
         NotifyNotification *n;
-        GMainLoop* loop;
+
+        notify_init (__FILE__);
 
 	n = notify_notification_new ("Test",
 				     "You should see a normal notification",
 				     "", NULL);
+	notify_notification_show (n, NULL);
+	sleep (3);
+
+	g_object_unref(G_OBJECT(n));
+}
+
+static void
+test_withlib_update_notification (void)
+{
+        NotifyNotification *n;
+	gboolean res = FALSE;
+
         notify_init (__FILE__);
 
-	notify_notification_show (n, NULL);
-	
-	loop = g_main_loop_new(NULL, FALSE);
-        g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
-        g_main_loop_run (loop);
+	n = notify_notification_new ("Test",
+				     "New notification",
+				     "", NULL);
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+	sleep (3);
+
+	res = notify_notification_update (n, "Test (updated)",
+				    "The message body has been updated...",
+				    "");
+	g_assert (res);
+
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+	sleep (3);
 
 	g_object_unref(G_OBJECT(n));
 }
@@ -111,6 +135,14 @@ test_withlib_create_test_suite (void)
 					     NULL)
 		);
 	g_test_suite_add(ts,
+			 g_test_create_case ("can update notification",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_update_notification,
+					     NULL)
+		);
+	g_test_suite_add(ts,
 			 g_test_create_case ("can pass icon data on the wire",
 					     0,
 					     NULL,
@@ -118,7 +150,6 @@ test_withlib_create_test_suite (void)
 					     test_withlib_pass_icon_data,
 					     NULL)
 		);
-
 
 	return ts;
 }
