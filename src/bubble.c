@@ -1203,6 +1203,15 @@ bubble_reset_timeout (Bubble* self)
 {
 	if (!self || !IS_BUBBLE (self))
 		return;
+
+	if (g_source_remove (bubble_get_timer_id (self)))
+	{
+		bubble_set_timer_id (
+			self,
+			g_timeout_add_seconds (bubble_get_timeout (self),
+					       (GSourceFunc) bubble_timed_out,
+					       self));
+	}
 }
 
 void
