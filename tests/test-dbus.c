@@ -99,7 +99,7 @@ test_dbus_create_test_suite (void)
 		);
 
 	g_test_suite_add(ts,
-			 g_test_create_case ("refuses to have multiple instance on the bus",
+			 g_test_create_case ("refuse to have multiple instance on the bus",
 					     0,
 					     NULL,
 					     NULL,
