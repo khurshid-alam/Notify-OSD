@@ -188,7 +188,8 @@ stack_layout (Stack* self)
 		y += defaults_get_bubble_gap (self->defaults);
 	}
 
-	/* 1. check if we need to expire bubbles early because the feedback bubble needs room */
+	/* 1. check if we need to expire bubbles early because the feedback
+	**    bubble needs room */
 	for (list = g_list_first (self->list);
 	     list != NULL;
 	     list = g_list_next (list))
