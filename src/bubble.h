@@ -19,6 +19,7 @@
 #define __BUBBLE_H
 
 #include <glib-object.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
 
 G_BEGIN_DECLS
 
@@ -73,6 +74,10 @@ bubble_set_message_body (Bubble*      self,
 void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename);
+
+void
+bubble_set_icon_from_pixbuf (Bubble*      self,
+			     GdkPixbuf*   pixbuf);
 
 void
 bubble_set_value (Bubble* self,

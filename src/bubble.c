@@ -983,13 +983,26 @@ void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
-	if (!self || !IS_BUBBLE (self))
+ 	if (!self || !IS_BUBBLE (self))
 		return;
 
 	if (GET_PRIVATE (self)->icon_pixbuf)
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
 
 	GET_PRIVATE (self)->icon_pixbuf = load_bitmap_icon (filename);
+}
+
+void
+bubble_set_icon_from_pixbuf (Bubble*      self,
+			     GdkPixbuf*   pixbuf)
+{
+ 	if (!self || !IS_BUBBLE (self) || !pixbuf)
+		return;
+
+	if (GET_PRIVATE (self)->icon_pixbuf)
+		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
+
+	GET_PRIVATE (self)->icon_pixbuf = pixbuf;
 }
 
 void
