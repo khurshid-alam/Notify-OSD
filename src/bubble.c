@@ -150,31 +150,6 @@ screen_changed_handler (GtkWidget* window,
 }
 
 static
-gboolean
-delete_handler (GtkWidget* window,
-		GdkEvent*  event,
-		gpointer   data)
-{
-	gtk_main_quit ();
-	return TRUE;
-}
-
-static
-gboolean
-key_press_handler (GtkWidget*   window,
-		   GdkEventKey* event,
-		   gpointer     data)
-{
-	if (event->type   == GDK_KEY_PRESS &&
-	    (event->keyval == GDK_q || event->keyval == GDK_Escape))
-	{
-		delete_handler (window, NULL, NULL);
-	}
-
-	return TRUE;
-}
-
-static
 void
 update_input_shape (GtkWidget* window,
 		    gint       width,
@@ -891,14 +866,6 @@ bubble_new (void)
 			       GDK_BUTTON_RELEASE_MASK);
 
 	/* hook up input-event handlers to window */
-	g_signal_connect (G_OBJECT (window),
-			  "delete-event",
-			  G_CALLBACK (delete_handler),
-			  NULL);
-	g_signal_connect (G_OBJECT (window),
-			  "key-press-event",
-			  G_CALLBACK (key_press_handler),
-			  NULL);
 	g_signal_connect (G_OBJECT (window),
 			  "screen-changed",
 			  G_CALLBACK (screen_changed_handler),
