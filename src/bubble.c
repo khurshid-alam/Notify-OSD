@@ -1061,6 +1061,16 @@ bubble_show (Bubble* self)
 					    self));
 }
 
+/* mostly called when we change the content of the bubble
+   and need to force a redraw
+*/
+void
+bubble_refresh (Bubble* self)
+{
+	/* force a redraw */
+	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
+}
+
 static
 gboolean
 do_slide_bubble (Bubble *self)

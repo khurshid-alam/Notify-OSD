@@ -120,6 +120,9 @@ bubble_timed_out (Bubble* self);
 void
 bubble_show (Bubble* self);
 
+void
+bubble_refresh (Bubble* self);
+
 gboolean
 bubble_hide (Bubble* self);
 
