@@ -34,7 +34,7 @@
 #define BLUR_ALPHA   0.5f
 #define BLUR_RADIUS 10.0f
 
-#define DEFAULT_TIMEOUT 10*1000 /* 10s */
+#define DEFAULT_TIMEOUT 10 /* 10 seconds */
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -1054,11 +1054,14 @@ bubble_show (Bubble* self)
 	GET_PRIVATE (self)->visible = TRUE;
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 
-	/* and now let the timer tick... */
+	/* and now let the timer tick... we use g_timeout_add_seconds() here
+	** because for the bubble timeouts microsecond-precise resolution is not
+	** needed, furthermore this also allows glib more room for optimizations
+	** and improve system-power-usage to be more efficient */
 	bubble_set_timer_id (self,
-			     g_timeout_add (bubble_get_timeout (self),
-					    (GSourceFunc) bubble_timed_out,
-					    self));
+			     g_timeout_add_seconds (bubble_get_timeout (self),
+						    (GSourceFunc) bubble_timed_out,
+						    self));
 }
 
 /* mostly called when we change the content of the bubble
