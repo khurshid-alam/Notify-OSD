@@ -196,7 +196,7 @@ stack_layout (Stack* self)
 		hreq += defaults_get_bubble_gap (self->defaults) +
 			bubble_get_height ((Bubble*) list->data);
 
-	if (hreq > defaults_get_desktop_height (self->defaults))
+	if (hreq > defaults_get_stack_height (self->defaults))
 	{
 		/* FIXME */
 	}

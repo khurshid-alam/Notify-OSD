@@ -34,6 +34,7 @@ enum
 	PROP_DESKTOP_BOTTOM,
 	PROP_DESKTOP_LEFT,
 	PROP_DESKTOP_RIGHT,
+	PROP_STACK_HEIGHT,
 	PROP_BUBBLE_GAP,
 	PROP_BUBBLE_WIDTH,
 	PROP_BUBBLE_HEIGHT,
@@ -113,6 +114,10 @@ defaults_constructed (GObject* gobject)
 			      (gint) coords[2],
 			      NULL);
 		g_object_set (self,
+			      "stack-height",
+			      (gint) coords[3] / 2,
+			      NULL);
+		g_object_set (self,
 			      "bubble-width",
 			      (gint) (coords[2] * 0.25f),
 			      NULL);
@@ -181,6 +186,10 @@ defaults_get_property (GObject*    gobject,
 
 		case PROP_DESKTOP_RIGHT:
 			g_value_set_int (value, defaults->desktop_right);
+		break;
+
+		case PROP_STACK_HEIGHT:
+			g_value_set_int (value, defaults->stack_height);
 		break;
 
 		case PROP_BUBBLE_GAP:
@@ -265,6 +274,10 @@ defaults_set_property (GObject*      gobject,
 			defaults->desktop_right = g_value_get_int (value);
 		break;
 
+		case PROP_STACK_HEIGHT:
+			defaults->stack_height = g_value_get_int (value);
+		break;
+
 		case PROP_BUBBLE_WIDTH:
 			defaults->bubble_width = g_value_get_int (value);
 		break;
@@ -323,6 +336,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_desktop_bottom;
 	GParamSpec*   property_desktop_left;
 	GParamSpec*   property_desktop_right;
+	GParamSpec*   property_stack_height;
 	GParamSpec*   property_bubble_gap;
 	GParamSpec*   property_bubble_width;
 	GParamSpec*   property_bubble_height;
@@ -417,6 +431,19 @@ defaults_class_init (DefaultsClass* klass)
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_RIGHT,
 					 property_desktop_right);
+
+	property_stack_height = g_param_spec_int (
+				"stack-height",
+				"stack-height",
+				"Maximum allowed height of stack",
+				0,
+				4096,
+				2048,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_STACK_HEIGHT,
+					 property_stack_height);
 
     	property_bubble_gap = g_param_spec_int (
 				"bubble-gap",
@@ -621,6 +648,16 @@ defaults_get_desktop_right (Defaults* self)
 	g_object_get (self, "desktop-right", &right_edge, NULL);
 
 	return right_edge;
+}
+
+gint
+defaults_get_stack_height (Defaults* self)
+{
+	gint stack_height;
+
+	g_object_get (self, "stack-height", &stack_height, NULL);
+
+	return stack_height;
 }
 
 gint

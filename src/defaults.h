@@ -45,6 +45,7 @@ struct _Defaults
 	gint     desktop_bottom;
 	gint     desktop_left;
 	gint     desktop_right;
+	gint     stack_height;
 	gint     bubble_gap;
 	gint     bubble_width;
 	gint     bubble_height;
@@ -86,6 +87,9 @@ defaults_get_desktop_left (Defaults* self);
 
 gint
 defaults_get_desktop_right (Defaults* self);
+
+gint
+defaults_get_stack_height (Defaults* self);
 
 gint
 defaults_get_bubble_gap (Defaults* self);
