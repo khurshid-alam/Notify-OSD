@@ -69,8 +69,12 @@ void
 stack_del (Stack* self);
 
 guint
-stack_push_bubble (Stack* self,
+stack_push_bubble (Stack*  self,
 		   Bubble* bubble);
+
+void
+stack_pop_bubble_by_id (Stack* self,
+			guint  id);
 
 void
 stack_show_feedback_bubble (Stack* self,

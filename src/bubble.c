@@ -643,6 +643,12 @@ redraw_handler (Bubble* bubble)
 	gdouble    opacity;
 	GtkWindow* window;
 
+	if (!bubble)
+		return FALSE;
+
+	if (!bubble_is_visible (bubble))
+		return FALSE;
+
 	window = GTK_WINDOW (GET_PRIVATE(bubble)->widget);
 
 	if (!GTK_IS_WINDOW (window))
@@ -700,6 +706,12 @@ pointer_update (Bubble* bubble)
 	gint       width;
 	gint       height;
 	GtkWidget* window;
+
+	if (!bubble)
+		return FALSE;
+
+	if (!bubble_is_visible (bubble))
+		return FALSE;
 
 	window = GET_PRIVATE(bubble)->widget;
 

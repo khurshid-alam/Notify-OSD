@@ -23,13 +23,6 @@
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
-/* a convenience-structure for the handling of entries in the stack-list */
-typedef struct _Entry
-{
-	guint   notification_id;
-	Bubble* bubble;
-} Entry;
-
 /*-- internal API ------------------------------------------------------------*/
 
 static void
@@ -97,14 +90,46 @@ delete_entry (gpointer data,
 {
 }
 
+gint
+compare_id (gconstpointer a,
+	    gconstpointer b)
+{
+	gint  result;
+	guint id_1;
+	guint id_2;
+
+	if (!a || !b)
+		return -1;
+
+	id_1 = bubble_get_id ((Bubble*) a);
+	id_2 = *((guint*) b);
+
+	if (id_1 < id_2)
+		result = -1;
+
+	if (id_1 == id_2)
+		result = 0;
+
+	if (id_1 > id_2)
+		result = 1;
+
+	return result;
+}
+
 GList*
 find_entry_by_id (Stack* self,
 		  guint  id)
 {
-	GList* entry = NULL;
+	GList* entry;
 
 	/* sanity check */
 	if (!self)
+		return NULL;
+
+	entry = g_list_find_custom (self->list,
+				    (gconstpointer) &id,
+				    compare_id);
+	if (!entry)
 		return NULL;
 
 	return entry;
@@ -114,13 +139,19 @@ static Bubble*
 find_bubble_by_id (Stack* self,
 		   guint  id)
 {
-	Bubble* bubble = NULL;
+	GList* entry;
 
 	/* sanity check */
 	if (!self)
 		return NULL;
 
-	return bubble;
+	entry = g_list_find_custom (self->list,
+				    (gconstpointer) &id,
+				    compare_id);
+	if (!entry)
+		return NULL;
+
+	return (Bubble*) entry->data;
 }
 
 static void
@@ -158,9 +189,11 @@ layout (Stack* self)
 	}
 
 	/* 1. check if we need to expire bubbles early because the feedback bubble needs room */
-	for (list = g_list_first (self->list); list != NULL; list = g_list_next (list))
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
 		hreq += defaults_get_bubble_gap (self->defaults) +
-			bubble_get_height (((Entry *)(list->data))->bubble);
+			bubble_get_height ((Bubble*) list->data);
 
 	if (hreq > defaults_get_desktop_height (self->defaults))
 	{
@@ -174,19 +207,21 @@ layout (Stack* self)
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
 	 */
-	for (list = g_list_first (self->list); list != NULL; list = g_list_next (list))
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
 	{
-		bubble = (((Entry *)(list->data))->bubble);
+		bubble = (Bubble*) list->data;
 
 		/* set/update the bubble attributes */
 		bubble_set_size (bubble,
 				 defaults_get_bubble_width (self->defaults),
 				 defaults_get_bubble_height (self->defaults));
 		bubble_move (bubble, x, y);
-		// bubble_slide_to (bubble, x, y);
+		/* bubble_slide_to (bubble, x, y); */
 		bubble_show (bubble);
 
-		y += bubble_get_height (((Entry *)(list->data))->bubble)
+		y += bubble_get_height ((Bubble*) list->data)
 		     + defaults_get_bubble_gap (self->defaults);
 	}
 }
@@ -225,14 +260,20 @@ stack_del (Stack* self)
 	g_object_unref (self);
 }
 
+void
+timed_out_handler (Bubble* bubble,
+		   Stack*  stack)
+{
+	stack_pop_bubble_by_id (stack, bubble_get_id (bubble));
+}
+
 /* since notification-ids are unsigned integers the first id index is 1, 0 is
 ** used to indicate an error */
 guint
-stack_push_bubble (Stack* self,
+stack_push_bubble (Stack*  self,
 		   Bubble* bubble)
 {
-	Entry*  entry           = NULL;
-	guint notification_id   = -1;
+	guint notification_id = -1;
 
 	/* sanity check */
 	if (!self)
@@ -243,13 +284,15 @@ stack_push_bubble (Stack* self,
 	/* add bubble/id to stack */
 	bubble_set_id (bubble, notification_id);
 
-	entry = (Entry*) g_malloc0 (sizeof (Entry));
-	entry->notification_id = notification_id;
-	entry->bubble = bubble;
-	self->list = g_list_append (self->list, (gpointer) entry);
+	self->list = g_list_append (self->list, (gpointer) bubble);
 
 	/* recalculate layout of current stack, will open new bubble */
 	layout (self);
+
+	g_signal_connect (G_OBJECT (bubble),
+			  "timed-out",
+			  G_CALLBACK (timed_out_handler),
+			  self);
 
 	/* return current/new id to caller (usually our DBus-dispatcher) */
 	return notification_id;
@@ -279,14 +322,11 @@ stack_show_feedback_bubble (Stack* self,
 
 /* dbarth: turned static, because it is the stack's business to manage its list of bubbles
  */
-#if 0 // FIXME FIXME FIXME (-Wall)
-static 
 void
 stack_pop_bubble_by_id (Stack* self,
 			guint  id)
 {
 	Bubble* bubble;
-	GList*  entry;
 
 	/* sanity check */
 	if (!self)
@@ -299,15 +339,15 @@ stack_pop_bubble_by_id (Stack* self,
 
 	/* close/hide/fade-out bubble */
 	bubble_hide (bubble);
+	bubble_del (bubble);
 
 	/* find entry in list corresponding to id and remove it */
-	entry = find_entry_by_id (self, id);
-	self->list = g_list_delete_link (self->list, entry);
+	self->list = g_list_delete_link (self->list,
+					 find_entry_by_id (self, id));
 
 	/* recalculate layout of current stack */
 	layout (self);
 }
-#endif
 
 gboolean
 stack_notify_handler (Stack*                 self,
