@@ -34,6 +34,8 @@
 #define BLUR_ALPHA   0.5f
 #define BLUR_RADIUS 10.0f
 
+#define DEFAULT_TIMEOUT 10*1000 /* 10s */
+
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
@@ -716,27 +718,6 @@ pointer_update (Bubble* bubble)
 	return TRUE;
 }
 
-/*static
-void
-calculate_default_size (guint *width,
-			guint *height)
-{
-	* FIXME: Mirco, please implement the cairo code here *
-	*width  = 250;
-	*height = 100;
-}*/
-
-/*static
-void
-calculate_default_position (guint *x,
-			    guint *y)
-{
-	* FIXME: Mirco, please implement the cairo code here *
-	*x = 1400 - 250 - 10;
-	*y = 30;
-}*/
-
-
 
 /*-- internal API ------------------------------------------------------------*/
 
@@ -899,7 +880,7 @@ bubble_new (void)
 	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
 	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
 	GET_PRIVATE(this)->visible      = FALSE;
-	GET_PRIVATE(this)->timeout      = 10*1000; /* 10s */
+	GET_PRIVATE(this)->timeout      = DEFAULT_TIMEOUT;
 	GET_PRIVATE(this)->mouse_over   = FALSE;
 	GET_PRIVATE(this)->sliding_to_x = -1;
 	GET_PRIVATE(this)->sliding_to_y = -1;
