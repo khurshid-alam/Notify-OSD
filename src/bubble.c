@@ -1201,10 +1201,16 @@ bubble_is_visible (Bubble* self)
 void
 bubble_reset_timeout (Bubble* self)
 {
+	guint timer_id;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	if (g_source_remove (bubble_get_timer_id (self)))
+	timer_id = bubble_get_timer_id (self);
+	if (timer_id <= 0)
+		return;
+
+	if (g_source_remove (timer_id))
 	{
 		bubble_set_timer_id (
 			self,
