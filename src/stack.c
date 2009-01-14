@@ -200,10 +200,7 @@ layout (Stack* self)
 		/* FIXME */
 	}
 
-
 	/* 2. walk through the list of the current bubbles on the stack
-	      by order of arrival, ie by id,
-	      !!!!! except when the ids loop! *** NEED A SPECIFIC TEST HERE ***
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
 	 */
@@ -224,6 +221,9 @@ layout (Stack* self)
 		y += bubble_get_height ((Bubble*) list->data)
 		     + defaults_get_bubble_gap (self->defaults);
 	}
+	/* TODO: consider the case of old ids for refreshed bubbles; they
+ 	 * may be expired early, even if they still have a large lifespan
+ 	 * left */
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -285,9 +285,6 @@ stack_push_bubble (Stack*  self,
 	bubble_set_id (bubble, notification_id);
 
 	self->list = g_list_append (self->list, (gpointer) bubble);
-
-	/* recalculate layout of current stack, will open new bubble */
-	layout (self);
 
 	g_signal_connect (G_OBJECT (bubble),
 			  "timed-out",
@@ -361,8 +358,9 @@ stack_notify_handler (Stack*                 self,
 		      gint                   timeout,
 		      DBusGMethodInvocation* context)
 {
-	Bubble* bubble = NULL;
-	GValue* data   = NULL;
+	Bubble*    bubble = NULL;
+	GValue*      data = NULL;
+	gboolean  replace = FALSE;
 
 	/* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
@@ -370,6 +368,9 @@ stack_notify_handler (Stack*                 self,
 	{
 		bubble = bubble_new ();
 		bubble_set_id (bubble, self->next_id++);
+	} else {
+		bubble_reset_timeout (bubble);
+		replace = TRUE;
 	}
 
 	if (hints)
@@ -389,8 +390,12 @@ stack_notify_handler (Stack*                 self,
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);
 
-	/* push the bubble and try to display it */
-	stack_push_bubble(self, bubble);
+	/* push the bubble in the stack */
+	if (!replace)
+		stack_push_bubble(self, bubble);
+
+	/* recalculate layout of current stack, will open new bubble */
+	layout (self);
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
 
@@ -402,7 +407,10 @@ stack_close_notification_handler (Stack*   self,
 				  guint    id,
 				  GError** error)
 {
-	g_print ("stack_close_notification_handler() called, %s\n", G_STRLOC);
+	Bubble *bubble = find_bubble_by_id (self, id);
+	g_return_val_if_fail (bubble != NULL, FALSE);
+
+	/* TODO: send a timeout expired signal */
 
 	return TRUE;
 }
