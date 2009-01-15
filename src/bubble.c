@@ -868,7 +868,7 @@ bubble_new (void)
 	/*  "clear" input-mask, set title/icon/attributes */
 	update_input_shape (window, 1, 1);
 	gtk_widget_set_app_paintable (window, TRUE);
-	gtk_window_set_title (GTK_WINDOW (window), "notification-test-cairo");
+	gtk_window_set_title (GTK_WINDOW (window), "notification");
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
