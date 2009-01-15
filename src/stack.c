@@ -190,9 +190,9 @@ stack_layout (Stack* self)
 
 	/* 1. check if we need to expire bubbles early because the feedback
 	**    bubble needs room */
-	for (list = g_list_first (self->list);
+	for (list = g_list_last (self->list);
 	     list != NULL;
-	     list = g_list_next (list))
+	     list = g_list_previous (list))
 		hreq += defaults_get_bubble_gap (self->defaults) +
 			bubble_get_height ((Bubble*) list->data);
 
@@ -205,9 +205,9 @@ stack_layout (Stack* self)
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
 	 */
-	for (list = g_list_first (self->list);
+	for (list = g_list_last (self->list);
 	     list != NULL;
-	     list = g_list_next (list))
+	     list = g_list_previous (list))
 	{
 		bubble = (Bubble*) list->data;
 
@@ -218,8 +218,7 @@ stack_layout (Stack* self)
 		bubble_move (bubble, x, y);
 		/* bubble_slide_to (bubble, x, y); */
 		bubble_show (bubble);
-
-		y += bubble_get_height ((Bubble*) list->data)
+		y += bubble_get_height (bubble)
 		     + defaults_get_bubble_gap (self->defaults);
 	}
 	/* TODO: consider the case of old ids for refreshed bubbles; they
@@ -418,7 +417,6 @@ stack_notify_handler (Stack*                 self,
 	if (!bubble)
 	{
 		bubble = bubble_new ();
-		bubble_set_id (bubble, self->next_id++);
 	}
 
 	if (hints)
