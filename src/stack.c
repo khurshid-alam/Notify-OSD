@@ -463,7 +463,7 @@ stack_close_notification_handler (Stack*   self,
 	Bubble *bubble = find_bubble_by_id (self, id);
 	g_return_val_if_fail (bubble != NULL, FALSE);
 
-	/* TODO: send a timeout expired signal */
+	bubble_timed_out (bubble);
 
 	return TRUE;
 }
