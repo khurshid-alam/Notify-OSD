@@ -34,6 +34,10 @@
 #define BLUR_ALPHA   0.5f
 #define BLUR_RADIUS 10.0f
 
+#define DEFAULT_ICON_SIZE 32
+#define DEFAULT_MARGIN 16
+#define DEFAULT_SHADOW_SIZE 10
+
 #define DEFAULT_TIMEOUT 10 /* 10 seconds */
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
@@ -319,7 +323,7 @@ draw_shadow (cairo_t* cr,
 	cairo_pattern_t* pattern     = NULL;
 	cairo_t*         cr_surf     = NULL;
 	cairo_matrix_t   matrix;
-	gint             shadow_radius = 16;
+	gint             shadow_radius = 11;
 
 	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						  4 * shadow_radius,
@@ -338,11 +342,11 @@ draw_shadow (cairo_t* cr,
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr_surf);
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr_surf, 0.1f, 0.1f, 0.1f, 1.0f);
+	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.85f);
 	cairo_arc (cr_surf,
 		   2 * shadow_radius,
 		   2 * shadow_radius,
-		   1.4f * shadow_radius,
+		   1.25f * shadow_radius,
 		   0.0f,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
@@ -421,9 +425,9 @@ expose_handler (GtkWidget*      window,
 	cairo_t*         cr;
 	gdouble          width       = (gdouble) window->allocation.width;
 	gdouble          height      = (gdouble) window->allocation.height;
-	gdouble          margin_gap  = 25.0f;
-	gdouble          left_margin = 25.0f;
-	gdouble          top_margin  = 25.0f;
+	gdouble          margin_gap  = (gdouble) DEFAULT_MARGIN;
+	gdouble          left_margin = (gdouble) DEFAULT_MARGIN;
+	gdouble          top_margin  = (gdouble) DEFAULT_MARGIN;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
@@ -439,20 +443,20 @@ expose_handler (GtkWidget*      window,
 	draw_round_rect (cr,
 			 1.0f,
 			 10.0f, 10.0f,
-			 10.0f,
+			 6.0f,
 			 width - 20.0f,
 			 height - 20.0f);
 	cairo_fill (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
-			       0.05f,
-			       0.05f,
-			       0.05f,
+			       0.125f,
+			       0.125f,
+			       0.125f,
 			       gtk_window_get_opacity (GTK_WINDOW (window)));
 	draw_round_rect (cr,
 			 1.0f,
 			 10.0f, 10.0f,
-			 10.0f,
+			 6.0f,
 			 width - 20.0f,
 			 height - 20.0f);
 	cairo_fill (cr);
@@ -460,17 +464,14 @@ expose_handler (GtkWidget*      window,
 	/* render icon */
 	if (GET_PRIVATE (bubble)->icon_pixbuf)
 	{
-		gint icon_width = gdk_pixbuf_get_width (
-					GET_PRIVATE (bubble)->icon_pixbuf);
-		gint icon_height = gdk_pixbuf_get_height (
-					GET_PRIVATE (bubble)->icon_pixbuf);
 		gdk_cairo_set_source_pixbuf (
 					cr,
 					GET_PRIVATE (bubble)->icon_pixbuf,
-					((gint) width / 4 - icon_width / 2) / 2,
-					((gint) height - icon_height) / 2);
+					DEFAULT_MARGIN + 6.0f,
+					DEFAULT_MARGIN);
 		cairo_paint (cr);
-		left_margin += (gint) width / 4;
+		left_margin += DEFAULT_ICON_SIZE;
+		left_margin += DEFAULT_MARGIN;
 	}
 
 	/* render title */
@@ -479,15 +480,13 @@ expose_handler (GtkWidget*      window,
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
 		PangoRectangle        ink_rect;
-		GString*              string;
-
-		string = g_string_new (GET_PRIVATE (bubble)->message_body);
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
+		/* FIXME: get defaults from the system * 120% */
 		pango_font_description_set_absolute_size (desc,
-							  16 * PANGO_SCALE);
-		pango_font_description_set_family_static (desc, "Candara");
+							  12 * PANGO_SCALE);
+		pango_font_description_set_family_static (desc, "Sans");
 		pango_font_description_set_weight (desc, PANGO_WEIGHT_BOLD);
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
@@ -502,17 +501,21 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
 		pango_layout_get_extents (layout, &ink_rect, NULL);
 
-		if (string->len == 0)
+		/* If no summary/message_body is present,
+		 * and assuming there is an icon,
+		 * center/align title in the middle of the bubble
+		 */ 	
+		if ((GET_PRIVATE (bubble)->message_body == '\0') &&
+		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			cairo_move_to (cr,
-				       width / 4 + (width * 0.75f - ink_rect.width / PANGO_SCALE) / 2,
+				       DEFAULT_ICON_SIZE + (width - DEFAULT_ICON_SIZE - ink_rect.width / PANGO_SCALE) / 2,
 				       (height - ink_rect.height / PANGO_SCALE) / 2);
 		}
 		else
 		{
 			cairo_move_to (cr, left_margin, top_margin);
 		}
-		g_string_free (string, TRUE);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
@@ -533,9 +536,10 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
+		/* FIXME: get defaults from the system */
 		pango_font_description_set_absolute_size (desc,
-							  12 * PANGO_SCALE);
-		pango_font_description_set_family_static (desc, "Candara");
+							  10 * PANGO_SCALE);
+		pango_font_description_set_family_static (desc, "Sans");
 		pango_font_description_set_weight (desc, PANGO_WEIGHT_NORMAL);
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
@@ -644,12 +648,6 @@ redraw_handler (Bubble* bubble)
 	return TRUE;
 }
 
-static int
-get_default_icon_size (void)
-{
-	return 32;
-}
-
 static
 GdkPixbuf*
 load_icon (const gchar* filename)
@@ -659,7 +657,6 @@ load_icon (const gchar* filename)
 	GtkIconInfo*    info = NULL;
 	GError*        error = NULL;
 	GFile*          file = NULL;
-	gint            size = 0;
 	
 	/* sanity check */
 	g_return_val_if_fail (filename, NULL);
@@ -668,15 +665,14 @@ load_icon (const gchar* filename)
 	if (!strncmp (filename, "file://", 7))
 		filename += 7;
 
-	size = get_default_icon_size ();
-
 	file = g_file_new_for_path (filename);
 	if (g_file_query_exists (file, NULL))
 	/* Implementation note: blocking I/O; could be cancellable though */
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-							    size, size,
+							    DEFAULT_ICON_SIZE,
+							    DEFAULT_ICON_SIZE,
 							    TRUE,
 							    &error);
 	} else {
@@ -684,7 +680,7 @@ load_icon (const gchar* filename)
 
 		theme = gtk_icon_theme_get_default ();
 		info  = gtk_icon_theme_lookup_icon (theme, filename,
-						    size,
+						    DEFAULT_ICON_SIZE,
 						    GTK_ICON_LOOKUP_USE_BUILTIN);
 		g_return_val_if_fail (info, NULL);
 
@@ -694,7 +690,7 @@ load_icon (const gchar* filename)
 			g_warning ("icon '%s' not available in SVG", filename);
 
 		pixbuf = gtk_icon_theme_load_icon (theme, filename,
-						   size,
+						   DEFAULT_ICON_SIZE,
 						   GTK_ICON_LOOKUP_USE_BUILTIN,
 						   NULL);
 		

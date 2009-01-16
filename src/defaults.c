@@ -119,11 +119,11 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 		g_object_set (self,
 			      "bubble-width",
-			      (gint) (coords[2] * 0.25f),
+			      226,
 			      NULL);
 		g_object_set (self,
 			      "bubble-height",
-			      (gint) (coords[3] * 0.125f),
+			      64,
 			      NULL);
 		XFree (coords);
 	}
@@ -452,7 +452,7 @@ defaults_class_init (DefaultsClass* klass)
 				"Gap between bubbles and the workarea edges",
 				0,
 				50,
-				7,
+				1,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
