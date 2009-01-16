@@ -405,6 +405,8 @@ process_dbus_icon_data (GValue *data)
 	guchar *copy;
 	GdkPixbuf *pixbuf = NULL;
 
+	g_return_val_if_fail (data != NULL, NULL);
+
 	dbus_icon_t = dbus_g_type_get_struct ("GValueArray",
 					      G_TYPE_INT,
 					      G_TYPE_INT,

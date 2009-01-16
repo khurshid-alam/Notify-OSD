@@ -644,28 +644,62 @@ redraw_handler (Bubble* bubble)
 	return TRUE;
 }
 
+static int
+get_default_icon_size (void)
+{
+	return 32;
+}
+
 static
 GdkPixbuf*
-load_bitmap_icon (const gchar* filename)
+load_icon (const gchar* filename)
 {
-	/*cairo_surface_t*  surf   = NULL;*/
-	gint              width  = BUBBLE_ICON_WIDTH;
-	gint              height = BUBBLE_ICON_HEIGHT;
-	GError*           error  = NULL;
-	GdkPixbuf*        pixbuf = NULL;
-
+	GdkPixbuf*    pixbuf = NULL;
+	GtkIconTheme*  theme = NULL;
+	GtkIconInfo*    info = NULL;
+	GError*        error = NULL;
+	GFile*          file = NULL;
+	gint            size = 0;
+	
 	/* sanity check */
-	if (!filename)
-		return NULL;
+	g_return_val_if_fail (filename, NULL);
 
-	/* load image into pixbuf */
-	pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-						    width,
-						    height,
-						    TRUE,
-						    &error);
-	if (!pixbuf)
-		return NULL;
+	/* Images referenced must always be local files. */
+	if (!strncmp (filename, "file://", 7))
+		filename += 7;
+
+	size = get_default_icon_size ();
+
+	file = g_file_new_for_path (filename);
+	if (g_file_query_exists (file, NULL))
+	/* Implementation note: blocking I/O; could be cancellable though */
+	{
+		/* load image into pixbuf */
+		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
+							    size, size,
+							    TRUE,
+							    &error);
+	} else {
+		/* TODO: rewrite, check for SVG support, raise apport notification for low-res icons */
+
+		theme = gtk_icon_theme_get_default ();
+		info  = gtk_icon_theme_lookup_icon (theme, filename,
+						    size,
+						    GTK_ICON_LOOKUP_USE_BUILTIN);
+		g_return_val_if_fail (info, NULL);
+
+		const gchar *f = gtk_icon_info_get_filename (info);
+		if (f == NULL ||
+		    !g_str_has_suffix (f, ".svg"))
+			g_warning ("icon '%s' not available in SVG", filename);
+
+		pixbuf = gtk_icon_theme_load_icon (theme, filename,
+						   size,
+						   GTK_ICON_LOOKUP_USE_BUILTIN,
+						   NULL);
+		
+		gtk_icon_info_free (info);
+	}
 
 	return pixbuf;
 }
@@ -916,6 +950,9 @@ bubble_set_title (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
+    	if (GET_PRIVATE (self)->title)
+		g_free ((gpointer) GET_PRIVATE (self)->title);
+
 	GET_PRIVATE (self)->title = g_strdup (title);
 }
 
@@ -925,6 +962,9 @@ bubble_set_message_body (Bubble*      self,
 {
 	if (!self || !IS_BUBBLE (self))
 		return;
+
+    	if (GET_PRIVATE (self)->message_body)
+		g_free ((gpointer) GET_PRIVATE (self)->message_body);
 
 	GET_PRIVATE (self)->message_body = g_strdup (body);
 }
@@ -939,7 +979,7 @@ bubble_set_icon (Bubble*      self,
 	if (GET_PRIVATE (self)->icon_pixbuf)
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
 
-	GET_PRIVATE (self)->icon_pixbuf = load_bitmap_icon (filename);
+	GET_PRIVATE (self)->icon_pixbuf = load_icon (filename);
 }
 
 void
