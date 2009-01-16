@@ -30,9 +30,6 @@ G_BEGIN_DECLS
 #define IS_BUBBLE_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), BUBBLE_TYPE))
 #define BUBBLE_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), BUBBLE_TYPE, BubbleClass))
 
-#define BUBBLE_ICON_WIDTH 64
-#define BUBBLE_ICON_HEIGHT 64
-
 typedef struct _Bubble        Bubble;
 typedef struct _BubbleClass   BubbleClass;
 typedef struct _BubblePrivate BubblePrivate;
