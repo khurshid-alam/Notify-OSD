@@ -950,6 +950,9 @@ bubble_set_title (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
+    	if (GET_PRIVATE (self)->title)
+		g_free ((gpointer) GET_PRIVATE (self)->title);
+
 	GET_PRIVATE (self)->title = g_strdup (title);
 }
 
@@ -959,6 +962,9 @@ bubble_set_message_body (Bubble*      self,
 {
 	if (!self || !IS_BUBBLE (self))
 		return;
+
+    	if (GET_PRIVATE (self)->message_body)
+		g_free ((gpointer) GET_PRIVATE (self)->message_body);
 
 	GET_PRIVATE (self)->message_body = g_strdup (body);
 }
