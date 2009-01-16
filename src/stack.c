@@ -154,18 +154,61 @@ find_bubble_by_id (Stack* self,
 	return (Bubble*) entry->data;
 }
 
+static gint
+stack_get_height (Stack* self)
+{
+	GList*  list         = NULL;
+	Bubble* bubble       = NULL;
+	gint    stack_height = 0;
+
+	/* sanity check */
+	g_return_val_if_fail (self != NULL, 0);
+
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
+	{
+		bubble = (Bubble*) list->data;
+		stack_height += defaults_get_bubble_gap (self->defaults) +
+				bubble_get_height (bubble);
+	}
+
+	stack_height -= defaults_get_bubble_gap (self->defaults);
+
+	return stack_height;
+}
+
+static void
+stack_pop_last_bubble (Stack* self)
+{
+	GList* entry;
+
+	/* sanity check */
+	g_return_if_fail (self != NULL);
+
+	/* find last (remember fifo) entry in stack-list */
+	entry = g_list_first (self->list);
+	if (!entry)
+		return;
+
+	/* close/hide/fade-out bubble */
+	bubble_hide ((Bubble*) entry->data);
+	bubble_del ((Bubble*) entry->data);
+
+	/* find entry in list corresponding to id and remove it */
+	self->list = g_list_delete_link (self->list, entry);
+}
+
 static void
 stack_layout (Stack* self)
 {
-	GList*     list = NULL;
-	Bubble*  bubble = NULL;
-	guint      hreq = 0;
-	guint stack_top = 0;
-	gint          y = 0;
-	gint          x = 0;
+	GList*  list   = NULL;
+	Bubble* bubble = NULL;
+	gint    y      = 0;
+	gint    x      = 0;
 
 	/* sanity check */
-	g_return_if_fail(self);
+	g_return_if_fail (self != NULL);
 
 	/* position the top left corner of the stack  */
 	y  =  defaults_get_desktop_top (self->defaults);
@@ -178,9 +221,6 @@ stack_layout (Stack* self)
 		defaults_get_bubble_gap (self->defaults)
 		;
  
-	hreq = y;
-	stack_top = y;
-
 	/* consider the special case of the feedback synchronous bubble */
 	if (self->feedback_bubble)
 	{
@@ -190,16 +230,11 @@ stack_layout (Stack* self)
 
 	/* 1. check if we need to expire bubbles early because the feedback
 	**    bubble needs room */
-	for (list = g_list_last (self->list);
-	     list != NULL;
-	     list = g_list_previous (list))
-		hreq += defaults_get_bubble_gap (self->defaults) +
-			bubble_get_height ((Bubble*) list->data);
-
-	if (hreq > defaults_get_stack_height (self->defaults))
-	{
-		/* FIXME */
-	}
+	while (stack_get_height (self) > 
+	       defaults_get_stack_height (self->defaults))
+ 	{
+		stack_pop_last_bubble (self);
+ 	}
 
 	/* 2. walk through the list of the current bubbles on the stack
 	      and compute the new position for the bubbles
