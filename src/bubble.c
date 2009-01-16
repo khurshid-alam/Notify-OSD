@@ -51,10 +51,10 @@ struct _BubblePrivate {
 	guint            timer_id;
 	guint            timeout;
 	gboolean         mouse_over;
-	gint             sliding_to_x;
-	gint             sliding_to_y;
-	gint             inc_x;
-	gint             inc_y;
+	gint             start_y;
+	gint             end_y;
+	gint             delta_y;
+	gdouble          inc_factor;
 	gint             value; /* "empty": -1, valid range: 0 - 100 */
 };
 
@@ -882,8 +882,10 @@ bubble_new (void)
 	GET_PRIVATE(this)->visible      = FALSE;
 	GET_PRIVATE(this)->timeout      = DEFAULT_TIMEOUT;
 	GET_PRIVATE(this)->mouse_over   = FALSE;
-	GET_PRIVATE(this)->sliding_to_x = -1;
-	GET_PRIVATE(this)->sliding_to_y = -1;
+	GET_PRIVATE(this)->start_y      = 0;
+	GET_PRIVATE(this)->end_y        = 0;
+	GET_PRIVATE(this)->inc_factor   = 0.0f;
+	GET_PRIVATE(this)->delta_y      = 0;
 
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
 	draw_handler_id = g_timeout_add (1000/60,
@@ -1076,73 +1078,76 @@ bubble_refresh (Bubble* self)
 
 static
 gboolean
-do_slide_bubble (Bubble *self)
+do_slide_bubble (Bubble* self)
 {
-	gint x         = 0;
-	gint y         = 0;
+	gint x = 0;
+	gint y = 0;
 
+	/* sanity check */
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
+	/* where is the bubble at the moment? */
 	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
-				 &x, &y);
+				 &x,
+				 &y);
 
-	/* check if we arrived at the destination */
-	if ((x == GET_PRIVATE (self)->sliding_to_x) &&
-	    (y == GET_PRIVATE (self)->sliding_to_y))
-		return FALSE;
+	/* check if we arrived at the destination ... or overshot */
+	if (GET_PRIVATE (self)->delta_y > 0)
+	{
+		/* stop the callback/animation */
+		if (y >= GET_PRIVATE (self)->end_y)
+			return FALSE;
+	}
+	else
+	{
+		/* stop the callback/animation */
+		if (y <= GET_PRIVATE (self)->end_y)
+			return FALSE;
+	}
 
-#if 0
-	g_printf ("moving from (%d, %d) to (%d, %d) by (%d, %d)\n",
-		  x, y,
-		  GET_PRIVATE (self)->sliding_to_x,
-		  GET_PRIVATE (self)->sliding_to_y,
-		  GET_PRIVATE (self)->inc_x,
-		  GET_PRIVATE (self)->inc_y);
-#endif
-	bubble_move(self,
-		    x + GET_PRIVATE (self)->inc_x,
-		    y + GET_PRIVATE (self)->inc_y);
+	/* move the bubble to the new position */
+	bubble_move (self,
+		     x,
+		     GET_PRIVATE (self)->start_y +
+		     GET_PRIVATE (self)->delta_y *
+		     sin (GET_PRIVATE (self)->inc_factor) * G_PI / 2.0f);
 
-	return TRUE; /* keep going */
+	/* "advance" the increase-factor */
+	GET_PRIVATE (self)->inc_factor += 1.0f / 30.0f;
+
+	/* keep going */
+	return TRUE;
 }
 
 void
 bubble_slide_to (Bubble* self,
-		 gint    x,
-		 gint    y)
+		 gint    end_x,
+		 gint    end_y)
 {
 	guint timer_id = 0;
-	gint delta_x   = 0;
-	gint delta_y   = 0;
-	gint inc_x   = 0;
-	gint inc_y   = 0;
+	gint  start_x  = 0;
+	gint  start_y  = 0;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->sliding_to_x = x;
-	GET_PRIVATE (self)->sliding_to_y = y;
-
 	/* determine direction to take */
 	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
-				 &x, &y);
+				 &start_x,
+				 &start_y);
 
-	delta_x = GET_PRIVATE (self)->sliding_to_x - x;
-	delta_y = GET_PRIVATE (self)->sliding_to_y - y;
-	inc_x   = (GET_PRIVATE (self)->sliding_to_x - x) /
-		abs( GET_PRIVATE (self)->sliding_to_x -x);
-	inc_y   = (GET_PRIVATE (self)->sliding_to_y - y) /
-		abs( GET_PRIVATE (self)->sliding_to_y -y);
-	/* TODO: put some sin() here to get a smoother effect */
-	inc_x   *= delta_x / 5;
-	inc_y   *= delta_y / 5;
+	/* don't do anything if we got the same target/end y-position */
+	if (end_y == start_y)
+		return;
 
-	GET_PRIVATE (self)->inc_x = inc_x;
-	GET_PRIVATE (self)->inc_y = inc_y;
+	GET_PRIVATE (self)->inc_factor = 0.0f;
+	GET_PRIVATE (self)->start_y    = start_y;
+	GET_PRIVATE (self)->end_y      = end_y;
+	GET_PRIVATE (self)->delta_y    = end_y - start_y;
 
 	/* and now let the timer tick... */
-	timer_id = g_timeout_add (100,
+	timer_id = g_timeout_add (1000/60,
 				  (GSourceFunc) do_slide_bubble,
 				  self);
 }
