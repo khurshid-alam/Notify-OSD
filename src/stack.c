@@ -197,6 +197,8 @@ stack_pop_last_bubble (Stack* self)
 
 	/* find entry in list corresponding to id and remove it */
 	self->list = g_list_delete_link (self->list, entry);
+
+	/* stack_layout() is not called here intentionally! */
 }
 
 static void
