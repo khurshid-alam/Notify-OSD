@@ -329,6 +329,7 @@ static void
 defaults_class_init (DefaultsClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
+
 	GdkScreen*    screen        = gdk_screen_get_default ();
 	GParamSpec*   property_desktop_width;
 	GParamSpec*   property_desktop_height;
@@ -448,10 +449,10 @@ defaults_class_init (DefaultsClass* klass)
     	property_bubble_gap = g_param_spec_int (
 				"bubble-gap",
 				"bubble-gap",
-				"Gap between bubbles and screen edges",
+				"Gap between bubbles and the workarea edges",
 				0,
 				50,
-				10,
+				7,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
@@ -464,7 +465,7 @@ defaults_class_init (DefaultsClass* klass)
 				"Width of bubble in pixels",
 				0,
 				1024,
-				gdk_screen_get_width (screen) / 5,
+				226,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
@@ -477,7 +478,7 @@ defaults_class_init (DefaultsClass* klass)
 				"Height of bubble in pixels",
 				50,
 				300,
-				gdk_screen_get_height (screen) / 10,
+				64,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
@@ -490,7 +491,7 @@ defaults_class_init (DefaultsClass* klass)
 				"Opacity of bubble",
 				0.1f,
 				1.0f,
-				0.85f,
+				0.70f,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
