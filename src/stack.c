@@ -154,7 +154,7 @@ find_bubble_by_id (Stack* self,
 	return (Bubble*) entry->data;
 }
 
-static gint
+/* HACK: static */ gint
 stack_get_height (Stack* self)
 {
 	GList*  list         = NULL;
@@ -178,7 +178,7 @@ stack_get_height (Stack* self)
 	return stack_height;
 }
 
-static void
+/* HACK: static */ void
 stack_pop_last_bubble (Stack* self)
 {
 	GList* entry;
@@ -214,13 +214,13 @@ stack_layout (Stack* self)
 
 	/* position the top left corner of the stack  */
 	y  =  defaults_get_desktop_top (self->defaults);
-	y  += defaults_get_bubble_gap (self->defaults);
+	y  += (5 - 10); /* HACK */
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
 		defaults_get_desktop_right (self->defaults) -
-		defaults_get_bubble_gap (self->defaults) -
+		(7 - 10) /* HACK */ -
 		defaults_get_bubble_width (self->defaults)
 		:
-		defaults_get_bubble_gap (self->defaults)
+		(7 - 10) /* HACK */
 		;
  
 	/* consider the special case of the feedback synchronous bubble */
@@ -232,12 +232,13 @@ stack_layout (Stack* self)
 
 	/* 1. check if we need to expire bubbles early because the feedback
 	**    bubble needs room */
+#if 0
 	while (stack_get_height (self) > 
 	       defaults_get_stack_height (self->defaults))
  	{
 		stack_pop_last_bubble (self);
  	}
-
+#endif
 	/* 2. walk through the list of the current bubbles on the stack
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
@@ -253,6 +254,10 @@ stack_layout (Stack* self)
 				 defaults_get_bubble_width (self->defaults),
 				 defaults_get_bubble_height (self->defaults));
 
+		bubble_move (bubble, x, y);
+
+/* FIXME: sliding is broken */
+#if 0
 		if (y == defaults_get_desktop_top (self->defaults) +
 			 defaults_get_bubble_gap (self->defaults))
 		{
@@ -262,6 +267,7 @@ stack_layout (Stack* self)
 		{
 			bubble_slide_to (bubble, x, y);
 		}
+#endif
 
 		bubble_show (bubble);
 		y += bubble_get_height (bubble)

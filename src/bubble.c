@@ -426,8 +426,11 @@ expose_handler (GtkWidget*      window,
 	gdouble          width       = (gdouble) window->allocation.width;
 	gdouble          height      = (gdouble) window->allocation.height;
 	gdouble          margin_gap  = (gdouble) DEFAULT_MARGIN;
-	gdouble          left_margin = (gdouble) DEFAULT_MARGIN;
-	gdouble          top_margin  = (gdouble) DEFAULT_MARGIN;
+	gdouble          left_margin = (gdouble) DEFAULT_SHADOW_SIZE;
+	gdouble          top_margin  = (gdouble) DEFAULT_SHADOW_SIZE;
+
+	left_margin += DEFAULT_MARGIN;
+	top_margin += DEFAULT_MARGIN;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
@@ -438,7 +441,9 @@ expose_handler (GtkWidget*      window,
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	draw_shadow (cr, width, height);
+	draw_shadow (cr,
+		     width,
+		     height);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	draw_round_rect (cr,
 			 1.0f,
@@ -467,9 +472,10 @@ expose_handler (GtkWidget*      window,
 		gdk_cairo_set_source_pixbuf (
 					cr,
 					GET_PRIVATE (bubble)->icon_pixbuf,
-					DEFAULT_MARGIN + 6.0f,
-					DEFAULT_MARGIN);
+					left_margin,
+					left_margin);
 		cairo_paint (cr);
+
 		left_margin += DEFAULT_ICON_SIZE;
 		left_margin += DEFAULT_MARGIN;
 	}
@@ -982,11 +988,30 @@ void
 bubble_set_icon_from_pixbuf (Bubble*      self,
 			     GdkPixbuf*   pixbuf)
 {
+	GdkPixbuf *scaled;
+	int height, width;
+
  	if (!self || !IS_BUBBLE (self) || !pixbuf)
 		return;
 
 	if (GET_PRIVATE (self)->icon_pixbuf)
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
+
+	height = gdk_pixbuf_get_height (pixbuf);
+	width = gdk_pixbuf_get_width (pixbuf);
+
+	if (width != DEFAULT_ICON_SIZE)
+	{
+		if (width != height)
+			g_warning ("non-square pixmap");
+		/* TODO: improve scaling for non-square pixmaps */
+
+		scaled = gdk_pixbuf_scale_simple (pixbuf,
+						  DEFAULT_ICON_SIZE,
+						  DEFAULT_ICON_SIZE,
+						  GDK_INTERP_BILINEAR);
+		pixbuf = scaled;
+	}
 
 	GET_PRIVATE (self)->icon_pixbuf = pixbuf;
 }

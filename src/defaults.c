@@ -119,11 +119,11 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 		g_object_set (self,
 			      "bubble-width",
-			      226,
+			      226 + 20, /* HACK: drop-shadow */
 			      NULL);
 		g_object_set (self,
 			      "bubble-height",
-			      64,
+			      64 + 20, /* HACK: drop-shadow */
 			      NULL);
 		XFree (coords);
 	}
