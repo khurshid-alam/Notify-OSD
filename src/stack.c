@@ -217,7 +217,6 @@ stack_purge_old_bubbles (Stack* self)
 		if (! bubble_is_visible (bubble) &&
 		    (bubble_get_timeout (bubble) == 0))
 		{
-			g_debug ("expiring bubble #%d", bubble_get_id (bubble));
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
 			g_object_unref (bubble);
