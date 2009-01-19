@@ -222,7 +222,7 @@ stack_layout (Stack* self)
 		:
 		(7 - 10) /* HACK */
 		;
- 
+
 	/* consider the special case of the feedback synchronous bubble */
 	if (self->feedback_bubble)
 	{
@@ -239,6 +239,7 @@ stack_layout (Stack* self)
 		stack_pop_last_bubble (self);
  	}
 #endif
+
 	/* 2. walk through the list of the current bubbles on the stack
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
@@ -270,8 +271,9 @@ stack_layout (Stack* self)
 #endif
 
 		bubble_show (bubble);
-		y += bubble_get_height (bubble)
-		     + defaults_get_bubble_gap (self->defaults);
+		y += defaults_get_bubble_height (self->defaults)
+			- 20 + 7; /* HACK */
+		/* Warning: bubble_get_height() is not reliable */
 	}
 	/* TODO: consider the case of old ids for refreshed bubbles; they
  	 * may be expired early, even if they still have a large lifespan
@@ -391,12 +393,12 @@ stack_pop_bubble_by_id (Stack* self,
 
 	/* close/hide/fade-out bubble */
 	bubble_hide (bubble);
-	bubble_del (bubble);
 
 	/* find entry in list corresponding to id and remove it */
 	self->list = g_list_delete_link (self->list,
 					 find_entry_by_id (self, id));
 
+	g_unref (bubble);
 	/* immediately refresh the layout of the stack */
 	stack_layout (self);
 }

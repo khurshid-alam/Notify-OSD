@@ -452,7 +452,7 @@ defaults_class_init (DefaultsClass* klass)
 				"Gap between bubbles and the workarea edges",
 				0,
 				50,
-				1,
+				7,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
