@@ -22,8 +22,6 @@
 #include <glib/gprintf.h>
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
-#include <librsvg/rsvg.h>
-#include <librsvg/rsvg-cairo.h>
 #include <pixman.h>
 #include <math.h>
 

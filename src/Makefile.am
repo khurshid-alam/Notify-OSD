@@ -40,14 +40,12 @@ alsdorf_LDADD =			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS) 		\
 	$(GTK_LIBS) 		\
-	$(LIBRSVG_LIBS) 	\
 	$(DBUS_LIBS)     	\
 	$(NULL)
 
 alsdorf_CFLAGS = 		\
 	-Wall -Werror -std=c99	\
 	$(GTK_CFLAGS) 		\
-	$(LIBRSVG_CFLAGS) 	\
 	$(DBUS_CFLAGS)		\
 	$(NULL)
 
