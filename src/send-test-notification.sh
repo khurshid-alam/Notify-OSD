@@ -1,18 +1,20 @@
 #!/bin/sh
 
+DIR=$HOME/devel/alsdorf
+
 notify-send "Hello" "Hello World"
 sleep 2
-notify-send " " -i $HOME/src/alsdorf/icons/volume.svg -h int:value:75
+notify-send " " -i $DIR/icons/volume.svg -h int:value:75
 sleep 2
-notify-send " " -i $HOME/src/alsdorf/icons/volume.svg -h int:value:30
+notify-send " " -i $DIR/icons/volume.svg -h int:value:30
 sleep 2
-notify-send " " -i $HOME/src/alsdorf/icons/brightness.svg -h int:value:85
+notify-send " " -i $DIR/icons/brightness.svg -h int:value:85
 sleep 2
-notify-send " " -i $HOME/src/alsdorf/icons/brightness.svg -h int:value:45
+notify-send " " -i $DIR/icons/brightness.svg -h int:value:45
 sleep 2
-notify-send "WiFi signal found" -i $HOME/src/alsdorf/icons/wifi-75.svg
+notify-send "WiFi signal found" -i $DIR/icons/wifi-75.svg
 sleep 2
-notify-send "WiFi signal lost" -i $HOME/src/alsdorf/icons/wifi-lost.svg
+notify-send "WiFi signal lost" -i $DIR/icons/wifi-lost.svg
 sleep 2
 notify-send "English bubble" "The quick brown fox jumps over the lazy dog." -i /usr/share/icons/Human/scalable/places/network.svg
 sleep 2

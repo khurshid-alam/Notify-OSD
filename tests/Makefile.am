@@ -23,14 +23,12 @@ test_modules_SOURCES =		\
 test_modules_CFLAGS =		\
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
-	$(LIBRSVG_CFLAGS)	\
 	$(GTK_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	-I$(top_srcdir)/src
 
 test_modules_LDADD =		\
 	$(GLIB_LIBS)		\
-	$(LIBRSVG_LIBS)		\
 	$(DBUS_LIBS)		\
 	$(GTK_LIBS)		\
 	-lnotify
