@@ -41,8 +41,7 @@ AM_PATH_GTK_2_0
 
 
 PKG_CHECK_MODULES(alsdorf, 
-		  gtk+-2.0 >= 2.6
-		  libgnome-menu >= 2.18)
+		  gtk+-2.0 >= 2.6)
 AC_SUBST(ALSDORF_CFLAGS)
 AC_SUBST(ALSDORF_LIBS)
 # example python module
