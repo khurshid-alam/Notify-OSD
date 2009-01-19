@@ -38,7 +38,7 @@
 #define DEFAULT_MARGIN 16
 #define DEFAULT_SHADOW_SIZE 10
 
-#define DEFAULT_TIMEOUT 10 /* 10 seconds */
+#define DEFAULT_TIMEOUT 5 /* 5 seconds */
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -498,6 +498,7 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
+
 		pango_layout_set_width (layout,
 					(width - left_margin - margin_gap) *
 					PANGO_SCALE);
@@ -505,7 +506,8 @@ expose_handler (GtkWidget*      window,
 
 		/* print and layout string (pango-wise) */
 		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
-		pango_layout_get_extents (layout, &ink_rect, NULL);
+
+		pango_layout_get_extents (layout, NULL, &ink_rect);
 
 		/* If no summary/message_body is present,
 		 * and assuming there is an icon,
@@ -531,7 +533,7 @@ expose_handler (GtkWidget*      window,
 		cairo_fill (cr);
 		g_object_unref (layout);
 
-		top_margin += 1.25f * ((gdouble) ink_rect.height / PANGO_SCALE);
+		top_margin += 1.05f * ((gdouble) ink_rect.height / PANGO_SCALE);
 	}
 
 	/* render body-message */
