@@ -1219,6 +1219,9 @@ bubble_timed_out (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
+	bubble_set_timeout (self, 0);
+	bubble_hide (self);
+
 	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);
 
 	return FALSE;

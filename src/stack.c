@@ -193,12 +193,38 @@ stack_pop_last_bubble (Stack* self)
 
 	/* close/hide/fade-out bubble */
 	bubble_hide ((Bubble*) entry->data);
-	bubble_del ((Bubble*) entry->data);
 
 	/* find entry in list corresponding to id and remove it */
 	self->list = g_list_delete_link (self->list, entry);
+	g_object_unref ((Bubble*) entry->data);
 
 	/* stack_layout() is not called here intentionally! */
+}
+
+static void
+stack_purge_old_bubbles (Stack* self)
+{
+	Bubble* bubble = NULL;
+	GList*    list = NULL;
+
+	g_return_if_fail (self != NULL);
+
+	for (list = g_list_first (self->list);
+	     list != NULL;)
+	{
+		bubble = (Bubble*) list->data;
+		
+		if (! bubble_is_visible (bubble) &&
+		    (bubble_get_timeout (bubble) == 0))
+		{
+			g_debug ("expiring bubble #%d", bubble_get_id (bubble));
+			self->list = g_list_delete_link (self->list, list);
+			list = self->list;
+			g_object_unref (bubble);
+		} else {
+			list = g_list_next (list);
+		}
+	}
 }
 
 static void
@@ -211,6 +237,8 @@ stack_layout (Stack* self)
 
 	/* sanity check */
 	g_return_if_fail (self != NULL);
+
+	stack_purge_old_bubbles (self);
 
 	/* position the top left corner of the stack  */
 	y  =  defaults_get_desktop_top (self->defaults);
@@ -228,6 +256,8 @@ stack_layout (Stack* self)
 	{
 		y += bubble_get_height (self->feedback_bubble);
 		y += defaults_get_bubble_gap (self->defaults);
+
+		/* TODO: make sure the bubble is show()ed */
 	}
 
 	/* 1. check if we need to expire bubbles early because the feedback
@@ -244,9 +274,9 @@ stack_layout (Stack* self)
 	      and compute the new position for the bubbles
 	      as long as there is room available on the stack
 	 */
-	for (list = g_list_last (self->list);
+	for (list = g_list_first (self->list);
 	     list != NULL;
-	     list = g_list_previous (list))
+	     list = g_list_next (list))
 	{
 		bubble = (Bubble*) list->data;
 
@@ -318,7 +348,10 @@ void
 timed_out_handler (Bubble* bubble,
 		   Stack*  stack)
 {
-	stack_pop_bubble_by_id (stack, bubble_get_id (bubble));
+	/* HACK: do nothing, to avoid segfaults */
+	return;
+
+	/* stack_pop_bubble_by_id (stack, bubble_get_id (bubble)); */
 }
 
 /* since notification-ids are unsigned integers the first id index is 1, 0 is
@@ -366,7 +399,7 @@ stack_show_feedback_bubble (Stack* self,
 
 	if (self->feedback_bubble != NULL)
 	{
-		bubble_del(self->feedback_bubble);
+		g_object_unref (self->feedback_bubble);
 	}
 
 	/* add bubble/id to stack */
@@ -397,8 +430,8 @@ stack_pop_bubble_by_id (Stack* self,
 	/* find entry in list corresponding to id and remove it */
 	self->list = g_list_delete_link (self->list,
 					 find_entry_by_id (self, id));
+	g_object_unref (bubble);
 
-	g_unref (bubble);
 	/* immediately refresh the layout of the stack */
 	stack_layout (self);
 }
@@ -487,9 +520,9 @@ stack_notify_handler (Stack*                 self,
 	if (body)
 		bubble_set_message_body (bubble, body);
 
-	if (*icon == '\0')
+	data = (GValue*) g_hash_table_lookup (hints, "icon_data");
+	if (*icon == '\0' && data != NULL)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "icon_data");
 		pixbuf = process_dbus_icon_data (data);
 		bubble_set_icon_from_pixbuf (bubble, pixbuf);
 	} else
