@@ -1,7 +1,10 @@
 #!/bin/sh
 
-DIR=$HOME/devel/alsdorf
+#DIR=$HOME/devel/alsdorf
+DIR=$HOME/src/alsdorf
 
+notify-send "Testing markup" "Some <b>bold</b>, <u>underlined</u>, <i>italic</i> text"
+sleep 2
 notify-send "Hello" "Hello World"
 sleep 2
 notify-send " " -i $DIR/icons/volume.svg -h int:value:75
@@ -23,3 +26,5 @@ sleep 2
 notify-send "Very russian" "Съешь ещё этих мягких французских булок, да выпей чаю." -i /usr/share/icons/Human/scalable/status/dialog-info.svg
 sleep 2
 notify-send "More from Germany" "Oje, Qualm verwölkt Dix zig Farbtriptychons." -i /usr/share/icons/Human/scalable/categories/gnome-globe.svg
+
+
