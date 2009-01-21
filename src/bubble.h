@@ -21,6 +21,8 @@
 #include <glib-object.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+#include "defaults.h"
+
 G_BEGIN_DECLS
 
 #define BUBBLE_TYPE             (bubble_get_type ())
@@ -37,7 +39,8 @@ typedef struct _BubblePrivate BubblePrivate;
 /* instance structure */
 struct _Bubble
 {
-	GObject parent;
+	GObject   parent;
+	Defaults* defaults;
 
 	/*< private >*/
 	BubblePrivate *priv;
@@ -55,7 +58,7 @@ struct _BubbleClass
 GType bubble_get_type (void);
 
 Bubble*
-bubble_new (void);
+bubble_new (Defaults* defaults);
 
 void
 bubble_del (Bubble* self);

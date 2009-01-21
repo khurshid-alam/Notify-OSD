@@ -169,11 +169,11 @@ stack_get_height (Stack* self)
 	     list = g_list_next (list))
 	{
 		bubble = (Bubble*) list->data;
-		stack_height += defaults_get_bubble_gap (self->defaults) +
+		stack_height += defaults_get_bubble_vert_gap (self->defaults) +
 				bubble_get_height (bubble);
 	}
 
-	stack_height -= defaults_get_bubble_gap (self->defaults);
+	stack_height -= defaults_get_bubble_vert_gap (self->defaults);
 
 	return stack_height;
 }
@@ -241,20 +241,24 @@ stack_layout (Stack* self)
 
 	/* position the top left corner of the stack  */
 	y  =  defaults_get_desktop_top (self->defaults);
-	y  += (5 - 10); /* HACK */
+	y  -= defaults_get_bubble_shadow_size (self->defaults);
+	y  += defaults_get_bubble_vert_gap (self->defaults);
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		defaults_get_desktop_right (self->defaults) -
-		(7 - 10) /* HACK */ -
-		defaults_get_bubble_width (self->defaults)
+		(defaults_get_desktop_right (self->defaults) -
+		 defaults_get_bubble_shadow_size (self->defaults) -
+		 defaults_get_bubble_horz_gap (self->defaults) -
+		 defaults_get_bubble_width (self->defaults))
 		:
-		(7 - 10) /* HACK */
+		(defaults_get_desktop_left (self->defaults) -
+		 defaults_get_bubble_shadow_size (self->defaults) + 
+		 defaults_get_bubble_horz_gap (self->defaults))
 		;
 
 	/* consider the special case of the feedback synchronous bubble */
 	if (self->feedback_bubble)
 	{
 		y += bubble_get_height (self->feedback_bubble);
-		y += defaults_get_bubble_gap (self->defaults);
+		y += defaults_get_bubble_vert_gap (self->defaults);
 
 		/* TODO: make sure the bubble is show()ed */
 	}
@@ -281,15 +285,17 @@ stack_layout (Stack* self)
 
 		/* set/update the bubble attributes */
 		bubble_set_size (bubble,
-				 defaults_get_bubble_width (self->defaults),
-				 defaults_get_bubble_height (self->defaults));
+				 defaults_get_bubble_width (self->defaults) +
+				 2 * defaults_get_bubble_shadow_size (self->defaults),
+				 defaults_get_bubble_min_height (self->defaults) +
+				 2 * defaults_get_bubble_shadow_size (self->defaults));
 
 		bubble_move (bubble, x, y);
 
 /* FIXME: sliding is broken */
 #if 0
 		if (y == defaults_get_desktop_top (self->defaults) +
-			 defaults_get_bubble_gap (self->defaults))
+			 defaults_get_bubble_ver_gap (self->defaults))
 		{
 			bubble_move (bubble, x, y);
 		}
@@ -300,8 +306,8 @@ stack_layout (Stack* self)
 #endif
 
 		bubble_show (bubble);
-		y += defaults_get_bubble_height (self->defaults)
-			- 20 + 7; /* HACK */
+		y += defaults_get_bubble_min_height (self->defaults) +
+		     defaults_get_bubble_vert_gap (self->defaults);
 		/* Warning: bubble_get_height() is not reliable */
 	}
 	/* TODO: consider the case of old ids for refreshed bubbles; they
@@ -454,7 +460,8 @@ process_dbus_icon_data (GValue *data)
 					      G_TYPE_BOOLEAN,
 					      G_TYPE_INT,
 					      G_TYPE_INT,
-					      dbus_g_type_get_collection ("GArray", G_TYPE_UCHAR),
+					      dbus_g_type_get_collection ("GArray",
+									  G_TYPE_UCHAR),
 					      G_TYPE_INVALID);
 	
 	if (G_VALUE_HOLDS (data, dbus_icon_t))
@@ -504,7 +511,7 @@ stack_notify_handler (Stack*                 self,
 	bubble = find_bubble_by_id (self, id);
 	if (!bubble)
 	{
-		bubble = bubble_new ();
+		bubble = bubble_new (self->defaults);
 	}
 
 	if (hints)

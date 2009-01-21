@@ -53,7 +53,7 @@ test_stack_push ()
 	Stack*       stack = NULL;
 	Defaults* defaults = defaults_new ();
 	Observer* observer = observer_new ();
-	Bubble*     bubble = bubble_new ();
+	Bubble*     bubble = bubble_new (defaults);
 	guint           id = -1;
 	guint  replaced_id = -1;
 

@@ -39,6 +39,7 @@ alsdorf_SOURCES =		\
 alsdorf_LDADD =			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS) 		\
+	$(GCONF_LIBS) 		\
 	$(GTK_LIBS) 		\
 	$(DBUS_LIBS)     	\
 	$(NULL)
@@ -46,6 +47,7 @@ alsdorf_LDADD =			\
 alsdorf_CFLAGS = 		\
 	-Wall -Werror -std=c99	\
 	$(GTK_CFLAGS) 		\
+	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	$(NULL)
 

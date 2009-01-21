@@ -40,8 +40,10 @@ test_bubble_slide (void)
 	Bubble* bubble;
 	gint x         = 0;
 	gint y         = 0;
+	Defaults* defaults;
 
-	bubble = bubble_new ();
+	defaults = defaults_new ();
+	bubble = bubble_new (defaults);
 	g_assert (bubble != NULL);
 
 	bubble_move (bubble, 0, 0);
@@ -58,6 +60,7 @@ test_bubble_slide (void)
 	g_assert_cmpint (x, ==, 100);
 
 	g_object_unref (bubble);
+	g_object_unref (defaults);
 }
 
 
@@ -66,12 +69,15 @@ void
 test_bubble_new (void)
 {
 	Bubble* bubble;
+	Defaults* defaults;
 
-	bubble = bubble_new ();
+	defaults = defaults_new ();
+	bubble = bubble_new (defaults);
 
 	g_assert (bubble != NULL);
 
 	g_object_unref (bubble);
+	g_object_unref (defaults);
 }
 
 static
@@ -79,12 +85,15 @@ void
 test_bubble_del (void)
 {
 	Bubble* bubble;
+	Defaults* defaults;
 
-	bubble = bubble_new ();
+	defaults = defaults_new ();
+	bubble = bubble_new (defaults);
 
 	g_assert (bubble != NULL);
 
 	g_object_unref (bubble);
+	g_object_unref (defaults);
 }
 
 static
@@ -93,8 +102,10 @@ test_bubble_set_attributes (void)
 {
 	Bubble*    bubble;
         GMainLoop* loop;
+	Defaults* defaults;
 
-	bubble = bubble_new ();
+	defaults = defaults_new ();
+	bubble = bubble_new (defaults);
 	bubble_set_icon (bubble, "../icons/chat.svg");
 	bubble_set_title (bubble, "Unit Testing");
 	bubble_set_message_body (bubble, "Long text that is hopefully wrapped");
@@ -108,6 +119,7 @@ test_bubble_set_attributes (void)
         g_main_loop_run (loop);
 
 	g_object_unref (bubble);
+	g_object_unref (defaults);
 }
 
 

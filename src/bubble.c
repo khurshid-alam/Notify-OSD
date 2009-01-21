@@ -26,17 +26,8 @@
 #include <math.h>
 
 #include "bubble.h"
+#include "defaults.h"
 #include "stack.h"
-
-#define BLUR_SIGMA  10.0f
-#define BLUR_ALPHA   0.5f
-#define BLUR_RADIUS 10.0f
-
-#define DEFAULT_ICON_SIZE 32
-#define DEFAULT_MARGIN 16
-#define DEFAULT_SHADOW_SIZE 10
-
-#define DEFAULT_TIMEOUT 5 /* 5 seconds */
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -44,20 +35,20 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
 struct _BubblePrivate {
-	GtkWidget*       widget;
-	gchar*           title;
-	gchar*           message_body;
-	guint            id;
-	GdkPixbuf*       icon_pixbuf;
-	gboolean         visible;
-	guint            timer_id;
-	guint            timeout;
-	gboolean         mouse_over;
-	gint             start_y;
-	gint             end_y;
-	gint             delta_y;
-	gdouble          inc_factor;
-	gint             value; /* "empty": -1, valid range: 0 - 100 */
+	GtkWidget* widget;
+	gchar*     title;
+	gchar*     message_body;
+	guint      id;
+	GdkPixbuf* icon_pixbuf;
+	gboolean   visible;
+	guint      timer_id;
+	guint      timeout;
+	gboolean   mouse_over;
+	gint       start_y;
+	gint       end_y;
+	gint       delta_y;
+	gdouble    inc_factor;
+	gint       value; /* "empty": -1, valid range: 0 - 100 */
 };
 
 enum
@@ -174,6 +165,7 @@ update_input_shape (GtkWidget* window,
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 
+			/* just draw something */
 			draw_round_rect (cr,
 					 1.0f,
 					 0.0f, 0.0f,
@@ -314,14 +306,14 @@ blur_image_surface (cairo_surface_t* surface,
 void
 draw_shadow (cairo_t* cr,
 	     gdouble  width,
-	     gdouble  height)
+	     gdouble  height,
+	     gint     shadow_radius)
 {
 	cairo_surface_t* tmp_surface = NULL;
 	cairo_surface_t* new_surface = NULL;
 	cairo_pattern_t* pattern     = NULL;
 	cairo_t*         cr_surf     = NULL;
 	cairo_matrix_t   matrix;
-	gint             shadow_radius = 11;
 
 	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						  4 * shadow_radius,
@@ -419,18 +411,21 @@ expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	Bubble*          bubble;
-	cairo_t*         cr;
-	gdouble          width       = (gdouble) window->allocation.width;
-	gdouble          height      = (gdouble) window->allocation.height;
-	gdouble          margin_gap  = (gdouble) DEFAULT_MARGIN;
-	gdouble          left_margin = (gdouble) DEFAULT_SHADOW_SIZE;
-	gdouble          top_margin  = (gdouble) DEFAULT_SHADOW_SIZE;
-
-	left_margin += DEFAULT_MARGIN;
-	top_margin += DEFAULT_MARGIN;
+	Bubble*  bubble;
+	cairo_t* cr;
+	gdouble  width       = (gdouble) window->allocation.width;
+	gdouble  height      = (gdouble) window->allocation.height;
+	gdouble  margin_gap;
+	gdouble  left_margin;
+	gdouble  top_margin;
 
 	bubble = (Bubble*) G_OBJECT (data);
+
+	margin_gap   = (gdouble) defaults_get_margin_size (bubble->defaults);
+	left_margin  = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
+	top_margin   = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
+	left_margin += (gdouble) defaults_get_margin_size (bubble->defaults);
+	top_margin  += (gdouble) defaults_get_margin_size (bubble->defaults);
 
 	cr = gdk_cairo_create (window->window);
 
@@ -441,14 +436,16 @@ expose_handler (GtkWidget*      window,
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	draw_shadow (cr,
 		     width,
-		     height);
+		     height,
+		     defaults_get_bubble_shadow_size (bubble->defaults));
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	draw_round_rect (cr,
 			 1.0f,
-			 10.0f, 10.0f,
-			 6.0f,
-			 width - 20.0f,
-			 height - 20.0f);
+			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+			 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
+			 (gdouble) defaults_get_bubble_width (bubble->defaults),
+			 (gdouble) defaults_get_bubble_min_height (bubble->defaults));
 	cairo_fill (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
@@ -458,10 +455,11 @@ expose_handler (GtkWidget*      window,
 			       gtk_window_get_opacity (GTK_WINDOW (window)));
 	draw_round_rect (cr,
 			 1.0f,
-			 10.0f, 10.0f,
-			 6.0f,
-			 width - 20.0f,
-			 height - 20.0f);
+			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+			 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
+			 (gdouble) defaults_get_bubble_width (bubble->defaults),
+			 (gdouble) defaults_get_bubble_min_height (bubble->defaults));
 	cairo_fill (cr);
 
 	/* render icon */
@@ -474,8 +472,8 @@ expose_handler (GtkWidget*      window,
 					left_margin);
 		cairo_paint (cr);
 
-		left_margin += DEFAULT_ICON_SIZE;
-		left_margin += DEFAULT_MARGIN;
+		left_margin += (gdouble) defaults_get_icon_size (bubble->defaults);
+		left_margin += (gdouble) defaults_get_margin_size (bubble->defaults);
 	}
 
 	/* render title */
@@ -487,18 +485,18 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		/* FIXME: get defaults from the system * 120% */
 		pango_font_description_set_absolute_size (desc,
-							  12 * PANGO_SCALE);
-		pango_font_description_set_family_static (desc, "Sans");
-		pango_font_description_set_weight (desc, PANGO_WEIGHT_BOLD);
+							  defaults_get_text_title_size (bubble->defaults) *
+							  PANGO_SCALE);
+		pango_font_description_set_family_static (desc, defaults_get_text_font_face (bubble->defaults));
+		pango_font_description_set_weight (desc, defaults_get_text_title_weight (bubble->defaults));
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
 
 		pango_layout_set_width (layout,
-					(width - left_margin - margin_gap) *
+					(defaults_get_bubble_width (bubble->defaults) - left_margin - margin_gap) *
 					PANGO_SCALE);
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
@@ -515,8 +513,12 @@ expose_handler (GtkWidget*      window,
 		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			cairo_move_to (cr,
-				       DEFAULT_ICON_SIZE + (width - DEFAULT_ICON_SIZE - ink_rect.width / PANGO_SCALE) / 2,
-				       (height - ink_rect.height / PANGO_SCALE) / 2);
+				       defaults_get_icon_size (bubble->defaults) +
+				       (defaults_get_bubble_width (bubble->defaults) -
+					defaults_get_icon_size (bubble->defaults) -
+					ink_rect.width / PANGO_SCALE) / 2,
+				       (defaults_get_bubble_min_height (bubble->defaults) -
+					ink_rect.height / PANGO_SCALE) / 2);
 		}
 		else
 		{
@@ -531,7 +533,7 @@ expose_handler (GtkWidget*      window,
 		cairo_fill (cr);
 		g_object_unref (layout);
 
-		top_margin += 1.05f * ((gdouble) ink_rect.height / PANGO_SCALE);
+		top_margin += (gdouble) ink_rect.height / PANGO_SCALE;
 	}
 
 	/* render body-message */
@@ -542,21 +544,27 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		/* FIXME: get defaults from the system */
 		pango_font_description_set_absolute_size (desc,
-							  10 * PANGO_SCALE);
-		pango_font_description_set_family_static (desc, "Sans");
-		pango_font_description_set_weight (desc, PANGO_WEIGHT_NORMAL);
+							  defaults_get_text_body_size (bubble->defaults) *
+							  PANGO_SCALE);
+		pango_font_description_set_family_static (desc,
+							  defaults_get_text_font_face (bubble->defaults));
+		pango_font_description_set_weight (desc,
+						   defaults_get_text_body_weight (bubble->defaults));
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
 		pango_layout_set_width (layout,
-					(width - left_margin - margin_gap) *
+					(defaults_get_bubble_width (bubble->defaults) -
+					 left_margin -
+					 margin_gap) *
 					PANGO_SCALE);
 		pango_layout_set_height (layout,
-					 (height - top_margin - margin_gap) *
+					 (defaults_get_bubble_min_height (bubble->defaults) -
+					  top_margin -
+					  margin_gap) *
 					 PANGO_SCALE);
 
 		/* print and layout string (pango-wise) */
@@ -579,10 +587,10 @@ expose_handler (GtkWidget*      window,
 	    GET_PRIVATE (bubble)->value <= 100)
 	{
 		gint    step;
-		gdouble x        = width / 3.5f;
-		gdouble y        = height / 1.5f;
-		gdouble w        = width / 2.5f;
-		gdouble h        = height / 2.0f;
+		gdouble x        = defaults_get_bubble_width (bubble->defaults) / 3.5f;
+		gdouble y        = defaults_get_bubble_min_height (bubble->defaults) / 1.5f;
+		gdouble w        = defaults_get_bubble_width (bubble->defaults) / 2.5f;
+		gdouble h        = defaults_get_bubble_min_height (bubble->defaults) / 2.0f;
 		gdouble radius   = 3.0f;
 		gdouble x_gap    = 3.0f;
 		gdouble y_start  = 0.1f;
@@ -656,7 +664,8 @@ redraw_handler (Bubble* bubble)
 
 static
 GdkPixbuf*
-load_icon (const gchar* filename)
+load_icon (const gchar* filename,
+	   gint         icon_size)
 {
 	GdkPixbuf*    pixbuf = NULL;
 	GtkIconTheme*  theme = NULL;
@@ -677,8 +686,8 @@ load_icon (const gchar* filename)
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-							    DEFAULT_ICON_SIZE,
-							    DEFAULT_ICON_SIZE,
+							    icon_size,
+							    icon_size,
 							    TRUE,
 							    &error);
 	} else {
@@ -686,7 +695,7 @@ load_icon (const gchar* filename)
 
 		theme = gtk_icon_theme_get_default ();
 		info  = gtk_icon_theme_lookup_icon (theme, filename,
-						    DEFAULT_ICON_SIZE,
+						    icon_size,
 						    GTK_ICON_LOOKUP_USE_BUILTIN);
 		g_return_val_if_fail (info, NULL);
 
@@ -696,7 +705,7 @@ load_icon (const gchar* filename)
 			g_warning ("icon '%s' not available in SVG", filename);
 
 		pixbuf = gtk_icon_theme_load_icon (theme, filename,
-						   DEFAULT_ICON_SIZE,
+						   icon_size,
 						   GTK_ICON_LOOKUP_USE_BUILTIN,
 						   NULL);
 		
@@ -856,7 +865,7 @@ bubble_class_init (BubbleClass* klass)
 /*-- public API --------------------------------------------------------------*/
 
 Bubble*
-bubble_new (void)
+bubble_new (Defaults* defaults)
 {
 	Bubble*         this              = NULL;
 	GtkWidget*      window            = NULL;
@@ -866,6 +875,8 @@ bubble_new (void)
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
 		return NULL;
+
+	this->defaults = defaults;
 
 	GET_PRIVATE (this)->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
 	window = GET_PRIVATE (this)->widget;
@@ -912,16 +923,16 @@ bubble_new (void)
 	gtk_window_set_opacity (GTK_WINDOW (window), 0.95f);
 
 	this->priv = GET_PRIVATE (this);
-	GET_PRIVATE(this)->widget       = window;
-	GET_PRIVATE(this)->title        = g_strdup("GTK+ Notification");
-	GET_PRIVATE(this)->message_body = g_strdup("Courtesy of the new Canonical notification sub-system");
-	GET_PRIVATE(this)->visible      = FALSE;
-	GET_PRIVATE(this)->timeout      = DEFAULT_TIMEOUT;
-	GET_PRIVATE(this)->mouse_over   = FALSE;
-	GET_PRIVATE(this)->start_y      = 0;
-	GET_PRIVATE(this)->end_y        = 0;
-	GET_PRIVATE(this)->inc_factor   = 0.0f;
-	GET_PRIVATE(this)->delta_y      = 0;
+	GET_PRIVATE(this)->widget        = window;
+	GET_PRIVATE(this)->title         = g_strdup("GTK+ Notification");
+	GET_PRIVATE(this)->message_body  = g_strdup("Courtesy of the new Canonical notification sub-system");
+	GET_PRIVATE(this)->visible       = FALSE;
+	GET_PRIVATE(this)->timeout       = 5;
+	GET_PRIVATE(this)->mouse_over    = FALSE;
+	GET_PRIVATE(this)->start_y       = 0;
+	GET_PRIVATE(this)->end_y         = 0;
+	GET_PRIVATE(this)->inc_factor    = 0.0f;
+	GET_PRIVATE(this)->delta_y       = 0;
 
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
 	draw_handler_id = g_timeout_add (1000/60,
@@ -981,12 +992,14 @@ bubble_set_icon (Bubble*      self,
 	if (GET_PRIVATE (self)->icon_pixbuf)
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
 
-	GET_PRIVATE (self)->icon_pixbuf = load_icon (filename);
+	GET_PRIVATE (self)->icon_pixbuf = load_icon (
+						filename,
+						defaults_get_icon_size (self->defaults));
 }
 
 void
-bubble_set_icon_from_pixbuf (Bubble*      self,
-			     GdkPixbuf*   pixbuf)
+bubble_set_icon_from_pixbuf (Bubble*    self,
+			     GdkPixbuf* pixbuf)
 {
 	GdkPixbuf *scaled;
 	int height, width;
@@ -1000,15 +1013,15 @@ bubble_set_icon_from_pixbuf (Bubble*      self,
 	height = gdk_pixbuf_get_height (pixbuf);
 	width = gdk_pixbuf_get_width (pixbuf);
 
-	if (width != DEFAULT_ICON_SIZE)
+	if (width != defaults_get_icon_size (self->defaults))
 	{
 		if (width != height)
 			g_warning ("non-square pixmap");
 		/* TODO: improve scaling for non-square pixmaps */
 
 		scaled = gdk_pixbuf_scale_simple (pixbuf,
-						  DEFAULT_ICON_SIZE,
-						  DEFAULT_ICON_SIZE,
+						  defaults_get_icon_size (self->defaults),
+						  defaults_get_icon_size (self->defaults),
 						  GDK_INTERP_BILINEAR);
 		pixbuf = scaled;
 	}

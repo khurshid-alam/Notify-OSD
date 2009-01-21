@@ -46,14 +46,31 @@ struct _Defaults
 	gint     desktop_left;
 	gint     desktop_right;
 	gint     stack_height;
-	gint     bubble_gap;
+	gint     bubble_vert_gap;
+	gint     bubble_horz_gap;
 	gint     bubble_width;
-	gint     bubble_height;
-	gdouble  bubble_opacity;
-	gdouble  bubble_color[3];
-	gdouble  font_dpi;
-	gdouble  font_size;
-	GString* font_face;
+	gint     bubble_min_height;
+	gint     bubble_max_height;
+	gint     bubble_shadow_size;
+	GString* bubble_shadow_color;
+	GString* bubble_bg_color;
+	GString* bubble_bg_opacity;
+	GString* bubble_hover_opacity;
+	gint     bubble_corner_radius;
+	gint     content_shadow_size;
+	GString* content_shadow_color;
+	gint     margin_size;
+	gint     icon_size;
+	gint     fade_in_timeout;
+	gint     fade_out_timeout;
+	gint     on_screen_timeout;
+	GString* text_font_face;
+	GString* text_title_color;
+	gint     text_title_weight;
+	gint     text_title_size;
+	GString* text_body_color;
+	gint     text_body_weight;
+	gint     text_body_size;
 };
 
 /* class structure */
@@ -92,31 +109,79 @@ gint
 defaults_get_stack_height (Defaults* self);
 
 gint
-defaults_get_bubble_gap (Defaults* self);
-
-gint
 defaults_get_bubble_width (Defaults* self);
 
 gint
-defaults_get_bubble_height (Defaults* self);
+defaults_get_bubble_min_height (Defaults* self);
 
-gdouble
-defaults_get_bubble_opacity (Defaults* self);
+gint
+defaults_get_bubble_max_height (Defaults* self);
 
-void
-defaults_get_bubble_color (Defaults* self,
-			   gdouble*  red,
-			   gdouble*  green,
-			   gdouble*  blue);
+gint
+defaults_get_bubble_vert_gap (Defaults* self);
 
-gdouble
-defaults_get_font_dpi (Defaults* self);
+gint
+defaults_get_bubble_horz_gap (Defaults* self);
 
-gdouble
-defaults_get_font_size (Defaults* self);
+gint
+defaults_get_bubble_shadow_size (Defaults* self);
 
 gchar*
-defaults_get_font_face (Defaults* self);
+defaults_get_bubble_shadow_color (Defaults* self);
+
+gchar*
+defaults_get_bubble_bg_color (Defaults* self);
+
+gchar*
+defaults_get_bubble_bg_opacity (Defaults* self);
+
+gchar*
+defaults_get_bubble_hover_opacity (Defaults* self);
+
+gint
+defaults_get_bubble_corner_radius (Defaults* self);
+
+gint
+defaults_get_content_shadow_size (Defaults* self);
+
+gchar*
+defaults_get_content_shadow_color (Defaults* self);
+
+gint
+defaults_get_margin_size (Defaults* self);
+
+gint
+defaults_get_icon_size (Defaults* self);
+
+gint
+defaults_get_fade_in_timeout (Defaults* self);
+
+gint
+defaults_get_fade_out_timeout (Defaults* self);
+
+gint
+defaults_get_on_screen_timeout (Defaults* self);
+
+gchar*
+defaults_get_text_font_face (Defaults* self);
+
+gchar*
+defaults_get_text_title_color (Defaults* self);
+
+gint
+defaults_get_text_title_weight (Defaults* self);
+
+gint
+defaults_get_text_title_size (Defaults* self);
+
+gchar*
+defaults_get_text_body_color (Defaults* self);
+
+gint
+defaults_get_text_body_weight (Defaults* self);
+
+gint
+defaults_get_text_body_size (Defaults* self);
 
 G_END_DECLS
 
