@@ -435,7 +435,7 @@ draw_value_indicator (cairo_t* cr,
 	cairo_rectangle (cr, x, y, w, h);
 	cairo_stroke (cr);*/
 
-	step_value = value / bars;
+	step_value = 100.0f / (gdouble) bars;
 	x_gap = w * 0.3f / (gdouble) (bars - 1);
 	x_step = w * 0.7f / (gdouble) bars;
 	radius = 0.3f * x_step;
