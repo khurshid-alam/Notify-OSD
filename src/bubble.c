@@ -568,9 +568,12 @@ expose_handler (GtkWidget*      window,
 					 PANGO_SCALE);
 
 		/* print and layout string (pango-wise) */
-		pango_layout_set_text (layout,
+		/*pango_layout_set_text (layout,
 				       GET_PRIVATE (bubble)->message_body,
-				       -1);
+				       -1);*/
+		pango_layout_set_markup (layout,
+					 GET_PRIVATE (bubble)->message_body,
+					 -1);
 
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_move_to (cr, left_margin, top_margin);
