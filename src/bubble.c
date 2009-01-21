@@ -100,14 +100,14 @@ gint         g_pointer[2];
 
 static void
 draw_round_rect (cairo_t* cr,
-		 double   aspect,         /* aspect-ratio            */
-		 double   x,              /* top-left corner         */
-		 double   y,              /* top-left corner         */
-		 double   corner_radius,  /* "size" of the corners   */
-		 double   width,          /* width of the rectangle  */
-		 double   height          /* height of the rectangle */)
+		 gdouble   aspect,         /* aspect-ratio            */
+		 gdouble   x,              /* top-left corner         */
+		 gdouble   y,              /* top-left corner         */
+		 gdouble   corner_radius,  /* "size" of the corners   */
+		 gdouble   width,          /* width of the rectangle  */
+		 gdouble   height          /* height of the rectangle */)
 {
-	double radius = corner_radius / aspect;
+	gdouble radius = corner_radius / aspect;
 
 	/* top-left, right of the corner */
 	cairo_move_to (cr, x + radius, y);
