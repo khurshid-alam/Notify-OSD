@@ -167,9 +167,9 @@ draw_round_rect (cairo_t* cr,
 
 static void
 draw_value_indicator (cairo_t* cr,
-		      gint     value,   /* value to render                 */
-		      gint     start_x, /* top                             */
-		      gint     start_y, /* left                            */
+		      gint     value,   /* value to render: 0 - 100        */
+		      gint     start_x, /* top of surrounding rect         */
+		      gint     start_y, /* left of surrounding rect        */
 		      gint     width,   /* width of surrounding rect       */
 		      gint     height,  /* height of surrounding rect      */
 		      gint     bars,    /* how may bars to use for display */
