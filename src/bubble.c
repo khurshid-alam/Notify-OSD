@@ -589,9 +589,10 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		pango_font_description_set_absolute_size (desc,
-							  defaults_get_text_title_size (bubble->defaults) *
-							  PANGO_SCALE);
+
+		pango_font_description_set_size (desc,
+						 defaults_get_text_title_size (bubble->defaults) *
+						 PANGO_SCALE);
 		pango_font_description_set_family_static (desc, defaults_get_text_font_face (bubble->defaults));
 		pango_font_description_set_weight (desc, defaults_get_text_title_weight (bubble->defaults));
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
@@ -652,9 +653,9 @@ expose_handler (GtkWidget*      window,
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
-		pango_font_description_set_absolute_size (desc,
-							  defaults_get_text_body_size (bubble->defaults) *
-							  PANGO_SCALE);
+		pango_font_description_set_size (desc,
+						 defaults_get_text_body_size (bubble->defaults) *
+						 PANGO_SCALE);
 		pango_font_description_set_family_static (desc,
 							  defaults_get_text_font_face (bubble->defaults));
 		pango_font_description_set_weight (desc,
@@ -697,6 +698,7 @@ expose_handler (GtkWidget*      window,
 		cairo_fill (cr);
 		g_object_unref (layout);
 	}
+
 
 	/* render value */
 	if (GET_PRIVATE (bubble)->value >= 0 &&
