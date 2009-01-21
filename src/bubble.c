@@ -1025,7 +1025,8 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 		scaled = gdk_pixbuf_scale_simple (pixbuf,
 						  defaults_get_icon_size (self->defaults),
 						  defaults_get_icon_size (self->defaults),
-						  GDK_INTERP_BILINEAR);
+						  GDK_INTERP_HYPER);
+						  /*GDK_INTERP_BILINEAR);*/
 		pixbuf = scaled;
 	}
 
