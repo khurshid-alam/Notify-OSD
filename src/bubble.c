@@ -56,7 +56,43 @@ enum
 	TIMED_OUT,
 	LAST_SIGNAL
 };
- 		
+
+enum
+{
+	R = 0,
+	G,
+	B,
+	A
+};
+
+/* FIXME: this is in class Defaults already, but not yet hooked up so for the
+ * moment we use the macros here, these values reflect the visual-guideline
+ * for jaunty notifications */
+#define TEXT_TITLE_COLOR_R 1.0f
+#define TEXT_TITLE_COLOR_G 1.0f
+#define TEXT_TITLE_COLOR_B 1.0f
+#define TEXT_TITLE_COLOR_A 1.0f
+
+#define TEXT_BODY_COLOR_R  0.91f
+#define TEXT_BODY_COLOR_G  0.91f
+#define TEXT_BODY_COLOR_B  0.91f
+#define TEXT_BODY_COLOR_A  1.0f
+
+#define BUBBLE_BG_COLOR_R  0.07f
+#define BUBBLE_BG_COLOR_G  0.07f
+#define BUBBLE_BG_COLOR_B  0.07f
+#define BUBBLE_BG_COLOR_A  0.8f
+
+#define INDICATOR_UNLIT_R  1.0f
+#define INDICATOR_UNLIT_G  1.0f
+#define INDICATOR_UNLIT_B  1.0f
+#define INDICATOR_UNLIT_A  0.3f
+
+#define INDICATOR_LIT_R    1.0f
+#define INDICATOR_LIT_G    1.0f
+#define INDICATOR_LIT_B    1.0f
+#define INDICATOR_LIT_A    1.0f
+
 /*-- private functions  --------------------------------------------------------------*/
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
@@ -412,7 +448,9 @@ draw_value_indicator (cairo_t* cr,
 		      gint     start_y, /* left                            */
 		      gint     width,   /* width of surrounding rect       */
 		      gint     height,  /* height of surrounding rect      */
-		      gint     bars)    /* how may bars to use for display */
+		      gint     bars,    /* how may bars to use for display */
+		      gdouble* lit,     /* lit-color as gdouble[4]         */
+		      gdouble* unlit    /* unlit-color as gdouble[4]       */)
 {
 	gint    step;
 	gdouble x = (gdouble) start_x;
@@ -426,8 +464,8 @@ draw_value_indicator (cairo_t* cr,
 	gdouble y_step;           /* increment-step for bar-height  */
 	gint    step_value;
 
-	/* sanity check */
-	if (bars < 0)
+	/* sanity checks */
+	if (bars < 0 || lit == NULL || unlit == NULL)
 		return;
 
 	/* reference rect for positioning-control */
@@ -444,9 +482,21 @@ draw_value_indicator (cairo_t* cr,
 	for (step = 0; step < bars; step++)
 	{
 		if (step * step_value >= value)
-			cairo_set_source_rgba (cr, 0.5f, 0.5f, 0.5f, 0.5f);
+		{
+			cairo_set_source_rgba (cr,
+					       unlit[R],
+					       unlit[G],
+					       unlit[B],
+					       unlit[A]);
+		}
 		else
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+		{
+			cairo_set_source_rgba (cr,
+					       lit[R],
+					       lit[G],
+					       lit[B],
+					       lit[A]);
+		}
 
 		draw_round_rect (cr,
 				 1.0f,
@@ -503,9 +553,9 @@ expose_handler (GtkWidget*      window,
 	cairo_fill (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
-			       0.125f,
-			       0.125f,
-			       0.125f,
+			       BUBBLE_BG_COLOR_R,
+			       BUBBLE_BG_COLOR_G,
+			       BUBBLE_BG_COLOR_B,
 			       gtk_window_get_opacity (GTK_WINDOW (window)));
 	draw_round_rect (cr,
 			 1.0f,
@@ -583,7 +633,11 @@ expose_handler (GtkWidget*      window,
 		pango_cairo_layout_path (cr, layout);
 
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.9f);
+		cairo_set_source_rgba (cr,
+				       TEXT_TITLE_COLOR_R,
+				       TEXT_TITLE_COLOR_G,
+				       TEXT_TITLE_COLOR_B,
+				       TEXT_TITLE_COLOR_A);
 		cairo_fill (cr);
 		g_object_unref (layout);
 
@@ -634,7 +688,12 @@ expose_handler (GtkWidget*      window,
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
-		cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.5f);
+
+		cairo_set_source_rgba (cr,
+				       TEXT_BODY_COLOR_R,
+				       TEXT_BODY_COLOR_G,
+				       TEXT_BODY_COLOR_B,
+				       TEXT_BODY_COLOR_A);
 		cairo_fill (cr);
 		g_object_unref (layout);
 	}
@@ -643,6 +702,15 @@ expose_handler (GtkWidget*      window,
 	if (GET_PRIVATE (bubble)->value >= 0 &&
 	    GET_PRIVATE (bubble)->value <= 100)
 	{
+		gdouble lit[4]   = {INDICATOR_LIT_R,
+				    INDICATOR_LIT_G,
+				    INDICATOR_LIT_B,
+				    INDICATOR_LIT_A};
+		gdouble unlit[4] = {INDICATOR_UNLIT_R,
+				    INDICATOR_UNLIT_G,
+				    INDICATOR_UNLIT_B,
+				    INDICATOR_UNLIT_A};
+
 		draw_value_indicator (
 			cr,
 			GET_PRIVATE (bubble)->value,
@@ -655,7 +723,9 @@ expose_handler (GtkWidget*      window,
 			3 * defaults_get_margin_size (bubble->defaults) -
 			defaults_get_icon_size (bubble->defaults),
 			defaults_get_icon_size (bubble->defaults),
-			13);
+			13,
+			lit,
+			unlit);
 	}
 
 	cairo_destroy (cr);
