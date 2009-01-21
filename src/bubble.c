@@ -165,6 +165,74 @@ draw_round_rect (cairo_t* cr,
                    270.0f * G_PI / 180.0f);
 }
 
+static void
+draw_value_indicator (cairo_t* cr,
+		      gint     value,   /* value to render                 */
+		      gint     start_x, /* top                             */
+		      gint     start_y, /* left                            */
+		      gint     width,   /* width of surrounding rect       */
+		      gint     height,  /* height of surrounding rect      */
+		      gint     bars,    /* how may bars to use for display */
+		      gdouble* lit,     /* lit-color as gdouble[4]         */
+		      gdouble* unlit    /* unlit-color as gdouble[4]       */)
+{
+	gint    step;
+	gdouble x = (gdouble) start_x;
+	gdouble y = (gdouble) start_y;
+	gdouble w = (gdouble) width;
+	gdouble h = (gdouble) height;
+	gdouble radius;           /* corner-radius of a bar         */
+	gdouble x_gap;            /* gap between two bars           */
+	gdouble y_start = 0.275f; /* normalized height of first bar */
+	gdouble x_step;           /* width of a bar                 */
+	gdouble y_step;           /* increment-step for bar-height  */
+	gint    step_value;
+
+	/* sanity checks */
+	if (bars < 0 || lit == NULL || unlit == NULL)
+		return;
+
+	/* reference rect for positioning-control */
+	/*cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
+	cairo_rectangle (cr, x, y, w, h);
+	cairo_stroke (cr);*/
+
+	step_value = 100.0f / (gdouble) bars;
+	x_gap = w * 0.3f / (gdouble) (bars - 1);
+	x_step = w * 0.7f / (gdouble) bars;
+	radius = 0.3f * x_step;
+	y_step = (h - (h * y_start)) / (bars - 1);
+
+	for (step = 0; step < bars; step++)
+	{
+		if (step * step_value >= value)
+		{
+			cairo_set_source_rgba (cr,
+					       unlit[R],
+					       unlit[G],
+					       unlit[B],
+					       unlit[A]);
+		}
+		else
+		{
+			cairo_set_source_rgba (cr,
+					       lit[R],
+					       lit[G],
+					       lit[B],
+					       lit[A]);
+		}
+
+		draw_round_rect (cr,
+				 1.0f,
+				 x + (x_step + x_gap) * (gdouble) step,
+				 h + y - y_step * (gdouble) step - y_start * h,
+				 radius,
+				 x_step,
+				 y_start * h + y_step * (gdouble) step);
+		cairo_fill (cr);
+	}
+}
+
 static
 void
 screen_changed_handler (GtkWidget* window,
@@ -439,74 +507,6 @@ draw_shadow (cairo_t* cr,
 	cairo_pattern_destroy (pattern);
 	cairo_surface_destroy (tmp_surface);
 	cairo_surface_destroy (new_surface);
-}
-
-void
-draw_value_indicator (cairo_t* cr,
-		      gint     value,   /* value to render                 */
-		      gint     start_x, /* top                             */
-		      gint     start_y, /* left                            */
-		      gint     width,   /* width of surrounding rect       */
-		      gint     height,  /* height of surrounding rect      */
-		      gint     bars,    /* how may bars to use for display */
-		      gdouble* lit,     /* lit-color as gdouble[4]         */
-		      gdouble* unlit    /* unlit-color as gdouble[4]       */)
-{
-	gint    step;
-	gdouble x = (gdouble) start_x;
-	gdouble y = (gdouble) start_y;
-	gdouble w = (gdouble) width;
-	gdouble h = (gdouble) height;
-	gdouble radius;           /* corner-radius of a bar         */
-	gdouble x_gap;            /* gap between two bars           */
-	gdouble y_start = 0.275f; /* normalized height of first bar */
-	gdouble x_step;           /* width of a bar                 */
-	gdouble y_step;           /* increment-step for bar-height  */
-	gint    step_value;
-
-	/* sanity checks */
-	if (bars < 0 || lit == NULL || unlit == NULL)
-		return;
-
-	/* reference rect for positioning-control */
-	/*cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_stroke (cr);*/
-
-	step_value = 100.0f / (gdouble) bars;
-	x_gap = w * 0.3f / (gdouble) (bars - 1);
-	x_step = w * 0.7f / (gdouble) bars;
-	radius = 0.3f * x_step;
-	y_step = (h - (h * y_start)) / (bars - 1);
-
-	for (step = 0; step < bars; step++)
-	{
-		if (step * step_value >= value)
-		{
-			cairo_set_source_rgba (cr,
-					       unlit[R],
-					       unlit[G],
-					       unlit[B],
-					       unlit[A]);
-		}
-		else
-		{
-			cairo_set_source_rgba (cr,
-					       lit[R],
-					       lit[G],
-					       lit[B],
-					       lit[A]);
-		}
-
-		draw_round_rect (cr,
-				 1.0f,
-				 x + (x_step + x_gap) * (gdouble) step,
-				 h + y - y_step * (gdouble) step - y_start * h,
-				 radius,
-				 x_step,
-				 y_start * h + y_step * (gdouble) step);
-		cairo_fill (cr);
-	}
 }
 
 static
