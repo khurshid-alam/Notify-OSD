@@ -405,6 +405,60 @@ draw_shadow (cairo_t* cr,
 	cairo_surface_destroy (new_surface);
 }
 
+void
+draw_value_indicator (cairo_t* cr,
+		      gint     value,   /* value to render                 */
+		      gint     start_x, /* top                             */
+		      gint     start_y, /* left                            */
+		      gint     width,   /* width of surrounding rect       */
+		      gint     height,  /* height of surrounding rect      */
+		      gint     bars)    /* how may bars to use for display */
+{
+	gint    step;
+	gdouble x = (gdouble) start_x;
+	gdouble y = (gdouble) start_y;
+	gdouble w = (gdouble) width;
+	gdouble h = (gdouble) height;
+	gdouble radius;           /* corner-radius of a bar         */
+	gdouble x_gap;            /* gap between two bars           */
+	gdouble y_start = 0.275f; /* normalized height of first bar */
+	gdouble x_step;           /* width of a bar                 */
+	gdouble y_step;           /* increment-step for bar-height  */
+	gint    step_value;
+
+	/* sanity check */
+	if (bars < 0)
+		return;
+
+	/* reference rect for positioning-control */
+	/*cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
+	cairo_rectangle (cr, x, y, w, h);
+	cairo_stroke (cr);*/
+
+	step_value = value / bars;
+	x_gap = w * 0.3f / (gdouble) (bars - 1);
+	x_step = w * 0.7f / (gdouble) bars;
+	radius = 0.3f * x_step;
+	y_step = (h - (h * y_start)) / (bars - 1);
+
+	for (step = 0; step < bars; step++)
+	{
+		if (step * step_value >= value)
+			cairo_set_source_rgba (cr, 0.5f, 0.5f, 0.5f, 0.5f);
+		else
+			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+
+		draw_round_rect (cr,
+				 1.0f,
+				 x + (x_step + x_gap) * (gdouble) step,
+				 h + y - y_step * (gdouble) step - y_start * h,
+				 radius,
+				 x_step,
+				 y_start * h + y_step * (gdouble) step);
+		cairo_fill (cr);
+	}
+}
+
 static
 gboolean
 expose_handler (GtkWidget*      window,
@@ -589,44 +643,19 @@ expose_handler (GtkWidget*      window,
 	if (GET_PRIVATE (bubble)->value >= 0 &&
 	    GET_PRIVATE (bubble)->value <= 100)
 	{
-		gint    step;
-		gdouble x        = defaults_get_bubble_width (bubble->defaults) / 3.5f;
-		gdouble y        = defaults_get_bubble_min_height (bubble->defaults) / 1.5f;
-		gdouble w        = defaults_get_bubble_width (bubble->defaults) / 2.5f;
-		gdouble h        = defaults_get_bubble_min_height (bubble->defaults) / 2.0f;
-		gdouble radius   = 3.0f;
-		gdouble x_gap    = 3.0f;
-		gdouble y_start  = 0.1f;
-		gdouble x_step;
-		gdouble y_step;
-
-		x_step = (w - (8 * x_gap))/ 9;
-		y_step = (h - (h * y_start)) / 9;
-
-		for (step = 1; step < 10; step++)
-		{
-			if (step * 10 >= GET_PRIVATE (bubble)->value)
-			{
-				cairo_set_source_rgba (cr,
-						       0.5f,
-						       0.5f,
-						       0.5f,
-						       0.5f);
-			}
-			else
-			{
-				cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.25f);
-			}
-
-			draw_round_rect (cr,
-					 1.0f,
-					 x + (x_step + x_gap) * (gdouble) step,
-					 y - y_step * (gdouble) step,
-					 radius,
-					 x_step,
-					 y_start * h + y_step * (gdouble) step);
-			cairo_fill (cr);
-		}
+		draw_value_indicator (
+			cr,
+			GET_PRIVATE (bubble)->value,
+			defaults_get_bubble_shadow_size (bubble->defaults) +
+			2 * defaults_get_margin_size (bubble->defaults) +
+			defaults_get_icon_size (bubble->defaults),
+			defaults_get_bubble_shadow_size (bubble->defaults) +
+			defaults_get_margin_size (bubble->defaults),
+			defaults_get_bubble_width (bubble->defaults) -
+			3 * defaults_get_margin_size (bubble->defaults) -
+			defaults_get_icon_size (bubble->defaults),
+			defaults_get_icon_size (bubble->defaults),
+			13);
 	}
 
 	cairo_destroy (cr);
