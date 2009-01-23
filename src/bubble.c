@@ -815,6 +815,7 @@ expose_handler (GtkWidget*      window,
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
 		PangoRectangle        ink_rect;
+		PangoRectangle        log_rect;
 
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
@@ -839,7 +840,34 @@ expose_handler (GtkWidget*      window,
 				       GET_PRIVATE (bubble)->title->str,
 				       GET_PRIVATE (bubble)->title->len);
 
-		pango_layout_get_extents (layout, NULL, &ink_rect);
+		pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+		/* draw ink- and log-rects for debugging text positioning */
+		cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
+		cairo_rectangle (cr,
+				 defaults_get_bubble_shadow_size (bubble->defaults) +
+				 defaults_get_margin_size (bubble->defaults) +
+				 defaults_get_icon_size (bubble->defaults) +
+				 (gdouble) ink_rect.x / PANGO_SCALE,
+				 defaults_get_bubble_shadow_size (bubble->defaults) +
+				 defaults_get_margin_size (bubble->defaults) +
+				 (gdouble) ink_rect.y / PANGO_SCALE,
+				 (gdouble) ink_rect.width / PANGO_SCALE,
+				 (gdouble) ink_rect.height / PANGO_SCALE);
+		cairo_stroke (cr);
+
+		cairo_set_source_rgb (cr, 0.5f, 0.5f, 1.0f);
+		cairo_rectangle (cr,
+				 defaults_get_bubble_shadow_size (bubble->defaults) +
+				 defaults_get_margin_size (bubble->defaults) +
+				 defaults_get_icon_size (bubble->defaults) +
+				 (gdouble) log_rect.x / PANGO_SCALE,
+				 defaults_get_bubble_shadow_size (bubble->defaults) +
+				 defaults_get_margin_size (bubble->defaults) +
+				 (gdouble) log_rect.y / PANGO_SCALE,
+				 (gdouble) log_rect.width / PANGO_SCALE,
+				 (gdouble) log_rect.height / PANGO_SCALE);
+		cairo_stroke (cr);
 
 		/* If no summary/message_body is present,
 		 * and assuming there is an icon,
@@ -852,9 +880,9 @@ expose_handler (GtkWidget*      window,
 				       defaults_get_icon_size (bubble->defaults) +
 				       (defaults_get_bubble_width (bubble->defaults) -
 					defaults_get_icon_size (bubble->defaults) -
-					ink_rect.width / PANGO_SCALE) / 2,
+					log_rect.width / PANGO_SCALE) / 2,
 				       (defaults_get_bubble_min_height (bubble->defaults) -
-					ink_rect.height / PANGO_SCALE) / 2);
+					log_rect.height / PANGO_SCALE) / 2);
 		}
 		else
 		{
@@ -873,7 +901,7 @@ expose_handler (GtkWidget*      window,
 		cairo_fill (cr);
 		g_object_unref (layout);
 
-		top_margin += (gdouble) ink_rect.height / PANGO_SCALE;
+		top_margin += (gdouble) log_rect.height / PANGO_SCALE;
 	}
 
 	/* render body-message */
