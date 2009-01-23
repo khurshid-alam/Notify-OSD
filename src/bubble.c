@@ -414,6 +414,30 @@ draw_value_indicator (cairo_t* cr,
 	}
 }
 
+static void
+bubble_render_icon_indicator (Bubble* self)
+{
+	g_print ("icon + indicator\n");
+}
+
+static void
+bubble_render_icon_title (Bubble* self)
+{
+	g_print ("icon + title\n");
+}
+
+static void
+bubble_render_icon_title_body (Bubble* self)
+{
+	g_print ("icon + title + body\n");
+}
+
+static void
+bubble_render_title_body (Bubble* self)
+{
+	g_print ("title + body\n");
+}
+
 static
 void
 screen_changed_handler (GtkWidget* window,
@@ -710,19 +734,19 @@ expose_handler (GtkWidget*      window,
 	switch (bubble_get_layout (bubble))
 	{
 		case LAYOUT_ICON_INDICATOR:
-			g_print ("icon + indicator\n");
+			bubble_render_icon_indicator (bubble);
 		break;
 
 		case LAYOUT_ICON_TITLE:
-			g_print ("icon + title\n");
+			bubble_render_icon_title (bubble);
 		break;
 
 		case LAYOUT_ICON_TITLE_BODY:
-			g_print ("icon + title + body\n");
+			bubble_render_icon_title_body (bubble);
 		break;
 
 		case LAYOUT_TITLE_BODY:
-			g_print ("title + body\n");
+			bubble_render_title_body (bubble);
 		break;
 
 		case LAYOUT_NONE:
