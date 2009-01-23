@@ -1863,9 +1863,7 @@ _calc_body_height (Bubble* self,
 
 	d = self->defaults;
 
-	surface = cairo_image_surface_create (CAIRO_FORMAT_A1,
-					      body_width,
-					      200);
+	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
@@ -1894,7 +1892,7 @@ _calc_body_height (Bubble* self,
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
-	pango_layout_set_width (layout, body_width);
+	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
 	pango_layout_set_markup (
 		layout,
@@ -1903,6 +1901,7 @@ _calc_body_height (Bubble* self,
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 	body_height = log_rect.height / PANGO_SCALE;
+
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
