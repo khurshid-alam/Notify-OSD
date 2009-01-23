@@ -1293,8 +1293,6 @@ bubble_new (Defaults* defaults)
 {
 	Bubble*         this              = NULL;
 	GtkWidget*      window            = NULL;
-	guint           draw_handler_id   = 0;
-	guint           pointer_update_id = 0;
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
@@ -1360,16 +1358,6 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->end_y         = 0;
 	GET_PRIVATE(this)->inc_factor    = 0.0f;
 	GET_PRIVATE(this)->delta_y       = 0;
-
-	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	draw_handler_id = g_timeout_add (1000/60,
-					 (GSourceFunc) redraw_handler,
-					 this);
-
-	/* FIXME: read out current mouse-pointer position every 1/10 second */
-        pointer_update_id = g_timeout_add (100,
-					   (GSourceFunc) pointer_update,
-					   this);
 
 	return this;
 }
@@ -1571,6 +1559,9 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
+	guint           draw_handler_id   = 0;
+	guint           pointer_update_id = 0;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -1585,6 +1576,15 @@ bubble_show (Bubble* self)
 			     g_timeout_add_seconds (bubble_get_timeout (self),
 						    (GSourceFunc) bubble_timed_out,
 						    self));
+	/* FIXME: do nasty busy-polling rendering in the drawing-area */
+	draw_handler_id = g_timeout_add (1000/60,
+					 (GSourceFunc) redraw_handler,
+					 self);
+
+	/* FIXME: read out current mouse-pointer position every 1/10 second */
+        pointer_update_id = g_timeout_add (100,
+					   (GSourceFunc) pointer_update,
+					   self);
 }
 
 /* mostly called when we change the content of the bubble
