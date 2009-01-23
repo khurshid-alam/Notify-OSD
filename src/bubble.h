@@ -152,6 +152,9 @@ bubble_get_position (Bubble* self,
 gint
 bubble_get_height (Bubble *self);
 
+void
+bubble_recalc_size (Bubble *self);
+
 G_END_DECLS
 
 #endif /* __BUBBLE_H */

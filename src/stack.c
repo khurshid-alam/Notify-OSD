@@ -284,11 +284,11 @@ stack_layout (Stack* self)
 		bubble = (Bubble*) list->data;
 
 		/* set/update the bubble attributes */
-		bubble_set_size (bubble,
+		/*bubble_set_size (bubble,
 				 defaults_get_bubble_width (self->defaults) +
 				 2 * defaults_get_bubble_shadow_size (self->defaults),
 				 defaults_get_bubble_min_height (self->defaults) +
-				 2 * defaults_get_bubble_shadow_size (self->defaults));
+				 2 * defaults_get_bubble_shadow_size (self->defaults));*/
 
 		bubble_move (bubble, x, y);
 
@@ -306,7 +306,8 @@ stack_layout (Stack* self)
 #endif
 
 		bubble_show (bubble);
-		y += defaults_get_bubble_min_height (self->defaults) +
+		y += bubble_get_height (bubble) -
+		     2 * defaults_get_bubble_shadow_size (self->defaults) +
 		     defaults_get_bubble_vert_gap (self->defaults);
 		/* Warning: bubble_get_height() is not reliable */
 	}
@@ -538,11 +539,11 @@ stack_notify_handler (Stack*                 self,
 		apport_report (app_name, summary, actions, timeout);
 
 	/* push the bubble in the stack */
-	stack_push_bubble(self, bubble);
+	stack_push_bubble (self, bubble);
+	bubble_recalc_size (bubble);
 
 	/* update the layout of the stack;
-	   this will also open the new bubble
-	*/
+	 * this will also open the new bubble */
 	stack_layout (self);
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
