@@ -80,9 +80,9 @@ enum
 
 /* these values are interpreted as pixel-measurements and do comply to the 
  * visual guide for jaunty-notifications */
-#define DEFAULT_BUBBLE_WIDTH         226
+#define DEFAULT_BUBBLE_WIDTH         280
 #define DEFAULT_BUBBLE_MIN_HEIGHT    64
-#define DEFAULT_BUBBLE_MAX_HEIGHT    200
+#define DEFAULT_BUBBLE_MAX_HEIGHT    240
 #define DEFAULT_BUBBLE_VERT_GAP      7
 #define DEFAULT_BUBBLE_HORZ_GAP      5
 #define DEFAULT_BUBBLE_SHADOW_SIZE   8
@@ -94,7 +94,7 @@ enum
 #define DEFAULT_CONTENT_SHADOW_SIZE  2
 #define DEFAULT_CONTENT_SHADOW_COLOR "#000000"
 #define DEFAULT_MARGIN_SIZE          16
-#define DEFAULT_ICON_SIZE            32
+#define DEFAULT_ICON_SIZE            48
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
