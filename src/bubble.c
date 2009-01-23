@@ -19,9 +19,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
-#include <glib/gprintf.h>
 #include <gtk/gtk.h>
-#include <gdk/gdkkeysyms.h>
 #include <pixman.h>
 #include <math.h>
 
@@ -433,25 +431,25 @@ draw_value_indicator (cairo_t* cr,
 static void
 bubble_render_icon_indicator (Bubble* self)
 {
-	g_print ("icon + indicator\n");
+/*	g_debug ("icon + indicator\n"); */
 }
 
 static void
 bubble_render_icon_title (Bubble* self)
 {
-	g_print ("icon + title\n");
+/*	g_debug ("icon + title\n"); */
 }
 
 static void
 bubble_render_icon_title_body (Bubble* self)
 {
-	g_print ("icon + title + body\n");
+/*	g_debug ("icon + title + body\n"); */
 }
 
 static void
 bubble_render_title_body (Bubble* self)
 {
-	g_print ("title + body\n");
+/*	g_debug ("title + body\n"); */
 }
 
 static
@@ -766,7 +764,7 @@ expose_handler (GtkWidget*      window,
 		break;
 
 		case LAYOUT_NONE:
-			g_print ("WARNING: No layout defined!!!\n");
+			g_warning ("WARNING: No layout defined!!!\n");
 		break;
 	}
 
@@ -1946,11 +1944,12 @@ bubble_recalc_size (Bubble *self)
 					defaults_get_bubble_width (d) -
 					3 * defaults_get_margin_size (d) -
 					defaults_get_icon_size (d));
-			g_print ("title-width: %d, title-height: %d\n",
+/*			g_debug ("title-width: %d, title-height: %d\n",
 				 defaults_get_bubble_width (d) -
 				 3 * defaults_get_margin_size (d) -
 				 defaults_get_icon_size (d),
 				 title_height);
+*/
 			allowed_height = defaults_get_bubble_max_height (d) -
 					 2 * defaults_get_margin_size (d) -
 					 title_height;
@@ -1960,11 +1959,12 @@ bubble_recalc_size (Bubble *self)
 					defaults_get_bubble_width (d) -
 					3 * defaults_get_margin_size (d) -
 					defaults_get_icon_size (d));
-			g_print ("body-width: %d, body-height: %d\n",
+/*			g_debug ("body-width: %d, body-height: %d\n",
 				 defaults_get_bubble_width (d) -
 				 3 * defaults_get_margin_size (d) -
 				 defaults_get_icon_size (d),
 				 body_height);
+*/
 
 			if (body_height >= allowed_height)
 			{
@@ -2004,11 +2004,12 @@ bubble_recalc_size (Bubble *self)
 					self,
 					defaults_get_bubble_width (d) -
 					2 * defaults_get_margin_size (d));
-			g_print ("title-width: %d, title-height: %d\n",
+/*			g_debug ("title-width: %d, title-height: %d\n",
 				 defaults_get_bubble_width (d) -
 				 3 * defaults_get_margin_size (d) -
 				 defaults_get_icon_size (d),
 				 title_height);
+*/
 
 			allowed_height = defaults_get_bubble_max_height (d) -
 					 2 * defaults_get_margin_size (d) -
@@ -2018,12 +2019,12 @@ bubble_recalc_size (Bubble *self)
 					self,
 					defaults_get_bubble_width (d) -
 					2 * defaults_get_margin_size (d));
-			g_print ("body-width: %d, body-height: %d\n",
+/*			g_debug ("body-width: %d, body-height: %d\n",
 				 defaults_get_bubble_width (d) -
 				 3 * defaults_get_margin_size (d) -
 				 defaults_get_icon_size (d),
 				 body_height);
-
+*/
 			if (body_height >= allowed_height)
 			{
 				new_bubble_height =
@@ -2042,7 +2043,7 @@ bubble_recalc_size (Bubble *self)
 		break;
 
 		case LAYOUT_NONE:
-			g_print ("bubble_recalc_size(): WARNING, no layout!!!\n");
+			g_warning ("bubble_recalc_size(): WARNING, no layout!!!\n");
 		break;
 	}
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
