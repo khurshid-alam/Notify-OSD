@@ -34,21 +34,31 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
+typedef enum
+{
+	LAYOUT_NONE = 0,
+	LAYOUT_ICON_INDICATOR,
+	LAYOUT_ICON_TITLE,
+	LAYOUT_ICON_TITLE_BODY,
+	LAYOUT_TITLE_BODY
+} BubbleLayout;
+
 struct _BubblePrivate {
-	GtkWidget* widget;
-	gchar*     title;
-	gchar*     message_body;
-	guint      id;
-	GdkPixbuf* icon_pixbuf;
-	gboolean   visible;
-	guint      timer_id;
-	guint      timeout;
-	gboolean   mouse_over;
-	gint       start_y;
-	gint       end_y;
-	gint       delta_y;
-	gdouble    inc_factor;
-	gint       value; /* "empty": -1, valid range: 0 - 100 */
+	BubbleLayout layout;
+	GtkWidget*   widget;
+	GString*     title;
+	GString*     message_body;
+	guint        id;
+	GdkPixbuf*   icon_pixbuf;
+	gboolean     visible;
+	guint        timer_id;
+	guint        timeout;
+	gboolean     mouse_over;
+	gint         start_y;
+	gint         end_y;
+	gint         delta_y;
+	gdouble      inc_factor;
+	gint         value; /* "empty": -1, valid range: 0 - 100 */
 };
 
 enum
@@ -97,6 +107,66 @@ enum
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
+
+static void
+bubble_determine_layout (Bubble* self)
+{
+	/* sanity test */
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	/* set a sane default */
+	GET_PRIVATE (self)->layout = LAYOUT_NONE;
+
+	/* icon + indicator layout-case, e.g. volume */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             >= 0))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
+		return;
+	}
+
+	/* icon + title layout-case, e.g. "Wifi signal lost" */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
+		return;	    
+	}
+
+	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
+		return;
+	}
+
+	/* title + body/message layout-case, e.g. IM-message without avatar */
+	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+		return;
+	}
+}
+
+BubbleLayout
+bubble_get_layout (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return LAYOUT_NONE;
+
+	return GET_PRIVATE (self)->layout;
+}
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -163,6 +233,117 @@ draw_round_rect (cairo_t* cr,
                    radius,
                    180.0f * G_PI / 180.0f,
                    270.0f * G_PI / 180.0f);
+}
+
+static void
+draw_layout_grid (cairo_t*  cr,
+		  Defaults* d)
+{
+	if (!cr)
+		return;
+
+	cairo_set_line_width (cr, 1.0f);
+	cairo_set_source_rgb (cr, 0.0f, 1.0f, 0.0f);
+
+	/* all vertical grid lines */
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) 2 * defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) 2 * defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d) -
+		       (gdouble) defaults_get_margin_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d) -
+		       (gdouble) defaults_get_margin_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+
+	/* all horizontal grid lines */
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_margin_size (d) +
+		       (gdouble) defaults_get_icon_size (d));
+	cairo_move_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+	cairo_line_to (cr,
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_width (d),
+		       (gdouble) defaults_get_bubble_shadow_size (d) +
+		       (gdouble) defaults_get_bubble_min_height (d));
+
+	cairo_stroke (cr);
 }
 
 static void
@@ -525,6 +706,30 @@ expose_handler (GtkWidget*      window,
 
 	bubble = (Bubble*) G_OBJECT (data);
 
+	bubble_determine_layout (bubble);
+	switch (bubble_get_layout (bubble))
+	{
+		case LAYOUT_ICON_INDICATOR:
+			g_print ("icon + indicator\n");
+		break;
+
+		case LAYOUT_ICON_TITLE:
+			g_print ("icon + title\n");
+		break;
+
+		case LAYOUT_ICON_TITLE_BODY:
+			g_print ("icon + title + body\n");
+		break;
+
+		case LAYOUT_TITLE_BODY:
+			g_print ("title + body\n");
+		break;
+
+		case LAYOUT_NONE:
+			g_print ("WARNING: No layout defined!!!\n");
+		break;
+	}
+
 	margin_gap   = (gdouble) defaults_get_margin_size (bubble->defaults);
 	left_margin  = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
 	top_margin   = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
@@ -581,7 +786,7 @@ expose_handler (GtkWidget*      window,
 	}
 
 	/* render title */
-	if (GET_PRIVATE (bubble)->title)
+	if (GET_PRIVATE (bubble)->title->len != 0)
 	{
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
@@ -606,7 +811,9 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 		/* print and layout string (pango-wise) */
-		pango_layout_set_text (layout, GET_PRIVATE (bubble)->title, -1);
+		pango_layout_set_text (layout,
+				       GET_PRIVATE (bubble)->title->str,
+				       GET_PRIVATE (bubble)->title->len);
 
 		pango_layout_get_extents (layout, NULL, &ink_rect);
 
@@ -614,7 +821,7 @@ expose_handler (GtkWidget*      window,
 		 * and assuming there is an icon,
 		 * center/align title in the middle of the bubble
 		 */ 	
-		if ((GET_PRIVATE (bubble)->message_body == '\0') &&
+		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
 		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			cairo_move_to (cr,
@@ -646,7 +853,7 @@ expose_handler (GtkWidget*      window,
 	}
 
 	/* render body-message */
-	if (GET_PRIVATE (bubble)->message_body)
+	if (GET_PRIVATE (bubble)->message_body->len != 0)
 	{
 		PangoFontDescription* desc   = NULL;
 		PangoLayout*          layout = NULL;
@@ -678,11 +885,11 @@ expose_handler (GtkWidget*      window,
 
 		/* print and layout string (pango-wise) */
 		/*pango_layout_set_text (layout,
-				       GET_PRIVATE (bubble)->message_body,
-				       -1);*/
+				       GET_PRIVATE (bubble)->message_body->str,
+				       GET_PRIVATE (bubble)->message_body->len);*/
 		pango_layout_set_markup (layout,
-					 GET_PRIVATE (bubble)->message_body,
-					 -1);
+					 GET_PRIVATE (bubble)->message_body->str,
+					 GET_PRIVATE (bubble)->message_body->len);
 
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_move_to (cr, left_margin, top_margin);
@@ -729,6 +936,8 @@ expose_handler (GtkWidget*      window,
 			lit,
 			unlit);
 	}
+
+	draw_layout_grid (cr, bubble->defaults);
 
 	cairo_destroy (cr);
 
@@ -888,13 +1097,15 @@ bubble_finalize (GObject* gobject)
 
     	if (GET_PRIVATE (gobject)->title)
 	{
-		g_free ((gpointer) GET_PRIVATE (gobject)->title);
+		g_string_free ((gpointer) GET_PRIVATE (gobject)->title,
+			       TRUE);
 		GET_PRIVATE (gobject)->title = NULL;
 	}
 
     	if (GET_PRIVATE (gobject)->message_body)
 	{
-		g_free ((gpointer) GET_PRIVATE (gobject)->message_body);
+		g_string_free ((gpointer) GET_PRIVATE (gobject)->message_body,
+			       TRUE);
 		GET_PRIVATE (gobject)->message_body = NULL;
 	}
 
@@ -918,6 +1129,7 @@ bubble_init (Bubble* self)
 	BubblePrivate *priv;
 
 	self->priv = priv      = GET_PRIVATE (self);
+	priv->layout           = LAYOUT_NONE;
 	priv->title            = NULL;
 	priv->message_body     = NULL;
 	priv->visible          = FALSE;
@@ -1027,9 +1239,12 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_opacity (GTK_WINDOW (window), 0.95f);
 
 	this->priv = GET_PRIVATE (this);
+	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
 	GET_PRIVATE(this)->widget        = window;
-	GET_PRIVATE(this)->title         = g_strdup("GTK+ Notification");
-	GET_PRIVATE(this)->message_body  = g_strdup("Courtesy of the new Canonical notification sub-system");
+	GET_PRIVATE(this)->title         = g_string_new ("");
+	GET_PRIVATE(this)->message_body  = g_string_new ("");
+	GET_PRIVATE(this)->icon_pixbuf   = NULL;
+	GET_PRIVATE(this)->value         = -1;
 	GET_PRIVATE(this)->visible       = FALSE;
 	GET_PRIVATE(this)->timeout       = 5;
 	GET_PRIVATE(this)->mouse_over    = FALSE;
@@ -1067,10 +1282,10 @@ bubble_set_title (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-    	if (GET_PRIVATE (self)->title)
-		g_free ((gpointer) GET_PRIVATE (self)->title);
+	if (GET_PRIVATE (self)->title->len != 0)
+		g_string_free (GET_PRIVATE (self)->title, TRUE);
 
-	GET_PRIVATE (self)->title = g_strdup (title);
+	GET_PRIVATE (self)->title = g_string_new (title);
 }
 
 void
@@ -1080,10 +1295,10 @@ bubble_set_message_body (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-    	if (GET_PRIVATE (self)->message_body)
-		g_free ((gpointer) GET_PRIVATE (self)->message_body);
+	if (GET_PRIVATE (self)->message_body->len != 0)
+		g_string_free (GET_PRIVATE (self)->message_body, TRUE);
 
-	GET_PRIVATE (self)->message_body = g_strdup (body);
+	GET_PRIVATE (self)->message_body = g_string_new (body);
 }
 
 void
@@ -1094,7 +1309,10 @@ bubble_set_icon (Bubble*      self,
 		return;
 
 	if (GET_PRIVATE (self)->icon_pixbuf)
+	{
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
+		GET_PRIVATE (self)->icon_pixbuf = NULL;
+	}
 
 	GET_PRIVATE (self)->icon_pixbuf = load_icon (
 						filename,
@@ -1112,7 +1330,10 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 		return;
 
 	if (GET_PRIVATE (self)->icon_pixbuf)
+	{
 		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
+		GET_PRIVATE (self)->icon_pixbuf = NULL;
+	}
 
 	height = gdk_pixbuf_get_height (pixbuf);
 	width = gdk_pixbuf_get_width (pixbuf);
