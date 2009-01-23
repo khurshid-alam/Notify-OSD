@@ -5,7 +5,9 @@ DIR=$HOME/src/alsdorf
 
 notify-send "Testing markup" "Some <b>bold</b>, <u>underlined</u>, <i>italic</i> text"
 sleep 2
-notify-send "Hello" "Hello World"
+notify-send "Jamshed Kakar" "Hey, what about this restaurant? http://www.blafasel.org
+
+Would you go from your place by train or should I pick you up from work? What do you think?"
 sleep 2
 notify-send " " -i $DIR/icons/volume.svg -h int:value:75
 sleep 2
