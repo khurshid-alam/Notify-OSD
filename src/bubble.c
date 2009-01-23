@@ -1064,11 +1064,19 @@ redraw_handler (Bubble* bubble)
 
 	opacity = gtk_window_get_opacity (window);
 
-	if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
+	/* old mouse-over behaviour */
+	/*if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
 		opacity += 0.05f;
 
 	if (bubble_is_mouse_over (bubble) && opacity > 0.1f)
-		opacity -= 0.05f;
+		opacity -= 0.05f;*/
+
+	/* new mouse-over behaviour */
+    	if (!bubble_is_mouse_over (bubble))
+		opacity = 0.95f;
+
+	if (bubble_is_mouse_over (bubble))
+		opacity = 0.1f;
 
 	gtk_window_set_opacity (window, opacity);
 
