@@ -59,6 +59,7 @@ struct _BubblePrivate {
 	gint         delta_y;
 	gdouble      inc_factor;
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
+	gboolean     synchronous;
 };
 
 enum
@@ -1243,6 +1244,7 @@ bubble_init (Bubble* self)
 	priv->visible          = FALSE;
 	priv->icon_pixbuf      = NULL;
 	priv->value            = -1;
+	priv->synchronous      = FALSE;
 }
 
 static void
@@ -1373,6 +1375,19 @@ bubble_new (Defaults* defaults)
 
 	return this;
 }
+
+Bubble*
+bubble_new_synchronous (Defaults* defaults)
+{
+	Bubble *self = bubble_new (defaults);
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	GET_PRIVATE (self)->synchronous = TRUE;
+
+	return self;
+}
+
 
 void
 bubble_del (Bubble* self)
@@ -2032,4 +2047,13 @@ bubble_recalc_size (Bubble *self)
 		break;
 	}
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
+}
+
+gboolean
+bubble_is_synchronous (Bubble *self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return FALSE;
+
+	return GET_PRIVATE (self)->synchronous;
 }

@@ -60,6 +60,9 @@ GType bubble_get_type (void);
 Bubble*
 bubble_new (Defaults* defaults);
 
+Bubble*
+bubble_new_synchronous (Defaults* defaults);
+
 void
 bubble_del (Bubble* self);
 
@@ -154,6 +157,9 @@ bubble_get_height (Bubble *self);
 
 void
 bubble_recalc_size (Bubble *self);
+
+gboolean
+bubble_is_synchronous (Bubble *self);
 
 G_END_DECLS
 

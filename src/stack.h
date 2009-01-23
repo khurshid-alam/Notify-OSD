@@ -50,7 +50,6 @@ struct _Stack
 	GList*    list;
 	guint     next_id;
 
-	Bubble*   feedback_bubble;
 };
 
 /* class structure */
@@ -75,10 +74,6 @@ stack_push_bubble (Stack*  self,
 void
 stack_pop_bubble_by_id (Stack* self,
 			guint  id);
-
-void
-stack_show_feedback_bubble (Stack* self,
-			    Bubble* bubble);
 
 gboolean
 stack_notify_handler (Stack*                 self,
