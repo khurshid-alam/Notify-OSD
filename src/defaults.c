@@ -113,6 +113,63 @@ enum
 
 /*-- internal API ------------------------------------------------------------*/
 
+static gint
+_get_average_char_width (Defaults* self)
+{
+	cairo_surface_t*      surface;
+	cairo_t*              cr;
+	PangoFontDescription* desc;
+	PangoLayout*          layout;
+	PangoContext*         context;
+	PangoLanguage *       language;
+	PangoFontMetrics*     metrics;
+	gint                  char_width;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
+	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
+	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
+		return 0;
+
+	cr = cairo_create (surface);
+	cairo_surface_destroy (surface);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+		return 0;
+
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+	pango_font_description_set_size (
+		desc,
+		defaults_get_text_title_size (self) *
+		PANGO_SCALE);
+
+	pango_font_description_set_family_static (
+		desc,
+		defaults_get_text_font_face (self));
+
+	pango_font_description_set_weight (
+		desc,
+		defaults_get_text_title_weight (self));
+
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+
+	context  = pango_layout_get_context (layout); /* no need to unref */
+	language = pango_language_get_default ();     /* no need to unref */
+	metrics  = pango_context_get_metrics (context, desc, language);
+	char_width = pango_font_metrics_get_approximate_char_width (metrics);
+
+	/* clean up */
+	pango_font_metrics_unref (metrics);
+	pango_font_description_free (desc);
+	g_object_unref (layout);
+	cairo_destroy (cr);
+
+	return char_width / PANGO_SCALE;
+}
+
 static void
 defaults_constructed (GObject* gobject)
 {
@@ -133,6 +190,9 @@ defaults_constructed (GObject* gobject)
 	gint         icon_size;
 	gint         bubble_height;
 	gint         new_bubble_height;
+	gint         bubble_width;
+	gint         new_bubble_width;
+	gint         average_char_width;
 
 	self = DEFAULTS (gobject);
 
@@ -283,6 +343,31 @@ defaults_constructed (GObject* gobject)
 		g_object_set (self,
 			      "bubble-min-height",
 			      new_bubble_height,
+			      NULL);
+	}
+
+	/* correct the default bubble-width depending on the average width of a 
+	 * character rendered in the default system-font at the default
+	 * font-size,
+	 * as default layout, we'll take the icon+title+body+message case, thus
+	 * seen from left to right we use:
+	 *
+	 *      margin + icon_size + margin + 20 * avg_char_width + margin
+	 */
+	g_object_get (self,
+		      "bubble-width",
+		      &bubble_width,
+		      NULL);
+	average_char_width = _get_average_char_width (self);
+
+	new_bubble_width = 3 * margin_size +
+			   icon_size +
+			   20 * average_char_width;
+	if (new_bubble_width > bubble_width)
+	{
+		g_object_set (self,
+			      "bubble-width",
+			      new_bubble_width,
 			      NULL);
 	}
 
