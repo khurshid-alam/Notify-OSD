@@ -129,6 +129,10 @@ defaults_constructed (GObject* gobject)
 	GError*      error     = NULL;
 	GString*     font_face = NULL;
 	gint         font_size = 0;
+	gint         margin_size;
+	gint         icon_size;
+	gint         bubble_height;
+	gint         new_bubble_height;
 
 	self = DEFAULTS (gobject);
 
@@ -201,6 +205,7 @@ defaults_constructed (GObject* gobject)
 		GScanner*  scanner = NULL;
 		GTokenType token   = G_TOKEN_NONE;
 
+		/* extract font-family-name and font-size */
 		scanner = g_scanner_new (NULL);
 		if (scanner)
 		{
@@ -256,6 +261,30 @@ defaults_constructed (GObject* gobject)
 	}
 
 	g_object_unref (context);
+
+	/* correct the default min. bubble-height, according to the icon-size */
+	g_object_get (self,
+		      "margin-size",
+		      &margin_size,
+		      NULL);
+	g_object_get (self,
+		      "icon-size",
+		      &icon_size,
+		      NULL);
+	g_object_get (self,
+		      "bubble-min-height",
+		      &bubble_height,
+		      NULL);
+
+	new_bubble_height = 2 * margin_size + icon_size;
+
+	if (new_bubble_height > bubble_height)
+	{
+		g_object_set (self,
+			      "bubble-min-height",
+			      new_bubble_height,
+			      NULL);
+	}
 
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
