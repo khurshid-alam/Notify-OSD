@@ -1796,9 +1796,7 @@ _calc_title_height (Bubble* self,
 
 	d = self->defaults;
 
-	surface = cairo_image_surface_create (CAIRO_FORMAT_A1,
-					      title_width,
-					      200);
+	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
