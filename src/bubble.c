@@ -58,6 +58,7 @@ struct _BubblePrivate {
 	gdouble      inc_factor;
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
 	gboolean     synchronous;
+	gboolean     composited;
 };
 
 enum
@@ -513,6 +514,91 @@ update_input_shape (GtkWidget* window,
 	}
 }
 
+static void
+update_shape (Bubble* self)
+{
+	GdkBitmap* mask = NULL;
+	cairo_t*   cr   = NULL;
+	gint       width;
+	gint       height;
+	Defaults*  d;
+
+	/* sanity test */
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	d = self->defaults;
+
+	/* do we actually need a shape-mask at all? */
+	if (GET_PRIVATE (self)->composited)
+	{
+		gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
+					       NULL,
+					       0,
+					       0);
+		return;
+	}
+
+	/* guess we need one */
+	width = GET_PRIVATE (self)->widget->allocation.width;
+	height = GET_PRIVATE (self)->widget->allocation.height;
+	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
+	if (mask)
+	{
+		/* create context from mask/pixmap */
+		cr = gdk_cairo_create (mask);
+		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
+		{
+			/* clear mask/context */
+			cairo_scale (cr, 1.0f, 1.0f);
+			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+			cairo_paint (cr);
+
+			/* draw rounded rectangle shape/mask */
+			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+			draw_round_rect (cr,
+					 1.0f,
+					 (gdouble) defaults_get_bubble_shadow_size (d),
+					 (gdouble) defaults_get_bubble_shadow_size (d),
+					 (gdouble) defaults_get_bubble_corner_radius (d),
+					 (gdouble) defaults_get_bubble_width (d),
+					 (gdouble) bubble_get_height (self) -
+					 (gdouble) 2 * defaults_get_bubble_shadow_size (d));
+			cairo_fill (cr);
+			cairo_destroy (cr);
+
+			/* remove any current shape-mask */
+			gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
+						       NULL,
+						       0,
+						       0);
+
+			/* set new shape-mask */
+			gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
+						       mask,
+						       0,
+						       0);
+		}
+
+		g_object_unref ((gpointer) mask);
+	}
+}
+
+static void
+composited_changed_handler (GtkWidget* window,
+			    gpointer   data)
+{
+	Bubble* bubble;
+
+	bubble = (Bubble*) G_OBJECT (data);
+
+	GET_PRIVATE (bubble)->composited = gdk_screen_is_composited (
+						gtk_widget_get_screen (window));
+
+	update_shape (bubble);
+}
+
 static pixman_fixed_t*
 create_gaussian_blur_kernel (gint    radius,
                              gdouble sigma,
@@ -781,26 +867,41 @@ expose_handler (GtkWidget*      window,
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	draw_shadow (cr,
-		     width,
-		     height,
-		     defaults_get_bubble_shadow_size (bubble->defaults));
-	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-	draw_round_rect (cr,
-			 1.0f,
-			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-			 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
-			 (gdouble) defaults_get_bubble_width (bubble->defaults),
-			 (gdouble) bubble_get_height (bubble) -
-			 (gdouble) 2 * defaults_get_bubble_shadow_size (bubble->defaults));
-	cairo_fill (cr);
+	if (GET_PRIVATE (bubble)->composited)
+	{
+		draw_shadow (cr,
+			     width,
+			     height,
+			     defaults_get_bubble_shadow_size (bubble->defaults));
+		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+		draw_round_rect (cr,
+				 1.0f,
+				 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+				 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
+				 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
+				 (gdouble) defaults_get_bubble_width (bubble->defaults),
+				 (gdouble) bubble_get_height (bubble) -
+				 (gdouble) 2 * defaults_get_bubble_shadow_size (bubble->defaults));
+		cairo_fill (cr);
+	}
+
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr,
-			       BUBBLE_BG_COLOR_R,
-			       BUBBLE_BG_COLOR_G,
-			       BUBBLE_BG_COLOR_B,
-			       gtk_window_get_opacity (GTK_WINDOW (window)));
+	if (GET_PRIVATE (bubble)->composited)
+	{
+		cairo_set_source_rgba (cr,
+				       BUBBLE_BG_COLOR_R,
+				       BUBBLE_BG_COLOR_G,
+				       BUBBLE_BG_COLOR_B,
+				       gtk_window_get_opacity (GTK_WINDOW (window)));
+	}
+	else
+	{
+		cairo_set_source_rgb (cr,
+				      BUBBLE_BG_COLOR_R,
+				      BUBBLE_BG_COLOR_G,
+				      BUBBLE_BG_COLOR_B);
+	}
+
 	draw_round_rect (cr,
 			 1.0f,
 			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
@@ -1056,6 +1157,9 @@ redraw_handler (Bubble* bubble)
 	if (!bubble_is_visible (bubble))
 		return FALSE;
 
+	if (!GET_PRIVATE (bubble)->composited)
+		return TRUE;
+
 	window = GTK_WINDOW (GET_PRIVATE(bubble)->widget);
 
 	if (!GTK_IS_WINDOW (window))
@@ -1291,8 +1395,8 @@ bubble_class_init (BubbleClass* klass)
 Bubble*
 bubble_new (Defaults* defaults)
 {
-	Bubble*         this              = NULL;
-	GtkWidget*      window            = NULL;
+	Bubble*    this   = NULL;
+	GtkWidget* window = NULL;
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
@@ -1315,11 +1419,15 @@ bubble_new (Defaults* defaults)
 			       GDK_BUTTON_PRESS_MASK |
 			       GDK_BUTTON_RELEASE_MASK);
 
-	/* hook up input-event handlers to window */
+	/* hook up input/event handlers to window */
 	g_signal_connect (G_OBJECT (window),
 			  "screen-changed",
 			  G_CALLBACK (screen_changed_handler),
 			  NULL);
+	g_signal_connect (G_OBJECT (window),
+			  "composited-changed",
+			  G_CALLBACK (composited_changed_handler),
+			  this);
 
 	gtk_window_move (GTK_WINDOW (window), 0, 0);
 
@@ -1335,7 +1443,6 @@ bubble_new (Defaults* defaults)
 			  this);       
 
 	/*  "clear" input-mask, set title/icon/attributes */
-	update_input_shape (window, 1, 1);
 	gtk_widget_set_app_paintable (window, TRUE);
 	gtk_window_set_title (GTK_WINDOW (window), "notification");
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
@@ -1358,6 +1465,11 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->end_y         = 0;
 	GET_PRIVATE(this)->inc_factor    = 0.0f;
 	GET_PRIVATE(this)->delta_y       = 0;
+	GET_PRIVATE(this)->composited    = gdk_screen_is_composited (
+						gtk_widget_get_screen (window));
+
+	update_shape (this);
+	update_input_shape (window, 1, 1);
 
 	return this;
 }
