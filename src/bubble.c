@@ -18,8 +18,10 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <X11/Xatom.h>
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 #include <pixman.h>
 #include <math.h>
 
@@ -1417,6 +1419,42 @@ bubble_class_init (BubbleClass* klass)
 						    0);
 }
 
+/* the behind-bubble blur only works with the enabled/working compiz-plugin blur
+ * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window, thanks to
+ * the opacity-threshold of the blur-plugin we might not need to unset it for
+ * fade-on-hover case */
+static void
+_set_bg_blur (GtkWidget* window,
+	      gboolean   set_blur)
+{
+	glong data[] = {2, /* threshold */
+			0  /* filter    */};
+
+	/* sanity check */
+	if (!window)
+		return;
+
+	if (set_blur)
+	{
+		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
+				 GDK_WINDOW_XID (window->window),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+					      "_COMPIZ_WM_WINDOW_BLUR",
+					      FALSE),
+				 XA_INTEGER,
+				 32,
+				 PropModeReplace,
+				 (guchar *) data,
+				 2);
+	}
+	else
+	{
+		/* FIXME: not sure yet if we really need to unset it, because
+		 * the compiz blur-plugin has a opacity-threshold for applying
+		 * the blur */
+	}
+}
+
 /*-- public API --------------------------------------------------------------*/
 
 Bubble*
@@ -1497,6 +1535,8 @@ bubble_new (Defaults* defaults)
 
 	update_shape (this);
 	update_input_shape (window, 1, 1);
+
+	_set_bg_blur (window, TRUE);
 
 	return this;
 }
