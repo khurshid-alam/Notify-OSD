@@ -361,7 +361,9 @@ stack_layout_simple (Stack* self)
 	}
 
 	/* If there are already 2 visible notifications,
-	   there is really nothing else we can do. */
+	   there is really nothing else we can do.
+	   NOTE: one of them is NECESSARILY a feedback bubble...
+	*/
 	if (display_list[0] != NULL && display_list[1] != NULL)
 		return;
 
