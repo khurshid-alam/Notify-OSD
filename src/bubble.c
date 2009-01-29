@@ -950,6 +950,7 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_width (layout,
 					(defaults_get_bubble_width (bubble->defaults) - left_margin - margin_gap) *
 					PANGO_SCALE);
+
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 		/* print and layout string (pango-wise) */
@@ -957,7 +958,31 @@ expose_handler (GtkWidget*      window,
 				       GET_PRIVATE (bubble)->title->str,
 				       GET_PRIVATE (bubble)->title->len);
 
+		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
+		{
+			pango_layout_set_width (layout,
+						(defaults_get_bubble_width (bubble->defaults) -
+						 left_margin - margin_gap) *
+						PANGO_SCALE);
+			pango_layout_set_height (layout,
+						 (bubble_get_height (bubble) -
+						  2 * margin_gap -
+						  2 * defaults_get_bubble_shadow_size (bubble->defaults)) *
+						 PANGO_SCALE);
+			pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
+		}
+
 		pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
+		{
+			top_margin += ((bubble_get_height (bubble) -
+					2 * margin_gap -
+					2 * defaults_get_bubble_shadow_size (bubble->defaults) -
+					log_rect.height / PANGO_SCALE) / 2);
+		}
 
 		/* draw ink- and log-rects for debugging text positioning */
 		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
@@ -990,7 +1015,7 @@ expose_handler (GtkWidget*      window,
 		 * and assuming there is an icon,
 		 * center/align title in the middle of the bubble
 		 */ 	
-		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		/*if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
 		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			cairo_move_to (cr,
@@ -1004,7 +1029,9 @@ expose_handler (GtkWidget*      window,
 		else
 		{
 			cairo_move_to (cr, left_margin, top_margin);
-		}
+		}*/
+
+		cairo_move_to (cr, left_margin, top_margin);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
