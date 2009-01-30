@@ -19,6 +19,12 @@ alsdorf_sources =		\
 	stack.c			\
 	dbus.c			\
 	apport.c		\
+	../clutter/clutter-fixed.c		\
+	../clutter/clutter-units.c		\
+	../clutter/clutter-timeline.c		\
+	../clutter/clutter-timeout-pool.c	\
+	../clutter/clutter-alpha.c		\
+	../clutter/clutter-hack.c		\
 	$(NULL)
 
 alsdorf_headers =		\
@@ -29,6 +35,13 @@ alsdorf_headers =		\
 	stack-glue.h		\
 	dbus.h			\
 	apport.h		\
+	../clutter/clutter-fixed.h		\
+	../clutter/clutter-units.h		\
+	../clutter/clutter-timeline.h		\
+	../clutter/clutter-timeout-pool.h	\
+	../clutter/clutter-alpha.h		\
+	../clutter/clutter-debug.h		\
+	../clutter/clutter-hack.h		\
 	$(NULL)
 
 alsdorf_SOURCES =		\

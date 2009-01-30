@@ -23,6 +23,9 @@
 #include <pixman.h>
 #include <math.h>
 
+#include <clutter/clutter-hack.h>
+#include <clutter/clutter-alpha.h>
+
 #include "bubble.h"
 #include "defaults.h"
 #include "stack.h"
@@ -59,6 +62,7 @@ struct _BubblePrivate {
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
 	gboolean     synchronous;
 	gboolean     composited;
+	ClutterAlpha *alpha;
 };
 
 enum
@@ -1467,7 +1471,8 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->delta_y       = 0;
 	GET_PRIVATE(this)->composited    = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
-
+	GET_PRIVATE(this)->alpha         = NULL;
+	
 	update_shape (this);
 	update_input_shape (window, 1, 1);
 
@@ -1785,16 +1790,66 @@ bubble_slide_to (Bubble* self,
 				  self);
 }
 
+static void
+fade_cb (ClutterTimeline *timeline,
+	 gint frame_no,
+	 Bubble *bubble)
+{
+	float opacity;
+
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	opacity = (float)clutter_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
+		/ (float)CLUTTER_ALPHA_MAX_ALPHA;
+
+	gtk_window_set_opacity (GTK_WINDOW (
+					GET_PRIVATE (bubble)->widget),
+				opacity);
+}
+
+static void
+completed_cb (ClutterTimeline *timeline,
+	      Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	bubble_hide (bubble);
+	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
+
+	/* FIXME: dispose alpha, timeline? */
+}
+
 gboolean
 bubble_timed_out (Bubble* self)
 {
-	if (!self || !IS_BUBBLE (self))
-		return FALSE;
+	ClutterTimeline *timeline;
+	ClutterAlpha *alpha;
+
+	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
 	bubble_set_timeout (self, 0);
-	bubble_hide (self);
 
-	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);
+	if (! GET_PRIVATE (self)->composited)
+		return FALSE;
+
+	timeline = clutter_timeline_new_for_duration (700);
+	clutter_timeline_set_speed (timeline, 20);
+	alpha = clutter_alpha_new_full (timeline,
+					CLUTTER_ALPHA_RAMP_DEC,
+					NULL,
+					NULL);
+	g_signal_connect (G_OBJECT (timeline),
+			  "completed",
+			  G_CALLBACK (completed_cb),
+			  self);
+	g_signal_connect (G_OBJECT (timeline),
+			  "new-frame",
+			  G_CALLBACK (fade_cb),
+			  self);
+	
+	clutter_timeline_start (timeline);
+
+	GET_PRIVATE (self)->alpha = alpha;
 
 	return FALSE;
 }
