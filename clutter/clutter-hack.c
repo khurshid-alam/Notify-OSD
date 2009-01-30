@@ -61,6 +61,8 @@ clutter_threads_leave (void)
 
 static guint clutter_main_loop_level    = 0;
 static GSList *main_loops               = NULL;
+static gboolean clutter_is_initialized  = FALSE;
+
 
 /**
  * clutter_main:
@@ -114,13 +116,11 @@ clutter_main (void)
   CLUTTER_MARK ();
 }
 
-static gboolean clutter_is_initialised = FALSE;
-
 ClutterInitError
 clutter_init (int    *argc,
               char ***argv)
 {
-	if (!clutter_is_initialised)
+	if (!clutter_is_initialized)
 	{
 		/* initialise GLib type system */
 		g_type_init ();
