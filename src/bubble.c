@@ -1089,9 +1089,9 @@ expose_handler (GtkWidget*      window,
 		/*pango_layout_set_text (layout,
 				       GET_PRIVATE (bubble)->message_body->str,
 				       GET_PRIVATE (bubble)->message_body->len);*/
-		pango_layout_set_markup (layout,
-					 GET_PRIVATE (bubble)->message_body->str,
-					 GET_PRIVATE (bubble)->message_body->len);
+		pango_layout_set_text (layout,
+				       GET_PRIVATE (bubble)->message_body->str,
+				       GET_PRIVATE (bubble)->message_body->len);
 
 		pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -1582,13 +1582,65 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
+	GScanner*      scanner = NULL;
+	GTokenType     token;
+	GString*       string = NULL;
+	GScannerConfig scanner_config = {
+		"\t\r\n",                      /* characters to skip */
+		G_CSET_a_2_z " _," G_CSET_A_2_Z, /* identifier start */
+		G_CSET_a_2_z "_., " G_CSET_A_2_Z G_CSET_DIGITS,/* identifier cont. */
+		"#\n",                         /* single line comment */
+		FALSE,                         /* case_sensitive */
+		TRUE,                          /* skip multi-line comments */
+		TRUE,                          /* skip single line comments */
+		FALSE,                         /* scan multi-line comments */
+		TRUE,                          /* scan identifiers */
+		FALSE,                         /* scan 1-char identifiers */
+		FALSE,                         /* scan NULL identifiers */
+		FALSE,                         /* scan symbols */
+		FALSE,                         /* scan binary */
+		FALSE,                         /* scan octal */
+		TRUE,                          /* scan float */
+		TRUE,                          /* scan hex */
+		FALSE,                         /* scan hex dollar */
+		TRUE,                          /* scan single quote strings */
+		TRUE,                          /* scan double quite strings */
+		FALSE,                         /* numbers to int */
+		FALSE,                         /* int to float */
+		TRUE,                          /* identifier to string */
+		FALSE,                         /* char to token */
+		FALSE,                         /* symbol to token */
+		FALSE,                         /* scope 0 fallback */
+		FALSE                          /* store int64 */};
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
 	if (GET_PRIVATE (self)->message_body->len != 0)
 		g_string_free (GET_PRIVATE (self)->message_body, TRUE);
 
-	GET_PRIVATE (self)->message_body = g_string_new (body);
+	GET_PRIVATE (self)->message_body = g_string_new ("");
+
+	scanner = g_scanner_new (&scanner_config);
+	if (scanner)
+	{
+		string = g_string_new (body);
+
+		g_scanner_input_text (scanner,
+				      string->str,
+				      string->len);
+
+		for (token = g_scanner_get_next_token (scanner);
+		     token != G_TOKEN_EOF;
+		     token = g_scanner_get_next_token (scanner))
+		{
+			if (token == G_TOKEN_STRING)
+				g_string_append (GET_PRIVATE (self)->message_body,
+						 scanner->value.v_string);
+		}
+
+		g_string_free (string, TRUE);
+	}
 }
 
 void
@@ -2071,7 +2123,7 @@ _calc_body_height (Bubble* self,
 
 	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
-	pango_layout_set_markup (
+	pango_layout_set_text (
 		layout,
 		GET_PRIVATE (self)->message_body->str,
 		GET_PRIVATE (self)->message_body->len);

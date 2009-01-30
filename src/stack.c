@@ -668,12 +668,11 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	*out_caps      = g_malloc0 (4 * sizeof(char *));
+	*out_caps = g_malloc0 (3 * sizeof(char *));
 
 	(*out_caps)[0] = g_strdup ("body");
 	(*out_caps)[1] = g_strdup ("icon-static");
-	(*out_caps)[2] = g_strdup ("body-markup");
-	(*out_caps)[3] = NULL;
+	(*out_caps)[2] = NULL;
 
 	return TRUE;
 }
