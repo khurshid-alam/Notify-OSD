@@ -718,7 +718,8 @@ void
 draw_shadow (cairo_t* cr,
 	     gdouble  width,
 	     gdouble  height,
-	     gint     shadow_radius)
+	     gint     shadow_radius,
+	     gint     corner_radius)
 {
 	cairo_surface_t* tmp_surface = NULL;
 	cairo_surface_t* new_surface = NULL;
@@ -743,11 +744,11 @@ draw_shadow (cairo_t* cr,
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr_surf);
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.85f);
+	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.75f);
 	cairo_arc (cr_surf,
 		   2 * shadow_radius,
 		   2 * shadow_radius,
-		   1.25f * shadow_radius,
+		   2.0f * corner_radius,
 		   0.0f,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
@@ -874,7 +875,8 @@ expose_handler (GtkWidget*      window,
 		draw_shadow (cr,
 			     width,
 			     height,
-			     defaults_get_bubble_shadow_size (bubble->defaults));
+			     defaults_get_bubble_shadow_size (bubble->defaults),
+			     defaults_get_bubble_corner_radius (bubble->defaults));
 		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 		draw_round_rect (cr,
 				 1.0f,
@@ -894,7 +896,7 @@ expose_handler (GtkWidget*      window,
 				       BUBBLE_BG_COLOR_R,
 				       BUBBLE_BG_COLOR_G,
 				       BUBBLE_BG_COLOR_B,
-				       gtk_window_get_opacity (GTK_WINDOW (window)));
+				       BUBBLE_BG_COLOR_A);
 	}
 	else
 	{
@@ -1205,7 +1207,7 @@ redraw_handler (Bubble* bubble)
 
 	/* new mouse-over behaviour */
     	if (!bubble_is_mouse_over (bubble))
-		opacity = 0.95f;
+		opacity = 1.0f;
 
 	if (bubble_is_mouse_over (bubble))
 		opacity = 0.1f;
@@ -1514,7 +1516,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 0.95f);
+	gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
 
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
