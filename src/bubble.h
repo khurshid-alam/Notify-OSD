@@ -140,7 +140,7 @@ gboolean
 bubble_is_visible (Bubble* self);
 
 void
-bubble_reset_timeout (Bubble* self);
+bubble_start_timer (Bubble* self);
 
 void
 bubble_slide_to (Bubble* self,
@@ -160,6 +160,14 @@ bubble_recalc_size (Bubble *self);
 
 gboolean
 bubble_is_synchronous (Bubble *self);
+
+void
+bubble_fade_out (Bubble *self,
+		 guint   msecs);
+
+void
+bubble_fade_in (Bubble *self,
+		guint   msecs);
 
 G_END_DECLS
 

@@ -1062,9 +1062,10 @@ expose_handler (GtkWidget*      window,
 		/*pango_layout_set_text (layout,
 				       GET_PRIVATE (bubble)->message_body->str,
 				       GET_PRIVATE (bubble)->message_body->len);*/
-		pango_layout_set_markup (layout,
-					 GET_PRIVATE (bubble)->message_body->str,
-					 GET_PRIVATE (bubble)->message_body->len);
+		pango_layout_set_markup (
+			layout,
+			GET_PRIVATE (bubble)->message_body->str,
+			GET_PRIVATE (bubble)->message_body->len);
 
 		pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -1458,7 +1459,7 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->icon_pixbuf   = NULL;
 	GET_PRIVATE(this)->value         = -1;
 	GET_PRIVATE(this)->visible       = FALSE;
-	GET_PRIVATE(this)->timeout       = 5;
+	GET_PRIVATE(this)->timeout       = 2;
 	GET_PRIVATE(this)->mouse_over    = FALSE;
 	GET_PRIVATE(this)->start_y       = 0;
 	GET_PRIVATE(this)->end_y         = 0;
@@ -1680,14 +1681,6 @@ bubble_show (Bubble* self)
 	GET_PRIVATE (self)->visible = TRUE;
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 
-	/* and now let the timer tick... we use g_timeout_add_seconds() here
-	** because for the bubble timeouts microsecond-precise resolution is not
-	** needed, furthermore this also allows glib more room for optimizations
-	** and improve system-power-usage to be more efficient */
-	bubble_set_timer_id (self,
-			     g_timeout_add_seconds (bubble_get_timeout (self),
-						    (GSourceFunc) bubble_timed_out,
-						    self));
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
 	draw_handler_id = g_timeout_add (1000/60,
 					 (GSourceFunc) redraw_handler,
@@ -1697,6 +1690,8 @@ bubble_show (Bubble* self)
         pointer_update_id = g_timeout_add (100,
 					   (GSourceFunc) pointer_update,
 					   self);
+
+	/* FIXME: g_source_remove() both to avoid starting the loop */
 }
 
 /* mostly called when we change the content of the bubble
@@ -1785,6 +1780,21 @@ bubble_slide_to (Bubble* self,
 				  self);
 }
 
+
+static inline gboolean
+bubble_is_composited (Bubble *bubble)
+{
+	/* no g_return_if_fail(), the caller should have already
+	   checked that */
+	return gtk_widget_is_composited (GET_PRIVATE (bubble)->widget);
+}
+
+static inline GtkWindow*
+bubble_get_window (Bubble *bubble)
+{
+	return GTK_WINDOW (GET_PRIVATE (bubble)->widget);
+}
+
 static void
 fade_cb (ClutterTimeline *timeline,
 	 gint frame_no,
@@ -1797,14 +1807,14 @@ fade_cb (ClutterTimeline *timeline,
 	opacity = (float)clutter_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
 		/ (float)CLUTTER_ALPHA_MAX_ALPHA;
 
-	gtk_window_set_opacity (GTK_WINDOW (
-					GET_PRIVATE (bubble)->widget),
-				opacity);
+	gtk_window_set_opacity (bubble_get_window (bubble), opacity);
+
+	// bubble_refresh (bubble);
 }
 
 static void
-completed_cb (ClutterTimeline *timeline,
-	      Bubble *bubble)
+fade_out_completed_cb (ClutterTimeline *timeline,
+		       Bubble *bubble)
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
 
@@ -1813,19 +1823,70 @@ completed_cb (ClutterTimeline *timeline,
 	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
 }
 
-gboolean
-bubble_timed_out (Bubble* self)
+
+static void
+fade_in_completed_cb (ClutterTimeline *timeline,
+		      Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	bubble_start_timer (bubble);
+}
+
+void
+bubble_fade_in (Bubble *self,
+		guint   msecs)
 {
 	ClutterTimeline *timeline;
 
-	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
+	g_return_if_fail (IS_BUBBLE (self));
 
-	bubble_set_timeout (self, 0);
+//	if (!bubble_is_composited (self))
+//	{
+		bubble_show (self);
+		bubble_start_timer (self);
+		return;
+//	}
 
-	if (! GET_PRIVATE (self)->composited)
-		return FALSE;
+	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
+	bubble_show (self);
+	
+	timeline = clutter_timeline_new_for_duration (msecs);
 
-	timeline = clutter_timeline_new_for_duration (700);
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
+
+	GET_PRIVATE (self)->alpha =
+		clutter_alpha_new_full (timeline,
+					CLUTTER_ALPHA_EXP_INC,
+					NULL,
+					NULL);
+	g_object_unref (timeline);
+
+	g_signal_connect (G_OBJECT (timeline),
+			  "completed",
+			  G_CALLBACK (fade_in_completed_cb),
+			  self);
+	g_signal_connect (G_OBJECT (timeline),
+			  "new-frame",
+			  G_CALLBACK (fade_cb),
+			  self);
+
+	clutter_timeline_start (timeline);
+}
+
+void
+bubble_fade_out (Bubble *self,
+		 guint   msecs)
+{
+	ClutterTimeline *timeline;
+
+	g_return_if_fail (IS_BUBBLE (self));
+
+	timeline = clutter_timeline_new_for_duration (msecs);
 
 	if (GET_PRIVATE (self)->alpha != NULL)
 	{
@@ -1842,7 +1903,7 @@ bubble_timed_out (Bubble* self)
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
-			  G_CALLBACK (completed_cb),
+			  G_CALLBACK (fade_out_completed_cb),
 			  self);
 	g_signal_connect (G_OBJECT (timeline),
 			  "new-frame",
@@ -1850,6 +1911,22 @@ bubble_timed_out (Bubble* self)
 			  self);
 
 	clutter_timeline_start (timeline);
+}
+
+gboolean
+bubble_timed_out (Bubble* self)
+{
+	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
+
+	bubble_set_timeout (self, 0);
+
+	if (! GET_PRIVATE (self)->composited)
+	{
+		bubble_hide (self);
+		return FALSE;
+	}
+
+	bubble_fade_out (self, 300);
 
 	return FALSE;
 }
@@ -1895,7 +1972,7 @@ bubble_is_visible (Bubble* self)
 }
 
 void
-bubble_reset_timeout (Bubble* self)
+bubble_start_timer (Bubble* self)
 {
 	guint timer_id;
 
@@ -1903,17 +1980,18 @@ bubble_reset_timeout (Bubble* self)
 		return;
 
 	timer_id = bubble_get_timer_id (self);
-	if (timer_id <= 0)
-		return;
+	if (timer_id > 0)
+		g_source_remove (timer_id);
 
-	if (g_source_remove (timer_id))
-	{
-		bubble_set_timer_id (
-			self,
-			g_timeout_add_seconds (bubble_get_timeout (self),
-					       (GSourceFunc) bubble_timed_out,
-					       self));
-	}
+	/* and now let the timer tick... we use g_timeout_add_seconds() here
+	** because for the bubble timeouts microsecond-precise resolution is not
+	** needed, furthermore this also allows glib more room for optimizations
+	** and improve system-power-usage to be more efficient */
+	bubble_set_timer_id (
+		self,
+		g_timeout_add_seconds (bubble_get_timeout (self),
+				       (GSourceFunc) bubble_timed_out,
+				       self));
 }
 
 void

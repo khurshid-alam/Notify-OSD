@@ -322,12 +322,17 @@ stack_layout (Stack* self)
 		 defaults_get_bubble_horz_gap (self->defaults))
 		;
 
-	if (! bubble_is_visible (display_list[0]))
+	bubble = display_list[0];
+	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
 	{
-		bubble = display_list[0];
 		bubble_move (bubble, x, y);
-		bubble_show (bubble);
-
+		if (bubble == feedback_bubble)
+			bubble_fade_in (bubble, 700); /* TODO: or 300ms */
+		else if (bubble == urgent_bubble)
+			bubble_fade_in (bubble, 100);
+		else
+			bubble_fade_in (bubble, 200); /* TODO: or 300ms */
+		
 		y += bubble_get_height (bubble)
 			- 20 + 7; /* HACK */
 	} else {
@@ -336,11 +341,18 @@ stack_layout (Stack* self)
 			- 20 + 7; /* HACK */
 	}
 
-	if (! bubble_is_visible (display_list[1]))
+	bubble = display_list[1];
+	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
 	{
-		bubble = display_list[1];
 		bubble_move (bubble, x, y);
-		bubble_show (bubble);
+		if (bubble == feedback_bubble)
+			bubble_fade_in (bubble, 700);
+		/* TODO: or 300ms if in a serie of bubbles */
+		else if (bubble == urgent_bubble)
+			bubble_fade_in (bubble, 100);
+		else
+			bubble_fade_in (bubble, 200);
+		/* TODO: or 300ms if in a serie of bubbles */
 	}
 }
 
@@ -403,7 +415,7 @@ stack_push_bubble (Stack*  self,
 	/* check if this is just an update */
 	if (find_bubble_by_id (self, bubble_get_id (bubble)))		
 	{
-		bubble_reset_timeout (bubble);
+		bubble_start_timer (bubble);
 		bubble_refresh (bubble);
 
 		return bubble_get_id (bubble);
