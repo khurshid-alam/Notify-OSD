@@ -1,61 +1,22 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Generator: Adobe Illustrator 13.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 14576)  -->
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
 <svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
    xmlns:svg="http://www.w3.org/2000/svg"
    xmlns="http://www.w3.org/2000/svg"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    version="1.0"
-   id="Layer_1"
-   x="0px"
-   y="0px"
    width="100%"
-   height="89.686996"
+   height="117.31"
    viewBox="0 0 117.31 89.687"
-   enable-background="new 0 0 721.311 89.687"
-   xml:space="preserve"
-   sodipodi:version="0.32"
-   inkscape:version="0.46"
-   sodipodi:docname="wifi-100.svg"
-   inkscape:output_extension="org.inkscape.output.svg.inkscape"><metadata
-   id="metadata54"><rdf:RDF><cc:Work
-       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
-         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
-   id="defs52"><inkscape:perspective
-     sodipodi:type="inkscape:persp3d"
-     inkscape:vp_x="0 : 44.843498 : 1"
-     inkscape:vp_y="0 : 1000 : 0"
-     inkscape:vp_z="721.31097 : 44.843498 : 1"
-     inkscape:persp3d-origin="360.65549 : 29.895665 : 1"
-     id="perspective56" /></defs><sodipodi:namedview
-   inkscape:window-height="726"
-   inkscape:window-width="1057"
-   inkscape:pageshadow="2"
-   inkscape:pageopacity="0.0"
-   guidetolerance="10.0"
-   gridtolerance="10.0"
-   objecttolerance="10.0"
-   borderopacity="1.0"
-   bordercolor="#666666"
-   pagecolor="#ffffff"
-   id="base"
-   showgrid="false"
-   inkscape:zoom="4.2536869"
-   inkscape:cx="58.654999"
-   inkscape:cy="44.843498"
-   inkscape:window-x="357"
-   inkscape:window-y="178"
-   inkscape:current-layer="Layer_1" />
+   id="Layer_1"
+   xml:space="preserve"><defs
+   id="defs52" />
 
 
 
 <g
+   transform="translate(-604,0)"
    id="g39"
-   style="fill:#ffffff;fill-opacity:0.5"
-   transform="translate(-604,0)">
+   style="fill:#ffffff;fill-opacity:0.5">
 	<path
    d="M 673.988,42.845 C 673.988,36.587 668.914,31.513 662.655,31.513 C 656.396,31.513 651.322,36.587 651.322,42.845 C 651.322,47.662 654.333,51.767 658.571,53.407 L 658.571,85.69 C 658.571,86.756 658.988,87.762 659.744,88.517 C 660.498,89.273 661.503,89.687 662.572,89.687 L 662.738,89.687 C 663.805,89.687 664.81,89.273 665.566,88.517 C 666.322,87.762 666.738,86.756 666.738,85.69 L 666.738,53.408 C 670.977,51.768 673.988,47.664 673.988,42.845 z"
    id="path41"
