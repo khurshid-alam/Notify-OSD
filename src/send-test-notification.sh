@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#DIR=$HOME/devel/alsdorf
-DIR=$HOME/src/alsdorf
+DIR=$HOME/devel/alsdorf
+#DIR=$HOME/src/alsdorf
 
 notify-send "Testing markup" "Some <b>bold</b>, <u>underlined</u>, <i>italic</i> text"
 sleep 2

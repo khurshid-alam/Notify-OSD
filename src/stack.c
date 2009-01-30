@@ -233,98 +233,8 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
-/* HACK static */ void
-stack_layout1 (Stack* self)
-{
-	GList*  list   = NULL;
-	Bubble* bubble = NULL;
-	gint    y      = 0;
-	gint    x      = 0;
-
-	/* sanity check */
-	g_return_if_fail (self != NULL);
-
-	stack_purge_old_bubbles (self);
-
-	/* position the top left corner of the stack  */
-	y  =  defaults_get_desktop_top (self->defaults);
-	y  -= defaults_get_bubble_shadow_size (self->defaults);
-	y  += defaults_get_bubble_vert_gap (self->defaults);
-	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) -
-		 defaults_get_bubble_horz_gap (self->defaults) -
-		 defaults_get_bubble_width (self->defaults))
-		:
-		(defaults_get_desktop_left (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) + 
-		 defaults_get_bubble_horz_gap (self->defaults))
-		;
-
-	/* consider the special case of the feedback synchronous bubble */
-#if 0
-	if (self->feedback_bubble)
-	{
-		y += bubble_get_height (self->feedback_bubble);
-		y += defaults_get_bubble_vert_gap (self->defaults);
-
-		/* TODO: make sure the bubble is show()ed */
-	}
-
-	/* 1. check if we need to expire bubbles early because the feedback
-	**    bubble needs room */
-	while (stack_get_height (self) > 
-	       defaults_get_stack_height (self->defaults))
- 	{
-		stack_pop_last_bubble (self);
- 	}
-#endif
-
-	/* 2. walk through the list of the current bubbles on the stack
-	      and compute the new position for the bubbles
-	      as long as there is room available on the stack
-	 */
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-
-		/* set/update the bubble attributes */
-		/*bubble_set_size (bubble,
-				 defaults_get_bubble_width (self->defaults) +
-				 2 * defaults_get_bubble_shadow_size (self->defaults),
-				 defaults_get_bubble_min_height (self->defaults) +
-				 2 * defaults_get_bubble_shadow_size (self->defaults));*/
-
-		bubble_move (bubble, x, y);
-
-/* FIXME: sliding is broken */
-#if 0
-		if (y == defaults_get_desktop_top (self->defaults) +
-			 defaults_get_bubble_ver_gap (self->defaults))
-		{
-			bubble_move (bubble, x, y);
-		}
-		else
-		{
-			bubble_slide_to (bubble, x, y);
-		}
-#endif
-
-		bubble_show (bubble);
-		y += bubble_get_height (bubble) -
-		     2 * defaults_get_bubble_shadow_size (self->defaults) +
-		     defaults_get_bubble_vert_gap (self->defaults);
-		/* Warning: bubble_get_height() is not reliable */
-	}
-	/* TODO: consider the case of old ids for refreshed bubbles; they
- 	 * may be expired early, even if they still have a large lifespan
- 	 * left */
-}
-
 static void
-stack_layout_simple (Stack* self)
+stack_layout (Stack* self)
 {
 	Bubble* display_list[2] = {NULL, NULL};
 	Bubble* feedback_bubble = NULL;
@@ -433,8 +343,6 @@ stack_layout_simple (Stack* self)
 		bubble_show (bubble);
 	}
 }
-
-static void stack_layout (Stack *self) { stack_layout_simple (self); }
 
 
 /*-- public API --------------------------------------------------------------*/
