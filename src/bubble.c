@@ -1148,7 +1148,7 @@ expose_handler (GtkWidget*      window,
 	return TRUE;
 }
 
-static
+/*static
 gboolean
 redraw_handler (Bubble* bubble)
 {
@@ -1171,14 +1171,14 @@ redraw_handler (Bubble* bubble)
 
 	opacity = gtk_window_get_opacity (window);
 
-	/* old mouse-over behaviour */
-	/*if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
+	* old mouse-over behaviour *
+	*if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
 		opacity += 0.05f;
 
 	if (bubble_is_mouse_over (bubble) && opacity > 0.1f)
-		opacity -= 0.05f;*/
+		opacity -= 0.05f;*
 
-	/* new mouse-over behaviour */
+	* new mouse-over behaviour *
     	if (!bubble_is_mouse_over (bubble))
 		opacity = 0.95f;
 
@@ -1188,7 +1188,7 @@ redraw_handler (Bubble* bubble)
 	gtk_window_set_opacity (window, opacity);
 
 	return TRUE;
-}
+}*/
 
 static
 GdkPixbuf*
@@ -1676,7 +1676,7 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
-	guint           draw_handler_id   = 0;
+	/*guint           draw_handler_id   = 0;*/
 	guint           pointer_update_id = 0;
 
 	if (!self || !IS_BUBBLE (self))
@@ -1694,9 +1694,9 @@ bubble_show (Bubble* self)
 						    (GSourceFunc) bubble_timed_out,
 						    self));
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	draw_handler_id = g_timeout_add (1000/60,
+	/*draw_handler_id = g_timeout_add (1000/60,
 					 (GSourceFunc) redraw_handler,
-					 self);
+					 self);*/
 
 	/* FIXME: read out current mouse-pointer position every 1/10 second */
         pointer_update_id = g_timeout_add (100,
