@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter.h>
+#include <clutter/clutter-hack.h>
 
 /* We ask for 1 frame per millisecond.
  * Whenever this rate can't be achieved then the timeline

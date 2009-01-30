@@ -33,7 +33,11 @@
 #include <gobject/gvaluecollector.h>
 
 #include "clutter-fixed.h"
-#include "clutter-private.h"
+
+// #include "clutter-private.h"
+#include "clutter-hack.h"
+
+
 
 /**
  * SECTION:clutter-fixed

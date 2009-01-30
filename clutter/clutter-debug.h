@@ -2,7 +2,7 @@
 #define __CLUTTER_DEBUG_H__
 
 #include <glib.h>
-#include "clutter-main.h"
+#include "clutter-hack.h"
 
 G_BEGIN_DECLS
 

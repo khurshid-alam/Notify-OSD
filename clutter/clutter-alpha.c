@@ -58,9 +58,9 @@
 #include <math.h>
 
 #include "clutter-alpha.h"
-#include "clutter-main.h"
-#include "clutter-marshal.h"
-#include "clutter-private.h"
+#include "clutter-hack.h"
+// #include "clutter-marshal.h"
+// #include "clutter-private.h"
 #include "clutter-debug.h"
 
 G_DEFINE_TYPE (ClutterAlpha, clutter_alpha, G_TYPE_INITIALLY_UNOWNED);

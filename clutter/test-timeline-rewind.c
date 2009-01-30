@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter.h>
+#include <clutter/clutter-hack.h>
 
 #define TEST_TIMELINE_FPS 10
 #define TEST_TIMELINE_FRAME_COUNT 5

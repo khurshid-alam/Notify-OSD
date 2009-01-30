@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter.h>
+#include <clutter/clutter-hack.h>
 
 /* We use a nice slow timeline for this test since we
  * dont want the timeouts to interpolate the timeline

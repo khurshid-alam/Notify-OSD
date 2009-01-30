@@ -99,7 +99,8 @@
 #include <gobject/gvaluecollector.h>
 
 #include "clutter-units.h"
-#include "clutter-private.h"
+// #include "clutter-private.h"
+#include "clutter-hack.h"
 
 static GTypeInfo _info = {
  0,

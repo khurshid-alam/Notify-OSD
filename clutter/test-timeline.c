@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <clutter/clutter.h>
+#include <clutter/clutter-hack.h>
 
 static void
 timeline_1_complete (ClutterTimeline *timeline)

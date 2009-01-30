@@ -85,11 +85,12 @@
 
 #include "clutter-timeout-pool.h"
 #include "clutter-timeline.h"
-#include "clutter-main.h"
-#include "clutter-marshal.h"
-#include "clutter-private.h"
+// #include "clutter-main.h"
+// #include "clutter-marshal.h"
+// #include "clutter-private.h"
+#include "clutter-hack.h"
 #include "clutter-debug.h"
-#include "clutter-enum-types.h"
+// #include "clutter-enum-types.h"
 
 G_DEFINE_TYPE (ClutterTimeline, clutter_timeline, G_TYPE_OBJECT);
 
@@ -190,9 +191,12 @@ timeout_add (guint          interval,
     }
   else
     {
+#if 0
       res = clutter_threads_add_frame_source_full (CLUTTER_PRIORITY_TIMELINE,
 						   interval,
 						   func, data, notify);
+#endif
+      g_assert (G_LIKELY (timeline_use_pool)); /* ie, FAIL */
     }
 
   return res;
