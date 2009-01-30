@@ -1330,6 +1330,12 @@ bubble_finalize (GObject* gobject)
 		GET_PRIVATE (gobject)->icon_pixbuf = NULL;
 	}
 
+	if (GET_PRIVATE (gobject)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (gobject)->alpha);
+		GET_PRIVATE (gobject)->alpha = NULL;
+	}
+
 	/* chain up to the parent class */
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
@@ -1814,16 +1820,14 @@ completed_cb (ClutterTimeline *timeline,
 	g_return_if_fail (IS_BUBBLE (bubble));
 
 	bubble_hide (bubble);
-	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
 
-	/* FIXME: dispose alpha, timeline? */
+	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
 }
 
 gboolean
 bubble_timed_out (Bubble* self)
 {
 	ClutterTimeline *timeline;
-	ClutterAlpha *alpha;
 
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
@@ -1833,11 +1837,20 @@ bubble_timed_out (Bubble* self)
 		return FALSE;
 
 	timeline = clutter_timeline_new_for_duration (700);
-	clutter_timeline_set_speed (timeline, 20);
-	alpha = clutter_alpha_new_full (timeline,
+
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
+
+	GET_PRIVATE (self)->alpha =
+		clutter_alpha_new_full (timeline,
 					CLUTTER_ALPHA_RAMP_DEC,
 					NULL,
 					NULL);
+	g_object_unref (timeline);
+
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
 			  G_CALLBACK (completed_cb),
@@ -1846,10 +1859,8 @@ bubble_timed_out (Bubble* self)
 			  "new-frame",
 			  G_CALLBACK (fade_cb),
 			  self);
-	
-	clutter_timeline_start (timeline);
 
-	GET_PRIVATE (self)->alpha = alpha;
+	clutter_timeline_start (timeline);
 
 	return FALSE;
 }
