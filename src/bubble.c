@@ -1152,7 +1152,6 @@ static
 gboolean
 redraw_handler (Bubble* bubble)
 {
-	gdouble    opacity;
 	GtkWindow* window;
 
 	if (!bubble)
@@ -1169,23 +1168,13 @@ redraw_handler (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	opacity = gtk_window_get_opacity (window);
-
-	/* old mouse-over behaviour */
-	/*if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
-		opacity += 0.05f;
-
-	if (bubble_is_mouse_over (bubble) && opacity > 0.1f)
-		opacity -= 0.05f;*/
-
 	/* new mouse-over behaviour */
-    	if (!bubble_is_mouse_over (bubble))
-		opacity = 0.95f;
+    	if ((!bubble_is_mouse_over (bubble)) &&
+	    (GET_PRIVATE(bubble)->alpha == NULL))
+		gtk_window_set_opacity (window, 0.95f);
 
 	if (bubble_is_mouse_over (bubble))
-		opacity = 0.1f;
-
-	gtk_window_set_opacity (window, opacity);
+		gtk_window_set_opacity (window, 0.1f);
 
 	return TRUE;
 }
