@@ -164,23 +164,26 @@ find_bubble_by_id (Stack* self,
 /* HACK: static */ gint
 stack_get_height (Stack* self)
 {
-	GList*  list         = NULL;
-	Bubble* bubble       = NULL;
-	gint    stack_height = 0;
+	GList*    list         = NULL;
+	Bubble*   bubble       = NULL;
+	gint      stack_height = 0;
+	Defaults* d;
 
 	/* sanity check */
 	g_return_val_if_fail (self != NULL, 0);
+
+	d = self->defaults;
 
 	for (list = g_list_first (self->list);
 	     list != NULL;
 	     list = g_list_next (list))
 	{
 		bubble = (Bubble*) list->data;
-		stack_height += defaults_get_bubble_vert_gap (self->defaults) +
+		stack_height += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) +
 				bubble_get_height (bubble);
 	}
 
-	stack_height -= defaults_get_bubble_vert_gap (self->defaults);
+	stack_height -= defaults_get_bubble_vert_gap (d);
 
 	return stack_height;
 }
@@ -236,29 +239,32 @@ stack_purge_old_bubbles (Stack* self)
 /* HACK static */ void
 stack_layout1 (Stack* self)
 {
-	GList*  list   = NULL;
-	Bubble* bubble = NULL;
-	gint    y      = 0;
-	gint    x      = 0;
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
+	gint      y      = 0;
+	gint      x      = 0;
+	Defaults* d;
 
 	/* sanity check */
 	g_return_if_fail (self != NULL);
 
 	stack_purge_old_bubbles (self);
 
+	d = self->defaults;
+
 	/* position the top left corner of the stack  */
-	y  =  defaults_get_desktop_top (self->defaults);
-	y  -= defaults_get_bubble_shadow_size (self->defaults);
-	y  += defaults_get_bubble_vert_gap (self->defaults);
+	y  =  defaults_get_desktop_top (d);
+	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) -
-		 defaults_get_bubble_horz_gap (self->defaults) -
-		 defaults_get_bubble_width (self->defaults))
+		(defaults_get_desktop_right (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
+		 EM2PIXELS (defaults_get_bubble_width (d), d))
 		:
-		(defaults_get_desktop_left (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) + 
-		 defaults_get_bubble_horz_gap (self->defaults))
+		(defaults_get_desktop_left (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
 	/* consider the special case of the feedback synchronous bubble */
@@ -314,8 +320,8 @@ stack_layout1 (Stack* self)
 
 		bubble_show (bubble);
 		y += bubble_get_height (bubble) -
-		     2 * defaults_get_bubble_shadow_size (self->defaults) +
-		     defaults_get_bubble_vert_gap (self->defaults);
+		     2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		     EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
 		/* Warning: bubble_get_height() is not reliable */
 	}
 	/* TODO: consider the case of old ids for refreshed bubbles; they
@@ -326,15 +332,16 @@ stack_layout1 (Stack* self)
 static void
 stack_layout_simple (Stack* self)
 {
-	Bubble* display_list[2] = {NULL, NULL};
-	Bubble* feedback_bubble = NULL;
-	Bubble* next_to_display = NULL;
-	Bubble* urgent_bubble   = NULL;
-	GList*  list   = NULL;
-	Bubble* bubble = NULL;
-	gint    y      = 0;
-	gint    x      = 0;
+	Bubble*   display_list[2] = {NULL, NULL};
+	Bubble*   feedback_bubble = NULL;
+	Bubble*   next_to_display = NULL;
+	Bubble*   urgent_bubble   = NULL;
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
+	gint      y      = 0;
+	gint      x      = 0;
 	int i;
+	Defaults* d;
 
 	g_return_if_fail (self != NULL);
 
@@ -398,18 +405,19 @@ stack_layout_simple (Stack* self)
 	}
 	
 	/* Position the top left corner of the stack. */
-	y  =  defaults_get_desktop_top (self->defaults);
-	y  -= defaults_get_bubble_shadow_size (self->defaults);
-	y  += defaults_get_bubble_vert_gap (self->defaults);
+	d = self->defaults;
+	y  =  defaults_get_desktop_top (d);
+	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) -
-		 defaults_get_bubble_horz_gap (self->defaults) -
-		 defaults_get_bubble_width (self->defaults))
+		(defaults_get_desktop_right (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
+		 EM2PIXELS (defaults_get_bubble_width (d), d))
 		:
-		(defaults_get_desktop_left (self->defaults) -
-		 defaults_get_bubble_shadow_size (self->defaults) + 
-		 defaults_get_bubble_horz_gap (self->defaults))
+		(defaults_get_desktop_left (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
 	if (! bubble_is_visible (display_list[0]))
@@ -668,11 +676,12 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	*out_caps = g_malloc0 (3 * sizeof(char *));
+	*out_caps = g_malloc0 (4 * sizeof(char *));
 
 	(*out_caps)[0] = g_strdup ("body");
 	(*out_caps)[1] = g_strdup ("icon-static");
-	(*out_caps)[2] = NULL;
+	(*out_caps)[2] = g_strdup ("body-markup");
+	(*out_caps)[3] = NULL;
 
 	return TRUE;
 }
