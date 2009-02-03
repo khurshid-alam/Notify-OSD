@@ -16,6 +16,7 @@ test_modules_SOURCES =		\
 	../src/stack.c		\
 	../src/dbus.c		\
 	../src/apport.c		\
+	$(CLUTTER_MODULES)	\
 	test-modules-main.c     \
 	test-apport.c		\
 	test-dbus.c		\
@@ -24,6 +25,7 @@ test_modules_SOURCES =		\
 	test-defaults.c		\
 	test-observer.c		\
 	test-i18n.c		\
+	test-synchronous.c	\
 	test-stack.c
 
 test_modules_CFLAGS =		\

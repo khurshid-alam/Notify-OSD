@@ -60,8 +60,8 @@ GType bubble_get_type (void);
 Bubble*
 bubble_new (Defaults* defaults);
 
-Bubble*
-bubble_new_synchronous (Defaults* defaults);
+gchar*
+bubble_get_synchronous (Bubble *self);
 
 void
 bubble_del (Bubble* self);
@@ -160,6 +160,10 @@ bubble_recalc_size (Bubble *self);
 
 gboolean
 bubble_is_synchronous (Bubble *self);
+
+void
+bubble_set_synchronous (Bubble *self,
+			const gchar *sync);
 
 void
 bubble_fade_out (Bubble *self,

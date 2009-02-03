@@ -60,7 +60,7 @@ struct _BubblePrivate {
 	gint         delta_y;
 	gdouble      inc_factor;
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
-	gboolean     synchronous;
+	gchar*       synchronous;
 	gboolean     composited;
 	ClutterAlpha *alpha;
 };
@@ -1346,7 +1346,7 @@ bubble_init (Bubble* self)
 	priv->visible          = FALSE;
 	priv->icon_pixbuf      = NULL;
 	priv->value            = -1;
-	priv->synchronous      = FALSE;
+	priv->synchronous      = NULL;
 }
 
 static void
@@ -1475,16 +1475,12 @@ bubble_new (Defaults* defaults)
 	return this;
 }
 
-Bubble*
-bubble_new_synchronous (Defaults* defaults)
+gchar*
+bubble_get_synchronous (Bubble* self)
 {
-	Bubble *self = bubble_new (defaults);
+	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
-	g_return_val_if_fail (self != NULL, NULL);
-
-	GET_PRIVATE (self)->synchronous = TRUE;
-
-	return self;
+	return GET_PRIVATE (self)->synchronous;
 }
 
 
@@ -1931,6 +1927,7 @@ bubble_timed_out (Bubble* self)
 	return FALSE;
 }
 
+
 gboolean
 bubble_hide (Bubble* self)
 {
@@ -2292,11 +2289,20 @@ bubble_recalc_size (Bubble *self)
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
 }
 
+void
+bubble_set_synchronous (Bubble *self,
+			const gchar *sync)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	GET_PRIVATE (self)->synchronous = g_strdup (sync);
+}
+
 gboolean
 bubble_is_synchronous (Bubble *self)
 {
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return GET_PRIVATE (self)->synchronous;
+	return (GET_PRIVATE (self)->synchronous != NULL);
 }

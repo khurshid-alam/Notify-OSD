@@ -30,6 +30,7 @@ GTestSuite *test_dbus_create_test_suite (void);
 GTestSuite *test_apport_create_test_suite (void);
 GTestSuite *test_i18n_create_test_suite (void);
 GTestSuite *test_withlib_create_test_suite (void);
+GTestSuite *test_synchronous_create_test_suite (void);
 
 
 int
@@ -53,6 +54,7 @@ main (int    argc,
 	g_test_suite_add_suite (suite, test_apport_create_test_suite ());
 	g_test_suite_add_suite (suite, test_i18n_create_test_suite ());
 	g_test_suite_add_suite (suite, test_withlib_create_test_suite ());
+	g_test_suite_add_suite (suite, test_synchronous_create_test_suite ());
 
 	result = g_test_run ();
 
