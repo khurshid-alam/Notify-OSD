@@ -18,8 +18,10 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <X11/Xatom.h>
 #include <glib.h>
 #include <gtk/gtk.h>
+#include <gdk/gdkx.h>
 #include <pixman.h>
 #include <math.h>
 
@@ -720,7 +722,8 @@ void
 draw_shadow (cairo_t* cr,
 	     gdouble  width,
 	     gdouble  height,
-	     gint     shadow_radius)
+	     gint     shadow_radius,
+	     gint     corner_radius)
 {
 	cairo_surface_t* tmp_surface = NULL;
 	cairo_surface_t* new_surface = NULL;
@@ -745,11 +748,11 @@ draw_shadow (cairo_t* cr,
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr_surf);
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.85f);
+	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.75f);
 	cairo_arc (cr_surf,
 		   2 * shadow_radius,
 		   2 * shadow_radius,
-		   1.25f * shadow_radius,
+		   2.0f * corner_radius,
 		   0.0f,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
@@ -876,7 +879,8 @@ expose_handler (GtkWidget*      window,
 		draw_shadow (cr,
 			     width,
 			     height,
-			     defaults_get_bubble_shadow_size (bubble->defaults));
+			     defaults_get_bubble_shadow_size (bubble->defaults),
+			     defaults_get_bubble_corner_radius (bubble->defaults));
 		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 		draw_round_rect (cr,
 				 1.0f,
@@ -896,7 +900,7 @@ expose_handler (GtkWidget*      window,
 				       BUBBLE_BG_COLOR_R,
 				       BUBBLE_BG_COLOR_G,
 				       BUBBLE_BG_COLOR_B,
-				       gtk_window_get_opacity (GTK_WINDOW (window)));
+				       BUBBLE_BG_COLOR_A);
 	}
 	else
 	{
@@ -954,6 +958,7 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_width (layout,
 					(defaults_get_bubble_width (bubble->defaults) - left_margin - margin_gap) *
 					PANGO_SCALE);
+
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 		/* print and layout string (pango-wise) */
@@ -961,7 +966,31 @@ expose_handler (GtkWidget*      window,
 				       GET_PRIVATE (bubble)->title->str,
 				       GET_PRIVATE (bubble)->title->len);
 
+		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
+		{
+			pango_layout_set_width (layout,
+						(defaults_get_bubble_width (bubble->defaults) -
+						 left_margin - margin_gap) *
+						PANGO_SCALE);
+			pango_layout_set_height (layout,
+						 (bubble_get_height (bubble) -
+						  2 * margin_gap -
+						  2 * defaults_get_bubble_shadow_size (bubble->defaults)) *
+						 PANGO_SCALE);
+			pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
+		}
+
 		pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
+		{
+			top_margin += ((bubble_get_height (bubble) -
+					2 * margin_gap -
+					2 * defaults_get_bubble_shadow_size (bubble->defaults) -
+					log_rect.height / PANGO_SCALE) / 2);
+		}
 
 		/* draw ink- and log-rects for debugging text positioning */
 		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
@@ -994,7 +1023,7 @@ expose_handler (GtkWidget*      window,
 		 * and assuming there is an icon,
 		 * center/align title in the middle of the bubble
 		 */ 	
-		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
+		/*if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
 		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			cairo_move_to (cr,
@@ -1008,7 +1037,9 @@ expose_handler (GtkWidget*      window,
 		else
 		{
 			cairo_move_to (cr, left_margin, top_margin);
-		}
+		}*/
+
+		cairo_move_to (cr, left_margin, top_margin);
 
 		/* draw pango-text as path to our cairo-context */
 		pango_cairo_layout_path (cr, layout);
@@ -1390,6 +1421,42 @@ bubble_class_init (BubbleClass* klass)
 						    0);
 }
 
+/* the behind-bubble blur only works with the enabled/working compiz-plugin blur
+ * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window, thanks to
+ * the opacity-threshold of the blur-plugin we might not need to unset it for
+ * fade-on-hover case */
+static void
+_set_bg_blur (GtkWidget* window,
+	      gboolean   set_blur)
+{
+	glong data[] = {2, /* threshold */
+			0  /* filter    */};
+
+	/* sanity check */
+	if (!window)
+		return;
+
+	if (set_blur)
+	{
+		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
+				 GDK_WINDOW_XID (window->window),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+					      "_COMPIZ_WM_WINDOW_BLUR",
+					      FALSE),
+				 XA_INTEGER,
+				 32,
+				 PropModeReplace,
+				 (guchar *) data,
+				 2);
+	}
+	else
+	{
+		/* FIXME: not sure yet if we really need to unset it, because
+		 * the compiz blur-plugin has a opacity-threshold for applying
+		 * the blur */
+	}
+}
+
 /*-- public API --------------------------------------------------------------*/
 
 Bubble*
@@ -1449,7 +1516,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 0.95f);
+	gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
 
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
@@ -1471,6 +1538,8 @@ bubble_new (Defaults* defaults)
 	
 	update_shape (this);
 	update_input_shape (window, 1, 1);
+
+	_set_bg_blur (window, TRUE);
 
 	return this;
 }
