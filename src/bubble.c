@@ -1837,15 +1837,15 @@ bubble_fade_in (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-//	if (!bubble_is_composited (self))
-//	{
+	if (!bubble_is_composited (self))
+	{
 		bubble_show (self);
 		bubble_start_timer (self);
 		return;
-//	}
+	}
 
-	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
 	bubble_show (self);
+	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
 	
 	timeline = clutter_timeline_new_for_duration (msecs);
 
@@ -1857,7 +1857,7 @@ bubble_fade_in (Bubble *self,
 
 	GET_PRIVATE (self)->alpha =
 		clutter_alpha_new_full (timeline,
-					CLUTTER_ALPHA_EXP_INC,
+					CLUTTER_ALPHA_RAMP_INC,
 					NULL,
 					NULL);
 	g_object_unref (timeline);
