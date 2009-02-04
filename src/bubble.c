@@ -1194,13 +1194,11 @@ redraw_handler (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	/* new mouse-over behaviour */
-    	if ((!bubble_is_mouse_over (bubble)) &&
-	    (GET_PRIVATE(bubble)->alpha == NULL))
-		gtk_window_set_opacity (window, 0.95f);
-
+	/* new mouse-over behaviour */	    
 	if (bubble_is_mouse_over (bubble))
 		gtk_window_set_opacity (window, 0.1f);
+	else if (GET_PRIVATE(bubble)->alpha == NULL)
+		gtk_window_set_opacity (window, 0.95f);
 
 	return TRUE;
 }
@@ -1419,7 +1417,8 @@ bubble_class_init (BubbleClass* klass)
  * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window, thanks to
  * the opacity-threshold of the blur-plugin we might not need to unset it for
  * fade-on-hover case */
-static void
+// static
+ void
 _set_bg_blur (GtkWidget* window,
 	      gboolean   set_blur)
 {
@@ -1474,6 +1473,10 @@ bubble_new (Defaults* defaults)
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
 				  GDK_WINDOW_TYPE_HINT_DOCK);
+	/* TODO: fix the default settings of compiz to avoid fade and other
+	   effects to apply to our windows when we add this hint:
+	   | GDK_WINDOW_TYPE_HINT_NOTIFICATION);
+	*/
 
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
@@ -1510,7 +1513,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
+	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
 
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
@@ -1804,6 +1807,7 @@ bubble_show (Bubble* self)
 					 self);
 
 	/* FIXME: read out current mouse-pointer position every 1/10 second */
+
         pointer_update_id = g_timeout_add (100,
 					   (GSourceFunc) pointer_update,
 					   self);
@@ -1922,11 +1926,10 @@ fade_cb (ClutterTimeline *timeline,
 	g_return_if_fail (IS_BUBBLE (bubble));
 
 	opacity = (float)clutter_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
-		/ (float)CLUTTER_ALPHA_MAX_ALPHA;
+		/ (float)CLUTTER_ALPHA_MAX_ALPHA
+		* 0.95f;
 
 	gtk_window_set_opacity (bubble_get_window (bubble), opacity);
-
-	// bubble_refresh (bubble);
 }
 
 static void
@@ -1947,6 +1950,15 @@ fade_in_completed_cb (ClutterTimeline *timeline,
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
 
+	/* get rid of the alpha, so that the mouse-over algorithm notices */
+	if (GET_PRIVATE (bubble)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->alpha);
+		GET_PRIVATE (bubble)->alpha = NULL;
+	}
+
+	gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
+
 	bubble_start_timer (bubble);
 }
 
@@ -1965,9 +1977,6 @@ bubble_fade_in (Bubble *self,
 		return;
 	}
 
-	bubble_show (self);
-	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
-	
 	timeline = clutter_timeline_new_for_duration (msecs);
 
 	if (GET_PRIVATE (self)->alpha != NULL)
@@ -1987,12 +1996,16 @@ bubble_fade_in (Bubble *self,
 			  "completed",
 			  G_CALLBACK (fade_in_completed_cb),
 			  self);
+
 	g_signal_connect (G_OBJECT (timeline),
 			  "new-frame",
 			  G_CALLBACK (fade_cb),
 			  self);
 
 	clutter_timeline_start (timeline);
+
+	gtk_window_set_opacity (bubble_get_window (self), 0.0);
+	bubble_show (self);	
 }
 
 void
