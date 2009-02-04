@@ -239,6 +239,119 @@ draw_round_rect (cairo_t* cr,
                    270.0f * G_PI / 180.0f);
 }
 
+static pixman_fixed_t*
+create_gaussian_blur_kernel (gint    radius,
+                             gdouble sigma,
+                             gint*   length)
+{
+	const gdouble   scale2 = 2.0f * sigma * sigma;
+	const gdouble   scale1 = 1.0f / (G_PI * scale2);
+	const gint      size = 2 * radius + 1;
+	const gint      n_params = size * size;
+	pixman_fixed_t* params;
+	gdouble*        tmp;
+	gdouble         sum;
+	gint            x;
+	gint            y;
+	gint            i;
+
+        tmp = g_newa (double, n_params);
+
+        /* caluclate gaussian kernel in floating point format */
+        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
+                for (y = -radius; y <= radius; ++y, ++i) {
+                        const gdouble u = x * x;
+                        const gdouble v = y * y;
+
+                        tmp[i] = scale1 * exp (-(u+v)/scale2);
+
+                        sum += tmp[i];
+                }
+        }
+
+        /* normalize gaussian kernel and convert to fixed point format */
+        params = g_new (pixman_fixed_t, n_params + 2);
+
+        params[0] = pixman_int_to_fixed (size);
+        params[1] = pixman_int_to_fixed (size);
+
+        for (i = 0; i < n_params; ++i)
+                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
+
+        if (length)
+                *length = n_params + 2;
+
+        return params;
+}
+
+static cairo_surface_t*
+blur_image_surface (cairo_surface_t* surface,
+                    gint             radius,
+                    gdouble          sigma /* pass 0.0f for auto-calculation */) 
+{
+        static cairo_user_data_key_t data_key;
+        pixman_fixed_t*              params = NULL;
+        gint                         n_params;
+        pixman_image_t*              src;
+	pixman_image_t*              dst;
+        gint                         w;
+        gint                         h;
+        gint                         s;
+        gpointer                     p;
+	gdouble                      radiusf;
+
+        if (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE)
+		return NULL;
+
+	radiusf = fabs (radius) + 1.0f;
+	if (sigma == 0.0f)
+		sigma = sqrt (-(radiusf * radiusf) / (2.0f * log (1.0f / 255.0f)));
+
+        w = cairo_image_surface_get_width (surface);
+        h = cairo_image_surface_get_height (surface);
+        s = cairo_image_surface_get_stride (surface);
+
+        /* create pixman image for cairo image surface */
+        p = cairo_image_surface_get_data (surface);
+        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+
+        /* attach gaussian kernel to pixman image */
+        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
+        pixman_image_set_filter (src,
+				 PIXMAN_FILTER_CONVOLUTION,
+				 params,
+				 n_params);
+        g_free (params);
+
+        /* render blured image to new pixman image */
+        p = g_malloc0 (s * h);
+        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+        pixman_image_composite (PIXMAN_OP_SRC,
+				src,
+				NULL,
+				dst,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				w,
+				h);
+        pixman_image_unref (src);
+
+        /* create new cairo image for blured pixman image */
+        surface = cairo_image_surface_create_for_data (p,
+						       CAIRO_FORMAT_ARGB32,
+						       w,
+						       h,
+						       s);
+        cairo_surface_set_user_data (surface, &data_key, p, g_free);
+        pixman_image_unref (dst);
+
+        return surface;
+}
+
 #if 0
 static void
 draw_layout_grid (cairo_t* cr,
@@ -392,11 +505,6 @@ draw_value_indicator (cairo_t* cr,
 	if (bars < 0 || lit == NULL || unlit == NULL)
 		return;
 
-	/* reference rect for positioning-control */
-	/*cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_stroke (cr);*/
-
 	step_value = 100.0f / (gdouble) bars;
 	x_gap = w * 0.3f / (gdouble) (bars - 1);
 	x_step = w * 0.7f / (gdouble) bars;
@@ -408,9 +516,9 @@ draw_value_indicator (cairo_t* cr,
 		if (step * step_value >= value)
 		{
 			cairo_set_source_rgba (cr,
-					       unlit[R],
-					       unlit[G],
-					       unlit[B],
+					       unlit[R] * (value != 0) ? 1.0f : 0.5f,
+					       unlit[G] * (value != 0) ? 1.0f : 0.5f,
+					       unlit[B] * (value != 0) ? 1.0f : 0.5f,
 					       unlit[A]);
 		}
 		else
@@ -437,44 +545,141 @@ static void
 _render_icon_indicator (Bubble*  self,
 			cairo_t* cr)
 {
-	Defaults* d        = self->defaults;
-	gdouble   lit[4]   = {INDICATOR_LIT_R,
-			      INDICATOR_LIT_G,
-			      INDICATOR_LIT_B,
-			      INDICATOR_LIT_A};
-	gdouble   unlit[4] = {INDICATOR_UNLIT_R,
-			      INDICATOR_UNLIT_G,
-			      INDICATOR_UNLIT_B,
-			      INDICATOR_UNLIT_A};
+	Defaults*        d = self->defaults;
+	cairo_t*         glow_cr;
+	cairo_surface_t* glow_surface;
+	cairo_surface_t* tmp;
+	cairo_status_t   status;
+	cairo_pattern_t* pattern;
+	gint             bars = 13;
+	gdouble          lit[4]   = {INDICATOR_LIT_R,
+				     INDICATOR_LIT_G,
+				     INDICATOR_LIT_B,
+				     INDICATOR_LIT_A};
+	gdouble          unlit[4] = {INDICATOR_UNLIT_R,
+				     INDICATOR_UNLIT_G,
+				     INDICATOR_UNLIT_B,
+				     INDICATOR_UNLIT_A};
+	gint             blur_radius = 10;
 
 	g_debug ("icon + indicator\n");
 
-	/* render icon */
-	gdk_cairo_set_source_pixbuf (
-		cr,
-		GET_PRIVATE (self)->icon_pixbuf,
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		EM2PIXELS (defaults_get_margin_size (d), d),
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		EM2PIXELS (defaults_get_margin_size (d), d));
-	cairo_paint (cr);
+	/* create "scratch-pad" surface */
+	glow_surface = cairo_image_surface_create (
+			CAIRO_FORMAT_ARGB32,
+			EM2PIXELS (defaults_get_bubble_width (d), d) -
+			2 * EM2PIXELS (defaults_get_margin_size (d), d) +
+			2 * blur_radius,
+			EM2PIXELS (defaults_get_icon_size (d), d) +
+			2 * blur_radius);
+	status = cairo_surface_status (glow_surface);
+	if (status != CAIRO_STATUS_SUCCESS)
+		return;
 
-	/* render value */
+	/* create context for scratch-pad surface */
+	glow_cr = cairo_create (glow_surface);
+	status = cairo_status (glow_cr);
+	if (status != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (glow_surface);
+		return;
+	}
+
+	/* clear context of scratch-pad surface */
+	cairo_scale (glow_cr, 1.0f, 1.0f);
+	cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (glow_cr);
+
+	cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+
+	/* render icon to scratch-pad context */
+	gdk_cairo_set_source_pixbuf (glow_cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     blur_radius,
+				     blur_radius);
+	cairo_paint (glow_cr);
+
+	/* render value-bar(s) to scratch-pad context */
 	draw_value_indicator (
-		cr,
+		glow_cr,
 		GET_PRIVATE (self)->value,
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		2 * EM2PIXELS (defaults_get_margin_size (d), d) +
-		EM2PIXELS (defaults_get_icon_size (d), d),
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		EM2PIXELS (defaults_get_margin_size (d), d),
+		EM2PIXELS (defaults_get_margin_size (d), d) +
+		EM2PIXELS (defaults_get_icon_size (d), d) +
+		blur_radius,
+		blur_radius,
 		EM2PIXELS (defaults_get_bubble_width (d), d) -
 		3 * EM2PIXELS (defaults_get_margin_size (d), d) -
 		EM2PIXELS (defaults_get_icon_size (d), d),
 		EM2PIXELS (defaults_get_icon_size (d), d),
-		13,
+		bars,
 		lit,
 		unlit);
+
+	/* "blit" scratch-pad context to context of bubble */
+	cairo_set_source_surface (cr,
+				  glow_surface,
+				  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				  EM2PIXELS (defaults_get_margin_size (d), d) -
+				  blur_radius,
+				  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				  EM2PIXELS (defaults_get_margin_size (d), d) -
+				  blur_radius);
+	cairo_paint (cr);
+
+	switch (GET_PRIVATE (self)->value)
+	{
+		/* "undershoot" effect */
+		case 0:
+
+		break;
+
+		/* "overshoot" effect */
+		case 100:
+			/* blur the scratch-pad surface */
+			tmp = blur_image_surface (glow_surface,
+						  blur_radius,
+						  0.0f);
+
+			/* clear scratch-pad context */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+			cairo_paint (glow_cr);
+
+			/* create mask-pattern from blurred scratch-pad
+			 * surface */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+			cairo_push_group (glow_cr);
+			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
+			cairo_paint (glow_cr);
+			pattern = cairo_pop_group (glow_cr);
+
+			/* paint fully opaque white "through" blurred
+			 * mask-pattern */
+			cairo_set_source_rgba (glow_cr, 1.0f, 1.0f, 1.0f, 1.0f);
+			cairo_mask (glow_cr, pattern);
+			cairo_pattern_destroy (pattern);
+
+			/* finally "blit" scratch-pad onto context of bubble */
+			cairo_set_source_surface (cr,
+						  glow_surface,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius);
+			cairo_paint_with_alpha (cr, 1.0f);
+		break;
+
+		/* normal effect-less rendering */
+		default:
+			/* do nothing */
+		break;
+	}
+
+	/* clean up */
+	cairo_destroy (glow_cr);
+	cairo_surface_destroy (glow_surface);
+	cairo_surface_destroy (tmp);
 }
 
 static void
@@ -489,6 +694,8 @@ _render_icon_title (Bubble*  self,
 	PangoLayout*          layout = NULL;
 	PangoRectangle        ink_rect;
 	PangoRectangle        log_rect;
+
+	g_debug ("icon + title\n");
 
 	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -562,8 +769,6 @@ _render_icon_title (Bubble*  self,
 			       TEXT_TITLE_COLOR_A);
 	cairo_fill (cr);
 	g_object_unref (layout);
-
-	g_debug ("icon + title\n");
 }
 
 static void
@@ -578,6 +783,8 @@ _render_icon_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
+
+	g_debug ("icon + title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -651,7 +858,6 @@ _render_icon_title_body (Bubble*  self,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
-	/*pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);*/
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 	pango_layout_set_width (layout,
@@ -680,8 +886,6 @@ _render_icon_title_body (Bubble*  self,
 			       TEXT_BODY_COLOR_A);
 	cairo_fill (cr);
 	g_object_unref (layout);
-
-	g_debug ("icon + title + body\n");
 }
 
 static void
@@ -696,6 +900,8 @@ _render_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
+
+	g_debug ("title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -788,8 +994,6 @@ _render_title_body (Bubble*  self,
 			       TEXT_BODY_COLOR_A);
 	cairo_fill (cr);
 	g_object_unref (layout);
-
-	g_debug ("title + body\n");
 }
 
 static
@@ -936,119 +1140,6 @@ composited_changed_handler (GtkWidget* window,
 						gtk_widget_get_screen (window));
 
 	update_shape (bubble);
-}
-
-static pixman_fixed_t*
-create_gaussian_blur_kernel (gint    radius,
-                             gdouble sigma,
-                             gint*   length)
-{
-	const gdouble   scale2 = 2.0f * sigma * sigma;
-	const gdouble   scale1 = 1.0f / (G_PI * scale2);
-	const gint      size = 2 * radius + 1;
-	const gint      n_params = size * size;
-	pixman_fixed_t* params;
-	gdouble*        tmp;
-	gdouble         sum;
-	gint            x;
-	gint            y;
-	gint            i;
-
-        tmp = g_newa (double, n_params);
-
-        /* caluclate gaussian kernel in floating point format */
-        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
-                for (y = -radius; y <= radius; ++y, ++i) {
-                        const gdouble u = x * x;
-                        const gdouble v = y * y;
-
-                        tmp[i] = scale1 * exp (-(u+v)/scale2);
-
-                        sum += tmp[i];
-                }
-        }
-
-        /* normalize gaussian kernel and convert to fixed point format */
-        params = g_new (pixman_fixed_t, n_params + 2);
-
-        params[0] = pixman_int_to_fixed (size);
-        params[1] = pixman_int_to_fixed (size);
-
-        for (i = 0; i < n_params; ++i)
-                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
-
-        if (length)
-                *length = n_params + 2;
-
-        return params;
-}
-
-static cairo_surface_t*
-blur_image_surface (cairo_surface_t* surface,
-                    gint             radius,
-                    gdouble          sigma /* pass 0.0f for auto-calculation */) 
-{
-        static cairo_user_data_key_t data_key;
-        pixman_fixed_t*              params = NULL;
-        gint                         n_params;
-        pixman_image_t*              src;
-	pixman_image_t*              dst;
-        gint                         w;
-        gint                         h;
-        gint                         s;
-        gpointer                     p;
-	gdouble                      radiusf;
-
-        if (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE)
-		return NULL;
-
-	radiusf = fabs (radius) + 1.0f;
-	if (sigma == 0.0f)
-		sigma = sqrt (-(radiusf * radiusf) / (2.0f * log (1.0f / 255.0f)));
-
-        w = cairo_image_surface_get_width (surface);
-        h = cairo_image_surface_get_height (surface);
-        s = cairo_image_surface_get_stride (surface);
-
-        /* create pixman image for cairo image surface */
-        p = cairo_image_surface_get_data (surface);
-        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
-
-        /* attach gaussian kernel to pixman image */
-        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
-        pixman_image_set_filter (src,
-				 PIXMAN_FILTER_CONVOLUTION,
-				 params,
-				 n_params);
-        g_free (params);
-
-        /* render blured image to new pixman image */
-        p = g_malloc0 (s * h);
-        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
-        pixman_image_composite (PIXMAN_OP_SRC,
-				src,
-				NULL,
-				dst,
-				0,
-				0,
-				0,
-				0,
-				0,
-				0,
-				w,
-				h);
-        pixman_image_unref (src);
-
-        /* create new cairo image for blured pixman image */
-        surface = cairo_image_surface_create_for_data (p,
-						       CAIRO_FORMAT_ARGB32,
-						       w,
-						       h,
-						       s);
-        cairo_surface_set_user_data (surface, &data_key, p, g_free);
-        pixman_image_unref (dst);
-
-        return surface;
 }
 
 void
