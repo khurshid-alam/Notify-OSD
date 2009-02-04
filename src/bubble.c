@@ -256,112 +256,112 @@ draw_layout_grid (cairo_t* cr,
 
 	/* all vertical grid lines */
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) 2 * defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (2 * defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) 2 * defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (2 * defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d) -
-		       (gdouble) defaults_get_margin_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d) -
+		       EM2PIXELS (defaults_get_margin_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d) -
-		       (gdouble) defaults_get_margin_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d) -
+		       EM2PIXELS (defaults_get_margin_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 
 	/* all horizontal grid lines */
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_margin_size (d) +
-		       (gdouble) defaults_get_icon_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_margin_size (d), d) +
+		       EM2PIXELS (defaults_get_icon_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d) -
-		       (gdouble) defaults_get_margin_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d) -
-		       (gdouble) defaults_get_margin_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_move_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_line_to (cr,
-		       (gdouble) defaults_get_bubble_shadow_size (d) +
-		       (gdouble) defaults_get_bubble_width (d),
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       (gdouble) bubble_get_height (bubble) -
-		       (gdouble) defaults_get_bubble_shadow_size (d));
+		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 
 	cairo_stroke (cr);
 }
@@ -438,25 +438,25 @@ draw_value_indicator (cairo_t* cr,
 static void
 bubble_render_icon_indicator (Bubble* self)
 {
-/*	g_debug ("icon + indicator\n"); */
+	g_debug ("icon + indicator\n");
 }
 
 static void
 bubble_render_icon_title (Bubble* self)
 {
-/*	g_debug ("icon + title\n"); */
+	g_debug ("icon + title\n");
 }
 
 static void
 bubble_render_icon_title_body (Bubble* self)
 {
-/*	g_debug ("icon + title + body\n"); */
+	g_debug ("icon + title + body\n");
 }
 
 static void
 bubble_render_title_body (Bubble* self)
 {
-/*	g_debug ("title + body\n"); */
+	g_debug ("title + body\n");
 }
 
 static
@@ -565,12 +565,12 @@ update_shape (Bubble* self)
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 			draw_round_rect (cr,
 					 1.0f,
-					 (gdouble) defaults_get_bubble_shadow_size (d),
-					 (gdouble) defaults_get_bubble_shadow_size (d),
-					 (gdouble) defaults_get_bubble_corner_radius (d),
-					 (gdouble) defaults_get_bubble_width (d),
+					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+					 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+					 EM2PIXELS (defaults_get_bubble_width (d), d),
 					 (gdouble) bubble_get_height (self) -
-					 (gdouble) 2 * defaults_get_bubble_shadow_size (d));
+					 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 			cairo_fill (cr);
 			cairo_destroy (cr);
 
@@ -752,7 +752,7 @@ draw_shadow (cairo_t* cr,
 	cairo_arc (cr_surf,
 		   2 * shadow_radius,
 		   2 * shadow_radius,
-		   2.0f * corner_radius,
+		   1.75f * corner_radius,
 		   0.0f,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
@@ -827,15 +827,18 @@ expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	Bubble*  bubble;
-	cairo_t* cr;
-	gdouble  width       = (gdouble) window->allocation.width;
-	gdouble  height      = (gdouble) window->allocation.height;
-	gdouble  margin_gap;
-	gdouble  left_margin;
-	gdouble  top_margin;
+	Bubble*   bubble;
+	cairo_t*  cr;
+	gdouble   width       = (gdouble) window->allocation.width;
+	gdouble   height      = (gdouble) window->allocation.height;
+	gdouble   margin_gap;
+	gdouble   left_margin;
+	gdouble   top_margin;
+	Defaults* d;
 
 	bubble = (Bubble*) G_OBJECT (data);
+
+	d = bubble->defaults;
 
 	bubble_determine_layout (bubble);
 	switch (bubble_get_layout (bubble))
@@ -861,11 +864,11 @@ expose_handler (GtkWidget*      window,
 		break;
 	}
 
-	margin_gap   = (gdouble) defaults_get_margin_size (bubble->defaults);
-	left_margin  = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
-	top_margin   = (gdouble) defaults_get_bubble_shadow_size (bubble->defaults);
-	left_margin += (gdouble) defaults_get_margin_size (bubble->defaults);
-	top_margin  += (gdouble) defaults_get_margin_size (bubble->defaults);
+	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
+	left_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin  += EM2PIXELS (defaults_get_margin_size (d), d);
 
 	cr = gdk_cairo_create (window->window);
 
@@ -879,17 +882,17 @@ expose_handler (GtkWidget*      window,
 		draw_shadow (cr,
 			     width,
 			     height,
-			     defaults_get_bubble_shadow_size (bubble->defaults),
-			     defaults_get_bubble_corner_radius (bubble->defaults));
+			     EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			     EM2PIXELS (defaults_get_bubble_corner_radius (d), d));
 		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 		draw_round_rect (cr,
 				 1.0f,
-				 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-				 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-				 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
-				 (gdouble) defaults_get_bubble_width (bubble->defaults),
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+				 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+				 EM2PIXELS (defaults_get_bubble_width (d), d),
 				 (gdouble) bubble_get_height (bubble) -
-				 (gdouble) 2 * defaults_get_bubble_shadow_size (bubble->defaults));
+				 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 		cairo_fill (cr);
 	}
 
@@ -912,12 +915,12 @@ expose_handler (GtkWidget*      window,
 
 	draw_round_rect (cr,
 			 1.0f,
-			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-			 (gdouble) defaults_get_bubble_shadow_size (bubble->defaults),
-			 (gdouble) defaults_get_bubble_corner_radius (bubble->defaults),
-			 (gdouble) defaults_get_bubble_width (bubble->defaults),
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+			 EM2PIXELS (defaults_get_bubble_width (d), d),
 			 (gdouble) bubble_get_height (bubble) -
-			 (gdouble) 2 * defaults_get_bubble_shadow_size (bubble->defaults));
+			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 	cairo_fill (cr);
 
 	/* render icon */
@@ -930,8 +933,8 @@ expose_handler (GtkWidget*      window,
 					left_margin);
 		cairo_paint (cr);
 
-		left_margin += (gdouble) defaults_get_icon_size (bubble->defaults);
-		left_margin += (gdouble) defaults_get_margin_size (bubble->defaults);
+		left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
+		left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
 	}
 
 	/* render title */
@@ -946,17 +949,17 @@ expose_handler (GtkWidget*      window,
 		desc = pango_font_description_new ();
 
 		pango_font_description_set_size (desc,
-						 defaults_get_text_title_size (bubble->defaults) *
+						 EM2PIXELS (defaults_get_text_title_size (d), d) *
 						 PANGO_SCALE);
-		pango_font_description_set_family_static (desc, defaults_get_text_font_face (bubble->defaults));
-		pango_font_description_set_weight (desc, defaults_get_text_title_weight (bubble->defaults));
+		pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
+		pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
 		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
 
 		pango_layout_set_width (layout,
-					(defaults_get_bubble_width (bubble->defaults) - left_margin - margin_gap) *
+					(EM2PIXELS (defaults_get_bubble_width (d), d) - left_margin - margin_gap) *
 					PANGO_SCALE);
 
 		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -970,13 +973,13 @@ expose_handler (GtkWidget*      window,
 		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
 		{
 			pango_layout_set_width (layout,
-						(defaults_get_bubble_width (bubble->defaults) -
+						(EM2PIXELS (defaults_get_bubble_width (d), d) -
 						 left_margin - margin_gap) *
 						PANGO_SCALE);
 			pango_layout_set_height (layout,
 						 (bubble_get_height (bubble) -
 						  2 * margin_gap -
-						  2 * defaults_get_bubble_shadow_size (bubble->defaults)) *
+						  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d)) *
 						 PANGO_SCALE);
 			pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
 		}
@@ -988,19 +991,19 @@ expose_handler (GtkWidget*      window,
 		{
 			top_margin += ((bubble_get_height (bubble) -
 					2 * margin_gap -
-					2 * defaults_get_bubble_shadow_size (bubble->defaults) -
+					2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
 					log_rect.height / PANGO_SCALE) / 2);
 		}
 
 		/* draw ink- and log-rects for debugging text positioning */
 		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
 		cairo_rectangle (cr,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
-				 defaults_get_icon_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
+				 EM2PIXELS (defaults_get_icon_size (d), d) +
 				 (gdouble) ink_rect.x / PANGO_SCALE,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
 				 (gdouble) ink_rect.y / PANGO_SCALE,
 				 (gdouble) ink_rect.width / PANGO_SCALE,
 				 (gdouble) ink_rect.height / PANGO_SCALE);
@@ -1008,12 +1011,12 @@ expose_handler (GtkWidget*      window,
 
 		cairo_set_source_rgb (cr, 0.5f, 0.5f, 1.0f);
 		cairo_rectangle (cr,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
-				 defaults_get_icon_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
+				 EM2PIXELS (defaults_get_icon_size (d), d) +
 				 (gdouble) log_rect.x / PANGO_SCALE,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
 				 (gdouble) log_rect.y / PANGO_SCALE,
 				 (gdouble) log_rect.width / PANGO_SCALE,
 				 (gdouble) log_rect.height / PANGO_SCALE);
@@ -1067,7 +1070,7 @@ expose_handler (GtkWidget*      window,
 		layout = pango_cairo_create_layout (cr);
 		desc = pango_font_description_new ();
 		pango_font_description_set_size (desc,
-						 defaults_get_text_body_size (bubble->defaults) *
+						 EM2PIXELS (defaults_get_text_body_size (d), d) *
 						 PANGO_SCALE);
 		pango_font_description_set_family_static (desc,
 							  defaults_get_text_font_face (bubble->defaults));
@@ -1079,36 +1082,27 @@ expose_handler (GtkWidget*      window,
 		pango_layout_set_font_description (layout, desc);
 		pango_font_description_free (desc);
 		pango_layout_set_width (layout,
-					(defaults_get_bubble_width (bubble->defaults) -
+					(EM2PIXELS (defaults_get_bubble_width (d), d) -
 					 left_margin -
 					 margin_gap) *
 					PANGO_SCALE);
-		/*pango_layout_set_height (layout,
-					 (defaults_get_bubble_min_height (bubble->defaults) -
-					  top_margin -
-					  margin_gap) *
-					 PANGO_SCALE);*/
 
 		/* print and layout string (pango-wise) */
-		/*pango_layout_set_text (layout,
+		pango_layout_set_text (layout,
 				       GET_PRIVATE (bubble)->message_body->str,
-				       GET_PRIVATE (bubble)->message_body->len);*/
-		pango_layout_set_markup (
-			layout,
-			GET_PRIVATE (bubble)->message_body->str,
-			GET_PRIVATE (bubble)->message_body->len);
+				       GET_PRIVATE (bubble)->message_body->len);
 
 		pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
 		/* draw ink- and log-rects for debugging text positioning */
 		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
 		cairo_rectangle (cr,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
-				 defaults_get_icon_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
+				 EM2PIXELS (defaults_get_icon_size (d), d) +
 				 (gdouble) ink_rect.x / PANGO_SCALE,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
 				 (gdouble) ink_rect.y / PANGO_SCALE,
 				 (gdouble) ink_rect.width / PANGO_SCALE,
 				 (gdouble) ink_rect.height / PANGO_SCALE);
@@ -1116,12 +1110,12 @@ expose_handler (GtkWidget*      window,
 
 		cairo_set_source_rgb (cr, 0.5f, 0.5f, 1.0f);
 		cairo_rectangle (cr,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
-				 defaults_get_icon_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
+				 EM2PIXELS (defaults_get_icon_size (d), d) +
 				 (gdouble) log_rect.x / PANGO_SCALE,
-				 defaults_get_bubble_shadow_size (bubble->defaults) +
-				 defaults_get_margin_size (bubble->defaults) +
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				 EM2PIXELS (defaults_get_margin_size (d), d) +
 				 (gdouble) log_rect.y / PANGO_SCALE,
 				 (gdouble) log_rect.width / PANGO_SCALE,
 				 (gdouble) log_rect.height / PANGO_SCALE);
@@ -1159,21 +1153,21 @@ expose_handler (GtkWidget*      window,
 		draw_value_indicator (
 			cr,
 			GET_PRIVATE (bubble)->value,
-			defaults_get_bubble_shadow_size (bubble->defaults) +
-			2 * defaults_get_margin_size (bubble->defaults) +
-			defaults_get_icon_size (bubble->defaults),
-			defaults_get_bubble_shadow_size (bubble->defaults) +
-			defaults_get_margin_size (bubble->defaults),
-			defaults_get_bubble_width (bubble->defaults) -
-			3 * defaults_get_margin_size (bubble->defaults) -
-			defaults_get_icon_size (bubble->defaults),
-			defaults_get_icon_size (bubble->defaults),
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			2 * EM2PIXELS (defaults_get_margin_size (d), d) +
+			EM2PIXELS (defaults_get_icon_size (d), d),
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			EM2PIXELS (defaults_get_margin_size (d), d),
+			EM2PIXELS (defaults_get_bubble_width (d), d) -
+			3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+			EM2PIXELS (defaults_get_icon_size (d), d),
+			EM2PIXELS (defaults_get_icon_size (d), d),
 			13,
 			lit,
 			unlit);
 	}
 
-	/*draw_layout_grid (cr, bubble);*/
+	/* draw_layout_grid (cr, bubble); */
 
 	cairo_destroy (cr);
 
@@ -1579,6 +1573,37 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
+	/*GScanner*      scanner = NULL;
+	GTokenType     token;
+	GString*       string = NULL;
+	GScannerConfig scanner_config = {
+		"\t\r\n",                      * characters to skip *
+		G_CSET_a_2_z " _," G_CSET_A_2_Z, * identifier start *
+		G_CSET_a_2_z "_., " G_CSET_A_2_Z G_CSET_DIGITS,* identifier cont. *
+		"#\n",                         * single line comment *
+		FALSE,                         * case_sensitive *
+		TRUE,                          * skip multi-line comments *
+		TRUE,                          * skip single line comments *
+		FALSE,                         * scan multi-line comments *
+		TRUE,                          * scan identifiers *
+		FALSE,                         * scan 1-char identifiers *
+		FALSE,                         * scan NULL identifiers *
+		FALSE,                         * scan symbols *
+		FALSE,                         * scan binary *
+		FALSE,                         * scan octal *
+		TRUE,                          * scan float *
+		TRUE,                          * scan hex *
+		FALSE,                         * scan hex dollar *
+		TRUE,                          * scan single quote strings *
+		TRUE,                          * scan double quite strings *
+		FALSE,                         * numbers to int *
+		FALSE,                         * int to float *
+		TRUE,                          * identifier to string *
+		FALSE,                         * char to token *
+		FALSE,                         * symbol to token *
+		FALSE,                         * scope 0 fallback *
+		FALSE                          * store int64 *};*/
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -1586,12 +1611,35 @@ bubble_set_message_body (Bubble*      self,
 		g_string_free (GET_PRIVATE (self)->message_body, TRUE);
 
 	GET_PRIVATE (self)->message_body = g_string_new (body);
+
+	/*scanner = g_scanner_new (&scanner_config);
+	if (scanner)
+	{
+		string = g_string_new (body);
+
+		g_scanner_input_text (scanner,
+				      string->str,
+				      string->len);
+
+		for (token = g_scanner_get_next_token (scanner);
+		     token != G_TOKEN_EOF;
+		     token = g_scanner_get_next_token (scanner))
+		{
+			if (token == G_TOKEN_STRING)
+				g_string_append (GET_PRIVATE (self)->message_body,
+						 scanner->value.v_string);
+		}
+
+		g_string_free (string, TRUE);
+	}*/
 }
 
 void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
+	Defaults* d;
+
  	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -1601,17 +1649,20 @@ bubble_set_icon (Bubble*      self,
 		GET_PRIVATE (self)->icon_pixbuf = NULL;
 	}
 
+	d = self->defaults;
 	GET_PRIVATE (self)->icon_pixbuf = load_icon (
 						filename,
-						defaults_get_icon_size (self->defaults));
+						EM2PIXELS (defaults_get_icon_size (d), d));
 }
 
 void
 bubble_set_icon_from_pixbuf (Bubble*    self,
 			     GdkPixbuf* pixbuf)
 {
-	GdkPixbuf *scaled;
-	int height, width;
+	GdkPixbuf* scaled;
+	gint       height;
+	gint       width;
+	Defaults*  d;
 
  	if (!self || !IS_BUBBLE (self) || !pixbuf)
 		return;
@@ -1625,17 +1676,18 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	height = gdk_pixbuf_get_height (pixbuf);
 	width = gdk_pixbuf_get_width (pixbuf);
 
-	if (width != defaults_get_icon_size (self->defaults))
+	d = self->defaults;
+
+	if (width != defaults_get_icon_size (d))
 	{
 		if (width != height)
 			g_warning ("non-square pixmap");
 		/* TODO: improve scaling for non-square pixmaps */
 
 		scaled = gdk_pixbuf_scale_simple (pixbuf,
-						  defaults_get_icon_size (self->defaults),
-						  defaults_get_icon_size (self->defaults),
+						  EM2PIXELS (defaults_get_icon_size (d), d),
+						  EM2PIXELS (defaults_get_icon_size (d), d),
 						  GDK_INTERP_HYPER);
-						  /*GDK_INTERP_BILINEAR);*/
 		pixbuf = scaled;
 	}
 
@@ -2072,7 +2124,6 @@ bubble_get_position (Bubble* self,
 				 x, y);
 }
 
-
 gint
 bubble_get_height (Bubble *self)
 {
@@ -2120,7 +2171,7 @@ _calc_title_height (Bubble* self,
 	desc = pango_font_description_new ();
 	pango_font_description_set_size (
 		desc,
-		defaults_get_text_title_size (d) *
+		EM2PIXELS (defaults_get_text_title_size (d), d) *
 		PANGO_SCALE);
 
 	pango_font_description_set_family_static (
@@ -2183,7 +2234,7 @@ _calc_body_height (Bubble* self,
 	desc = pango_font_description_new ();
 	pango_font_description_set_size (
 		desc,
-		defaults_get_text_body_size (d) *
+		EM2PIXELS (defaults_get_text_body_size (d), d) *
 		PANGO_SCALE);
 
 	pango_font_description_set_family_static (
@@ -2201,7 +2252,7 @@ _calc_body_height (Bubble* self,
 
 	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
-	pango_layout_set_markup (
+	pango_layout_set_text (
 		layout,
 		GET_PRIVATE (self)->message_body->str,
 		GET_PRIVATE (self)->message_body->len);
@@ -2230,123 +2281,97 @@ bubble_recalc_size (Bubble *self)
 	bubble_determine_layout (self);
 
 	new_bubble_width =
-		defaults_get_bubble_width (d) +
-		2 * defaults_get_bubble_shadow_size (d);
+		EM2PIXELS (defaults_get_bubble_width (d), d) +
+		2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 	switch (GET_PRIVATE (self)->layout)
 	{
 		case LAYOUT_ICON_INDICATOR:
 		case LAYOUT_ICON_TITLE:
 			new_bubble_height =
-				defaults_get_bubble_min_height (d) +
-				2 * defaults_get_bubble_shadow_size (d);
+				EM2PIXELS (defaults_get_bubble_min_height (d), d) +
+				2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 		break;
 
 		case LAYOUT_ICON_TITLE_BODY:
 		{
-			gint title_height   = 0;
-			gint allowed_height = 0;
-			gint body_height    = 0;
+			gint    title_height     = 0;
+			gdouble available_height = 0.0f;
+			gdouble bubble_height    = 0.0f;
+			gint    body_height      = 0;
 
 			title_height = _calc_title_height (
 					self,
-					defaults_get_bubble_width (d) -
-					3 * defaults_get_margin_size (d) -
-					defaults_get_icon_size (d));
-/*			g_debug ("title-width: %d, title-height: %d\n",
-				 defaults_get_bubble_width (d) -
-				 3 * defaults_get_margin_size (d) -
-				 defaults_get_icon_size (d),
-				 title_height);
-*/
-			allowed_height = defaults_get_bubble_max_height (d) -
-					 2 * defaults_get_margin_size (d) -
-					 title_height;
+					EM2PIXELS (defaults_get_bubble_width (d), d) -
+					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+					EM2PIXELS (defaults_get_icon_size (d), d));
 
 			body_height = _calc_body_height (
 					self,
-					defaults_get_bubble_width (d) -
-					3 * defaults_get_margin_size (d) -
-					defaults_get_icon_size (d));
-/*			g_debug ("body-width: %d, body-height: %d\n",
-				 defaults_get_bubble_width (d) -
-				 3 * defaults_get_margin_size (d) -
-				 defaults_get_icon_size (d),
-				 body_height);
-*/
+					EM2PIXELS (defaults_get_bubble_width (d), d) -
+					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+					EM2PIXELS (defaults_get_icon_size (d), d));
 
-			if (body_height >= allowed_height)
+			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
+					   defaults_get_desktop_bottom_gap (d) -
+					   defaults_get_bubble_min_height (d) -
+					   2.0f * defaults_get_bubble_vert_gap (d);
+
+			bubble_height = PIXELS2EM (title_height, d) +
+					PIXELS2EM (body_height, d) +
+					2.0f * defaults_get_margin_size (d);
+
+			if (bubble_height >= available_height)
 			{
-				new_bubble_height =
-					defaults_get_bubble_max_height (d) +
-					2 * defaults_get_bubble_shadow_size (d);
+				new_bubble_height = EM2PIXELS (available_height, d);
 			}
 			else
 			{
 				new_bubble_height =
-					(defaults_get_icon_size (d) +
-					 2 * defaults_get_margin_size (d))
-					>
-					(body_height +
-					 title_height +
-					 2 * defaults_get_margin_size (d))
-					?
-					defaults_get_icon_size (d) +
-					2 * defaults_get_margin_size (d) +
-					2 * defaults_get_bubble_shadow_size (d)
-					:
 					body_height +
 					title_height +
-					2 * defaults_get_margin_size (d) +
-					2 * defaults_get_bubble_shadow_size (d);
+					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
+					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
 		}
 		break;
 
 		case LAYOUT_TITLE_BODY:
 		{
-			gint title_height   = 0;
-			gint allowed_height = 0;
-			gint body_height    = 0;
+			gint    title_height     = 0;
+			gdouble available_height = 0.0f;
+			gdouble bubble_height    = 0.0f;
+			gint    body_height      = 0;
 
 			title_height = _calc_title_height (
 					self,
-					defaults_get_bubble_width (d) -
-					2 * defaults_get_margin_size (d));
-/*			g_debug ("title-width: %d, title-height: %d\n",
-				 defaults_get_bubble_width (d) -
-				 3 * defaults_get_margin_size (d) -
-				 defaults_get_icon_size (d),
-				 title_height);
-*/
-
-			allowed_height = defaults_get_bubble_max_height (d) -
-					 2 * defaults_get_margin_size (d) -
-					 title_height;
+					EM2PIXELS (defaults_get_bubble_width (d), d) -
+					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
 
 			body_height = _calc_body_height (
 					self,
-					defaults_get_bubble_width (d) -
-					2 * defaults_get_margin_size (d));
-/*			g_debug ("body-width: %d, body-height: %d\n",
-				 defaults_get_bubble_width (d) -
-				 3 * defaults_get_margin_size (d) -
-				 defaults_get_icon_size (d),
-				 body_height);
-*/
-			if (body_height >= allowed_height)
+					EM2PIXELS (defaults_get_bubble_width (d), d) -
+					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
+
+			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
+					   defaults_get_desktop_bottom_gap (d) -
+					   defaults_get_bubble_min_height (d) -
+					   2.0f * defaults_get_bubble_vert_gap (d);
+
+			bubble_height = PIXELS2EM ((title_height + body_height), d) +
+					2.0f * defaults_get_margin_size (d);
+
+			if (bubble_height >= available_height)
 			{
-				new_bubble_height =
-					defaults_get_bubble_max_height (d) +
-					2 * defaults_get_bubble_shadow_size (d);
+				new_bubble_height = EM2PIXELS (available_height, d);
 			}
 			else
 			{
 				new_bubble_height =
 					body_height +
 					title_height +
-					2 * defaults_get_margin_size (d) +
-					2 * defaults_get_bubble_shadow_size (d);
+					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
+					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
 		}
 		break;

@@ -35,6 +35,7 @@ enum
 	PROP_DESKTOP_BOTTOM,
 	PROP_DESKTOP_LEFT,
 	PROP_DESKTOP_RIGHT,
+	PROP_DESKTOP_BOTTOM_GAP,
 	PROP_STACK_HEIGHT,
 	PROP_BUBBLE_VERT_GAP,
 	PROP_BUBBLE_HORZ_GAP,
@@ -60,7 +61,8 @@ enum
 	PROP_TEXT_TITLE_SIZE,
 	PROP_TEXT_BODY_COLOR,
 	PROP_TEXT_BODY_WEIGHT,
-	PROP_TEXT_BODY_SIZE
+	PROP_TEXT_BODY_SIZE,
+	PROP_PIXELS_PER_EM
 };
 
 enum
@@ -78,30 +80,32 @@ enum
 	TEXT_WEIGHT_BOLD   = 700  /* QFont::Bold   75 */
 };
 
-/* these values are interpreted as pixel-measurements and do comply to the 
+/* these values are interpreted as em-measurements and do comply to the 
  * visual guide for jaunty-notifications */
-#define DEFAULT_BUBBLE_WIDTH         280
-#define DEFAULT_BUBBLE_MIN_HEIGHT    64
-#define DEFAULT_BUBBLE_MAX_HEIGHT    240
-#define DEFAULT_BUBBLE_VERT_GAP      7
-#define DEFAULT_BUBBLE_HORZ_GAP      5
-#define DEFAULT_BUBBLE_SHADOW_SIZE   10
+#define DEFAULT_DESKTOP_BOTTOM_GAP    6.0f
+#define DEFAULT_BUBBLE_WIDTH         18.0f
+#define DEFAULT_BUBBLE_MIN_HEIGHT     5.0f
+#define DEFAULT_BUBBLE_MAX_HEIGHT    12.2f
+#define DEFAULT_BUBBLE_VERT_GAP       0.5f
+#define DEFAULT_BUBBLE_HORZ_GAP       0.5f
+#define DEFAULT_BUBBLE_SHADOW_SIZE    0.5f
 #define DEFAULT_BUBBLE_SHADOW_COLOR  "#000000"
 #define DEFAULT_BUBBLE_BG_COLOR      "#131313"
 #define DEFAULT_BUBBLE_BG_OPACITY    "#cc"
 #define DEFAULT_BUBBLE_HOVER_OPACITY "#66"
-#define DEFAULT_BUBBLE_CORNER_RADIUS 6
-#define DEFAULT_CONTENT_SHADOW_SIZE  2
+#define DEFAULT_BUBBLE_CORNER_RADIUS 0.375f
+#define DEFAULT_CONTENT_SHADOW_SIZE  0.125f
 #define DEFAULT_CONTENT_SHADOW_COLOR "#000000"
-#define DEFAULT_MARGIN_SIZE          16
-#define DEFAULT_ICON_SIZE            48
+#define DEFAULT_MARGIN_SIZE          1.0f
+#define DEFAULT_ICON_SIZE            3.0f
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
-#define DEFAULT_TEXT_TITLE_SIZE      120
+#define DEFAULT_TEXT_TITLE_SIZE      1.2f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
 #define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
-#define DEFAULT_TEXT_BODY_SIZE       100
+#define DEFAULT_TEXT_BODY_SIZE       1.0f
+#define DEFAULT_PIXELS_PER_EM        10
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -110,10 +114,11 @@ enum
 #define DEFAULT_ON_SCREEN_TIMEOUT    5000
 
 #define GCONF_FONT_KEY "/desktop/gnome/interface/font_name"
+#define GCONF_DPI_KEY "/desktop/gnome/font_rendering/dpi"
 
 /*-- internal API ------------------------------------------------------------*/
 
-static gint
+static gdouble
 _get_average_char_width (Defaults* self)
 {
 	cairo_surface_t*      surface;
@@ -141,7 +146,7 @@ _get_average_char_width (Defaults* self)
 	desc = pango_font_description_new ();
 	pango_font_description_set_size (
 		desc,
-		defaults_get_text_title_size (self) *
+		EM2PIXELS (defaults_get_text_title_size (self), self) *
 		PANGO_SCALE);
 
 	pango_font_description_set_family_static (
@@ -167,7 +172,7 @@ _get_average_char_width (Defaults* self)
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
-	return char_width / PANGO_SCALE;
+	return PIXELS2EM (char_width / PANGO_SCALE, self);
 }
 
 static void
@@ -181,18 +186,20 @@ defaults_constructed (GObject* gobject)
 	glong*       coords;
 	Atom         workarea_atom;
 	Defaults*    self;
-	GConfClient* context   = NULL;
-	GString*     string    = NULL;
-	GError*      error     = NULL;
-	GString*     font_face = NULL;
-	gint         font_size = 0;
-	gint         margin_size;
-	gint         icon_size;
-	gint         bubble_height;
-	gint         new_bubble_height;
-	gint         bubble_width;
-	gint         new_bubble_width;
-	gint         average_char_width;
+	GConfClient* context       = NULL;
+	GString*     string        = NULL;
+	gdouble      dpi           = 0.0f;
+	GError*      error         = NULL;
+	GString*     font_face     = NULL;
+	gint         points        = 0;
+	gint         pixels_per_em = 0;
+	gdouble      margin_size;
+	gdouble      icon_size;
+	gdouble      bubble_height;
+	gdouble      new_bubble_height;
+	gdouble      bubble_width;
+	gdouble      new_bubble_width;
+	gdouble      average_char_width;
 
 	self = DEFAULTS (gobject);
 
@@ -240,10 +247,11 @@ defaults_constructed (GObject* gobject)
 			      "desktop-right",
 			      (gint) coords[2],
 			      NULL);
-		g_object_set (self,
+		/* FIXME: use new upper and lower threshold/limits for stack */
+		/*g_object_set (self,
 			      "stack-height",
 			      (gint) coords[3] / 2,
-			      NULL);
+			      NULL);*/
 		XFree (coords);
 	}
 
@@ -255,6 +263,7 @@ defaults_constructed (GObject* gobject)
 	string = g_string_new (gconf_client_get_string (context,
 							GCONF_FONT_KEY,
 							&error));
+
 	if (error)
 	{
 		g_object_unref (context);
@@ -279,7 +288,7 @@ defaults_constructed (GObject* gobject)
 				switch (token)
 				{
 					case G_TOKEN_INT:
-						font_size = (gint) scanner->value.v_int;
+						points = (gint) scanner->value.v_int;
 					break;
 
 					case G_TOKEN_IDENTIFIER:
@@ -287,8 +296,10 @@ defaults_constructed (GObject* gobject)
 							font_face = g_string_new (scanner->value.v_string);
 						else
 						{
-							g_string_append (font_face, " ");
-							g_string_append (font_face, scanner->value.v_string);
+							g_string_append (font_face,
+									 " ");
+							g_string_append (font_face,
+									 scanner->value.v_string);
 						}
 					break;
 
@@ -307,17 +318,26 @@ defaults_constructed (GObject* gobject)
 			      "text-font-face",
 			      font_face->str,
 			      NULL);
-		g_object_set (self,
-			      "text-title-size",
-			      (gint) (1.2f * font_size),
-			      NULL);
-		g_object_set (self,
-			      "text-body-size",
-			      font_size,
-			      NULL);
 
 		if (font_face != NULL)
 			g_string_free (font_face, TRUE);
+	}
+
+	dpi = gconf_client_get_float (context, GCONF_DPI_KEY, &error);
+	if (error)
+	{
+		g_object_unref (context);
+		return;
+	}
+	else
+	{
+		pixels_per_em = (gint) ((gdouble) points *
+					1.0f / 72.0f * dpi);
+		g_debug ("pixels-per-em: %d\n", pixels_per_em);
+		g_object_set (self,
+			      "pixels-per-em",
+			      pixels_per_em,
+			      NULL);
 	}
 
 	g_object_unref (context);
@@ -336,7 +356,7 @@ defaults_constructed (GObject* gobject)
 		      &bubble_height,
 		      NULL);
 
-	new_bubble_height = 2 * margin_size + icon_size;
+	new_bubble_height = 2.0f * margin_size + icon_size;
 
 	if (new_bubble_height > bubble_height)
 	{
@@ -360,9 +380,9 @@ defaults_constructed (GObject* gobject)
 		      NULL);
 	average_char_width = _get_average_char_width (self);
 
-	new_bubble_width = 3 * margin_size +
+	new_bubble_width = 3.0f * margin_size +
 			   icon_size +
-			   20 * average_char_width;
+			   20.0f * average_char_width;
 	if (new_bubble_width > bubble_width)
 	{
 		g_object_set (self,
@@ -431,32 +451,36 @@ defaults_get_property (GObject*    gobject,
 			g_value_set_int (value, defaults->desktop_right);
 		break;
 
+		case PROP_DESKTOP_BOTTOM_GAP:
+			g_value_set_double (value, defaults->desktop_bottom_gap);
+		break;
+
 		case PROP_STACK_HEIGHT:
-			g_value_set_int (value, defaults->stack_height);
+			g_value_set_double (value, defaults->stack_height);
 		break;
 
 		case PROP_BUBBLE_VERT_GAP:
-			g_value_set_int (value, defaults->bubble_vert_gap);
+			g_value_set_double (value, defaults->bubble_vert_gap);
 		break;
 
 		case PROP_BUBBLE_HORZ_GAP:
-			g_value_set_int (value, defaults->bubble_horz_gap);
+			g_value_set_double (value, defaults->bubble_horz_gap);
 		break;
 
 		case PROP_BUBBLE_WIDTH:
-			g_value_set_int (value, defaults->bubble_width);
+			g_value_set_double (value, defaults->bubble_width);
 		break;
 
 		case PROP_BUBBLE_MIN_HEIGHT:
-			g_value_set_int (value, defaults->bubble_min_height);
+			g_value_set_double (value, defaults->bubble_min_height);
 		break;
 
 		case PROP_BUBBLE_MAX_HEIGHT:
-			g_value_set_int (value, defaults->bubble_max_height);
+			g_value_set_double (value, defaults->bubble_max_height);
 		break;
 
 		case PROP_BUBBLE_SHADOW_SIZE:
-			g_value_set_int (value, defaults->bubble_shadow_size);
+			g_value_set_double (value, defaults->bubble_shadow_size);
 		break;
 
 		case PROP_BUBBLE_SHADOW_COLOR:
@@ -480,11 +504,11 @@ defaults_get_property (GObject*    gobject,
 		break;
 
 		case PROP_BUBBLE_CORNER_RADIUS:
-			g_value_set_int (value, defaults->bubble_corner_radius);
+			g_value_set_double (value, defaults->bubble_corner_radius);
 		break;
 
 		case PROP_CONTENT_SHADOW_SIZE:
-			g_value_set_int (value, defaults->content_shadow_size);
+			g_value_set_double (value, defaults->content_shadow_size);
 		break;
 
 		case PROP_CONTENT_SHADOW_COLOR:
@@ -493,11 +517,11 @@ defaults_get_property (GObject*    gobject,
 		break;
 
 		case PROP_MARGIN_SIZE:
-			g_value_set_int (value, defaults->margin_size);
+			g_value_set_double (value, defaults->margin_size);
 		break;
 
 		case PROP_ICON_SIZE:
-			g_value_set_int (value, defaults->icon_size);
+			g_value_set_double (value, defaults->icon_size);
 		break;
 
 		case PROP_FADE_IN_TIMEOUT:
@@ -527,7 +551,7 @@ defaults_get_property (GObject*    gobject,
 		break;
 
 		case PROP_TEXT_TITLE_SIZE:
-			g_value_set_int (value, defaults->text_title_size);
+			g_value_set_double (value, defaults->text_title_size);
 		break;
 
 		case PROP_TEXT_BODY_COLOR:
@@ -540,7 +564,11 @@ defaults_get_property (GObject*    gobject,
 		break;
 
 		case PROP_TEXT_BODY_SIZE:
-			g_value_set_int (value, defaults->text_body_size);
+			g_value_set_double (value, defaults->text_body_size);
+		break;
+
+		case PROP_PIXELS_PER_EM:
+			g_value_set_int (value, defaults->pixels_per_em);
 		break;
 
 		default :
@@ -585,32 +613,36 @@ defaults_set_property (GObject*      gobject,
 			defaults->desktop_right = g_value_get_int (value);
 		break;
 
+		case PROP_DESKTOP_BOTTOM_GAP:
+			defaults->desktop_bottom_gap = g_value_get_double (value);
+		break;
+
 		case PROP_STACK_HEIGHT:
-			defaults->stack_height = g_value_get_int (value);
+			defaults->stack_height = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_WIDTH:
-			defaults->bubble_width = g_value_get_int (value);
+			defaults->bubble_width = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_VERT_GAP:
-			defaults->bubble_vert_gap = g_value_get_int (value);
+			defaults->bubble_vert_gap = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_HORZ_GAP:
-			defaults->bubble_horz_gap = g_value_get_int (value);
+			defaults->bubble_horz_gap = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_MIN_HEIGHT:
-			defaults->bubble_min_height = g_value_get_int (value);
+			defaults->bubble_min_height = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_MAX_HEIGHT:
-			defaults->bubble_max_height = g_value_get_int (value);
+			defaults->bubble_max_height = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_SHADOW_SIZE:
-			defaults->bubble_shadow_size = g_value_get_int (value);
+			defaults->bubble_shadow_size = g_value_get_double (value);
 		break;
 
 		case PROP_BUBBLE_SHADOW_COLOR:
@@ -653,11 +685,11 @@ defaults_set_property (GObject*      gobject,
 		break;
 
 		case PROP_BUBBLE_CORNER_RADIUS:
-			defaults->bubble_corner_radius = g_value_get_int (value);
+			defaults->bubble_corner_radius = g_value_get_double (value);
 		break;
 
 		case PROP_CONTENT_SHADOW_SIZE:
-			defaults->content_shadow_size = g_value_get_int (value);
+			defaults->content_shadow_size = g_value_get_double (value);
 		break;
 
 		case PROP_CONTENT_SHADOW_COLOR:
@@ -671,11 +703,11 @@ defaults_set_property (GObject*      gobject,
 		break;
 
 		case PROP_MARGIN_SIZE:
-			defaults->margin_size = g_value_get_int (value);
+			defaults->margin_size = g_value_get_double (value);
 		break;
 
 		case PROP_ICON_SIZE:
-			defaults->icon_size = g_value_get_int (value);
+			defaults->icon_size = g_value_get_double (value);
 		break;
 
 		case PROP_FADE_IN_TIMEOUT:
@@ -715,7 +747,7 @@ defaults_set_property (GObject*      gobject,
 		break;
 
 		case PROP_TEXT_TITLE_SIZE:
-			defaults->text_title_size = g_value_get_int (value);
+			defaults->text_title_size = g_value_get_double (value);
 		break;
 
 		case PROP_TEXT_BODY_COLOR:
@@ -732,7 +764,11 @@ defaults_set_property (GObject*      gobject,
 		break;
 
 		case PROP_TEXT_BODY_SIZE:
-			defaults->text_body_size = g_value_get_int (value);
+			defaults->text_body_size = g_value_get_double (value);
+		break;
+
+		case PROP_PIXELS_PER_EM:
+			defaults->pixels_per_em = g_value_get_int (value);
 		break;
 
 		default :
@@ -753,6 +789,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_desktop_bottom;
 	GParamSpec*   property_desktop_left;
 	GParamSpec*   property_desktop_right;
+	GParamSpec*   property_desktop_bottom_gap;
 	GParamSpec*   property_stack_height;
 	GParamSpec*   property_bubble_vert_gap;
 	GParamSpec*   property_bubble_horz_gap;
@@ -779,6 +816,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_text_body_color;
 	GParamSpec*   property_text_body_weight;
 	GParamSpec*   property_text_body_size;
+	GParamSpec*   property_pixels_per_em;
 
 	gobject_class->constructed  = defaults_constructed;
 	gobject_class->dispose      = defaults_dispose;
@@ -864,25 +902,38 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_DESKTOP_RIGHT,
 					 property_desktop_right);
 
-	property_stack_height = g_param_spec_int (
+	property_desktop_bottom_gap = g_param_spec_double (
+				"desktop-bottom-gap",
+				"desktop-bottom-gap",
+				"Bottom gap on the desktop in em",
+				0.0f,
+				16.0f,
+				DEFAULT_DESKTOP_BOTTOM_GAP,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_DESKTOP_BOTTOM_GAP,
+					 property_desktop_bottom_gap);
+
+	property_stack_height = g_param_spec_double (
 				"stack-height",
 				"stack-height",
-				"Maximum allowed height of stack",
-				0,
-				4096,
-				2048,
+				"Maximum allowed height of stack (in em)",
+				0.0f,
+				256.0f,
+				50.0f,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_STACK_HEIGHT,
 					 property_stack_height);
 
-    	property_bubble_vert_gap = g_param_spec_int (
+    	property_bubble_vert_gap = g_param_spec_double (
 				"bubble-vert-gap",
 				"bubble-vert-gap",
-				"Vert. gap between bubble and workarea edge",
-				0,
-				1024,
+				"Vert. gap between bubble and workarea edge (in em)",
+				0.0f,
+				10.0f,
 				DEFAULT_BUBBLE_VERT_GAP,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -890,12 +941,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_VERT_GAP,
 					 property_bubble_vert_gap);
 
-    	property_bubble_horz_gap = g_param_spec_int (
+    	property_bubble_horz_gap = g_param_spec_double (
 				"bubble-horz-gap",
 				"bubble-horz-gap",
-				"Horz. gap between bubble and workarea edge",
-				0,
-				1024,
+				"Horz. gap between bubble and workarea edge (in em)",
+				0.0f,
+				10.0f,
 				DEFAULT_BUBBLE_HORZ_GAP,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -903,12 +954,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_HORZ_GAP,
 					 property_bubble_horz_gap);
 
-	property_bubble_width = g_param_spec_int (
+	property_bubble_width = g_param_spec_double (
 				"bubble-width",
 				"bubble-width",
-				"Width of bubble in pixels",
-				0,
-				1024,
+				"Width of bubble (in em)",
+				0.0f,
+				256.0f,
 				DEFAULT_BUBBLE_WIDTH,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -916,12 +967,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_WIDTH,
 					 property_bubble_width);
 
-	property_bubble_min_height = g_param_spec_int (
+	property_bubble_min_height = g_param_spec_double (
 				"bubble-min-height",
 				"bubble-min-height",
-				"Min. height of bubble in pixels",
-				0,
-				1024,
+				"Min. height of bubble (in em)",
+				0.0f,
+				256.0f,
 				DEFAULT_BUBBLE_MIN_HEIGHT,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -929,12 +980,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_MIN_HEIGHT,
 					 property_bubble_min_height);
 
-	property_bubble_max_height = g_param_spec_int (
+	property_bubble_max_height = g_param_spec_double (
 				"bubble-max-height",
 				"bubble-max-height",
-				"Max. height of bubble in pixels",
-				0,
-				1024,
+				"Max. height of bubble (in em)",
+				0.0f,
+				256.0f,
 				DEFAULT_BUBBLE_MAX_HEIGHT,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -942,12 +993,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_MAX_HEIGHT,
 					 property_bubble_max_height);
 
-	property_bubble_shadow_size = g_param_spec_int (
+	property_bubble_shadow_size = g_param_spec_double (
 				"bubble-shadow-size",
 				"bubble-shadow-size",
-				"Size of bubble drop-shadow in pixels",
-				0,
-				1024,
+				"Size (in em) of bubble drop-shadow",
+				0.0f,
+				32.0f,
 				DEFAULT_BUBBLE_SHADOW_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -999,12 +1050,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_HOVER_OPACITY,
 					 property_bubble_hover_opacity);
 
-	property_bubble_corner_radius = g_param_spec_int (
+	property_bubble_corner_radius = g_param_spec_double (
 				"bubble-corner-radius",
 				"bubble-corner-radius",
-				"Corner-radius of bubble in pixels",
-				0,
-				1024,
+				"Corner-radius of bubble (in em)",
+				0.0f,
+				16.0f,
 				DEFAULT_BUBBLE_CORNER_RADIUS,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1012,12 +1063,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_BUBBLE_CORNER_RADIUS,
 					 property_bubble_corner_radius);
 
-	property_content_shadow_size = g_param_spec_int (
+	property_content_shadow_size = g_param_spec_double (
 				"content-shadow-size",
 				"content-shadow-size",
-				"Size of icon/text drop-shadow in pixels",
-				0,
-				1024,
+				"Size (in em) of icon/text drop-shadow",
+				0.0f,
+				8.0f,
 				DEFAULT_CONTENT_SHADOW_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1036,12 +1087,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_CONTENT_SHADOW_COLOR,
 					 property_content_shadow_color);
 
-	property_margin_size = g_param_spec_int (
+	property_margin_size = g_param_spec_double (
 				"margin-size",
 				"margin-size",
-				"Size of margin in pixels",
-				0,
-				1024,
+				"Size (in em) of margin",
+				0.0f,
+				32.0f,
 				DEFAULT_MARGIN_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1049,12 +1100,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_MARGIN_SIZE,
 					 property_margin_size);
 
-	property_icon_size = g_param_spec_int (
+	property_icon_size = g_param_spec_double (
 				"icon-size",
 				"icon-size",
-				"Size of icon/avatar in pixels",
-				0,
-				1024,
+				"Size (in em) of icon/avatar",
+				0.0f,
+				64.0f,
 				DEFAULT_ICON_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1136,12 +1187,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_TEXT_TITLE_WEIGHT,
 					 property_text_title_weight);
 
-	property_text_title_size = g_param_spec_int (
+	property_text_title_size = g_param_spec_double (
 				"text-title-size",
 				"text-title-size",
-				"Size of font to use for content title-text",
-				0,
-				1000,
+				"Size (in em) of font to use for content title-text",
+				0.0f,
+				32.0f,
 				DEFAULT_TEXT_TITLE_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1173,18 +1224,31 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_TEXT_BODY_WEIGHT,
 					 property_text_body_weight);
 
-	property_text_body_size = g_param_spec_int (
+	property_text_body_size = g_param_spec_double (
 				"text-body-size",
 				"text-body-size",
-				"Size of font to use for content body-text",
-				0,
-				1000,
+				"Size (in em) of font to use for content body-text",
+				0.0f,
+				32.0f,
 				DEFAULT_TEXT_BODY_SIZE,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_BODY_SIZE,
 					 property_text_body_size);
+
+	property_pixels_per_em = g_param_spec_int (
+				"pixels-per-em",
+				"pixels-per-em",
+				"Number of pixels for one em-unit",
+				1,
+				100,
+				DEFAULT_PIXELS_PER_EM,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_PIXELS_PER_EM,
+					 property_pixels_per_em);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -1208,6 +1272,9 @@ defaults_get_desktop_width (Defaults* self)
 {
 	gint width;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "desktop-width", &width, NULL);
 
 	return width;
@@ -1217,6 +1284,9 @@ gint
 defaults_get_desktop_height (Defaults* self)
 {
 	gint height;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
 
 	g_object_get (self, "desktop-height", &height, NULL);
 
@@ -1228,6 +1298,9 @@ defaults_get_desktop_top (Defaults* self)
 {
 	gint top_edge;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "desktop-top", &top_edge, NULL);
 
 	return top_edge;
@@ -1237,6 +1310,9 @@ gint
 defaults_get_desktop_bottom (Defaults* self)
 {
 	gint bottom_edge;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
 
 	g_object_get (self, "desktop-bottom", &bottom_edge, NULL);
 
@@ -1248,6 +1324,9 @@ defaults_get_desktop_left (Defaults* self)
 {
 	gint left_edge;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "desktop-left", &left_edge, NULL);
 
 	return left_edge;
@@ -1258,95 +1337,138 @@ defaults_get_desktop_right (Defaults* self)
 {
 	gint right_edge;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "desktop-right", &right_edge, NULL);
 
 	return right_edge;
 }
 
-gint
+gdouble
+defaults_get_desktop_bottom_gap (Defaults* self)
+{
+	gdouble bottom_gap;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
+
+	g_object_get (self, "desktop-bottom-gap", &bottom_gap, NULL);
+
+	return bottom_gap;
+}
+
+gdouble
 defaults_get_stack_height (Defaults* self)
 {
-	gint stack_height;
+	gdouble stack_height;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "stack-height", &stack_height, NULL);
 
 	return stack_height;
 }
 
-gint
+gdouble
 defaults_get_bubble_gap (Defaults* self)
 {
-	gint gap;
+	gdouble gap;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-gap", &gap, NULL);
 
 	return gap;
 }
 
-gint
+gdouble
 defaults_get_bubble_width (Defaults* self)
 {
-	gint width;
+	gdouble width;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-width", &width, NULL);
 
 	return width;
 }
 
-gint
+gdouble
 defaults_get_bubble_min_height (Defaults* self)
 {
-	gint bubble_min_height;
+	gdouble bubble_min_height;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-min-height", &bubble_min_height, NULL);
 
 	return bubble_min_height;
 }
 
-gint
+gdouble
 defaults_get_bubble_max_height (Defaults* self)
 {
-	gint bubble_max_height;
+	gdouble bubble_max_height;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-max-height", &bubble_max_height, NULL);
 
 	return bubble_max_height;
 }
 
-gint
+gdouble
 defaults_get_bubble_vert_gap (Defaults* self)
 {
-	gint bubble_vert_gap;
+	gdouble bubble_vert_gap;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-vert-gap", &bubble_vert_gap, NULL);
 
 	return bubble_vert_gap;
 }
 
-gint
+gdouble
 defaults_get_bubble_horz_gap (Defaults* self)
 {
-	gint bubble_horz_gap;
+	gdouble bubble_horz_gap;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-horz-gap", &bubble_horz_gap, NULL);
 
 	return bubble_horz_gap;
 }
 
-gint
+gdouble
 defaults_get_bubble_height (Defaults* self)
 {
-	gint height;
+	gdouble height;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-height", &height, NULL);
 
 	return height;
 }
 
-gint
+gdouble
 defaults_get_bubble_shadow_size (Defaults* self)
 {
-	gint bubble_shadow_size;
+	gdouble bubble_shadow_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "bubble-shadow-size", &bubble_shadow_size, NULL);
 
@@ -1357,6 +1479,9 @@ gchar*
 defaults_get_bubble_shadow_color (Defaults* self)
 {
 	gchar* bubble_shadow_color = NULL;
+
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
 
 	g_object_get (self,
 		      "bubble-shadow-color",
@@ -1371,6 +1496,9 @@ defaults_get_bubble_bg_color (Defaults* self)
 {
 	gchar* bubble_bg_color = NULL;
 
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
+
 	g_object_get (self,
 		      "bubble-bg-color",
 		      &bubble_bg_color,
@@ -1383,6 +1511,9 @@ gchar*
 defaults_get_bubble_bg_opacity (Defaults* self)
 {
 	gchar* bubble_bg_opacity = NULL;
+
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
 
 	g_object_get (self,
 		      "bubble-bg-opacity",
@@ -1397,6 +1528,9 @@ defaults_get_bubble_hover_opacity (Defaults* self)
 {
 	gchar* bubble_hover_opacity = NULL;
 
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
+
 	g_object_get (self,
 		      "bubble-hover-opacity",
 		      &bubble_hover_opacity,
@@ -1405,10 +1539,13 @@ defaults_get_bubble_hover_opacity (Defaults* self)
 	return bubble_hover_opacity;
 }
 
-gint
+gdouble
 defaults_get_bubble_corner_radius (Defaults* self)
 {
-	gint bubble_corner_radius;
+	gdouble bubble_corner_radius;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self,
 		      "bubble-corner-radius",
@@ -1418,10 +1555,13 @@ defaults_get_bubble_corner_radius (Defaults* self)
 	return bubble_corner_radius;
 }
 
-gint
+gdouble
 defaults_get_content_shadow_size (Defaults* self)
 {
-	gint content_shadow_size;
+	gdouble content_shadow_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "content-shadow-size", &content_shadow_size, NULL);
 
@@ -1433,6 +1573,9 @@ defaults_get_content_shadow_color (Defaults* self)
 {
 	gchar* content_shadow_color = NULL;
 
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
+
 	g_object_get (self,
 		      "content-shadow-color",
 		      &content_shadow_color,
@@ -1441,20 +1584,26 @@ defaults_get_content_shadow_color (Defaults* self)
 	return content_shadow_color;
 }
 
-gint
+gdouble
 defaults_get_margin_size (Defaults* self)
 {
-	gint margin_size;
+	gdouble margin_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "margin-size", &margin_size, NULL);
 
 	return margin_size;
 }
 
-gint
+gdouble
 defaults_get_icon_size (Defaults* self)
 {
-	gint icon_size;
+	gdouble icon_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "icon-size", &icon_size, NULL);
 
@@ -1466,6 +1615,9 @@ defaults_get_fade_in_timeout (Defaults* self)
 {
 	gint fade_in_timeout;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "fade-in-timeout", &fade_in_timeout, NULL);
 
 	return fade_in_timeout;
@@ -1475,6 +1627,9 @@ gint
 defaults_get_fade_out_timeout (Defaults* self)
 {
 	gint fade_out_timeout;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
 
 	g_object_get (self, "fade-out-timeout", &fade_out_timeout, NULL);
 
@@ -1486,6 +1641,9 @@ defaults_get_on_screen_timeout (Defaults* self)
 {
 	gint on_screen_timeout;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "on-screen-timeout", &on_screen_timeout, NULL);
 
 	return on_screen_timeout;
@@ -1495,6 +1653,9 @@ gchar*
 defaults_get_text_font_face (Defaults* self)
 {
 	gchar* text_font_face = NULL;
+
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
 
 	g_object_get (self, "text-font-face", &text_font_face, NULL);
 
@@ -1506,6 +1667,9 @@ defaults_get_text_title_color (Defaults* self)
 {
 	gchar* text_title_color = NULL;
 
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
+
 	g_object_get (self, "text-title-color", &text_title_color, NULL);
 
 	return text_title_color;
@@ -1516,16 +1680,22 @@ defaults_get_text_title_weight (Defaults* self)
 {
 	gint text_title_weight;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "text-title-weight", &text_title_weight, NULL);
 
 	return text_title_weight;
 }
 
 
-gint
+gdouble
 defaults_get_text_title_size (Defaults* self)
 {
-	gint text_title_size;
+	gdouble text_title_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "text-title-size", &text_title_size, NULL);
 
@@ -1538,6 +1708,9 @@ defaults_get_text_body_color (Defaults* self)
 {
 	gchar* text_body_color = NULL;
 
+	if (!self || !IS_DEFAULTS (self))
+		return NULL;
+
 	g_object_get (self, "text-body-color", &text_body_color, NULL);
 
 	return text_body_color;
@@ -1548,18 +1721,38 @@ defaults_get_text_body_weight (Defaults* self)
 {
 	gint text_body_weight;
 
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
 	g_object_get (self, "text-body-weight", &text_body_weight, NULL);
 
 	return text_body_weight;
 }
 
-
-gint
+gdouble
 defaults_get_text_body_size (Defaults* self)
 {
-	gint text_body_size;
+	gdouble text_body_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
 
 	g_object_get (self, "text-body-size", &text_body_size, NULL);
 
 	return text_body_size;
+}
+
+/* we use the normal font-height in pixels ("pixels-per-em") as the measurement
+ * for 1 em, thus it should _not_ be called before defaults_constructed() */
+gint
+defaults_get_pixel_per_em (Defaults* self)
+{
+	if (!self || !IS_DEFAULTS (self))
+		return 0;
+
+	gint pixels_per_em;
+
+	g_object_get (self, "pixels-per-em", &pixels_per_em, NULL);
+
+	return pixels_per_em;
 }

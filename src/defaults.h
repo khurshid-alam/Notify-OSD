@@ -30,6 +30,16 @@ G_BEGIN_DECLS
 #define IS_DEFAULTS_CLASS(klass)  (G_TYPE_CHECK_CLASS_TYPE ((klass), DEFAULTS_TYPE))
 #define DEFAULTS_GET_CLASS(obj)   (G_TYPE_INSTANCE_GET_CLASS ((obj), DEFAULTS_TYPE, DefaultsClass))
 
+/* FIXME: quick hack to get every measurement to use em instead of pixels, to
+ * correctly use these two macros you'll need to pass it a valid Defaults class
+ * object
+ *
+ * example use:
+ *   PIXEL2EM(42, defaults) - that will returns a gdouble
+ *   EM2PIXEL(0.375, defaults) - that will return a gint */
+#define PIXELS2EM(pixel_value, d) ((gdouble) ((gdouble) pixel_value / (gdouble) defaults_get_pixel_per_em(d)))
+#define EM2PIXELS(em_value, d) ((gint) (em_value * (gdouble) defaults_get_pixel_per_em(d)))
+
 typedef struct _Defaults      Defaults;
 typedef struct _DefaultsClass DefaultsClass;
 
@@ -45,32 +55,34 @@ struct _Defaults
 	gint     desktop_bottom;
 	gint     desktop_left;
 	gint     desktop_right;
-	gint     stack_height;
-	gint     bubble_vert_gap;
-	gint     bubble_horz_gap;
-	gint     bubble_width;
-	gint     bubble_min_height;
-	gint     bubble_max_height;
-	gint     bubble_shadow_size;
+	gdouble  desktop_bottom_gap;
+	gdouble  stack_height;
+	gdouble  bubble_vert_gap;
+	gdouble  bubble_horz_gap;
+	gdouble  bubble_width;
+	gdouble  bubble_min_height;
+	gdouble  bubble_max_height;
+	gdouble  bubble_shadow_size;
 	GString* bubble_shadow_color;
 	GString* bubble_bg_color;
 	GString* bubble_bg_opacity;
 	GString* bubble_hover_opacity;
-	gint     bubble_corner_radius;
-	gint     content_shadow_size;
+	gdouble  bubble_corner_radius;
+	gdouble  content_shadow_size;
 	GString* content_shadow_color;
-	gint     margin_size;
-	gint     icon_size;
+	gdouble  margin_size;
+	gdouble  icon_size;
 	gint     fade_in_timeout;
 	gint     fade_out_timeout;
 	gint     on_screen_timeout;
 	GString* text_font_face;
 	GString* text_title_color;
 	gint     text_title_weight;
-	gint     text_title_size;
+	gdouble  text_title_size;
 	GString* text_body_color;
 	gint     text_body_weight;
-	gint     text_body_size;
+	gdouble  text_body_size;
+	gint     pixels_per_em;
 };
 
 /* class structure */
@@ -105,25 +117,28 @@ defaults_get_desktop_left (Defaults* self);
 gint
 defaults_get_desktop_right (Defaults* self);
 
-gint
+gdouble
+defaults_get_desktop_bottom_gap (Defaults* self);
+
+gdouble
 defaults_get_stack_height (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_width (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_min_height (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_max_height (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_vert_gap (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_horz_gap (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_shadow_size (Defaults* self);
 
 gchar*
@@ -138,19 +153,19 @@ defaults_get_bubble_bg_opacity (Defaults* self);
 gchar*
 defaults_get_bubble_hover_opacity (Defaults* self);
 
-gint
+gdouble
 defaults_get_bubble_corner_radius (Defaults* self);
 
-gint
+gdouble
 defaults_get_content_shadow_size (Defaults* self);
 
 gchar*
 defaults_get_content_shadow_color (Defaults* self);
 
-gint
+gdouble
 defaults_get_margin_size (Defaults* self);
 
-gint
+gdouble
 defaults_get_icon_size (Defaults* self);
 
 gint
@@ -171,7 +186,7 @@ defaults_get_text_title_color (Defaults* self);
 gint
 defaults_get_text_title_weight (Defaults* self);
 
-gint
+gdouble
 defaults_get_text_title_size (Defaults* self);
 
 gchar*
@@ -180,8 +195,11 @@ defaults_get_text_body_color (Defaults* self);
 gint
 defaults_get_text_body_weight (Defaults* self);
 
-gint
+gdouble
 defaults_get_text_body_size (Defaults* self);
+
+gint
+defaults_get_pixel_per_em (Defaults* self);
 
 G_END_DECLS
 
