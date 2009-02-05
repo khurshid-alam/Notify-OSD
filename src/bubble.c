@@ -808,7 +808,7 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 	pango_layout_set_width (layout,
@@ -2251,7 +2251,7 @@ _calc_body_height (Bubble* self,
 		defaults_get_text_body_weight (d));
 
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 
 	pango_layout_set_text (
