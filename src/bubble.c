@@ -516,9 +516,9 @@ draw_value_indicator (cairo_t* cr,
 		if (step * step_value >= value)
 		{
 			cairo_set_source_rgba (cr,
-					       unlit[R] * (value != 0) ? 1.0f : 0.5f,
-					       unlit[G] * (value != 0) ? 1.0f : 0.5f,
-					       unlit[B] * (value != 0) ? 1.0f : 0.5f,
+					       unlit[R],
+					       unlit[G],
+					       unlit[B],
 					       unlit[A]);
 		}
 		else
@@ -630,7 +630,37 @@ _render_icon_indicator (Bubble*  self,
 	{
 		/* "undershoot" effect */
 		case 0:
+			/* abuse blur to create a mask of scratch-pad surface */
+			tmp = blur_image_surface (glow_surface,
+						  0.0f,
+						  0.0f);
 
+			/* clear scratch-pad context */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+			cairo_paint (glow_cr);
+
+			/* create mask-pattern from scratch-pad surface */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+			cairo_push_group (glow_cr);
+			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
+			cairo_paint (glow_cr);
+			pattern = cairo_pop_group (glow_cr);
+
+			/* paint semi transparent black through mask-pattern */
+			cairo_set_source_rgba (glow_cr, 0.0f, 0.0f, 0.0f, 0.65f);
+			cairo_mask (glow_cr, pattern);
+			cairo_pattern_destroy (pattern);
+
+			/* finally "blit" scratch-pad onto context of bubble */
+			cairo_set_source_surface (cr,
+						  glow_surface,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius);
+			cairo_paint_with_alpha (cr, 0.8f);
 		break;
 
 		/* "overshoot" effect */
