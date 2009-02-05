@@ -161,56 +161,6 @@ find_bubble_by_id (Stack* self,
 	return (Bubble*) entry->data;
 }
 
-/* HACK: static */ gint
-stack_get_height (Stack* self)
-{
-	GList*    list         = NULL;
-	Bubble*   bubble       = NULL;
-	gint      stack_height = 0;
-	Defaults* d;
-
-	/* sanity check */
-	g_return_val_if_fail (self != NULL, 0);
-
-	d = self->defaults;
-
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-		stack_height += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) +
-				bubble_get_height (bubble);
-	}
-
-	stack_height -= defaults_get_bubble_vert_gap (d);
-
-	return stack_height;
-}
-
-/* HACK: static */ void
-stack_pop_last_bubble (Stack* self)
-{
-	GList* entry;
-
-	/* sanity check */
-	g_return_if_fail (self != NULL);
-
-	/* find last (remember fifo) entry in stack-list */
-	entry = g_list_first (self->list);
-	if (!entry)
-		return;
-
-	/* close/hide/fade-out bubble */
-	bubble_hide ((Bubble*) entry->data);
-
-	/* find entry in list corresponding to id and remove it */
-	self->list = g_list_delete_link (self->list, entry);
-	g_object_unref ((Bubble*) entry->data);
-
-	/* stack_layout() is not called here intentionally! */
-}
-
 static void
 stack_purge_old_bubbles (Stack* self)
 {
@@ -438,8 +388,12 @@ timed_out_handler (Bubble* bubble,
 {
 	stack_layout (stack);
 
-	/* HACK: do nothing, to avoid segfaults */
-	/* stack_pop_bubble_by_id (stack, bubble_get_id (bubble)); */
+	/* TODO: use weak-refs to dispose the bubble.
+	   Meanwhile, do nothing here to avoid segfaults
+	   and rely on the stack_purge_old_bubbles() call
+	   later on in the thread.
+	*/
+
 	return;
 }
 
