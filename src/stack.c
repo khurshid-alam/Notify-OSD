@@ -580,9 +580,15 @@ stack_close_notification_handler (Stack*   self,
 	Bubble *bubble = find_bubble_by_id (self, id);
 	g_return_val_if_fail (bubble != NULL, FALSE);
 
-	bubble_timed_out (bubble);
+	bubble_hide (bubble);
 
-	return TRUE;
+	/* FIXME: use weak-refs */
+/*	g_object_unref (bubble);
+	stack_layout (self);
+*/
+        /* TODO: return FALSE as a reminder that the operation needs
+	   more work */
+	return FALSE;
 }
 
 gboolean

@@ -75,7 +75,7 @@ test_withlib_update_notification (void)
 				     "", NULL);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
-	sleep (3);
+	sleep (1);
 
 	res = notify_notification_update (n, "Test (updated)",
 				    "The message body has been updated...",
@@ -105,6 +105,31 @@ test_withlib_pass_icon_data (void)
 	notify_notification_show (n, NULL);
 	
 	loop = g_main_loop_new(NULL, FALSE);
+        g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
+        g_main_loop_run (loop);
+
+	g_object_unref(G_OBJECT(n));
+}
+
+static void
+test_withlib_close_notification (void)
+{
+        NotifyNotification *n;
+        GMainLoop* loop;
+	gboolean res = FALSE;
+
+	n = notify_notification_new ("Test Title",
+				     "This notification will be closed prematurely...",
+				     "", NULL);
+	notify_notification_show (n, NULL);
+	
+	loop = g_main_loop_new(NULL, FALSE);
+        g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
+        g_main_loop_run (loop);
+
+	res = notify_notification_close (n, NULL);
+	g_assert (res);
+
         g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
         g_main_loop_run (loop);
 
@@ -148,6 +173,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_pass_icon_data,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("can close a notification",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_close_notification,
 					     NULL)
 		);
 
