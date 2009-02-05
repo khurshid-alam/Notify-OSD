@@ -34,15 +34,6 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
-typedef enum
-{
-	LAYOUT_NONE = 0,
-	LAYOUT_ICON_INDICATOR,
-	LAYOUT_ICON_TITLE,
-	LAYOUT_ICON_TITLE_BODY,
-	LAYOUT_TITLE_BODY
-} BubbleLayout;
-
 struct _BubblePrivate {
 	BubbleLayout     layout;
 	GtkWidget*       widget;
@@ -115,66 +106,6 @@ enum
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
-
-static void
-bubble_determine_layout (Bubble* self)
-{
-	/* sanity test */
-	if (!self || !IS_BUBBLE (self))
-		return;
-
-	/* set a sane default */
-	GET_PRIVATE (self)->layout = LAYOUT_NONE;
-
-	/* icon + indicator layout-case, e.g. volume */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             >= 0))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
-		return;
-	}
-
-	/* icon + title layout-case, e.g. "Wifi signal lost" */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
-		return;	    
-	}
-
-	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
-		return;
-	}
-
-	/* title + body/message layout-case, e.g. IM-message without avatar */
-	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
-		return;
-	}
-}
-
-BubbleLayout
-bubble_get_layout (Bubble* self)
-{
-	if (!self || !IS_BUBBLE (self))
-		return LAYOUT_NONE;
-
-	return GET_PRIVATE (self)->layout;
-}
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -1351,7 +1282,6 @@ expose_handler (GtkWidget*      window,
         /* render drop-shadow and bubble-background */
 	_render_background (cr, d, width, height, bubble);
 
-	bubble_determine_layout (bubble);
 	switch (bubble_get_layout (bubble))
 	{
 		case LAYOUT_ICON_INDICATOR:
@@ -1371,6 +1301,7 @@ expose_handler (GtkWidget*      window,
 		break;
 
 		case LAYOUT_NONE:
+			/* should be intercepted by stack_notify_handler() */
 			g_warning ("WARNING: No layout defined!!!\n");
 		break;
 	}
@@ -2480,4 +2411,64 @@ bubble_is_synchronous (Bubble *self)
 		return FALSE;
 
 	return GET_PRIVATE (self)->synchronous;
+}
+
+void
+bubble_determine_layout (Bubble* self)
+{
+	/* sanity test */
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	/* set a sane default */
+	GET_PRIVATE (self)->layout = LAYOUT_NONE;
+
+	/* icon + indicator layout-case, e.g. volume */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             >= 0))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
+		return;
+	}
+
+	/* icon + title layout-case, e.g. "Wifi signal lost" */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
+		return;	    
+	}
+
+	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
+		return;
+	}
+
+	/* title + body/message layout-case, e.g. IM-message without avatar */
+	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+		return;
+	}
+}
+
+BubbleLayout
+bubble_get_layout (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return LAYOUT_NONE;
+
+	return GET_PRIVATE (self)->layout;
 }

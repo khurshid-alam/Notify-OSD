@@ -23,6 +23,15 @@
 
 #include "defaults.h"
 
+typedef enum
+{
+	LAYOUT_NONE = 0,
+	LAYOUT_ICON_INDICATOR,
+	LAYOUT_ICON_TITLE,
+	LAYOUT_ICON_TITLE_BODY,
+	LAYOUT_TITLE_BODY
+} BubbleLayout;
+
 G_BEGIN_DECLS
 
 #define BUBBLE_TYPE             (bubble_get_type ())
@@ -160,6 +169,12 @@ bubble_recalc_size (Bubble *self);
 
 gboolean
 bubble_is_synchronous (Bubble *self);
+
+void
+bubble_determine_layout (Bubble* self);
+
+BubbleLayout
+bubble_get_layout (Bubble* self);
 
 G_END_DECLS
 
