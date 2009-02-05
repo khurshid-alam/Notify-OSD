@@ -1026,8 +1026,9 @@ update_shape (Bubble* self)
 	}
 
 	/* guess we need one */
-	width = GET_PRIVATE (self)->widget->allocation.width;
-	height = GET_PRIVATE (self)->widget->allocation.height;
+	gtk_widget_get_size_request (GET_PRIVATE(self)->widget,
+				     &width,
+				     &height);
 	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 	if (mask)
 	{
@@ -1040,6 +1041,9 @@ update_shape (Bubble* self)
 			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (cr);
 
+			width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
 			/* draw rounded rectangle shape/mask */
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
@@ -1048,9 +1052,8 @@ update_shape (Bubble* self)
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-					 EM2PIXELS (defaults_get_bubble_width (d), d),
-					 (gdouble) bubble_get_height (self) -
-					 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+					 width,
+					 height);
 			cairo_fill (cr);
 			cairo_destroy (cr);
 
@@ -1701,7 +1704,6 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->body_width      = 0;
 	GET_PRIVATE(this)->body_height     = 0;
 
-	update_shape (this);
 	update_input_shape (window, 1, 1);
 
 	_set_bg_blur (window, TRUE);
@@ -2217,7 +2219,6 @@ _calc_body_height (Bubble* self,
 	PangoLayout*          layout  = NULL;
 	PangoRectangle        log_rect;
 	gint                  body_height;
-	gint                  h;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -2261,13 +2262,6 @@ _calc_body_height (Bubble* self,
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
 	body_height = PANGO_PIXELS (log_rect.height);
-
-	pango_layout_get_size (layout, NULL, &h);
-	g_debug ("_calc_body_height(): %d line(s), %d px width, %d px height, %d height",
-		 pango_layout_get_line_count (layout),
-		 PANGO_PIXELS (pango_layout_get_width (layout)),
-		 PANGO_PIXELS (h),
-		 pango_layout_get_height (layout));
 
 	pango_font_description_free (desc);
 	g_object_unref (layout);
@@ -2402,6 +2396,8 @@ bubble_recalc_size (Bubble *self)
 		break;
 	}
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
+
+	update_shape (self);
 }
 
 gboolean
