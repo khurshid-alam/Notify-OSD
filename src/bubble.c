@@ -69,6 +69,12 @@ struct _BubblePrivate {
 	ClutterTimeline *timeline;
 	guint        draw_handler_id;
 	guint        pointer_update_id;
+	cairo_surface_t* blurred_content;
+	cairo_surface_t* blurred_bubble;
+	gint             title_width;
+	gint             title_height;
+	gint             body_width;
+	gint             body_height;
 };
 
 enum
@@ -245,6 +251,119 @@ draw_round_rect (cairo_t* cr,
                    270.0f * G_PI / 180.0f);
 }
 
+static pixman_fixed_t*
+create_gaussian_blur_kernel (gint    radius,
+                             gdouble sigma,
+                             gint*   length)
+{
+	const gdouble   scale2 = 2.0f * sigma * sigma;
+	const gdouble   scale1 = 1.0f / (G_PI * scale2);
+	const gint      size = 2 * radius + 1;
+	const gint      n_params = size * size;
+	pixman_fixed_t* params;
+	gdouble*        tmp;
+	gdouble         sum;
+	gint            x;
+	gint            y;
+	gint            i;
+
+        tmp = g_newa (double, n_params);
+
+        /* caluclate gaussian kernel in floating point format */
+        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
+                for (y = -radius; y <= radius; ++y, ++i) {
+                        const gdouble u = x * x;
+                        const gdouble v = y * y;
+
+                        tmp[i] = scale1 * exp (-(u+v)/scale2);
+
+                        sum += tmp[i];
+                }
+        }
+
+        /* normalize gaussian kernel and convert to fixed point format */
+        params = g_new (pixman_fixed_t, n_params + 2);
+
+        params[0] = pixman_int_to_fixed (size);
+        params[1] = pixman_int_to_fixed (size);
+
+        for (i = 0; i < n_params; ++i)
+                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
+
+        if (length)
+                *length = n_params + 2;
+
+        return params;
+}
+
+static cairo_surface_t*
+blur_image_surface (cairo_surface_t* surface,
+                    gint             radius,
+                    gdouble          sigma /* pass 0.0f for auto-calculation */) 
+{
+        static cairo_user_data_key_t data_key;
+        pixman_fixed_t*              params = NULL;
+        gint                         n_params;
+        pixman_image_t*              src;
+	pixman_image_t*              dst;
+        gint                         w;
+        gint                         h;
+        gint                         s;
+        gpointer                     p;
+	gdouble                      radiusf;
+
+        if (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE)
+		return NULL;
+
+	radiusf = fabs (radius) + 1.0f;
+	if (sigma == 0.0f)
+		sigma = sqrt (-(radiusf * radiusf) / (2.0f * log (1.0f / 255.0f)));
+
+        w = cairo_image_surface_get_width (surface);
+        h = cairo_image_surface_get_height (surface);
+        s = cairo_image_surface_get_stride (surface);
+
+        /* create pixman image for cairo image surface */
+        p = cairo_image_surface_get_data (surface);
+        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+
+        /* attach gaussian kernel to pixman image */
+        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
+        pixman_image_set_filter (src,
+				 PIXMAN_FILTER_CONVOLUTION,
+				 params,
+				 n_params);
+        g_free (params);
+
+        /* render blured image to new pixman image */
+        p = g_malloc0 (s * h);
+        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+        pixman_image_composite (PIXMAN_OP_SRC,
+				src,
+				NULL,
+				dst,
+				0,
+				0,
+				0,
+				0,
+				0,
+				0,
+				w,
+				h);
+        pixman_image_unref (src);
+
+        /* create new cairo image for blured pixman image */
+        surface = cairo_image_surface_create_for_data (p,
+						       CAIRO_FORMAT_ARGB32,
+						       w,
+						       h,
+						       s);
+        cairo_surface_set_user_data (surface, &data_key, p, g_free);
+        pixman_image_unref (dst);
+
+        return surface;
+}
+
 #if 0
 static void
 draw_layout_grid (cairo_t* cr,
@@ -398,11 +517,6 @@ draw_value_indicator (cairo_t* cr,
 	if (bars < 0 || lit == NULL || unlit == NULL)
 		return;
 
-	/* reference rect for positioning-control */
-	/*cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
-	cairo_rectangle (cr, x, y, w, h);
-	cairo_stroke (cr);*/
-
 	step_value = 100.0f / (gdouble) bars;
 	x_gap = w * 0.3f / (gdouble) (bars - 1);
 	x_step = w * 0.7f / (gdouble) bars;
@@ -440,27 +554,466 @@ draw_value_indicator (cairo_t* cr,
 }
 
 static void
-bubble_render_icon_indicator (Bubble* self)
+_render_icon_indicator (Bubble*  self,
+			cairo_t* cr)
 {
+	Defaults*        d = self->defaults;
+	cairo_t*         glow_cr;
+	cairo_surface_t* glow_surface;
+	cairo_surface_t* tmp;
+	cairo_status_t   status;
+	cairo_pattern_t* pattern;
+	gint             bars = 13;
+	gdouble          lit[4]   = {INDICATOR_LIT_R,
+				     INDICATOR_LIT_G,
+				     INDICATOR_LIT_B,
+				     INDICATOR_LIT_A};
+	gdouble          unlit[4] = {INDICATOR_UNLIT_R,
+				     INDICATOR_UNLIT_G,
+				     INDICATOR_UNLIT_B,
+				     INDICATOR_UNLIT_A};
+	gint             blur_radius = 10;
+
 	g_debug ("icon + indicator\n");
+
+	/* create "scratch-pad" surface */
+	glow_surface = cairo_image_surface_create (
+			CAIRO_FORMAT_ARGB32,
+			EM2PIXELS (defaults_get_bubble_width (d), d) -
+			2 * EM2PIXELS (defaults_get_margin_size (d), d) +
+			2 * blur_radius,
+			EM2PIXELS (defaults_get_icon_size (d), d) +
+			2 * blur_radius);
+	status = cairo_surface_status (glow_surface);
+	if (status != CAIRO_STATUS_SUCCESS)
+		return;
+
+	/* create context for scratch-pad surface */
+	glow_cr = cairo_create (glow_surface);
+	status = cairo_status (glow_cr);
+	if (status != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (glow_surface);
+		return;
+	}
+
+	/* clear context of scratch-pad surface */
+	cairo_scale (glow_cr, 1.0f, 1.0f);
+	cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (glow_cr);
+
+	cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+
+	/* render icon to scratch-pad context */
+	gdk_cairo_set_source_pixbuf (glow_cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     blur_radius,
+				     blur_radius);
+	cairo_paint (glow_cr);
+
+	/* render value-bar(s) to scratch-pad context */
+	draw_value_indicator (
+		glow_cr,
+		GET_PRIVATE (self)->value,
+		EM2PIXELS (defaults_get_margin_size (d), d) +
+		EM2PIXELS (defaults_get_icon_size (d), d) +
+		blur_radius,
+		blur_radius,
+		EM2PIXELS (defaults_get_bubble_width (d), d) -
+		3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+		EM2PIXELS (defaults_get_icon_size (d), d),
+		EM2PIXELS (defaults_get_icon_size (d), d),
+		bars,
+		lit,
+		unlit);
+
+	/* "blit" scratch-pad context to context of bubble */
+	cairo_set_source_surface (cr,
+				  glow_surface,
+				  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				  EM2PIXELS (defaults_get_margin_size (d), d) -
+				  blur_radius,
+				  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				  EM2PIXELS (defaults_get_margin_size (d), d) -
+				  blur_radius);
+	cairo_paint (cr);
+
+	switch (GET_PRIVATE (self)->value)
+	{
+		/* "undershoot" effect */
+		case 0:
+			/* abuse blur to create a mask of scratch-pad surface */
+			tmp = blur_image_surface (glow_surface,
+						  0.0f,
+						  0.0f);
+
+			/* clear scratch-pad context */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+			cairo_paint (glow_cr);
+
+			/* create mask-pattern from scratch-pad surface */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+			cairo_push_group (glow_cr);
+			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
+			cairo_paint (glow_cr);
+			pattern = cairo_pop_group (glow_cr);
+
+			/* paint semi transparent black through mask-pattern */
+			cairo_set_source_rgba (glow_cr, 0.0f, 0.0f, 0.0f, 0.65f);
+			cairo_mask (glow_cr, pattern);
+			cairo_pattern_destroy (pattern);
+
+			/* finally "blit" scratch-pad onto context of bubble */
+			cairo_set_source_surface (cr,
+						  glow_surface,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius);
+			cairo_paint_with_alpha (cr, 0.8f);
+		break;
+
+		/* "overshoot" effect */
+		case 100:
+			/* blur the scratch-pad surface */
+			tmp = blur_image_surface (glow_surface,
+						  blur_radius,
+						  0.0f);
+
+			/* clear scratch-pad context */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
+			cairo_paint (glow_cr);
+
+			/* create mask-pattern from blurred scratch-pad
+			 * surface */
+			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
+			cairo_push_group (glow_cr);
+			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
+			cairo_paint (glow_cr);
+			pattern = cairo_pop_group (glow_cr);
+
+			/* paint fully opaque white "through" blurred
+			 * mask-pattern */
+			cairo_set_source_rgba (glow_cr, 1.0f, 1.0f, 1.0f, 1.0f);
+			cairo_mask (glow_cr, pattern);
+			cairo_pattern_destroy (pattern);
+
+			/* finally "blit" scratch-pad onto context of bubble */
+			cairo_set_source_surface (cr,
+						  glow_surface,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius,
+						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+						  EM2PIXELS (defaults_get_margin_size (d), d) -
+						  blur_radius);
+			cairo_paint_with_alpha (cr, 1.0f);
+		break;
+
+		/* normal effect-less rendering */
+		default:
+			/* do nothing */
+		break;
+	}
+
+	/* clean up */
+	cairo_destroy (glow_cr);
+	cairo_surface_destroy (glow_surface);
+	cairo_surface_destroy (tmp);
 }
 
 static void
-bubble_render_icon_title (Bubble* self)
+_render_icon_title (Bubble*  self,
+		    cairo_t* cr)
 {
+	Defaults*             d = self->defaults;
+	gint                  margin_gap;
+	gint                  top_margin;
+	gint                  left_margin;
+	PangoFontDescription* desc   = NULL;
+	PangoLayout*          layout = NULL;
+	PangoRectangle        ink_rect;
+	PangoRectangle        log_rect;
+
 	g_debug ("icon + title\n");
+
+	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		      EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render icon */
+	gdk_cairo_set_source_pixbuf (cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     left_margin,
+				     left_margin);
+	cairo_paint (cr);
+
+	left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
+	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render title */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_title_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+	pango_font_description_free (desc);
+
+	pango_layout_set_width (layout,
+				(EM2PIXELS (defaults_get_bubble_width (d), d) -
+				 left_margin -
+				 margin_gap) *
+				PANGO_SCALE);
+
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout,
+			       GET_PRIVATE (self)->title->str,
+			       GET_PRIVATE (self)->title->len);
+
+	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+	top_margin = (bubble_get_height (self) / 2) -
+		     (ink_rect.height / PANGO_SCALE) +
+		     0.25f * (ink_rect.height / PANGO_SCALE);
+
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr,
+			       TEXT_TITLE_COLOR_R,
+			       TEXT_TITLE_COLOR_G,
+			       TEXT_TITLE_COLOR_B,
+			       TEXT_TITLE_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
 }
 
 static void
-bubble_render_icon_title_body (Bubble* self)
+_render_icon_title_body (Bubble*  self,
+			 cairo_t* cr)
 {
+	Defaults*             d      = self->defaults;
+	PangoFontDescription* desc   = NULL;
+	PangoLayout*          layout = NULL;
+	PangoRectangle        ink_rect;
+	PangoRectangle        log_rect;
+	gint                  margin_gap;
+	gint                  top_margin;
+	gint                  left_margin;
+
 	g_debug ("icon + title + body\n");
+
+	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		      EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render icon */
+	gdk_cairo_set_source_pixbuf (cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     left_margin,
+				     left_margin);
+	cairo_paint (cr);
+
+	left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
+	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render title */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_title_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_font_description (layout, desc);
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_font_description_free (desc);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout,
+			       GET_PRIVATE (self)->title->str,
+			       GET_PRIVATE (self)->title->len);
+
+	pango_layout_set_width (layout,
+				GET_PRIVATE (self)->title_width * PANGO_SCALE);
+
+	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+	top_margin += margin_gap;
+
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr,
+			       TEXT_TITLE_COLOR_R,
+			       TEXT_TITLE_COLOR_G,
+			       TEXT_TITLE_COLOR_B,
+			       TEXT_TITLE_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
+
+	top_margin += log_rect.height / PANGO_SCALE;
+
+	/* render body-message */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_body_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc,
+						  defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc,
+					   defaults_get_text_body_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+	pango_font_description_free (desc);
+	pango_layout_set_width (layout,
+				GET_PRIVATE (self)->body_width * PANGO_SCALE);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout,
+			       GET_PRIVATE (self)->message_body->str,
+			       GET_PRIVATE (self)->message_body->len);
+
+	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_source_rgba (cr,
+			       TEXT_BODY_COLOR_R,
+			       TEXT_BODY_COLOR_G,
+			       TEXT_BODY_COLOR_B,
+			       TEXT_BODY_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
 }
 
 static void
-bubble_render_title_body (Bubble* self)
+_render_title_body (Bubble*  self,
+		    cairo_t* cr)
 {
+	Defaults*             d      = self->defaults;
+	PangoFontDescription* desc   = NULL;
+	PangoLayout*          layout = NULL;
+	PangoRectangle        ink_rect;
+	PangoRectangle        log_rect;
+	gint                  margin_gap;
+	gint                  top_margin;
+	gint                  left_margin;
+
 	g_debug ("title + body\n");
+
+	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		      EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render title */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_title_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+	pango_font_description_free (desc);
+
+	pango_layout_set_width (layout,
+				GET_PRIVATE (self)->title_width * PANGO_SCALE);
+
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout,
+			       GET_PRIVATE (self)->title->str,
+			       GET_PRIVATE (self)->title->len);
+
+	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+	top_margin += margin_gap;
+
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr,
+			       TEXT_TITLE_COLOR_R,
+			       TEXT_TITLE_COLOR_G,
+			       TEXT_TITLE_COLOR_B,
+			       TEXT_TITLE_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
+
+	top_margin += (gdouble) log_rect.height / PANGO_SCALE;
+
+	/* render body-message */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_body_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc,
+						  defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc,
+					   defaults_get_text_body_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+	pango_font_description_free (desc);
+	pango_layout_set_width (layout,
+				GET_PRIVATE (self)->body_width * PANGO_SCALE);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout,
+			       GET_PRIVATE (self)->message_body->str,
+			       GET_PRIVATE (self)->message_body->len);
+
+	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_source_rgba (cr,
+			       TEXT_BODY_COLOR_R,
+			       TEXT_BODY_COLOR_G,
+			       TEXT_BODY_COLOR_B,
+			       TEXT_BODY_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
 }
 
 static
@@ -609,119 +1162,6 @@ composited_changed_handler (GtkWidget* window,
 	update_shape (bubble);
 }
 
-static pixman_fixed_t*
-create_gaussian_blur_kernel (gint    radius,
-                             gdouble sigma,
-                             gint*   length)
-{
-	const gdouble   scale2 = 2.0f * sigma * sigma;
-	const gdouble   scale1 = 1.0f / (G_PI * scale2);
-	const gint      size = 2 * radius + 1;
-	const gint      n_params = size * size;
-	pixman_fixed_t* params;
-	gdouble*        tmp;
-	gdouble         sum;
-	gint            x;
-	gint            y;
-	gint            i;
-
-        tmp = g_newa (double, n_params);
-
-        /* caluclate gaussian kernel in floating point format */
-        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
-                for (y = -radius; y <= radius; ++y, ++i) {
-                        const gdouble u = x * x;
-                        const gdouble v = y * y;
-
-                        tmp[i] = scale1 * exp (-(u+v)/scale2);
-
-                        sum += tmp[i];
-                }
-        }
-
-        /* normalize gaussian kernel and convert to fixed point format */
-        params = g_new (pixman_fixed_t, n_params + 2);
-
-        params[0] = pixman_int_to_fixed (size);
-        params[1] = pixman_int_to_fixed (size);
-
-        for (i = 0; i < n_params; ++i)
-                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
-
-        if (length)
-                *length = n_params + 2;
-
-        return params;
-}
-
-static cairo_surface_t*
-blur_image_surface (cairo_surface_t* surface,
-                    gint             radius,
-                    gdouble          sigma /* pass 0.0f for auto-calculation */) 
-{
-        static cairo_user_data_key_t data_key;
-        pixman_fixed_t*              params = NULL;
-        gint                         n_params;
-        pixman_image_t*              src;
-	pixman_image_t*              dst;
-        gint                         w;
-        gint                         h;
-        gint                         s;
-        gpointer                     p;
-	gdouble                      radiusf;
-
-        if (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE)
-		return NULL;
-
-	radiusf = fabs (radius) + 1.0f;
-	if (sigma == 0.0f)
-		sigma = sqrt (-(radiusf * radiusf) / (2.0f * log (1.0f / 255.0f)));
-
-        w = cairo_image_surface_get_width (surface);
-        h = cairo_image_surface_get_height (surface);
-        s = cairo_image_surface_get_stride (surface);
-
-        /* create pixman image for cairo image surface */
-        p = cairo_image_surface_get_data (surface);
-        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
-
-        /* attach gaussian kernel to pixman image */
-        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
-        pixman_image_set_filter (src,
-				 PIXMAN_FILTER_CONVOLUTION,
-				 params,
-				 n_params);
-        g_free (params);
-
-        /* render blured image to new pixman image */
-        p = g_malloc0 (s * h);
-        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
-        pixman_image_composite (PIXMAN_OP_SRC,
-				src,
-				NULL,
-				dst,
-				0,
-				0,
-				0,
-				0,
-				0,
-				0,
-				w,
-				h);
-        pixman_image_unref (src);
-
-        /* create new cairo image for blured pixman image */
-        surface = cairo_image_surface_create_for_data (p,
-						       CAIRO_FORMAT_ARGB32,
-						       w,
-						       h,
-						       s);
-        cairo_surface_set_user_data (surface, &data_key, p, g_free);
-        pixman_image_unref (dst);
-
-        return surface;
-}
-
 void
 draw_shadow (cairo_t* cr,
 	     gdouble  width,
@@ -825,78 +1265,38 @@ draw_shadow (cairo_t* cr,
 	cairo_surface_destroy (new_surface);
 }
 
-static
-gboolean
-expose_handler (GtkWidget*      window,
-		GdkEventExpose* event,
-		gpointer        data)
+static void
+_render_background (cairo_t*  cr,
+		    Defaults* d,
+		    gint      width,
+		    gint      height,
+		    Bubble*   bubble)
 {
-	Bubble*   bubble;
-	cairo_t*  cr;
-	gdouble   width       = (gdouble) window->allocation.width;
-	gdouble   height      = (gdouble) window->allocation.height;
-	gdouble   margin_gap;
-	gdouble   left_margin;
-	gdouble   top_margin;
-	Defaults* d;
-
-	bubble = (Bubble*) G_OBJECT (data);
-
-	d = bubble->defaults;
-
-	bubble_determine_layout (bubble);
-	switch (bubble_get_layout (bubble))
-	{
-		case LAYOUT_ICON_INDICATOR:
-			bubble_render_icon_indicator (bubble);
-		break;
-
-		case LAYOUT_ICON_TITLE:
-			bubble_render_icon_title (bubble);
-		break;
-
-		case LAYOUT_ICON_TITLE_BODY:
-			bubble_render_icon_title_body (bubble);
-		break;
-
-		case LAYOUT_TITLE_BODY:
-			bubble_render_title_body (bubble);
-		break;
-
-		case LAYOUT_NONE:
-			g_warning ("WARNING: No layout defined!!!\n");
-		break;
-	}
-
-	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
-	left_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
-	top_margin  += EM2PIXELS (defaults_get_margin_size (d), d);
-
-	cr = gdk_cairo_create (window->window);
-
         /* clear and render drop-shadow and bubble-background */
-	cairo_scale (cr, 1.0f, 1.0f);
-	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	if (GET_PRIVATE (bubble)->composited)
 	{
 		draw_shadow (cr,
 			     width,
 			     height,
-			     EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			     EM2PIXELS (defaults_get_bubble_corner_radius (d), d));
+			     EM2PIXELS (defaults_get_bubble_shadow_size (d),
+					d),
+			     EM2PIXELS (defaults_get_bubble_corner_radius (d),
+					d));
 		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 		draw_round_rect (cr,
 				 1.0f,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-				 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-				 EM2PIXELS (defaults_get_bubble_width (d), d),
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+					    d),
+				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+					    d),
+				 EM2PIXELS (defaults_get_bubble_corner_radius (d),
+					    d),
+				 EM2PIXELS (defaults_get_bubble_width (d),
+					    d),
 				 (gdouble) bubble_get_height (bubble) -
-				 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+				 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
+						   d));
 		cairo_fill (cr);
 	}
 
@@ -919,256 +1319,68 @@ expose_handler (GtkWidget*      window,
 
 	draw_round_rect (cr,
 			 1.0f,
-			 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-			 EM2PIXELS (defaults_get_bubble_width (d), d),
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+				    d),
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+				    d),
+			 EM2PIXELS (defaults_get_bubble_corner_radius (d),
+				    d),
+			 EM2PIXELS (defaults_get_bubble_width (d),
+				    d),
 			 (gdouble) bubble_get_height (bubble) -
-			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
+					   d));
 	cairo_fill (cr);
+}
 
-	/* render icon */
-	if (GET_PRIVATE (bubble)->icon_pixbuf)
+static
+gboolean
+expose_handler (GtkWidget*      window,
+		GdkEventExpose* event,
+		gpointer        data)
+{
+	Bubble*   bubble;
+	cairo_t*  cr;
+	gdouble   width  = (gdouble) window->allocation.width;
+	gdouble   height = (gdouble) window->allocation.height;
+	Defaults* d;
+
+	bubble = (Bubble*) G_OBJECT (data);
+
+	d = bubble->defaults;
+
+	cr = gdk_cairo_create (window->window);
+
+        /* clear bubble-background */
+	cairo_scale (cr, 1.0f, 1.0f);
+	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr);
+
+        /* render drop-shadow and bubble-background */
+	_render_background (cr, d, width, height, bubble);
+
+	bubble_determine_layout (bubble);
+	switch (bubble_get_layout (bubble))
 	{
-		gdk_cairo_set_source_pixbuf (
-					cr,
-					GET_PRIVATE (bubble)->icon_pixbuf,
-					left_margin,
-					left_margin);
-		cairo_paint (cr);
+		case LAYOUT_ICON_INDICATOR:
+			_render_icon_indicator (bubble, cr);
+		break;
 
-		left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
-		left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
-	}
+		case LAYOUT_ICON_TITLE:
+			_render_icon_title (bubble, cr);
+		break;
 
-	/* render title */
-	if (GET_PRIVATE (bubble)->title->len != 0)
-	{
-		PangoFontDescription* desc   = NULL;
-		PangoLayout*          layout = NULL;
-		PangoRectangle        ink_rect;
-		PangoRectangle        log_rect;
+		case LAYOUT_ICON_TITLE_BODY:
+			_render_icon_title_body (bubble, cr);
+		break;
 
-		layout = pango_cairo_create_layout (cr);
-		desc = pango_font_description_new ();
+		case LAYOUT_TITLE_BODY:
+			_render_title_body (bubble, cr);
+		break;
 
-		pango_font_description_set_size (desc,
-						 EM2PIXELS (defaults_get_text_title_size (d), d) *
-						 PANGO_SCALE);
-		pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
-		pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
-		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
-		pango_layout_set_font_description (layout, desc);
-		pango_font_description_free (desc);
-
-		pango_layout_set_width (layout,
-					(EM2PIXELS (defaults_get_bubble_width (d), d) - left_margin - margin_gap) *
-					PANGO_SCALE);
-
-		pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
-
-		/* print and layout string (pango-wise) */
-		pango_layout_set_text (layout,
-				       GET_PRIVATE (bubble)->title->str,
-				       GET_PRIVATE (bubble)->title->len);
-
-		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
-		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
-		{
-			pango_layout_set_width (layout,
-						(EM2PIXELS (defaults_get_bubble_width (d), d) -
-						 left_margin - margin_gap) *
-						PANGO_SCALE);
-			pango_layout_set_height (layout,
-						 (bubble_get_height (bubble) -
-						  2 * margin_gap -
-						  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d)) *
-						 PANGO_SCALE);
-			pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
-		}
-
-		pango_layout_get_extents (layout, &ink_rect, &log_rect);
-
-		if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
-		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
-		{
-			top_margin += ((bubble_get_height (bubble) -
-					2 * margin_gap -
-					2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
-					log_rect.height / PANGO_SCALE) / 2);
-		}
-
-		/* draw ink- and log-rects for debugging text positioning */
-		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
-		cairo_rectangle (cr,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 EM2PIXELS (defaults_get_icon_size (d), d) +
-				 (gdouble) ink_rect.x / PANGO_SCALE,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 (gdouble) ink_rect.y / PANGO_SCALE,
-				 (gdouble) ink_rect.width / PANGO_SCALE,
-				 (gdouble) ink_rect.height / PANGO_SCALE);
-		cairo_stroke (cr);
-
-		cairo_set_source_rgb (cr, 0.5f, 0.5f, 1.0f);
-		cairo_rectangle (cr,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 EM2PIXELS (defaults_get_icon_size (d), d) +
-				 (gdouble) log_rect.x / PANGO_SCALE,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 (gdouble) log_rect.y / PANGO_SCALE,
-				 (gdouble) log_rect.width / PANGO_SCALE,
-				 (gdouble) log_rect.height / PANGO_SCALE);
-		cairo_stroke (cr);*/
-
-		/* If no summary/message_body is present,
-		 * and assuming there is an icon,
-		 * center/align title in the middle of the bubble
-		 */ 	
-		/*if ((GET_PRIVATE (bubble)->message_body->len == 0) &&
-		    (GET_PRIVATE (bubble)->icon_pixbuf != NULL))
-		{
-			cairo_move_to (cr,
-				       defaults_get_icon_size (bubble->defaults) +
-				       (defaults_get_bubble_width (bubble->defaults) -
-					defaults_get_icon_size (bubble->defaults) -
-					log_rect.width / PANGO_SCALE) / 2,
-				       (defaults_get_bubble_min_height (bubble->defaults) -
-					log_rect.height / PANGO_SCALE) / 2);
-		}
-		else
-		{
-			cairo_move_to (cr, left_margin, top_margin);
-		}*/
-
-		cairo_move_to (cr, left_margin, top_margin);
-
-		/* draw pango-text as path to our cairo-context */
-		pango_cairo_layout_path (cr, layout);
-
-		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		cairo_set_source_rgba (cr,
-				       TEXT_TITLE_COLOR_R,
-				       TEXT_TITLE_COLOR_G,
-				       TEXT_TITLE_COLOR_B,
-				       TEXT_TITLE_COLOR_A);
-		cairo_fill (cr);
-		g_object_unref (layout);
-
-		top_margin += (gdouble) log_rect.height / PANGO_SCALE;
-	}
-
-	/* render body-message */
-	if (GET_PRIVATE (bubble)->message_body->len != 0)
-	{
-		PangoFontDescription* desc   = NULL;
-		PangoLayout*          layout = NULL;
-		PangoRectangle        ink_rect;
-		PangoRectangle        log_rect;
-
-		layout = pango_cairo_create_layout (cr);
-		desc = pango_font_description_new ();
-		pango_font_description_set_size (desc,
-						 EM2PIXELS (defaults_get_text_body_size (d), d) *
-						 PANGO_SCALE);
-		pango_font_description_set_family_static (desc,
-							  defaults_get_text_font_face (bubble->defaults));
-		pango_font_description_set_weight (desc,
-						   defaults_get_text_body_weight (bubble->defaults));
-		pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-		pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
-		/*pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);*/
-		pango_layout_set_font_description (layout, desc);
-		pango_font_description_free (desc);
-		pango_layout_set_width (layout,
-					(EM2PIXELS (defaults_get_bubble_width (d), d) -
-					 left_margin -
-					 margin_gap) *
-					PANGO_SCALE);
-
-		/* print and layout string (pango-wise) */
-		pango_layout_set_text (layout,
-				       GET_PRIVATE (bubble)->message_body->str,
-				       GET_PRIVATE (bubble)->message_body->len);
-
-		pango_layout_get_extents (layout, &ink_rect, &log_rect);
-
-		/* draw ink- and log-rects for debugging text positioning */
-		/*cairo_set_source_rgb (cr, 1.0f, 0.5f, 0.5f);
-		cairo_rectangle (cr,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 EM2PIXELS (defaults_get_icon_size (d), d) +
-				 (gdouble) ink_rect.x / PANGO_SCALE,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 (gdouble) ink_rect.y / PANGO_SCALE,
-				 (gdouble) ink_rect.width / PANGO_SCALE,
-				 (gdouble) ink_rect.height / PANGO_SCALE);
-		cairo_stroke (cr);
-
-		cairo_set_source_rgb (cr, 0.5f, 0.5f, 1.0f);
-		cairo_rectangle (cr,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 EM2PIXELS (defaults_get_icon_size (d), d) +
-				 (gdouble) log_rect.x / PANGO_SCALE,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-				 EM2PIXELS (defaults_get_margin_size (d), d) +
-				 (gdouble) log_rect.y / PANGO_SCALE,
-				 (gdouble) log_rect.width / PANGO_SCALE,
-				 (gdouble) log_rect.height / PANGO_SCALE);
-		cairo_stroke (cr);*/
-
-		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		cairo_move_to (cr, left_margin, top_margin);
-
-		/* draw pango-text as path to our cairo-context */
-		pango_cairo_layout_path (cr, layout);
-
-		cairo_set_source_rgba (cr,
-				       TEXT_BODY_COLOR_R,
-				       TEXT_BODY_COLOR_G,
-				       TEXT_BODY_COLOR_B,
-				       TEXT_BODY_COLOR_A);
-		cairo_fill (cr);
-		g_object_unref (layout);
-	}
-
-
-	/* render value */
-	if (GET_PRIVATE (bubble)->value >= 0 &&
-	    GET_PRIVATE (bubble)->value <= 100)
-	{
-		gdouble lit[4]   = {INDICATOR_LIT_R,
-				    INDICATOR_LIT_G,
-				    INDICATOR_LIT_B,
-				    INDICATOR_LIT_A};
-		gdouble unlit[4] = {INDICATOR_UNLIT_R,
-				    INDICATOR_UNLIT_G,
-				    INDICATOR_UNLIT_B,
-				    INDICATOR_UNLIT_A};
-
-		draw_value_indicator (
-			cr,
-			GET_PRIVATE (bubble)->value,
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-			2 * EM2PIXELS (defaults_get_margin_size (d), d) +
-			EM2PIXELS (defaults_get_icon_size (d), d),
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-			EM2PIXELS (defaults_get_margin_size (d), d),
-			EM2PIXELS (defaults_get_bubble_width (d), d) -
-			3 * EM2PIXELS (defaults_get_margin_size (d), d) -
-			EM2PIXELS (defaults_get_icon_size (d), d),
-			EM2PIXELS (defaults_get_icon_size (d), d),
-			13,
-			lit,
-			unlit);
+		case LAYOUT_NONE:
+			g_warning ("WARNING: No layout defined!!!\n");
+		break;
 	}
 
 	/* draw_layout_grid (cr, bubble); */
@@ -1326,6 +1538,8 @@ bubble_finalize (GObject* gobject)
 	else
 		g_debug ("** bubble %p finalized", gobject);
 
+	cairo_status_t status;
+
 	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
 	{
 		gtk_widget_destroy (GTK_WIDGET (BUBBLE (gobject)->priv->widget));
@@ -1380,6 +1594,26 @@ bubble_finalize (GObject* gobject)
 	{
 		g_source_remove (GET_PRIVATE (gobject)->timer_id);
 		GET_PRIVATE (gobject)->timer_id = 0;
+	}
+
+	if (GET_PRIVATE (gobject)->blurred_content)
+	{
+		status = cairo_surface_status (GET_PRIVATE (gobject)->blurred_content);
+		if (status == CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (GET_PRIVATE (gobject)->blurred_content);
+			GET_PRIVATE (gobject)->blurred_content = NULL;
+		}
+	}
+
+	if (GET_PRIVATE (gobject)->blurred_bubble)
+	{
+		status = cairo_surface_status (GET_PRIVATE (gobject)->blurred_bubble);
+		if (status == CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (GET_PRIVATE (gobject)->blurred_bubble);
+			GET_PRIVATE (gobject)->blurred_bubble = NULL;
+		}
 	}
 
 	/* chain up to the parent class */
@@ -1569,7 +1803,13 @@ bubble_new (Defaults* defaults)
 						gtk_widget_get_screen (window));
 	GET_PRIVATE(this)->alpha         = NULL;
 	GET_PRIVATE(this)->timeline      = NULL;
-	
+	GET_PRIVATE(this)->blurred_content = NULL;
+	GET_PRIVATE(this)->blurred_bubble  = NULL;
+	GET_PRIVATE(this)->title_width     = 0;
+	GET_PRIVATE(this)->title_height    = 0;
+	GET_PRIVATE(this)->body_width      = 0;
+	GET_PRIVATE(this)->body_height     = 0;
+
 	update_shape (this);
 	update_input_shape (window, 1, 1);
 
@@ -1613,36 +1853,9 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	/*GScanner*      scanner = NULL;
-	GTokenType     token;
-	GString*       string = NULL;
-	GScannerConfig scanner_config = {
-		"\t\r\n",                      * characters to skip *
-		G_CSET_a_2_z " _," G_CSET_A_2_Z, * identifier start *
-		G_CSET_a_2_z "_., " G_CSET_A_2_Z G_CSET_DIGITS,* identifier cont. *
-		"#\n",                         * single line comment *
-		FALSE,                         * case_sensitive *
-		TRUE,                          * skip multi-line comments *
-		TRUE,                          * skip single line comments *
-		FALSE,                         * scan multi-line comments *
-		TRUE,                          * scan identifiers *
-		FALSE,                         * scan 1-char identifiers *
-		FALSE,                         * scan NULL identifiers *
-		FALSE,                         * scan symbols *
-		FALSE,                         * scan binary *
-		FALSE,                         * scan octal *
-		TRUE,                          * scan float *
-		TRUE,                          * scan hex *
-		FALSE,                         * scan hex dollar *
-		TRUE,                          * scan single quote strings *
-		TRUE,                          * scan double quite strings *
-		FALSE,                         * numbers to int *
-		FALSE,                         * int to float *
-		TRUE,                          * identifier to string *
-		FALSE,                         * char to token *
-		FALSE,                         * symbol to token *
-		FALSE,                         * scope 0 fallback *
-		FALSE                          * store int64 *};*/
+	gboolean result;
+	gchar*   text;
+	GError*  error = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
@@ -1650,28 +1863,17 @@ bubble_set_message_body (Bubble*      self,
 	if (GET_PRIVATE (self)->message_body->len != 0)
 		g_string_free (GET_PRIVATE (self)->message_body, TRUE);
 
-	GET_PRIVATE (self)->message_body = g_string_new (body);
+	/* filter out any HTML/markup if possible */
+    	result = pango_parse_markup (body,
+				     -1,
+				     0,    /* no accel-marker needed */
+				     NULL, /* no PangoAttr needed */
+				     &text,
+				     NULL, /* no accel-marker-return needed */
+				     &error);
 
-	/*scanner = g_scanner_new (&scanner_config);
-	if (scanner)
-	{
-		string = g_string_new (body);
-
-		g_scanner_input_text (scanner,
-				      string->str,
-				      string->len);
-
-		for (token = g_scanner_get_next_token (scanner);
-		     token != G_TOKEN_EOF;
-		     token = g_scanner_get_next_token (scanner))
-		{
-			if (token == G_TOKEN_STRING)
-				g_string_append (GET_PRIVATE (self)->message_body,
-						 scanner->value.v_string);
-		}
-
-		g_string_free (string, TRUE);
-	}*/
+	GET_PRIVATE (self)->message_body = g_string_new (text);
+	g_free ((gpointer) text);
 }
 
 void
@@ -2215,7 +2417,6 @@ _calc_title_height (Bubble* self,
 	cairo_t*              cr;
 	PangoFontDescription* desc    = NULL;
 	PangoLayout*          layout  = NULL;
-	PangoRectangle        ink_rect = {0, 0, 0, 0};
 	PangoRectangle        log_rect = {0, 0, 0, 0};
 	gint                  title_height;
 
@@ -2261,7 +2462,7 @@ _calc_title_height (Bubble* self,
 		GET_PRIVATE (self)->title->str,
 		GET_PRIVATE (self)->title->len);
 
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+	pango_layout_get_extents (layout, NULL, &log_rect);
 	title_height = log_rect.height / PANGO_SCALE;
 	g_object_unref (layout);
 	cairo_destroy (cr);
@@ -2278,9 +2479,9 @@ _calc_body_height (Bubble* self,
 	cairo_t*              cr;
 	PangoFontDescription* desc    = NULL;
 	PangoLayout*          layout  = NULL;
-	PangoRectangle        ink_rect = {0, 0, 0, 0};
-	PangoRectangle        log_rect = {0, 0, 0, 0};
+	PangoRectangle        log_rect;
 	gint                  body_height;
+	gint                  h;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -2291,7 +2492,8 @@ _calc_body_height (Bubble* self,
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
-	cr = cairo_create (surface);
+	/*cr = cairo_create (surface);*/
+	cr = gdk_cairo_create (GET_PRIVATE (self)->widget->window);
 	cairo_surface_destroy (surface);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 		return 0;
@@ -2314,18 +2516,24 @@ _calc_body_height (Bubble* self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
-	pango_font_description_free (desc);
-
-	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
 	pango_layout_set_text (
 		layout,
 		GET_PRIVATE (self)->message_body->str,
 		GET_PRIVATE (self)->message_body->len);
+	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
-	body_height = log_rect.height / PANGO_SCALE;
+	pango_layout_get_extents (layout, NULL, &log_rect);
+	body_height = PANGO_PIXELS (log_rect.height);
 
+	pango_layout_get_size (layout, NULL, &h);
+	g_debug ("_calc_body_height(): %d line(s), %d px width, %d px height, %d height",
+		 pango_layout_get_line_count (layout),
+		 PANGO_PIXELS (pango_layout_get_width (layout)),
+		 PANGO_PIXELS (h),
+		 pango_layout_get_height (layout));
+
+	pango_font_description_free (desc);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
@@ -2361,31 +2569,36 @@ bubble_recalc_size (Bubble *self)
 
 		case LAYOUT_ICON_TITLE_BODY:
 		{
-			gint    title_height     = 0;
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
-			gint    body_height      = 0;
 
-			title_height = _calc_title_height (
-					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
-					EM2PIXELS (defaults_get_icon_size (d), d));
+			GET_PRIVATE (self)->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+				EM2PIXELS (defaults_get_icon_size (d), d);
 
-			body_height = _calc_body_height (
+			GET_PRIVATE (self)->title_height = _calc_title_height (
 					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
-					EM2PIXELS (defaults_get_icon_size (d), d));
+					GET_PRIVATE (self)->title_width);
+
+			GET_PRIVATE (self)->body_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+				EM2PIXELS (defaults_get_icon_size (d), d);
+
+			GET_PRIVATE (self)->body_height = _calc_body_height (
+					self,
+					GET_PRIVATE(self)->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
 					   defaults_get_bubble_min_height (d) -
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
-			bubble_height = PIXELS2EM (title_height, d) +
-					PIXELS2EM (body_height, d) +
-					2.0f * defaults_get_margin_size (d);
+			bubble_height =
+				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
+				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
 			{
@@ -2394,8 +2607,8 @@ bubble_recalc_size (Bubble *self)
 			else
 			{
 				new_bubble_height =
-					body_height +
-					title_height +
+					GET_PRIVATE (self)->body_height +
+					GET_PRIVATE (self)->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
@@ -2404,28 +2617,34 @@ bubble_recalc_size (Bubble *self)
 
 		case LAYOUT_TITLE_BODY:
 		{
-			gint    title_height     = 0;
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
-			gint    body_height      = 0;
 
-			title_height = _calc_title_height (
-					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
+			GET_PRIVATE (self)->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				2 * EM2PIXELS (defaults_get_margin_size (d), d);
 
-			body_height = _calc_body_height (
+			GET_PRIVATE (self)->title_height = _calc_title_height (
 					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
+					GET_PRIVATE (self)->title_width);
+
+			GET_PRIVATE (self)->body_width = 
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				2 * EM2PIXELS (defaults_get_margin_size (d), d);
+
+			GET_PRIVATE (self)->body_height = _calc_body_height (
+					self,
+					GET_PRIVATE (self)->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
 					   defaults_get_bubble_min_height (d) -
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
-			bubble_height = PIXELS2EM ((title_height + body_height), d) +
-					2.0f * defaults_get_margin_size (d);
+			bubble_height =
+				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
+				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
 			{
@@ -2434,8 +2653,8 @@ bubble_recalc_size (Bubble *self)
 			else
 			{
 				new_bubble_height =
-					body_height +
-					title_height +
+					GET_PRIVATE (self)->body_height +
+					GET_PRIVATE (self)->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}

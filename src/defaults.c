@@ -126,7 +126,7 @@ _get_average_char_width (Defaults* self)
 	PangoFontDescription* desc;
 	PangoLayout*          layout;
 	PangoContext*         context;
-	PangoLanguage *       language;
+	PangoLanguage*        language;
 	PangoFontMetrics*     metrics;
 	gint                  char_width;
 
