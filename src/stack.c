@@ -240,12 +240,13 @@ static void
 stack_layout (Stack* self)
 {
 	Bubble*   display_list[2] = {NULL, NULL};
-	Bubble*   feedback_bubble = NULL;
+	Bubble*   sync_bubble = NULL;
 	Bubble*   next_to_display = NULL;
 	Bubble*   urgent_bubble   = NULL;
 	GList*    list   = NULL;
 	Bubble*   bubble = NULL;
 	gint      y      = 0;
+	gint      top    = 0;
 	gint      x      = 0;
 	int i;
 	Defaults* d;
@@ -267,8 +268,9 @@ stack_layout (Stack* self)
 			next_to_display = bubble;
 
 		if (bubble_is_synchronous (bubble))
-			feedback_bubble = bubble;
+			sync_bubble = bubble;
 
+		/* TODO: query the 'priority' attribute */
 		/* if (bubble_is_urgent (bubble))
 			urgent_bubble = bubble;
 		*/
@@ -276,19 +278,19 @@ stack_layout (Stack* self)
 
 	/* If there are already 2 visible notifications,
 	   there is really nothing else we can do.
-	   NOTE: one of them is NECESSARILY a feedback bubble...
+	   NOTE: one of them is NECESSARILY a synchronous one...
 	*/
 	if (display_list[0] != NULL && display_list[1] != NULL)
 		return;
 
-	/* If there is a feedback_bubble waiting,
+	/* If there is a sync_bubble waiting,
 	   ensure it is displayed immediately. */
-	if (feedback_bubble != NULL)
+	if (sync_bubble != NULL)
 	{
 		if (display_list[0] == NULL)
-			display_list[0] = feedback_bubble;
-		else if (display_list[0] != feedback_bubble)
-			display_list[1] = feedback_bubble;
+			display_list[0] = sync_bubble;
+		else if (display_list[0] != sync_bubble)
+			display_list[1] = sync_bubble;
 	}
 
 	/* If there is an urgent bubble waiting,
@@ -306,7 +308,7 @@ stack_layout (Stack* self)
 	{
 		if (display_list[0] == NULL)
 			display_list[0] = next_to_display;
-		else if ((display_list[0] == feedback_bubble) &&
+		else if ((display_list[0] == sync_bubble) &&
 			 (display_list[1] == NULL))
 			display_list[1] = next_to_display;
 	}
@@ -316,6 +318,7 @@ stack_layout (Stack* self)
 	y  =  defaults_get_desktop_top (d);
 	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
+	top = y;
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
 		(defaults_get_desktop_right (d) -
 		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
@@ -331,7 +334,7 @@ stack_layout (Stack* self)
 	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
 	{
 		bubble_move (bubble, x, y);
-		if (bubble == feedback_bubble)
+		if (bubble == sync_bubble)
 			bubble_fade_in (bubble, 700); /* TODO: or 300ms */
 		else if (bubble == urgent_bubble)
 			bubble_fade_in (bubble, 100);
@@ -342,15 +345,50 @@ stack_layout (Stack* self)
 			- 20 + 7; /* HACK */
 	} else {
 		bubble_get_position (bubble, &x, &y);
+#if 1
+		/* Figure out if there is a gap between the top of
+		   the workarea and the top of the "1st" notification
+		   that is already on display
+		*/
+		if (y > top)
+		{
+			/* There is a gap, though we don't compute
+			   exactly how much. We will try to position
+			   the second window in this gap at the top.
+			   So now, let's try to see how much we need
+			   the "first" window to slide down to give more
+			   space for the second */
+			if ((display_list[1] != NULL) &&
+			    (! bubble_is_visible (display_list[1])))
+			{
+				gint y1;
+				y1 = top
+					+ bubble_get_height (display_list[1])
+					+ defaults_get_bubble_vert_gap (self->defaults)
+					- defaults_get_bubble_shadow_size (self->defaults);
+				g_debug ("sliding the \"1st\" bubble from %d to %d (%d)", y, y1, (y1 - y));
+				bubble_move (bubble, x, y1);
+
+				y = top;
+			}
+		} else {
+			y += bubble_get_height (bubble)
+				+ defaults_get_bubble_vert_gap (self->defaults)
+				- defaults_get_bubble_shadow_size (self->defaults);
+		}
+#else
 		y += bubble_get_height (bubble)
-			- 20 + 7; /* HACK */
+				+ defaults_get_bubble_vert_gap (self->defaults)
+				- defaults_get_bubble_shadow_size (self->defaults);
+#endif
+
 	}
 
 	bubble = display_list[1];
 	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
 	{
 		bubble_move (bubble, x, y);
-		if (bubble == feedback_bubble)
+		if (bubble == sync_bubble)
 			bubble_fade_in (bubble, 700);
 		/* TODO: or 300ms if in a serie of bubbles */
 		else if (bubble == urgent_bubble)
@@ -545,6 +583,10 @@ stack_notify_handler (Stack*                 self,
 		data = (GValue*) g_hash_table_lookup (hints, "value");
 		if (G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
+
+		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
+		if (G_VALUE_HOLDS_STRING (data))
+			bubble_set_synchronous (bubble, g_value_get_string (data));
 	}
 
 	if (summary)
