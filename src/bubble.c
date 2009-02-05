@@ -63,6 +63,10 @@ struct _BubblePrivate {
 	gboolean         composited;
 	cairo_surface_t* blurred_content;
 	cairo_surface_t* blurred_bubble;
+	gint             title_width;
+	gint             title_height;
+	gint             body_width;
+	gint             body_height;
 };
 
 enum
@@ -769,23 +773,12 @@ _render_icon_title (Bubble*  self,
 			       GET_PRIVATE (self)->title->str,
 			       GET_PRIVATE (self)->title->len);
 
-	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 left_margin - margin_gap) *
-				PANGO_SCALE);
-	pango_layout_set_height (layout,
-				 (bubble_get_height (self) -
-				  2 * margin_gap -
-				  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d)) *
-				 PANGO_SCALE);
-
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
 	top_margin = (bubble_get_height (self) / 2) -
 		     (ink_rect.height / PANGO_SCALE) +
 		     0.25f * (ink_rect.height / PANGO_SCALE);
 
-	g_print ("bubble-height: %d\n", bubble_get_height(self) );
 	cairo_move_to (cr, left_margin, top_margin);
 
 	/* draw pango-text as path to our cairo-context */
@@ -851,10 +844,7 @@ _render_icon_title_body (Bubble*  self,
 			       GET_PRIVATE (self)->title->len);
 
 	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 EM2PIXELS (defaults_get_icon_size (d), d) -
-				 3 * margin_gap) *
-				PANGO_SCALE);
+				GET_PRIVATE (self)->title_width * PANGO_SCALE);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -891,10 +881,7 @@ _render_icon_title_body (Bubble*  self,
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 left_margin -
-				 margin_gap) *
-				PANGO_SCALE);
+				GET_PRIVATE (self)->body_width * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
@@ -953,9 +940,7 @@ _render_title_body (Bubble*  self,
 	pango_font_description_free (desc);
 
 	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 2 * margin_gap) *
-				PANGO_SCALE);
+				GET_PRIVATE (self)->title_width * PANGO_SCALE);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
@@ -999,10 +984,7 @@ _render_title_body (Bubble*  self,
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 left_margin -
-				 margin_gap) *
-				PANGO_SCALE);
+				GET_PRIVATE (self)->body_width * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
@@ -1783,6 +1765,10 @@ bubble_new (Defaults* defaults)
 						gtk_widget_get_screen (window));
 	GET_PRIVATE(this)->blurred_content = NULL;
 	GET_PRIVATE(this)->blurred_bubble  = NULL;
+	GET_PRIVATE(this)->title_width     = 0;
+	GET_PRIVATE(this)->title_height    = 0;
+	GET_PRIVATE(this)->body_width      = 0;
+	GET_PRIVATE(this)->body_height     = 0;
 
 	update_shape (this);
 	update_input_shape (window, 1, 1);
@@ -2236,7 +2222,6 @@ _calc_title_height (Bubble* self,
 	cairo_t*              cr;
 	PangoFontDescription* desc    = NULL;
 	PangoLayout*          layout  = NULL;
-	PangoRectangle        ink_rect = {0, 0, 0, 0};
 	PangoRectangle        log_rect = {0, 0, 0, 0};
 	gint                  title_height;
 
@@ -2282,7 +2267,7 @@ _calc_title_height (Bubble* self,
 		GET_PRIVATE (self)->title->str,
 		GET_PRIVATE (self)->title->len);
 
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+	pango_layout_get_extents (layout, NULL, &log_rect);
 	title_height = log_rect.height / PANGO_SCALE;
 	g_object_unref (layout);
 	cairo_destroy (cr);
@@ -2299,9 +2284,9 @@ _calc_body_height (Bubble* self,
 	cairo_t*              cr;
 	PangoFontDescription* desc    = NULL;
 	PangoLayout*          layout  = NULL;
-	PangoRectangle        ink_rect = {0, 0, 0, 0};
-	PangoRectangle        log_rect = {0, 0, 0, 0};
+	PangoRectangle        log_rect;
 	gint                  body_height;
+	gint                  h;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -2312,7 +2297,8 @@ _calc_body_height (Bubble* self,
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
-	cr = cairo_create (surface);
+	/*cr = cairo_create (surface);*/
+	cr = gdk_cairo_create (GET_PRIVATE (self)->widget->window);
 	cairo_surface_destroy (surface);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 		return 0;
@@ -2335,18 +2321,24 @@ _calc_body_height (Bubble* self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
-	pango_font_description_free (desc);
-
-	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
 	pango_layout_set_text (
 		layout,
 		GET_PRIVATE (self)->message_body->str,
 		GET_PRIVATE (self)->message_body->len);
+	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
-	body_height = log_rect.height / PANGO_SCALE;
+	pango_layout_get_extents (layout, NULL, &log_rect);
+	body_height = PANGO_PIXELS (log_rect.height);
 
+	pango_layout_get_size (layout, NULL, &h);
+	g_debug ("_calc_body_height(): %d line(s), %d px width, %d px height, %d height",
+		 pango_layout_get_line_count (layout),
+		 PANGO_PIXELS (pango_layout_get_width (layout)),
+		 PANGO_PIXELS (h),
+		 pango_layout_get_height (layout));
+
+	pango_font_description_free (desc);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
@@ -2382,31 +2374,36 @@ bubble_recalc_size (Bubble *self)
 
 		case LAYOUT_ICON_TITLE_BODY:
 		{
-			gint    title_height     = 0;
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
-			gint    body_height      = 0;
 
-			title_height = _calc_title_height (
-					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
-					EM2PIXELS (defaults_get_icon_size (d), d));
+			GET_PRIVATE (self)->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+				EM2PIXELS (defaults_get_icon_size (d), d);
 
-			body_height = _calc_body_height (
+			GET_PRIVATE (self)->title_height = _calc_title_height (
 					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					3 * EM2PIXELS (defaults_get_margin_size (d), d) -
-					EM2PIXELS (defaults_get_icon_size (d), d));
+					GET_PRIVATE (self)->title_width);
+
+			GET_PRIVATE (self)->body_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+				EM2PIXELS (defaults_get_icon_size (d), d);
+
+			GET_PRIVATE (self)->body_height = _calc_body_height (
+					self,
+					GET_PRIVATE(self)->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
 					   defaults_get_bubble_min_height (d) -
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
-			bubble_height = PIXELS2EM (title_height, d) +
-					PIXELS2EM (body_height, d) +
-					2.0f * defaults_get_margin_size (d);
+			bubble_height =
+				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
+				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
 			{
@@ -2415,8 +2412,8 @@ bubble_recalc_size (Bubble *self)
 			else
 			{
 				new_bubble_height =
-					body_height +
-					title_height +
+					GET_PRIVATE (self)->body_height +
+					GET_PRIVATE (self)->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
@@ -2425,28 +2422,34 @@ bubble_recalc_size (Bubble *self)
 
 		case LAYOUT_TITLE_BODY:
 		{
-			gint    title_height     = 0;
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
-			gint    body_height      = 0;
 
-			title_height = _calc_title_height (
-					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
+			GET_PRIVATE (self)->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				2 * EM2PIXELS (defaults_get_margin_size (d), d);
 
-			body_height = _calc_body_height (
+			GET_PRIVATE (self)->title_height = _calc_title_height (
 					self,
-					EM2PIXELS (defaults_get_bubble_width (d), d) -
-					2.0f * EM2PIXELS (defaults_get_margin_size (d), d));
+					GET_PRIVATE (self)->title_width);
+
+			GET_PRIVATE (self)->body_width = 
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				2 * EM2PIXELS (defaults_get_margin_size (d), d);
+
+			GET_PRIVATE (self)->body_height = _calc_body_height (
+					self,
+					GET_PRIVATE (self)->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
 					   defaults_get_bubble_min_height (d) -
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
-			bubble_height = PIXELS2EM ((title_height + body_height), d) +
-					2.0f * defaults_get_margin_size (d);
+			bubble_height =
+				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
+				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
 			{
@@ -2455,8 +2458,8 @@ bubble_recalc_size (Bubble *self)
 			else
 			{
 				new_bubble_height =
-					body_height +
-					title_height +
+					GET_PRIVATE (self)->body_height +
+					GET_PRIVATE (self)->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
