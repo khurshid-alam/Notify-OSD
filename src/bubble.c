@@ -66,6 +66,9 @@ struct _BubblePrivate {
 	gboolean     urgent;
 	gboolean     composited;
 	ClutterAlpha *alpha;
+	ClutterTimeline *timeline;
+	guint        draw_handler_id;
+	guint        pointer_update_id;
 };
 
 enum
@@ -1318,6 +1321,11 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
+	if (GET_PRIVATE(gobject)->synchronous)
+		g_debug ("** sync. bubble %p finalized", gobject);
+	else
+		g_debug ("** bubble %p finalized", gobject);
+
 	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
 	{
 		gtk_widget_destroy (GTK_WIDGET (BUBBLE (gobject)->priv->widget));
@@ -1350,6 +1358,30 @@ bubble_finalize (GObject* gobject)
 		GET_PRIVATE (gobject)->alpha = NULL;
 	}
 
+	if (GET_PRIVATE (gobject)->timeline)
+	{
+		g_object_unref (GET_PRIVATE (gobject)->timeline);
+		GET_PRIVATE (gobject)->timeline = NULL;
+	}
+
+	if (GET_PRIVATE (gobject)->pointer_update_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->pointer_update_id);
+		GET_PRIVATE (gobject)->pointer_update_id = 0;
+	}
+
+	if (GET_PRIVATE (gobject)->draw_handler_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->draw_handler_id);
+		GET_PRIVATE (gobject)->draw_handler_id = 0;
+	}
+
+	if (GET_PRIVATE (gobject)->timer_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->timer_id);
+		GET_PRIVATE (gobject)->timer_id = 0;
+	}
+
 	/* chain up to the parent class */
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
@@ -1371,6 +1403,8 @@ bubble_init (Bubble* self)
 	priv->icon_pixbuf      = NULL;
 	priv->value            = -1;
 	priv->synchronous      = NULL;
+	priv->draw_handler_id  = 0;
+	priv->pointer_update_id= 0;
 }
 
 static void
@@ -1516,6 +1550,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
 
+	/* TODO: fold some of that back into bubble_init */
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
 	GET_PRIVATE(this)->widget        = window;
@@ -1533,6 +1568,7 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->composited    = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
 	GET_PRIVATE(this)->alpha         = NULL;
+	GET_PRIVATE(this)->timeline      = NULL;
 	
 	update_shape (this);
 	update_input_shape (window, 1, 1);
@@ -1793,9 +1829,6 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
-	guint           draw_handler_id   = 0;
-	guint           pointer_update_id = 0;
-
 	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -1803,17 +1836,17 @@ bubble_show (Bubble* self)
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	draw_handler_id = g_timeout_add (1000/60,
-					 (GSourceFunc) redraw_handler,
-					 self);
+	GET_PRIVATE (self)->draw_handler_id
+		= g_timeout_add (1000/60,
+				 (GSourceFunc) redraw_handler,
+				 self);
 
 	/* FIXME: read out current mouse-pointer position every 1/10 second */
 
-        pointer_update_id = g_timeout_add (100,
-					   (GSourceFunc) pointer_update,
-					   self);
-
-	/* FIXME: g_source_remove() both to avoid starting the loop */
+        GET_PRIVATE (self)->pointer_update_id
+		= g_timeout_add (100,
+				 (GSourceFunc) pointer_update,
+				 self);
 }
 
 /* mostly called when we change the content of the bubble
@@ -1958,6 +1991,12 @@ fade_in_completed_cb (ClutterTimeline *timeline,
 		GET_PRIVATE (bubble)->alpha = NULL;
 	}
 
+	if (GET_PRIVATE (bubble)->timeline)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->timeline);
+		GET_PRIVATE (bubble)->timeline = NULL;
+	}
+
 	gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
 
 	bubble_start_timer (bubble);
@@ -2018,6 +2057,7 @@ bubble_fade_out (Bubble *self,
 	g_return_if_fail (IS_BUBBLE (self));
 
 	timeline = clutter_timeline_new_for_duration (msecs);
+	GET_PRIVATE (self)->timeline = timeline;
 
 	if (GET_PRIVATE (self)->alpha != NULL)
 	{
@@ -2030,7 +2070,6 @@ bubble_fade_out (Bubble *self,
 					CLUTTER_ALPHA_RAMP_DEC,
 					NULL,
 					NULL);
-	g_object_unref (timeline);
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
@@ -2071,6 +2110,19 @@ bubble_hide (Bubble* self)
 
 	GET_PRIVATE (self)->visible = FALSE;
 	gtk_widget_hide (GET_PRIVATE (self)->widget);
+
+	if (GET_PRIVATE (self)->timeline)
+	{
+		clutter_timeline_stop (GET_PRIVATE (self)->timeline);
+		g_object_unref (GET_PRIVATE (self)->timeline);
+		GET_PRIVATE (self)->timeline = NULL;
+	}
+
+	if (GET_PRIVATE (self)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
 
 	return FALSE; /* this also instructs the timer to stop */
 }

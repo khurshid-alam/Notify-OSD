@@ -179,6 +179,7 @@ stack_purge_old_bubbles (Stack* self)
 		{
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
+			g_debug ("purging bubble %p", bubble);
 			g_object_unref (bubble);
 		} else {
 			list = g_list_next (list);
@@ -186,89 +187,50 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
-static void
-stack_layout (Stack* self)
+static gboolean
+stack_display_synchronous_bubble (Stack *self)
 {
-	Bubble*   display_list[2] = {NULL, NULL};
 	Bubble*   sync_bubble = NULL;
-	Bubble*   next_to_display = NULL;
-	Bubble*   urgent_bubble   = NULL;
 	GList*    list   = NULL;
 	Bubble*   bubble = NULL;
-	gint      y      = 0;
-	gint      top    = 0;
-	gint      x      = 0;
-	int i;
 	Defaults* d;
+	gint      y      = 0;
+	gint      x      = 0;
 
-	g_return_if_fail (self != NULL);
-
-	stack_purge_old_bubbles (self);
-
-	/* Identify important items in the stack */
-	for (list = g_list_first (self->list), i = 0;
+	for (list = g_list_first (self->list);
 	     list != NULL;
 	     list = g_list_next (list))
 	{
 		bubble = (Bubble*) list->data;
 
-		if (bubble_is_visible (bubble))
-			display_list[i++] = bubble;
-		else if (next_to_display == NULL)
-			next_to_display = bubble;
+		if (! bubble_is_synchronous (bubble))
+			continue;
 
-		if (bubble_is_synchronous (bubble))
-			sync_bubble = bubble;
-
-		/* TODO: query the 'priority' attribute */
-		/* if (bubble_is_urgent (bubble))
-			urgent_bubble = bubble;
-		*/
+		if (sync_bubble != NULL &&
+		    bubble_is_visible (sync_bubble))
+		{
+			/* hide older synchronous bubbles,
+			   only keep the latest one on display */
+			/* TODO: try to discard it (see weak-refs) */
+			g_debug ("overriding sync. bubble %p", sync_bubble);
+			bubble_hide (sync_bubble);
+			bubble_del (sync_bubble);
+		}
+		
+		/* remember the /last/ incoming sync_bubble */
+		sync_bubble = bubble;
 	}
 
-	/* If there are already 2 visible notifications,
-	   there is really nothing else we can do.
-	   NOTE: one of them is NECESSARILY a synchronous one...
-	*/
-	if (display_list[0] != NULL && display_list[1] != NULL)
-		return;
+	if (sync_bubble == NULL)
+		return FALSE;
 
-	/* If there is a sync_bubble waiting,
-	   ensure it is displayed immediately. */
-	if (sync_bubble != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = sync_bubble;
-		else if (display_list[0] != sync_bubble)
-			display_list[1] = sync_bubble;
-	}
+	g_debug ("displaying sync. bubble %p", bubble);
 
-	/* If there is an urgent bubble waiting,
-	   ensure it is displayed as soon as possible. */
-	if (urgent_bubble != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = urgent_bubble;
-		else if (display_list[1] == NULL)
-			display_list[1] = urgent_bubble;
-	}
-
-	/* Try to display the next bubble waiting in the stack */
-	if (next_to_display != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = next_to_display;
-		else if ((display_list[0] == sync_bubble) &&
-			 (display_list[1] == NULL))
-			display_list[1] = next_to_display;
-	}
-	
-	/* Position the top left corner of the stack. */
+	/* Position the bubble at the top left corner of the display. */
 	d = self->defaults;
 	y  =  defaults_get_desktop_top (d);
 	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-	top = y;
 	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
 		(defaults_get_desktop_right (d) -
 		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
@@ -280,73 +242,98 @@ stack_layout (Stack* self)
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
-	bubble = display_list[0];
-	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
-	{
-		bubble_move (bubble, x, y);
-		if (bubble == sync_bubble)
-			bubble_fade_in (bubble, 700); /* TODO: or 300ms */
-		else if (bubble == urgent_bubble)
-			bubble_fade_in (bubble, 100);
-		else
-			bubble_fade_in (bubble, 200); /* TODO: or 300ms */
-		
-		y += bubble_get_height (bubble)
-			- 20 + 7; /* HACK */
-	} else {
-		bubble_get_position (bubble, &x, &y);
-#if 1
-		/* Figure out if there is a gap between the top of
-		   the workarea and the top of the "1st" notification
-		   that is already on display
-		*/
-		if (y > top)
-		{
-			/* There is a gap, though we don't compute
-			   exactly how much. We will try to position
-			   the second window in this gap at the top.
-			   So now, let's try to see how much we need
-			   the "first" window to slide down to give more
-			   space for the second */
-			if ((display_list[1] != NULL) &&
-			    (! bubble_is_visible (display_list[1])))
-			{
-				gint y1;
-				y1 = top
-					+ bubble_get_height (display_list[1])
-					+ defaults_get_bubble_vert_gap (self->defaults)
-					- defaults_get_bubble_shadow_size (self->defaults);
-				g_debug ("sliding the \"1st\" bubble from %d to %d (%d)", y, y1, (y1 - y));
-				bubble_move (bubble, x, y1);
+	bubble_move (bubble, x, y);
+	bubble_set_timeout (bubble, 2); /* Warning: in *seconds*! */
+	bubble_fade_in (bubble, 100);
 
-				y = top;
+	return TRUE;
+}
+
+static void
+stack_layout (Stack* self)
+{
+	Bubble*   next_to_display = NULL;
+	Bubble*   urgent_bubble   = NULL;
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
+	gint      y      = 0;
+	gint      x      = 0;
+	gboolean  reset  = 0;
+	Defaults* d;
+
+	g_return_if_fail (self != NULL);
+
+	stack_purge_old_bubbles (self);
+
+	/* display a synchronous bubble if any */
+	reset = stack_display_synchronous_bubble (self);
+
+	/* pickup the next bubble to display */
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
+	{
+		bubble = (Bubble*) list->data;
+
+		/* sync. bubbles have already been taken care of */
+		if (bubble_is_synchronous (bubble))
+		    continue;
+
+		/* if there is already one bubble on display
+		   we don't have room for another one */
+		if (bubble_is_visible (bubble)){
+			/* but if a synchronous notification is on
+			   screen, synchronize both timers */
+			if (reset) {
+				bubble_start_timer (bubble);
+				bubble_refresh (bubble);
 			}
-		} else {
-			y += bubble_get_height (bubble)
-				+ defaults_get_bubble_vert_gap (self->defaults)
-				- defaults_get_bubble_shadow_size (self->defaults);
+			return;
 		}
-#else
-		y += bubble_get_height (bubble)
-				+ defaults_get_bubble_vert_gap (self->defaults)
-				- defaults_get_bubble_shadow_size (self->defaults);
-#endif
 
+		if (bubble_is_urgent (bubble))
+		{
+			/* pick-up the /first/ urgent bubble
+			   in the queue (FIFO) */
+			if (urgent_bubble == NULL) {
+				urgent_bubble = bubble;
+				next_to_display = bubble;
+			}
+		} else if (next_to_display == NULL) {
+			next_to_display = bubble;
+		}
 	}
 
-	bubble = display_list[1];
-	if ((bubble != NULL) && (! bubble_is_visible (bubble)))
-	{
-		bubble_move (bubble, x, y);
-		if (bubble == sync_bubble)
-			bubble_fade_in (bubble, 700);
-		/* TODO: or 300ms if in a serie of bubbles */
-		else if (bubble == urgent_bubble)
-			bubble_fade_in (bubble, 100);
-		else
-			bubble_fade_in (bubble, 200);
-		/* TODO: or 300ms if in a serie of bubbles */
-	}
+	if (next_to_display == NULL)
+		/* this actually happens when we're called for a synchronous
+		   bubble or after a bubble timed out, but there where no other
+		   notifications waiting in the queue */
+		return;
+
+	/* Position the top left corner of the stack. */
+	d = self->defaults;
+	y  =  defaults_get_desktop_top (d);
+	y  += 2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
+	y  += EM2PIXELS (defaults_get_bubble_min_height (d), d);
+
+	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
+		(defaults_get_desktop_right (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
+		 EM2PIXELS (defaults_get_bubble_width (d), d))
+		:
+		(defaults_get_desktop_left (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
+		;
+
+	bubble_move (next_to_display, x, y);
+
+	/* TODO: adjust timings for bubbles that appear in a serie of bubbles */
+	if (urgent_bubble != NULL)
+		bubble_fade_in (urgent_bubble, 100);
+	else 
+		bubble_fade_in (next_to_display, 200);
 }
 
 

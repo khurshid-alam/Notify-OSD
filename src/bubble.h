@@ -172,7 +172,6 @@ void
 bubble_set_urgent (Bubble *self,
 		   gboolean urgent);
 
-
 void
 bubble_fade_out (Bubble *self,
 		 guint   msecs);
