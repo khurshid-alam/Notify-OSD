@@ -165,6 +165,14 @@ void
 bubble_set_synchronous (Bubble *self,
 			const gchar *sync);
 
+gboolean
+bubble_is_urgent (Bubble *self);
+
+void
+bubble_set_urgent (Bubble *self,
+		   gboolean urgent);
+
+
 void
 bubble_fade_out (Bubble *self,
 		 guint   msecs);

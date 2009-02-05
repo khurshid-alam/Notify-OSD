@@ -63,6 +63,7 @@ struct _BubblePrivate {
 	gdouble      inc_factor;
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
 	gchar*       synchronous;
+	gboolean     urgent;
 	gboolean     composited;
 	ClutterAlpha *alpha;
 };
@@ -2412,4 +2413,21 @@ bubble_is_synchronous (Bubble *self)
 		return FALSE;
 
 	return (GET_PRIVATE (self)->synchronous != NULL);
+}
+
+gboolean
+bubble_is_urgent (Bubble *self)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	return GET_PRIVATE (self)->urgent;
+}
+
+void
+bubble_set_urgent (Bubble *self,
+		   gboolean urgent)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	GET_PRIVATE (self)->urgent = urgent;
 }
