@@ -2418,7 +2418,7 @@ bubble_is_synchronous (Bubble *self)
 gboolean
 bubble_is_urgent (Bubble *self)
 {
-	g_return_if_fail (IS_BUBBLE (self));
+	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
 	return GET_PRIVATE (self)->urgent;
 }
