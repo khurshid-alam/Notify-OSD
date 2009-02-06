@@ -574,8 +574,6 @@ _render_icon_indicator (Bubble*  self,
 				     INDICATOR_UNLIT_A};
 	gint             blur_radius = 10;
 
-	g_debug ("icon + indicator\n");
-
 	/* create "scratch-pad" surface */
 	glow_surface = cairo_image_surface_create (
 			CAIRO_FORMAT_ARGB32,
@@ -737,8 +735,6 @@ _render_icon_title (Bubble*  self,
 	PangoRectangle        ink_rect;
 	PangoRectangle        log_rect;
 
-	g_debug ("icon + title\n");
-
 	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -814,8 +810,6 @@ _render_icon_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
-
-	g_debug ("icon + title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -925,8 +919,6 @@ _render_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
-
-	g_debug ("title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -2527,11 +2519,7 @@ _calc_body_height (Bubble* self,
 	body_height = PANGO_PIXELS (log_rect.height);
 
 	pango_layout_get_size (layout, NULL, &h);
-	g_debug ("_calc_body_height(): %d line(s), %d px width, %d px height, %d height",
-		 pango_layout_get_line_count (layout),
-		 PANGO_PIXELS (pango_layout_get_width (layout)),
-		 PANGO_PIXELS (h),
-		 pango_layout_get_height (layout));
+	pango_layout_get_line_count (layout),
 
 	pango_font_description_free (desc);
 	g_object_unref (layout);
