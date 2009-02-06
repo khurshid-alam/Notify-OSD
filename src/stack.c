@@ -556,24 +556,7 @@ stack_notify_handler (Stack*                 self,
 	} else
 		bubble_set_icon (bubble, icon);
 
-	/* skip early if no layout is defined */
 	bubble_determine_layout (bubble);
-	if (bubble_get_layout (bubble) == LAYOUT_NONE)
-	{
-		g_warning ("WARNING: No layout defined!!!\n");
-		bubble_del (bubble);
-		/* FIXME: it is unclear at this moment how we should indicate,
-		 * via the returned ID, that the caller did not provide a valid
-		 * set of content-items (e.g. just passed a title, but no
-		 * message-body and no icon ... this is not covered/allowed
-		 * according to jaunty's notification-spec)
-		 *
-		 * according to the galago/freedesktop spec for notifications
-		 * a notification-daemon must _not_ return 0 as a
-		 * notification-id, so we assume a -1 as "error" is ok */
-		dbus_g_method_return (context, -1);
-		return TRUE;
-	}
 
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);

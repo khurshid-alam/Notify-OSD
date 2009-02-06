@@ -2671,6 +2671,10 @@ bubble_determine_layout (Bubble* self)
 		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
 		return;
 	}
+
+	GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+
+	return;
 }
 
 BubbleLayout
