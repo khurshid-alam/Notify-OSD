@@ -504,6 +504,7 @@ _render_icon_indicator (Bubble*  self,
 				     INDICATOR_UNLIT_B,
 				     INDICATOR_UNLIT_A};
 	gint             blur_radius = 10;
+	gdouble          dim_glow_opacity;
 
 	/* create "scratch-pad" surface */
 	glow_surface = cairo_image_surface_create (
@@ -567,6 +568,15 @@ _render_icon_indicator (Bubble*  self,
 				  blur_radius);
 	cairo_paint (cr);
 
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		dim_glow_opacity = (float)egg_alpha_get_alpha (
+			GET_PRIVATE (self)->alpha) /
+			(float)EGG_ALPHA_MAX_ALPHA;
+	} else
+		dim_glow_opacity = 0.8f;
+
+
 	switch (GET_PRIVATE (self)->value)
 	{
 		/* "undershoot" effect */
@@ -601,7 +611,7 @@ _render_icon_indicator (Bubble*  self,
 						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 						  EM2PIXELS (defaults_get_margin_size (d), d) -
 						  blur_radius);
-			cairo_paint_with_alpha (cr, 0.8f);
+			cairo_paint_with_alpha (cr, dim_glow_opacity);
 		break;
 
 		/* "overshoot" effect */
@@ -638,7 +648,7 @@ _render_icon_indicator (Bubble*  self,
 						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 						  EM2PIXELS (defaults_get_margin_size (d), d) -
 						  blur_radius);
-			cairo_paint_with_alpha (cr, 1.0f);
+			cairo_paint_with_alpha (cr, dim_glow_opacity);
 		break;
 
 		/* normal effect-less rendering */
@@ -1967,6 +1977,71 @@ bubble_move (Bubble* self,
 	gtk_window_move (GTK_WINDOW (GET_PRIVATE (self)->widget), x, y);
 }
 
+static void
+glow_completed_cb (EggTimeline *timeline,
+		   Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	/* get rid of the alpha, so that the mouse-over algorithm notices */
+	if (GET_PRIVATE (bubble)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->alpha);
+		GET_PRIVATE (bubble)->alpha = NULL;
+	}
+
+	if (GET_PRIVATE (bubble)->timeline)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->timeline);
+		GET_PRIVATE (bubble)->timeline = NULL;
+	}
+}
+
+static void
+glow_cb (EggTimeline *timeline,
+	 gint frame_no,
+	 Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	bubble_refresh (bubble);
+}	
+
+static void
+bubble_start_glow_effect (Bubble *self,
+			  guint   msecs)
+{
+	EggTimeline *timeline;
+
+	g_return_if_fail (IS_BUBBLE (self));
+
+	timeline = egg_timeline_new_for_duration (msecs);
+	GET_PRIVATE (self)->timeline = timeline;
+
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
+
+	GET_PRIVATE (self)->alpha =
+		egg_alpha_new_full (timeline,
+				    EGG_ALPHA_RAMP_DEC,
+				    NULL,
+				    NULL);
+
+	g_signal_connect (G_OBJECT (timeline),
+			  "completed",
+			  G_CALLBACK (glow_completed_cb),
+			  self);
+	g_signal_connect (G_OBJECT (timeline),
+			  "new-frame",
+			  G_CALLBACK (glow_cb),
+			  self);
+
+	egg_timeline_start (timeline);
+}
+
 void
 bubble_show (Bubble* self)
 {
@@ -1996,6 +2071,7 @@ bubble_show (Bubble* self)
 void
 bubble_refresh (Bubble* self)
 {
+	g_debug ("bubble_refresh()");
 	/* force a redraw */
 	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
 }
@@ -2151,7 +2227,8 @@ bubble_fade_in (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	if (!bubble_is_composited (self))
+	if (!bubble_is_composited (self)
+	    || msecs == 0)
 	{
 		bubble_show (self);
 		bubble_start_timer (self);
@@ -2171,7 +2248,6 @@ bubble_fade_in (Bubble *self,
 					EGG_ALPHA_RAMP_INC,
 					NULL,
 					NULL);
-	g_object_unref (timeline);
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
@@ -2317,6 +2393,12 @@ bubble_start_timer (Bubble* self)
 		g_timeout_add_seconds (bubble_get_timeout (self),
 				       (GSourceFunc) bubble_timed_out,
 				       self));
+
+	/* if the bubble is displaying a value that is out of bounds
+	   trigger a dim/glow animation */
+	if (GET_PRIVATE (self)->value == 0
+	    || GET_PRIVATE (self)->value == 100)
+		bubble_start_glow_effect (self, 500);
 }
 
 void
