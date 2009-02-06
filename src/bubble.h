@@ -69,8 +69,8 @@ GType bubble_get_type (void);
 Bubble*
 bubble_new (Defaults* defaults);
 
-Bubble*
-bubble_new_synchronous (Defaults* defaults);
+gchar*
+bubble_get_synchronous (Bubble *self);
 
 void
 bubble_del (Bubble* self);
@@ -149,7 +149,7 @@ gboolean
 bubble_is_visible (Bubble* self);
 
 void
-bubble_reset_timeout (Bubble* self);
+bubble_start_timer (Bubble* self);
 
 void
 bubble_slide_to (Bubble* self,
@@ -169,6 +169,25 @@ bubble_recalc_size (Bubble *self);
 
 gboolean
 bubble_is_synchronous (Bubble *self);
+
+void
+bubble_set_synchronous (Bubble *self,
+			const gchar *sync);
+
+gboolean
+bubble_is_urgent (Bubble *self);
+
+void
+bubble_set_urgent (Bubble *self,
+		   gboolean urgent);
+
+void
+bubble_fade_out (Bubble *self,
+		 guint   msecs);
+
+void
+bubble_fade_in (Bubble *self,
+		guint   msecs);
 
 void
 bubble_determine_layout (Bubble* self);

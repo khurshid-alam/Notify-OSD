@@ -108,6 +108,12 @@ compare_id (gconstpointer a,
 	if (!a || !b)
 		return -1;
 
+	if (! IS_BUBBLE (a))
+		return -1;
+
+	if (! IS_BUBBLE (b))
+		return -1;
+
 	id_1 = bubble_get_id ((Bubble*) a);
 	id_2 = *((guint*) b);
 
@@ -161,56 +167,6 @@ find_bubble_by_id (Stack* self,
 	return (Bubble*) entry->data;
 }
 
-/* HACK: static */ gint
-stack_get_height (Stack* self)
-{
-	GList*    list         = NULL;
-	Bubble*   bubble       = NULL;
-	gint      stack_height = 0;
-	Defaults* d;
-
-	/* sanity check */
-	g_return_val_if_fail (self != NULL, 0);
-
-	d = self->defaults;
-
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-		stack_height += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) +
-				bubble_get_height (bubble);
-	}
-
-	stack_height -= defaults_get_bubble_vert_gap (d);
-
-	return stack_height;
-}
-
-/* HACK: static */ void
-stack_pop_last_bubble (Stack* self)
-{
-	GList* entry;
-
-	/* sanity check */
-	g_return_if_fail (self != NULL);
-
-	/* find last (remember fifo) entry in stack-list */
-	entry = g_list_first (self->list);
-	if (!entry)
-		return;
-
-	/* close/hide/fade-out bubble */
-	bubble_hide ((Bubble*) entry->data);
-
-	/* find entry in list corresponding to id and remove it */
-	self->list = g_list_delete_link (self->list, entry);
-	g_object_unref ((Bubble*) entry->data);
-
-	/* stack_layout() is not called here intentionally! */
-}
-
 static void
 stack_purge_old_bubbles (Stack* self)
 {
@@ -224,8 +180,12 @@ stack_purge_old_bubbles (Stack* self)
 	{
 		bubble = (Bubble*) list->data;
 		
-		if (! bubble_is_visible (bubble) &&
-		    (bubble_get_timeout (bubble) == 0))
+		if (! IS_BUBBLE (bubble))
+		{
+			self->list = g_list_delete_link (self->list, list);
+			list = self->list;
+		} else if (! bubble_is_visible (bubble) &&
+			   (bubble_get_timeout (bubble) == 0))
 		{
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
@@ -236,175 +196,30 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
-/* HACK static */ void
-stack_layout1 (Stack* self)
-{
-	GList*    list   = NULL;
-	Bubble*   bubble = NULL;
-	gint      y      = 0;
-	gint      x      = 0;
-	Defaults* d;
-
-	/* sanity check */
-	g_return_if_fail (self != NULL);
-
-	stack_purge_old_bubbles (self);
-
-	d = self->defaults;
-
-	/* position the top left corner of the stack  */
-	y  =  defaults_get_desktop_top (d);
-	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
-		 EM2PIXELS (defaults_get_bubble_width (d), d))
-		:
-		(defaults_get_desktop_left (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
-		;
-
-	/* consider the special case of the feedback synchronous bubble */
-#if 0
-	if (self->feedback_bubble)
-	{
-		y += bubble_get_height (self->feedback_bubble);
-		y += defaults_get_bubble_vert_gap (self->defaults);
-
-		/* TODO: make sure the bubble is show()ed */
-	}
-
-	/* 1. check if we need to expire bubbles early because the feedback
-	**    bubble needs room */
-	while (stack_get_height (self) > 
-	       defaults_get_stack_height (self->defaults))
- 	{
-		stack_pop_last_bubble (self);
- 	}
-#endif
-
-	/* 2. walk through the list of the current bubbles on the stack
-	      and compute the new position for the bubbles
-	      as long as there is room available on the stack
-	 */
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-
-		/* set/update the bubble attributes */
-		/*bubble_set_size (bubble,
-				 defaults_get_bubble_width (self->defaults) +
-				 2 * defaults_get_bubble_shadow_size (self->defaults),
-				 defaults_get_bubble_min_height (self->defaults) +
-				 2 * defaults_get_bubble_shadow_size (self->defaults));*/
-
-		bubble_move (bubble, x, y);
-
-/* FIXME: sliding is broken */
-#if 0
-		if (y == defaults_get_desktop_top (self->defaults) +
-			 defaults_get_bubble_ver_gap (self->defaults))
-		{
-			bubble_move (bubble, x, y);
-		}
-		else
-		{
-			bubble_slide_to (bubble, x, y);
-		}
-#endif
-
-		bubble_show (bubble);
-		y += bubble_get_height (bubble) -
-		     2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		     EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-		/* Warning: bubble_get_height() is not reliable */
-	}
-	/* TODO: consider the case of old ids for refreshed bubbles; they
- 	 * may be expired early, even if they still have a large lifespan
- 	 * left */
-}
+static Bubble *sync_bubble = NULL;
 
 static void
-stack_layout_simple (Stack* self)
+stack_display_sync_bubble (Stack *self, Bubble *bubble)
 {
-	Bubble*   display_list[2] = {NULL, NULL};
-	Bubble*   feedback_bubble = NULL;
-	Bubble*   next_to_display = NULL;
-	Bubble*   urgent_bubble   = NULL;
-	GList*    list   = NULL;
-	Bubble*   bubble = NULL;
 	gint      y      = 0;
 	gint      x      = 0;
-	int i;
 	Defaults* d;
 
-	g_return_if_fail (self != NULL);
-
-	stack_purge_old_bubbles (self);
-
-	/* Identify important items in the stack */
-	for (list = g_list_first (self->list), i = 0;
-	     list != NULL;
-	     list = g_list_next (list))
+	if (sync_bubble != NULL)
 	{
-		bubble = (Bubble*) list->data;
-
-		if (bubble_is_visible (bubble))
-			display_list[i++] = bubble;
-		else if (next_to_display == NULL)
-			next_to_display = bubble;
-
-		if (bubble_is_synchronous (bubble))
-			feedback_bubble = bubble;
-
-		/* if (bubble_is_urgent (bubble))
-			urgent_bubble = bubble;
-		*/
+		/* hide older synchronous bubbles,
+		   only keep the latest one on display */
+		/* TODO: try to discard it (see weak-refs) */
+		g_debug ("overriding sync. bubble %p", sync_bubble);
+		bubble_hide (sync_bubble);
+		g_object_unref (sync_bubble);
 	}
 
-	/* If there are already 2 visible notifications,
-	   there is really nothing else we can do.
-	   NOTE: one of them is NECESSARILY a feedback bubble...
-	*/
-	if (display_list[0] != NULL && display_list[1] != NULL)
-		return;
+	sync_bubble = bubble;
 
-	/* If there is a feedback_bubble waiting,
-	   ensure it is displayed immediately. */
-	if (feedback_bubble != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = feedback_bubble;
-		else if (display_list[0] != feedback_bubble)
-			display_list[1] = feedback_bubble;
-	}
+	g_debug ("displaying sync. bubble %p", sync_bubble);
 
-	/* If there is an urgent bubble waiting,
-	   ensure it is displayed as soon as possible. */
-	if (urgent_bubble != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = urgent_bubble;
-		else if (display_list[1] == NULL)
-			display_list[1] = urgent_bubble;
-	}
-
-	/* Try to display the next bubble waiting in the stack */
-	if (next_to_display != NULL)
-	{
-		if (display_list[0] == NULL)
-			display_list[0] = next_to_display;
-		else if ((display_list[0] == feedback_bubble) &&
-			 (display_list[1] == NULL))
-			display_list[1] = next_to_display;
-	}
-	
-	/* Position the top left corner of the stack. */
+	/* Position the bubble at the top left corner of the display. */
 	d = self->defaults;
 	y  =  defaults_get_desktop_top (d);
 	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -420,29 +235,117 @@ stack_layout_simple (Stack* self)
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
-	if (! bubble_is_visible (display_list[0]))
-	{
-		bubble = display_list[0];
-		bubble_move (bubble, x, y);
-		bubble_show (bubble);
+	bubble_move (sync_bubble, x, y);
+	bubble_set_timeout (sync_bubble, 2); /* Warning: in *seconds*! */
+	bubble_fade_in (sync_bubble, 100);
+}
 
-		y += bubble_get_height (bubble)
-			- 20 + 7; /* HACK */
-	} else {
-		bubble_get_position (bubble, &x, &y);
-		y += bubble_get_height (bubble)
-			- 20 + 7; /* HACK */
-	}
+static void
+stack_resync_bubble_on_display (Stack *self)
+{
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
 
-	if (! bubble_is_visible (display_list[1]))
+	g_return_if_fail (IS_STACK (self));
+
+	/* pickup the next bubble to display */
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
 	{
-		bubble = display_list[1];
-		bubble_move (bubble, x, y);
-		bubble_show (bubble);
+		bubble = (Bubble*) list->data;
+
+		if (bubble_is_visible (bubble)){
+			bubble_start_timer (bubble);
+			bubble_refresh (bubble);
+			return;
+		}
 	}
 }
 
-static void stack_layout (Stack *self) { stack_layout_simple (self); }
+static void
+stack_layout (Stack* self)
+{
+	Bubble*   next_to_display = NULL;
+	Bubble*   urgent_bubble   = NULL;
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
+	gint      y      = 0;
+	gint      x      = 0;
+	gboolean  reset  = 0;
+	Defaults* d;
+
+	g_return_if_fail (self != NULL);
+
+	stack_purge_old_bubbles (self);
+
+	/* pickup the next bubble to display */
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
+	{
+		bubble = (Bubble*) list->data;
+
+		/* sync. bubbles have already been taken care of */
+		if (bubble_is_synchronous (bubble))
+		    continue;
+
+		/* if there is already one bubble on display
+		   we don't have room for another one */
+		if (bubble_is_visible (bubble)){
+			/* but if a synchronous notification is on
+			   screen, synchronize both timers */
+			if (reset) {
+				bubble_start_timer (bubble);
+				bubble_refresh (bubble);
+			}
+			return;
+		}
+
+		if (bubble_is_urgent (bubble))
+		{
+			/* pick-up the /first/ urgent bubble
+			   in the queue (FIFO) */
+			if (urgent_bubble == NULL) {
+				urgent_bubble = bubble;
+				next_to_display = bubble;
+			}
+		} else if (next_to_display == NULL) {
+			next_to_display = bubble;
+		}
+	}
+
+	if (next_to_display == NULL)
+		/* this actually happens when we're called for a synchronous
+		   bubble or after a bubble timed out, but there where no other
+		   notifications waiting in the queue */
+		return;
+
+	/* Position the top left corner of the stack. */
+	d = self->defaults;
+	y  =  defaults_get_desktop_top (d);
+	y  += 2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
+	y  += EM2PIXELS (defaults_get_bubble_min_height (d), d);
+
+	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
+		(defaults_get_desktop_right (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
+		 EM2PIXELS (defaults_get_bubble_width (d), d))
+		:
+		(defaults_get_desktop_left (d) -
+		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
+		;
+
+	bubble_move (next_to_display, x, y);
+
+	/* TODO: adjust timings for bubbles that appear in a serie of bubbles */
+	if (urgent_bubble != NULL)
+		bubble_fade_in (urgent_bubble, 100);
+	else 
+		bubble_fade_in (next_to_display, 200);
+}
 
 
 /*-- public API --------------------------------------------------------------*/
@@ -483,8 +386,12 @@ timed_out_handler (Bubble* bubble,
 {
 	stack_layout (stack);
 
-	/* HACK: do nothing, to avoid segfaults */
-	/* stack_pop_bubble_by_id (stack, bubble_get_id (bubble)); */
+	/* TODO: use weak-refs to dispose the bubble.
+	   Meanwhile, do nothing here to avoid segfaults
+	   and rely on the stack_purge_old_bubbles() call
+	   later on in the thread.
+	*/
+
 	return;
 }
 
@@ -503,7 +410,7 @@ stack_push_bubble (Stack*  self,
 	/* check if this is just an update */
 	if (find_bubble_by_id (self, bubble_get_id (bubble)))		
 	{
-		bubble_reset_timeout (bubble);
+		bubble_start_timer (bubble);
 		bubble_refresh (bubble);
 
 		return bubble_get_id (bubble);
@@ -621,6 +528,8 @@ stack_notify_handler (Stack*                 self,
 	if (!bubble)
 	{
 		bubble = bubble_new (self->defaults);
+	} else {
+		g_debug ("bubble with the same ID detected");
 	}
 
 	if (hints)
@@ -628,6 +537,10 @@ stack_notify_handler (Stack*                 self,
 		data = (GValue*) g_hash_table_lookup (hints, "value");
 		if (G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
+
+		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
+		if (G_VALUE_HOLDS_STRING (data))
+			bubble_set_synchronous (bubble, g_value_get_string (data));
 	}
 
 	if (summary)
@@ -643,35 +556,23 @@ stack_notify_handler (Stack*                 self,
 	} else
 		bubble_set_icon (bubble, icon);
 
-	/* skip early if no layout is defined */
 	bubble_determine_layout (bubble);
-	if (bubble_get_layout (bubble) == LAYOUT_NONE)
-	{
-		g_warning ("WARNING: No layout defined!!!\n");
-		bubble_del (bubble);
-		/* FIXME: it is unclear at this moment how we should indicate,
-		 * via the returned ID, that the caller did not provide a valid
-		 * set of content-items (e.g. just passed a title, but no
-		 * message-body and no icon ... this is not covered/allowed
-		 * according to jaunty's notification-spec)
-		 *
-		 * according to the galago/freedesktop spec for notifications
-		 * a notification-daemon must _not_ return 0 as a
-		 * notification-id, so we assume a -1 as "error" is ok */
-		dbus_g_method_return (context, -1);
-		return TRUE;
-	}
 
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);
 
-	/* push the bubble in the stack */
-	stack_push_bubble (self, bubble);
 	bubble_recalc_size (bubble);
 
-	/* update the layout of the stack;
-	 * this will also open the new bubble */
-	stack_layout (self);
+	if (bubble_is_synchronous (bubble))
+	{
+		stack_display_sync_bubble (self, bubble);
+		stack_resync_bubble_on_display (self);
+	} else {
+		stack_push_bubble (self, bubble);
+		/* update the layout of the stack;
+		 * this will also open the new bubble */
+		stack_layout (self);
+	}
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
 
@@ -686,7 +587,10 @@ stack_close_notification_handler (Stack*   self,
 	Bubble *bubble = find_bubble_by_id (self, id);
 	g_return_val_if_fail (bubble != NULL, FALSE);
 
-	bubble_timed_out (bubble);
+	bubble_hide (bubble);
+	g_object_unref (bubble);
+
+	stack_layout (self);
 
 	return TRUE;
 }

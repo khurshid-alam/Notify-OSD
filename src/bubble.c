@@ -25,6 +25,9 @@
 #include <pixman.h>
 #include <math.h>
 
+#include <egg/egg-hack.h>
+#include <egg/egg-alpha.h>
+
 #include "bubble.h"
 #include "defaults.h"
 #include "stack.h"
@@ -35,23 +38,28 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
 struct _BubblePrivate {
-	BubbleLayout     layout;
-	GtkWidget*       widget;
-	GString*         title;
-	GString*         message_body;
-	guint            id;
-	GdkPixbuf*       icon_pixbuf;
-	gboolean         visible;
-	guint            timer_id;
-	guint            timeout;
-	gboolean         mouse_over;
-	gint             start_y;
-	gint             end_y;
-	gint             delta_y;
-	gdouble          inc_factor;
-	gint             value; /* "empty": -1, valid range: 0 - 100 */
-	gboolean         synchronous;
-	gboolean         composited;
+	BubbleLayout layout;
+	GtkWidget*   widget;
+	GString*     title;
+	GString*     message_body;
+	guint        id;
+	GdkPixbuf*   icon_pixbuf;
+	gboolean     visible;
+	guint        timer_id;
+	guint        timeout;
+	gboolean     mouse_over;
+	gint         start_y;
+	gint         end_y;
+	gint         delta_y;
+	gdouble      inc_factor;
+	gint         value; /* "empty": -1, valid range: 0 - 100 */
+	gchar*       synchronous;
+	gboolean     urgent;
+	gboolean     composited;
+	EggAlpha *alpha;
+	EggTimeline *timeline;
+	guint        draw_handler_id;
+	guint        pointer_update_id;
 	cairo_surface_t* blurred_content;
 	cairo_surface_t* blurred_bubble;
 	gint             title_width;
@@ -497,8 +505,6 @@ _render_icon_indicator (Bubble*  self,
 				     INDICATOR_UNLIT_A};
 	gint             blur_radius = 10;
 
-	g_debug ("icon + indicator\n");
-
 	/* create "scratch-pad" surface */
 	glow_surface = cairo_image_surface_create (
 			CAIRO_FORMAT_ARGB32,
@@ -660,8 +666,6 @@ _render_icon_title (Bubble*  self,
 	PangoRectangle        ink_rect;
 	PangoRectangle        log_rect;
 
-	g_debug ("icon + title\n");
-
 	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -737,8 +741,6 @@ _render_icon_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
-
-	g_debug ("icon + title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -848,8 +850,6 @@ _render_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
-
-	g_debug ("title + body\n");
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -1330,11 +1330,9 @@ expose_handler (GtkWidget*      window,
 	return TRUE;
 }
 
-static
-gboolean
+static gboolean
 redraw_handler (Bubble* bubble)
 {
-	gdouble    opacity;
 	GtkWindow* window;
 
 	if (!bubble)
@@ -1351,23 +1349,10 @@ redraw_handler (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	opacity = gtk_window_get_opacity (window);
-
-	/* old mouse-over behaviour */
-	/*if (!bubble_is_mouse_over (bubble) && opacity < 0.95f)
-		opacity += 0.05f;
-
-	if (bubble_is_mouse_over (bubble) && opacity > 0.1f)
-		opacity -= 0.05f;*/
-
-	/* new mouse-over behaviour */
-    	if (!bubble_is_mouse_over (bubble))
-		opacity = 1.0f;
-
 	if (bubble_is_mouse_over (bubble))
-		opacity = 0.1f;
-
-	gtk_window_set_opacity (window, opacity);
+		gtk_window_set_opacity (window, 0.1f);
+	else if (GET_PRIVATE(bubble)->alpha == NULL)
+		gtk_window_set_opacity (window, 0.95f);
 
 	return TRUE;
 }
@@ -1486,6 +1471,11 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
+	if (GET_PRIVATE(gobject)->synchronous)
+		g_debug ("** sync. bubble %p finalized", gobject);
+	else
+		g_debug ("** bubble %p finalized", gobject);
+
 	cairo_status_t status;
 
 	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
@@ -1512,6 +1502,36 @@ bubble_finalize (GObject* gobject)
 	{
 		g_object_unref (GET_PRIVATE (gobject)->icon_pixbuf);
 		GET_PRIVATE (gobject)->icon_pixbuf = NULL;
+	}
+
+	if (GET_PRIVATE (gobject)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (gobject)->alpha);
+		GET_PRIVATE (gobject)->alpha = NULL;
+	}
+
+	if (GET_PRIVATE (gobject)->timeline)
+	{
+		g_object_unref (GET_PRIVATE (gobject)->timeline);
+		GET_PRIVATE (gobject)->timeline = NULL;
+	}
+
+	if (GET_PRIVATE (gobject)->pointer_update_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->pointer_update_id);
+		GET_PRIVATE (gobject)->pointer_update_id = 0;
+	}
+
+	if (GET_PRIVATE (gobject)->draw_handler_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->draw_handler_id);
+		GET_PRIVATE (gobject)->draw_handler_id = 0;
+	}
+
+	if (GET_PRIVATE (gobject)->timer_id)
+	{
+		g_source_remove (GET_PRIVATE (gobject)->timer_id);
+		GET_PRIVATE (gobject)->timer_id = 0;
 	}
 
 	if (GET_PRIVATE (gobject)->blurred_content)
@@ -1554,7 +1574,9 @@ bubble_init (Bubble* self)
 	priv->visible          = FALSE;
 	priv->icon_pixbuf      = NULL;
 	priv->value            = -1;
-	priv->synchronous      = FALSE;
+	priv->synchronous      = NULL;
+	priv->draw_handler_id  = 0;
+	priv->pointer_update_id= 0;
 }
 
 static void
@@ -1602,7 +1624,8 @@ bubble_class_init (BubbleClass* klass)
  * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window, thanks to
  * the opacity-threshold of the blur-plugin we might not need to unset it for
  * fade-on-hover case */
-static void
+// static
+ void
 _set_bg_blur (GtkWidget* window,
 	      gboolean   set_blur)
 {
@@ -1656,7 +1679,7 @@ bubble_new (Defaults* defaults)
 	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) &this);
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
-				  GDK_WINDOW_TYPE_HINT_DOCK);
+				  GDK_WINDOW_TYPE_HINT_NOTIFICATION);
 
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
@@ -1693,8 +1716,9 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
+	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
 
+	/* TODO: fold some of that back into bubble_init */
 	this->priv = GET_PRIVATE (this);
 	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
 	GET_PRIVATE(this)->widget        = window;
@@ -1703,7 +1727,7 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->icon_pixbuf   = NULL;
 	GET_PRIVATE(this)->value         = -1;
 	GET_PRIVATE(this)->visible       = FALSE;
-	GET_PRIVATE(this)->timeout       = 5;
+	GET_PRIVATE(this)->timeout       = 2;
 	GET_PRIVATE(this)->mouse_over    = FALSE;
 	GET_PRIVATE(this)->start_y       = 0;
 	GET_PRIVATE(this)->end_y         = 0;
@@ -1711,6 +1735,8 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->delta_y       = 0;
 	GET_PRIVATE(this)->composited    = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
+	GET_PRIVATE(this)->alpha         = NULL;
+	GET_PRIVATE(this)->timeline      = NULL;
 	GET_PRIVATE(this)->blurred_content = NULL;
 	GET_PRIVATE(this)->blurred_bubble  = NULL;
 	GET_PRIVATE(this)->title_width     = 0;
@@ -1725,16 +1751,12 @@ bubble_new (Defaults* defaults)
 	return this;
 }
 
-Bubble*
-bubble_new_synchronous (Defaults* defaults)
+gchar*
+bubble_get_synchronous (Bubble* self)
 {
-	Bubble *self = bubble_new (defaults);
+	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
-	g_return_val_if_fail (self != NULL, NULL);
-
-	GET_PRIVATE (self)->synchronous = TRUE;
-
-	return self;
+	return GET_PRIVATE (self)->synchronous;
 }
 
 
@@ -1948,32 +1970,24 @@ bubble_move (Bubble* self,
 void
 bubble_show (Bubble* self)
 {
-	guint           draw_handler_id   = 0;
-	guint           pointer_update_id = 0;
-
 	if (!self || !IS_BUBBLE (self))
 		return;
 
 	GET_PRIVATE (self)->visible = TRUE;
 	gtk_widget_show_all (GET_PRIVATE (self)->widget);
 
-	/* and now let the timer tick... we use g_timeout_add_seconds() here
-	** because for the bubble timeouts microsecond-precise resolution is not
-	** needed, furthermore this also allows glib more room for optimizations
-	** and improve system-power-usage to be more efficient */
-	bubble_set_timer_id (self,
-			     g_timeout_add_seconds (bubble_get_timeout (self),
-						    (GSourceFunc) bubble_timed_out,
-						    self));
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	draw_handler_id = g_timeout_add (1000/60,
-					 (GSourceFunc) redraw_handler,
-					 self);
+	GET_PRIVATE (self)->draw_handler_id
+		= g_timeout_add (1000/60,
+				 (GSourceFunc) redraw_handler,
+				 self);
 
 	/* FIXME: read out current mouse-pointer position every 1/10 second */
-        pointer_update_id = g_timeout_add (100,
-					   (GSourceFunc) pointer_update,
-					   self);
+
+        GET_PRIVATE (self)->pointer_update_id
+		= g_timeout_add (100,
+				 (GSourceFunc) pointer_update,
+				 self);
 }
 
 /* mostly called when we change the content of the bubble
@@ -2062,19 +2076,172 @@ bubble_slide_to (Bubble* self,
 				  self);
 }
 
+
+static inline gboolean
+bubble_is_composited (Bubble *bubble)
+{
+	/* no g_return_if_fail(), the caller should have already
+	   checked that */
+	return gtk_widget_is_composited (GET_PRIVATE (bubble)->widget);
+}
+
+static inline GtkWindow*
+bubble_get_window (Bubble *bubble)
+{
+	return GTK_WINDOW (GET_PRIVATE (bubble)->widget);
+}
+
+static void
+fade_cb (EggTimeline *timeline,
+	 gint frame_no,
+	 Bubble *bubble)
+{
+	float opacity;
+
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	opacity = (float)egg_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
+		/ (float)EGG_ALPHA_MAX_ALPHA
+		* 0.95f;
+
+	gtk_window_set_opacity (bubble_get_window (bubble), opacity);
+}
+
+static void
+fade_out_completed_cb (EggTimeline *timeline,
+		       Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	bubble_hide (bubble);
+
+	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
+}
+
+
+static void
+fade_in_completed_cb (EggTimeline *timeline,
+		      Bubble *bubble)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	/* get rid of the alpha, so that the mouse-over algorithm notices */
+	if (GET_PRIVATE (bubble)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->alpha);
+		GET_PRIVATE (bubble)->alpha = NULL;
+	}
+
+	if (GET_PRIVATE (bubble)->timeline)
+	{
+		g_object_unref (GET_PRIVATE (bubble)->timeline);
+		GET_PRIVATE (bubble)->timeline = NULL;
+	}
+
+	gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
+
+	bubble_start_timer (bubble);
+}
+
+void
+bubble_fade_in (Bubble *self,
+		guint   msecs)
+{
+	EggTimeline *timeline;
+
+	g_return_if_fail (IS_BUBBLE (self));
+
+	if (!bubble_is_composited (self))
+	{
+		bubble_show (self);
+		bubble_start_timer (self);
+		return;
+	}
+
+	timeline = egg_timeline_new_for_duration (msecs);
+
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
+
+	GET_PRIVATE (self)->alpha =
+		egg_alpha_new_full (timeline,
+					EGG_ALPHA_RAMP_INC,
+					NULL,
+					NULL);
+	g_object_unref (timeline);
+
+	g_signal_connect (G_OBJECT (timeline),
+			  "completed",
+			  G_CALLBACK (fade_in_completed_cb),
+			  self);
+
+	g_signal_connect (G_OBJECT (timeline),
+			  "new-frame",
+			  G_CALLBACK (fade_cb),
+			  self);
+
+	egg_timeline_start (timeline);
+
+	gtk_window_set_opacity (bubble_get_window (self), 0.0);
+	bubble_show (self);	
+}
+
+void
+bubble_fade_out (Bubble *self,
+		 guint   msecs)
+{
+	EggTimeline *timeline;
+
+	g_return_if_fail (IS_BUBBLE (self));
+
+	timeline = egg_timeline_new_for_duration (msecs);
+	GET_PRIVATE (self)->timeline = timeline;
+
+	if (GET_PRIVATE (self)->alpha != NULL)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
+
+	GET_PRIVATE (self)->alpha =
+		egg_alpha_new_full (timeline,
+					EGG_ALPHA_RAMP_DEC,
+					NULL,
+					NULL);
+
+	g_signal_connect (G_OBJECT (timeline),
+			  "completed",
+			  G_CALLBACK (fade_out_completed_cb),
+			  self);
+	g_signal_connect (G_OBJECT (timeline),
+			  "new-frame",
+			  G_CALLBACK (fade_cb),
+			  self);
+
+	egg_timeline_start (timeline);
+}
+
 gboolean
 bubble_timed_out (Bubble* self)
 {
-	if (!self || !IS_BUBBLE (self))
-		return FALSE;
+	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
 	bubble_set_timeout (self, 0);
-	bubble_hide (self);
 
-	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);
+	if (! GET_PRIVATE (self)->composited)
+	{
+		bubble_hide (self);
+		return FALSE;
+	}
+
+	bubble_fade_out (self, 300);
 
 	return FALSE;
 }
+
 
 gboolean
 bubble_hide (Bubble* self)
@@ -2084,6 +2251,19 @@ bubble_hide (Bubble* self)
 
 	GET_PRIVATE (self)->visible = FALSE;
 	gtk_widget_hide (GET_PRIVATE (self)->widget);
+
+	if (GET_PRIVATE (self)->timeline)
+	{
+		egg_timeline_stop (GET_PRIVATE (self)->timeline);
+		g_object_unref (GET_PRIVATE (self)->timeline);
+		GET_PRIVATE (self)->timeline = NULL;
+	}
+
+	if (GET_PRIVATE (self)->alpha)
+	{
+		g_object_unref (GET_PRIVATE (self)->alpha);
+		GET_PRIVATE (self)->alpha = NULL;
+	}
 
 	return FALSE; /* this also instructs the timer to stop */
 }
@@ -2117,7 +2297,7 @@ bubble_is_visible (Bubble* self)
 }
 
 void
-bubble_reset_timeout (Bubble* self)
+bubble_start_timer (Bubble* self)
 {
 	guint timer_id;
 
@@ -2125,17 +2305,18 @@ bubble_reset_timeout (Bubble* self)
 		return;
 
 	timer_id = bubble_get_timer_id (self);
-	if (timer_id <= 0)
-		return;
+	if (timer_id > 0)
+		g_source_remove (timer_id);
 
-	if (g_source_remove (timer_id))
-	{
-		bubble_set_timer_id (
-			self,
-			g_timeout_add_seconds (bubble_get_timeout (self),
-					       (GSourceFunc) bubble_timed_out,
-					       self));
-	}
+	/* and now let the timer tick... we use g_timeout_add_seconds() here
+	** because for the bubble timeouts microsecond-precise resolution is not
+	** needed, furthermore this also allows glib more room for optimizations
+	** and improve system-power-usage to be more efficient */
+	bubble_set_timer_id (
+		self,
+		g_timeout_add_seconds (bubble_get_timeout (self),
+				       (GSourceFunc) bubble_timed_out,
+				       self));
 }
 
 void
@@ -2420,13 +2601,39 @@ bubble_recalc_size (Bubble *self)
 	update_shape (self);
 }
 
+void
+bubble_set_synchronous (Bubble *self,
+			const gchar *sync)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	GET_PRIVATE (self)->synchronous = g_strdup (sync);
+}
+
 gboolean
 bubble_is_synchronous (Bubble *self)
 {
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return GET_PRIVATE (self)->synchronous;
+	return (GET_PRIVATE (self)->synchronous != NULL);
+}
+
+gboolean
+bubble_is_urgent (Bubble *self)
+{
+	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
+
+	return GET_PRIVATE (self)->urgent;
+}
+
+void
+bubble_set_urgent (Bubble *self,
+		   gboolean urgent)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	GET_PRIVATE (self)->urgent = urgent;
 }
 
 void
@@ -2478,6 +2685,10 @@ bubble_determine_layout (Bubble* self)
 		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
 		return;
 	}
+
+	GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+
+	return;
 }
 
 BubbleLayout
