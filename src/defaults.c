@@ -333,7 +333,6 @@ defaults_constructed (GObject* gobject)
 	{
 		pixels_per_em = (gint) ((gdouble) points *
 					1.0f / 72.0f * dpi);
-		g_debug ("pixels-per-em: %d\n", pixels_per_em);
 		g_object_set (self,
 			      "pixels-per-em",
 			      pixels_per_em,

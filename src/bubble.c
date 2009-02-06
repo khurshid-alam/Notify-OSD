@@ -37,15 +37,6 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 #define GET_PRIVATE(o) \
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
-typedef enum
-{
-	LAYOUT_NONE = 0,
-	LAYOUT_ICON_INDICATOR,
-	LAYOUT_ICON_TITLE,
-	LAYOUT_ICON_TITLE_BODY,
-	LAYOUT_TITLE_BODY
-} BubbleLayout;
-
 struct _BubblePrivate {
 	BubbleLayout layout;
 	GtkWidget*   widget;
@@ -123,66 +114,6 @@ enum
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
-
-static void
-bubble_determine_layout (Bubble* self)
-{
-	/* sanity test */
-	if (!self || !IS_BUBBLE (self))
-		return;
-
-	/* set a sane default */
-	GET_PRIVATE (self)->layout = LAYOUT_NONE;
-
-	/* icon + indicator layout-case, e.g. volume */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             >= 0))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
-		return;
-	}
-
-	/* icon + title layout-case, e.g. "Wifi signal lost" */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
-		return;	    
-	}
-
-	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
-		return;
-	}
-
-	/* title + body/message layout-case, e.g. IM-message without avatar */
-	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
-	{
-		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
-		return;
-	}
-}
-
-BubbleLayout
-bubble_get_layout (Bubble* self)
-{
-	if (!self || !IS_BUBBLE (self))
-		return LAYOUT_NONE;
-
-	return GET_PRIVATE (self)->layout;
-}
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -879,7 +810,7 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 	pango_layout_set_width (layout,
@@ -1095,8 +1026,9 @@ update_shape (Bubble* self)
 	}
 
 	/* guess we need one */
-	width = GET_PRIVATE (self)->widget->allocation.width;
-	height = GET_PRIVATE (self)->widget->allocation.height;
+	gtk_widget_get_size_request (GET_PRIVATE(self)->widget,
+				     &width,
+				     &height);
 	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 	if (mask)
 	{
@@ -1109,6 +1041,9 @@ update_shape (Bubble* self)
 			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (cr);
 
+			width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
 			/* draw rounded rectangle shape/mask */
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
@@ -1117,9 +1052,8 @@ update_shape (Bubble* self)
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-					 EM2PIXELS (defaults_get_bubble_width (d), d),
-					 (gdouble) bubble_get_height (self) -
-					 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+					 width,
+					 height);
 			cairo_fill (cr);
 			cairo_destroy (cr);
 
@@ -1351,7 +1285,6 @@ expose_handler (GtkWidget*      window,
         /* render drop-shadow and bubble-background */
 	_render_background (cr, d, width, height, bubble);
 
-	bubble_determine_layout (bubble);
 	switch (bubble_get_layout (bubble))
 	{
 		case LAYOUT_ICON_INDICATOR:
@@ -1371,6 +1304,7 @@ expose_handler (GtkWidget*      window,
 		break;
 
 		case LAYOUT_NONE:
+			/* should be intercepted by stack_notify_handler() */
 			g_warning ("WARNING: No layout defined!!!\n");
 		break;
 	}
@@ -1802,7 +1736,6 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->body_width      = 0;
 	GET_PRIVATE(this)->body_height     = 0;
 
-	update_shape (this);
 	update_input_shape (window, 1, 1);
 
 	_set_bg_blur (window, TRUE);
@@ -2473,7 +2406,6 @@ _calc_body_height (Bubble* self,
 	PangoLayout*          layout  = NULL;
 	PangoRectangle        log_rect;
 	gint                  body_height;
-	gint                  h;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -2506,7 +2438,7 @@ _calc_body_height (Bubble* self,
 		defaults_get_text_body_weight (d));
 
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 
 	pango_layout_set_text (
@@ -2517,9 +2449,6 @@ _calc_body_height (Bubble* self,
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
 	body_height = PANGO_PIXELS (log_rect.height);
-
-	pango_layout_get_size (layout, NULL, &h);
-	pango_layout_get_line_count (layout),
 
 	pango_font_description_free (desc);
 	g_object_unref (layout);
@@ -2654,6 +2583,8 @@ bubble_recalc_size (Bubble *self)
 		break;
 	}
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
+
+	update_shape (self);
 }
 
 void
@@ -2689,4 +2620,64 @@ bubble_set_urgent (Bubble *self,
 	g_return_if_fail (IS_BUBBLE (self));
 
 	GET_PRIVATE (self)->urgent = urgent;
+}
+
+void
+bubble_determine_layout (Bubble* self)
+{
+	/* sanity test */
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	/* set a sane default */
+	GET_PRIVATE (self)->layout = LAYOUT_NONE;
+
+	/* icon + indicator layout-case, e.g. volume */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             >= 0))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
+		return;
+	}
+
+	/* icon + title layout-case, e.g. "Wifi signal lost" */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len == 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
+		return;	    
+	}
+
+	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
+	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
+		return;
+	}
+
+	/* title + body/message layout-case, e.g. IM-message without avatar */
+	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
+	    (GET_PRIVATE (self)->title->len        != 0) &&
+	    (GET_PRIVATE (self)->message_body->len != 0) &&
+	    (GET_PRIVATE (self)->value             == -1))
+	{
+		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+		return;
+	}
+}
+
+BubbleLayout
+bubble_get_layout (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return LAYOUT_NONE;
+
+	return GET_PRIVATE (self)->layout;
 }
