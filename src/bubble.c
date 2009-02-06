@@ -1055,6 +1055,20 @@ update_shape (Bubble* self)
 					 width,
 					 height);
 			cairo_fill (cr);
+			if (bubble_is_mouse_over (self))
+			{
+				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+				draw_round_rect (
+					cr,
+					1.0f,
+					2 + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+					2 + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+					EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+					width - 4,
+					height - 4);
+				cairo_fill (cr);
+			}
+
 			cairo_destroy (cr);
 
 			/* remove any current shape-mask */
@@ -1572,16 +1586,16 @@ bubble_class_init (BubbleClass* klass)
 	gobject_class->finalize     = bubble_finalize;
 	gobject_class->get_property = bubble_get_property;
 
-	g_bubble_signals[TIMED_OUT] = g_signal_new ("timed-out",
-						    G_OBJECT_CLASS_TYPE (gobject_class),
-						    G_SIGNAL_RUN_LAST,
-						    G_STRUCT_OFFSET (BubbleClass,
-								     timed_out),
-						    NULL,
-						    NULL,
-						    g_cclosure_marshal_VOID__VOID,
-						    G_TYPE_NONE,
-						    0);
+	g_bubble_signals[TIMED_OUT] = g_signal_new (
+		"timed-out",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, timed_out),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__VOID,
+		G_TYPE_NONE,
+		0);
 }
 
 /* the behind-bubble blur only works with the enabled/working compiz-plugin blur
@@ -1902,7 +1916,13 @@ bubble_set_mouse_over (Bubble*  self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE(self)->mouse_over = flag;
+	/* did anything change? */
+	if (GET_PRIVATE(self)->mouse_over != flag)
+	{
+		GET_PRIVATE(self)->mouse_over = flag;
+		update_shape (self);
+	}
+
 }
 
 gboolean
