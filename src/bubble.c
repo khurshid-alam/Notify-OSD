@@ -1665,11 +1665,7 @@ bubble_new (Defaults* defaults)
 	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) &this);
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
-				  GDK_WINDOW_TYPE_HINT_DOCK);
-	/* TODO: fix the default settings of compiz to avoid fade and other
-	   effects to apply to our windows when we add this hint:
-	   | GDK_WINDOW_TYPE_HINT_NOTIFICATION);
-	*/
+				  GDK_WINDOW_TYPE_HINT_NOTIFICATION);
 
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
