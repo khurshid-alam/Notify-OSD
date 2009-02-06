@@ -22,7 +22,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * ClutterTimeoutPool: pool of timeout functions using the same slice of
+ * EggTimeoutPool: pool of timeout functions using the same slice of
  *                     the GLib main loop
  *
  * Author: Emmanuele Bassi <ebassi@openedhand.com>
@@ -30,24 +30,24 @@
  * Based on similar code by Tristan van Berkom
  */
 
-#ifndef __CLUTTER_TIMEOUT_POOL_H__
-#define __CLUTTER_TIMEOUT_POOL_H__
+#ifndef __EGG_TIMEOUT_POOL_H__
+#define __EGG_TIMEOUT_POOL_H__
 
 #include <glib.h>
 
 G_BEGIN_DECLS
 
-typedef struct _ClutterTimeoutPool    ClutterTimeoutPool;
+typedef struct _EggTimeoutPool    EggTimeoutPool;
 
-ClutterTimeoutPool *clutter_timeout_pool_new    (gint                priority);
-guint               clutter_timeout_pool_add    (ClutterTimeoutPool *pool,
+EggTimeoutPool *egg_timeout_pool_new    (gint                priority);
+guint               egg_timeout_pool_add    (EggTimeoutPool *pool,
                                                  guint               interval,
                                                  GSourceFunc         func,
                                                  gpointer            data,
                                                  GDestroyNotify      notify);
-void                clutter_timeout_pool_remove (ClutterTimeoutPool *pool,
+void                egg_timeout_pool_remove (EggTimeoutPool *pool,
                                                  guint               id);
 
 G_END_DECLS
 
-#endif /* __CLUTTER_TIMEOUT_POOL_H__ */
+#endif /* __EGG_TIMEOUT_POOL_H__ */

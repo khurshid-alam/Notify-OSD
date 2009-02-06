@@ -6,104 +6,104 @@
 #include <glib.h>
 #include <locale.h>
 
-#include "clutter-hack.h"
+#include "egg-hack.h"
 
-static guint clutter_default_fps        = 60;
+static guint egg_default_fps        = 60;
 
 guint
-clutter_get_default_frame_rate (void)
+egg_get_default_frame_rate (void)
 {
-	return clutter_default_fps;
+	return egg_default_fps;
 }
 
-guint clutter_debug_flags = 0;  /* global clutter debug flag */
+guint egg_debug_flags = 0;  /* global egg debug flag */
 
-#ifdef CLUTTER_ENABLE_DEBUG
-static const GDebugKey clutter_debug_keys[] = {
-  { "misc", CLUTTER_DEBUG_MISC },
-  { "actor", CLUTTER_DEBUG_ACTOR },
-  { "texture", CLUTTER_DEBUG_TEXTURE },
-  { "event", CLUTTER_DEBUG_EVENT },
-  { "paint", CLUTTER_DEBUG_PAINT },
-  { "gl", CLUTTER_DEBUG_GL },
-  { "alpha", CLUTTER_DEBUG_ALPHA },
-  { "behaviour", CLUTTER_DEBUG_BEHAVIOUR },
-  { "pango", CLUTTER_DEBUG_PANGO },
-  { "backend", CLUTTER_DEBUG_BACKEND },
-  { "scheduler", CLUTTER_DEBUG_SCHEDULER },
-  { "script", CLUTTER_DEBUG_SCRIPT },
-  { "shader", CLUTTER_DEBUG_SHADER },
-  { "multistage", CLUTTER_DEBUG_MULTISTAGE },
+#ifdef EGG_ENABLE_DEBUG
+static const GDebugKey egg_debug_keys[] = {
+  { "misc", EGG_DEBUG_MISC },
+  { "actor", EGG_DEBUG_ACTOR },
+  { "texture", EGG_DEBUG_TEXTURE },
+  { "event", EGG_DEBUG_EVENT },
+  { "paint", EGG_DEBUG_PAINT },
+  { "gl", EGG_DEBUG_GL },
+  { "alpha", EGG_DEBUG_ALPHA },
+  { "behaviour", EGG_DEBUG_BEHAVIOUR },
+  { "pango", EGG_DEBUG_PANGO },
+  { "backend", EGG_DEBUG_BACKEND },
+  { "scheduler", EGG_DEBUG_SCHEDULER },
+  { "script", EGG_DEBUG_SCRIPT },
+  { "shader", EGG_DEBUG_SHADER },
+  { "multistage", EGG_DEBUG_MULTISTAGE },
 };
-#endif /* CLUTTER_ENABLE_DEBUG */
+#endif /* EGG_ENABLE_DEBUG */
 
 gboolean
-clutter_get_debug_enabled (void)
+egg_get_debug_enabled (void)
 {
-#ifdef CLUTTER_ENABLE_DEBUG
-  return clutter_debug_flags != 0;
+#ifdef EGG_ENABLE_DEBUG
+  return egg_debug_flags != 0;
 #else
   return FALSE;
 #endif
 }
 
 void
-clutter_threads_enter (void)
+egg_threads_enter (void)
 {
 	return;
 }
 
 void
-clutter_threads_leave (void)
+egg_threads_leave (void)
 {
 	return;
 }
 
-static guint clutter_main_loop_level    = 0;
+static guint egg_main_loop_level    = 0;
 static GSList *main_loops               = NULL;
-static gboolean clutter_is_initialized  = FALSE;
+static gboolean egg_is_initialized  = FALSE;
 
 
 /**
- * clutter_main:
+ * egg_main:
  *
- * Starts the Clutter mainloop.
+ * Starts the Egg mainloop.
  */
 void
-clutter_main (void)
+egg_main (void)
 {
   GMainLoop *loop;
 
 #if 0
   /* Make sure there is a context */
-  CLUTTER_CONTEXT ();
+  EGG_CONTEXT ();
 #endif
 
-  if (!clutter_is_initialized)
+  if (!egg_is_initialized)
     {
-      g_warning ("Called clutter_main() but Clutter wasn't initialised.  "
-		 "You must call clutter_init() first.");
+      g_warning ("Called egg_main() but Egg wasn't initialised.  "
+		 "You must call egg_init() first.");
       return;
     }
 
-  CLUTTER_MARK ();
+  EGG_MARK ();
 
-  clutter_main_loop_level++;
+  egg_main_loop_level++;
 
   loop = g_main_loop_new (NULL, TRUE);
   main_loops = g_slist_prepend (main_loops, loop);
 
-#ifdef HAVE_CLUTTER_FRUITY
-  /* clutter fruity creates an application that forwards events and manually
+#ifdef HAVE_EGG_FRUITY
+  /* egg fruity creates an application that forwards events and manually
    * spins the mainloop
    */
-  clutter_fruity_main ();
+  egg_fruity_main ();
 #else
   if (g_main_loop_is_running (main_loops->data))
     {
-      clutter_threads_leave ();
+      egg_threads_leave ();
       g_main_loop_run (loop);
-      clutter_threads_enter ();
+      egg_threads_enter ();
     }
 #endif
 
@@ -111,56 +111,56 @@ clutter_main (void)
 
   g_main_loop_unref (loop);
 
-  clutter_main_loop_level--;
+  egg_main_loop_level--;
 
-  CLUTTER_MARK ();
+  EGG_MARK ();
 }
 
-ClutterInitError
-clutter_init (int    *argc,
+EggInitError
+egg_init (int    *argc,
               char ***argv)
 {
-	if (!clutter_is_initialized)
+	if (!egg_is_initialized)
 	{
 		/* initialise GLib type system */
 		g_type_init ();
 
-		clutter_is_initialized = TRUE;
+		egg_is_initialized = TRUE;
 	}
 
-	return CLUTTER_INIT_SUCCESS;
+	return EGG_INIT_SUCCESS;
 }
 
 
 /* -------------------------------------------------------------------------- */
 
-/* auto-generated code taken from clutter-enum-types.c */
+/* auto-generated code taken from egg-enum-types.c */
 
-/* enumerations from "./clutter-timeline.h" */
-#include "./clutter-timeline.h"
+/* enumerations from "./egg-timeline.h" */
+#include "./egg-timeline.h"
 GType
-clutter_timeline_direction_get_type(void) {
+egg_timeline_direction_get_type(void) {
   static GType etype = 0;
   if (G_UNLIKELY (!etype))
     {
       static const GEnumValue values[] = {
-        { CLUTTER_TIMELINE_FORWARD, "CLUTTER_TIMELINE_FORWARD", "forward" },
-        { CLUTTER_TIMELINE_BACKWARD, "CLUTTER_TIMELINE_BACKWARD", "backward" },
+        { EGG_TIMELINE_FORWARD, "EGG_TIMELINE_FORWARD", "forward" },
+        { EGG_TIMELINE_BACKWARD, "EGG_TIMELINE_BACKWARD", "backward" },
         { 0, NULL, NULL }
       };
-      etype = g_enum_register_static (g_intern_static_string ("ClutterTimelineDirection"), values);
+      etype = g_enum_register_static (g_intern_static_string ("EggTimelineDirection"), values);
     }
   return etype;
 }
 
-/* auto-generated code taken from clutter-marshal.c */
+/* auto-generated code taken from egg-marshal.c */
 
 #define g_marshal_value_peek_string(v)   (v)->data[0].v_pointer
 #define g_marshal_value_peek_int(v)      (v)->data[0].v_int
 
-/* VOID:STRING,INT (./clutter-marshal.list:12) */
+/* VOID:STRING,INT (./egg-marshal.list:12) */
 void
-clutter_marshal_VOID__STRING_INT (GClosure     *closure,
+egg_marshal_VOID__STRING_INT (GClosure     *closure,
                                   GValue       *return_value G_GNUC_UNUSED,
                                   guint         n_param_values,
                                   const GValue *param_values,
@@ -195,9 +195,9 @@ clutter_marshal_VOID__STRING_INT (GClosure     *closure,
             data2);
 }
 
-/* VOID:INT,INT (./clutter-marshal.list:6) */
+/* VOID:INT,INT (./egg-marshal.list:6) */
 void
-clutter_marshal_VOID__INT_INT (GClosure     *closure,
+egg_marshal_VOID__INT_INT (GClosure     *closure,
                                GValue       *return_value G_GNUC_UNUSED,
                                guint         n_param_values,
                                const GValue *param_values,
@@ -232,9 +232,9 @@ clutter_marshal_VOID__INT_INT (GClosure     *closure,
             data2);
 }
 
-/* UINT:VOID (./clutter-marshal.list:2) */
+/* UINT:VOID (./egg-marshal.list:2) */
 void
-clutter_marshal_UINT__VOID (GClosure     *closure,
+egg_marshal_UINT__VOID (GClosure     *closure,
                             GValue       *return_value G_GNUC_UNUSED,
                             guint         n_param_values,
                             const GValue *param_values,

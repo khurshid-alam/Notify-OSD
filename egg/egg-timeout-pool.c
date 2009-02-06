@@ -22,7 +22,7 @@
  * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
  * Boston, MA 02111-1307, USA.
  *
- * ClutterTimeoutPool: pool of timeout functions using the same slice of
+ * EggTimeoutPool: pool of timeout functions using the same slice of
  *                     the GLib main loop
  *
  * Author: Emmanuele Bassi <ebassi@openedhand.com>
@@ -34,19 +34,19 @@
 #include "config.h"
 #endif
 
-#include "clutter-debug.h"
-#include "clutter-timeout-pool.h"
+#include "egg-debug.h"
+#include "egg-timeout-pool.h"
 
-typedef struct _ClutterTimeout  ClutterTimeout;
+typedef struct _EggTimeout  EggTimeout;
 typedef enum {
-  CLUTTER_TIMEOUT_NONE   = 0,
-  CLUTTER_TIMEOUT_READY  = 1 << 1
-} ClutterTimeoutFlags;
+  EGG_TIMEOUT_NONE   = 0,
+  EGG_TIMEOUT_READY  = 1 << 1
+} EggTimeoutFlags;
 
-struct _ClutterTimeout
+struct _EggTimeout
 {
   guint id;
-  ClutterTimeoutFlags flags;
+  EggTimeoutFlags flags;
   gint refcount;
 
   guint interval;
@@ -57,7 +57,7 @@ struct _ClutterTimeout
   GDestroyNotify notify;
 };
 
-struct _ClutterTimeoutPool
+struct _EggTimeoutPool
 {
   GSource source;
 
@@ -70,30 +70,30 @@ struct _ClutterTimeoutPool
   guint id;
 };
 
-#define TIMEOUT_READY(timeout)   (timeout->flags & CLUTTER_TIMEOUT_READY)
+#define TIMEOUT_READY(timeout)   (timeout->flags & EGG_TIMEOUT_READY)
 
-static gboolean clutter_timeout_pool_prepare  (GSource     *source,
+static gboolean egg_timeout_pool_prepare  (GSource     *source,
                                                gint        *next_timeout);
-static gboolean clutter_timeout_pool_check    (GSource     *source);
-static gboolean clutter_timeout_pool_dispatch (GSource     *source,
+static gboolean egg_timeout_pool_check    (GSource     *source);
+static gboolean egg_timeout_pool_dispatch (GSource     *source,
                                                GSourceFunc  callback,
                                                gpointer     data);
-static void clutter_timeout_pool_finalize     (GSource     *source);
+static void egg_timeout_pool_finalize     (GSource     *source);
 
-static GSourceFuncs clutter_timeout_pool_funcs =
+static GSourceFuncs egg_timeout_pool_funcs =
 {
-  clutter_timeout_pool_prepare,
-  clutter_timeout_pool_check,
-  clutter_timeout_pool_dispatch,
-  clutter_timeout_pool_finalize
+  egg_timeout_pool_prepare,
+  egg_timeout_pool_check,
+  egg_timeout_pool_dispatch,
+  egg_timeout_pool_finalize
 };
 
 static gint
-clutter_timeout_sort (gconstpointer a,
+egg_timeout_sort (gconstpointer a,
                       gconstpointer b)
 {
-  const ClutterTimeout *t_a = a;
-  const ClutterTimeout *t_b = b;
+  const EggTimeout *t_a = a;
+  const EggTimeout *t_b = b;
   gint comparison;
 
   /* Keep 'ready' timeouts at the front */
@@ -116,16 +116,16 @@ clutter_timeout_sort (gconstpointer a,
 }
 
 static gint
-clutter_timeout_find_by_id (gconstpointer a,
+egg_timeout_find_by_id (gconstpointer a,
                             gconstpointer b)
 {
-  const ClutterTimeout *t_a = a;
+  const EggTimeout *t_a = a;
 
   return t_a->id == GPOINTER_TO_UINT (b) ? 0 : 1;
 }
 
 static guint
-clutter_timeout_pool_get_ticks (ClutterTimeoutPool *pool)
+egg_timeout_pool_get_ticks (EggTimeoutPool *pool)
 {
   GTimeVal time_now;
 
@@ -136,11 +136,11 @@ clutter_timeout_pool_get_ticks (ClutterTimeoutPool *pool)
 }
 
 static gboolean
-clutter_timeout_prepare (ClutterTimeoutPool *pool,
-                         ClutterTimeout     *timeout,
+egg_timeout_prepare (EggTimeoutPool *pool,
+                         EggTimeout     *timeout,
                          gint               *next_timeout)
 {
-  guint now = clutter_timeout_pool_get_ticks (pool);
+  guint now = egg_timeout_pool_get_ticks (pool);
 
   /* If time has gone backwards or the time since the last frame is
      greater than the two frames worth then reset the time and do a
@@ -168,8 +168,8 @@ clutter_timeout_prepare (ClutterTimeoutPool *pool,
 }
 
 static gboolean
-clutter_timeout_dispatch (GSource        *source,
-                          ClutterTimeout *timeout)
+egg_timeout_dispatch (GSource        *source,
+                          EggTimeout *timeout)
 {
   gboolean retval = FALSE;
 
@@ -189,25 +189,25 @@ clutter_timeout_dispatch (GSource        *source,
   return retval;
 }
 
-static ClutterTimeout *
-clutter_timeout_new (guint interval)
+static EggTimeout *
+egg_timeout_new (guint interval)
 {
-  ClutterTimeout *timeout;
+  EggTimeout *timeout;
 
-  timeout = g_slice_new0 (ClutterTimeout);
+  timeout = g_slice_new0 (EggTimeout);
   timeout->interval = interval;
-  timeout->flags = CLUTTER_TIMEOUT_NONE;
+  timeout->flags = EGG_TIMEOUT_NONE;
   timeout->refcount = 1;
 
   return timeout;
 }
 
-/* ref and unref are always called under the main Clutter lock, so there
+/* ref and unref are always called under the main Egg lock, so there
  * is not need for us to use g_atomic_int_* API.
  */
 
-static ClutterTimeout *
-clutter_timeout_ref (ClutterTimeout *timeout)
+static EggTimeout *
+egg_timeout_ref (EggTimeout *timeout)
 {
   g_return_val_if_fail (timeout != NULL, timeout);
   g_return_val_if_fail (timeout->refcount > 0, timeout);
@@ -218,7 +218,7 @@ clutter_timeout_ref (ClutterTimeout *timeout)
 }
 
 static void
-clutter_timeout_unref (ClutterTimeout *timeout)
+egg_timeout_unref (EggTimeout *timeout)
 {
   g_return_if_fail (timeout != NULL);
   g_return_if_fail (timeout->refcount > 0);
@@ -230,34 +230,34 @@ clutter_timeout_unref (ClutterTimeout *timeout)
       if (timeout->notify)
         timeout->notify (timeout->data);
 
-      g_slice_free (ClutterTimeout, timeout);
+      g_slice_free (EggTimeout, timeout);
     }
 }
 
 static void
-clutter_timeout_free (ClutterTimeout *timeout)
+egg_timeout_free (EggTimeout *timeout)
 {
   if (G_LIKELY (timeout))
     {
       if (timeout->notify)
         timeout->notify (timeout->data);
 
-      g_slice_free (ClutterTimeout, timeout);
+      g_slice_free (EggTimeout, timeout);
     }
 }
 
 static gboolean
-clutter_timeout_pool_prepare (GSource *source,
+egg_timeout_pool_prepare (GSource *source,
                               gint    *next_timeout)
 {
-  ClutterTimeoutPool *pool = (ClutterTimeoutPool *) source;
+  EggTimeoutPool *pool = (EggTimeoutPool *) source;
   GList *l = pool->timeouts;
 
   /* the pool is ready if the first timeout is ready */
   if (l && l->data)
     {
-      ClutterTimeout *timeout = l->data;
-      return clutter_timeout_prepare (pool, timeout, next_timeout);
+      EggTimeout *timeout = l->data;
+      return egg_timeout_prepare (pool, timeout, next_timeout);
     }
   else
     {
@@ -267,58 +267,58 @@ clutter_timeout_pool_prepare (GSource *source,
 }
 
 static gboolean
-clutter_timeout_pool_check (GSource *source)
+egg_timeout_pool_check (GSource *source)
 {
-  ClutterTimeoutPool *pool = (ClutterTimeoutPool *) source;
+  EggTimeoutPool *pool = (EggTimeoutPool *) source;
   GList *l = pool->timeouts;
 
-  clutter_threads_enter ();
+  egg_threads_enter ();
 
   for (l = pool->timeouts; l; l = l->next)
     {
-      ClutterTimeout *timeout = l->data;
+      EggTimeout *timeout = l->data;
 
       /* since the timeouts are sorted by expiration, as soon
        * as we get a check returning FALSE we know that the
        * following timeouts are not expiring, so we break as
        * soon as possible
        */
-      if (clutter_timeout_prepare (pool, timeout, NULL))
+      if (egg_timeout_prepare (pool, timeout, NULL))
         {
-          timeout->flags |= CLUTTER_TIMEOUT_READY;
+          timeout->flags |= EGG_TIMEOUT_READY;
           pool->ready += 1;
         }
       else
         break;
     }
 
-  clutter_threads_leave ();
+  egg_threads_leave ();
 
   return (pool->ready > 0);
 }
 
 static gboolean
-clutter_timeout_pool_dispatch (GSource     *source,
+egg_timeout_pool_dispatch (GSource     *source,
                                GSourceFunc  func,
                                gpointer     data)
 {
-  ClutterTimeoutPool *pool = (ClutterTimeoutPool *) source;
+  EggTimeoutPool *pool = (EggTimeoutPool *) source;
   GList *dispatched_timeouts;
 
   /* the main loop might have predicted this, so we repeat the
    * check for ready timeouts.
    */
   if (!pool->ready)
-    clutter_timeout_pool_check (source);
+    egg_timeout_pool_check (source);
 
-  clutter_threads_enter ();
+  egg_threads_enter ();
 
   /* Iterate by moving the actual start of the list along so that it
    * can cope with adds and removes while a timeout is being dispatched
    */
   while (pool->timeouts && pool->timeouts->data && pool->ready-- > 0)
     {
-      ClutterTimeout *timeout = pool->timeouts->data;
+      EggTimeout *timeout = pool->timeouts->data;
       GList *l;
 
       /* One of the ready timeouts may have been removed during dispatch,
@@ -332,9 +332,9 @@ clutter_timeout_pool_dispatch (GSource     *source,
       /* Add a reference to the timeout so it can't disappear
        * while it's being dispatched
        */
-      clutter_timeout_ref (timeout);
+      egg_timeout_ref (timeout);
 
-      timeout->flags &= ~CLUTTER_TIMEOUT_READY;
+      timeout->flags &= ~EGG_TIMEOUT_READY;
 
       /* Move the list node to a list of dispatched timeouts */
       l = pool->timeouts;
@@ -350,7 +350,7 @@ clutter_timeout_pool_dispatch (GSource     *source,
       l->next = pool->dispatched_timeouts;
       pool->dispatched_timeouts = l;
 
-      if (!clutter_timeout_dispatch (source, timeout))
+      if (!egg_timeout_dispatch (source, timeout))
 	{
 	  /* The timeout may have already been removed, but nothing
            * can be added to the dispatched_timeout list except in this
@@ -365,23 +365,23 @@ clutter_timeout_pool_dispatch (GSource     *source,
                                     pool->dispatched_timeouts);
 
 	      /* Remove the reference that was held by it being in the list */
-	      clutter_timeout_unref (timeout);
+	      egg_timeout_unref (timeout);
 	    }
 	}
 
-      clutter_timeout_unref (timeout);
+      egg_timeout_unref (timeout);
     }
 
   /* Re-insert the dispatched timeouts in sorted order */
   dispatched_timeouts = pool->dispatched_timeouts;
   while (dispatched_timeouts)
     {
-      ClutterTimeout *timeout = dispatched_timeouts->data;
+      EggTimeout *timeout = dispatched_timeouts->data;
       GList *next = dispatched_timeouts->next;
 
       if (timeout)
         pool->timeouts = g_list_insert_sorted (pool->timeouts, timeout,
-                                               clutter_timeout_sort);
+                                               egg_timeout_sort);
 
       dispatched_timeouts = next;
     }
@@ -391,23 +391,23 @@ clutter_timeout_pool_dispatch (GSource     *source,
 
   pool->ready = 0;
 
-  clutter_threads_leave ();
+  egg_threads_leave ();
 
   return TRUE;
 }
 
 static void
-clutter_timeout_pool_finalize (GSource *source)
+egg_timeout_pool_finalize (GSource *source)
 {
-  ClutterTimeoutPool *pool = (ClutterTimeoutPool *) source;
+  EggTimeoutPool *pool = (EggTimeoutPool *) source;
 
   /* force destruction */
-  g_list_foreach (pool->timeouts, (GFunc) clutter_timeout_free, NULL);
+  g_list_foreach (pool->timeouts, (GFunc) egg_timeout_free, NULL);
   g_list_free (pool->timeouts);
 }
 
 /**
- * clutter_timeout_pool_new:
+ * egg_timeout_pool_new:
  * @priority: the priority of the timeout pool. Typically this will
  *   be #G_PRIORITY_DEFAULT
  *
@@ -419,34 +419,34 @@ clutter_timeout_pool_finalize (GSource *source)
  * always sorted, so that the extraction of the next timeout function is
  * a constant time operation.
  *
- * Inside Clutter, every #ClutterTimeline share the same timeout pool, unless
- * the CLUTTER_TIMELINE=no-pool environment variable is set.
+ * Inside Egg, every #EggTimeline share the same timeout pool, unless
+ * the EGG_TIMELINE=no-pool environment variable is set.
  *
- * #ClutterTimeoutPool is part of the #ClutterTimeline implementation
+ * #EggTimeoutPool is part of the #EggTimeline implementation
  * and should not be used by application developers.
  *
- * Return value: the newly created #ClutterTimeoutPool. The created pool
+ * Return value: the newly created #EggTimeoutPool. The created pool
  *   is owned by the GLib default context and will be automatically
  *   destroyed when the context is destroyed. It is possible to force
  *   the destruction of the timeout pool using g_source_destroy()
  *
  * Since: 0.4
  */
-ClutterTimeoutPool *
-clutter_timeout_pool_new (gint priority)
+EggTimeoutPool *
+egg_timeout_pool_new (gint priority)
 {
-  ClutterTimeoutPool *pool;
+  EggTimeoutPool *pool;
   GSource *source;
 
-  source = g_source_new (&clutter_timeout_pool_funcs,
-                         sizeof (ClutterTimeoutPool));
+  source = g_source_new (&egg_timeout_pool_funcs,
+                         sizeof (EggTimeoutPool));
   if (!source)
     return NULL;
 
   if (priority != G_PRIORITY_DEFAULT)
     g_source_set_priority (source, priority);
 
-  pool = (ClutterTimeoutPool *) source;
+  pool = (EggTimeoutPool *) source;
 
   g_get_current_time (&pool->start_time);
   pool->next_id = 1;
@@ -459,8 +459,8 @@ clutter_timeout_pool_new (gint priority)
 }
 
 /**
- * clutter_timeout_pool_add:
- * @pool: a #ClutterTimeoutPool
+ * egg_timeout_pool_add:
+ * @pool: a #EggTimeoutPool
  * @interval: the time between calls to the function, in milliseconds
  * @func: function to call
  * @data: data to pass to the function, or %NULL
@@ -482,63 +482,63 @@ clutter_timeout_pool_new (gint priority)
  * @func takes more than @interval ms to execute.
  *
  * Return value: the ID (greater than 0) of the timeout inside the pool.
- *   Use clutter_timeout_pool_remove() to stop the timeout.
+ *   Use egg_timeout_pool_remove() to stop the timeout.
  *
  * Since: 0.4
  */
 guint
-clutter_timeout_pool_add (ClutterTimeoutPool *pool,
+egg_timeout_pool_add (EggTimeoutPool *pool,
                           guint               interval,
                           GSourceFunc         func,
                           gpointer            data,
                           GDestroyNotify      notify)
 {
-  ClutterTimeout *timeout;
+  EggTimeout *timeout;
   guint retval = 0;
 
-  timeout = clutter_timeout_new (interval);
+  timeout = egg_timeout_new (interval);
 
   retval = timeout->id = pool->next_id++;
 
-  timeout->last_time = clutter_timeout_pool_get_ticks (pool);
+  timeout->last_time = egg_timeout_pool_get_ticks (pool);
   timeout->func = func;
   timeout->data = data;
   timeout->notify = notify;
 
   pool->timeouts = g_list_insert_sorted (pool->timeouts, timeout,
-                                         clutter_timeout_sort);
+                                         egg_timeout_sort);
 
   return retval;
 }
 
 /**
- * clutter_timeout_pool_remove:
- * @pool: a #ClutterTimeoutPool
+ * egg_timeout_pool_remove:
+ * @pool: a #EggTimeoutPool
  * @id: the id of the timeout to remove
  *
  * Removes a timeout function with @id from the timeout pool. The id
  * is the same returned when adding a function to the timeout pool with
- * clutter_timeout_pool_add().
+ * egg_timeout_pool_add().
  *
  * Since: 0.4
  */
 void
-clutter_timeout_pool_remove (ClutterTimeoutPool *pool,
+egg_timeout_pool_remove (EggTimeoutPool *pool,
                              guint               id)
 {
   GList *l;
 
   if ((l = g_list_find_custom (pool->timeouts, GUINT_TO_POINTER (id),
-			       clutter_timeout_find_by_id)))
+			       egg_timeout_find_by_id)))
     {
-      clutter_timeout_unref (l->data);
+      egg_timeout_unref (l->data);
       pool->timeouts = g_list_delete_link (pool->timeouts, l);
     }
   else if ((l = g_list_find_custom (pool->dispatched_timeouts,
 				    GUINT_TO_POINTER (id),
-				    clutter_timeout_find_by_id)))
+				    egg_timeout_find_by_id)))
     {
-      clutter_timeout_unref (l->data);
+      egg_timeout_unref (l->data);
       pool->dispatched_timeouts
 	= g_list_delete_link (pool->dispatched_timeouts, l);
     }

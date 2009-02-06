@@ -24,23 +24,23 @@
  */
 
 /**
- * SECTION:clutter-timeline
+ * SECTION:egg-timeline
  * @short_description: A class for time-based events
  *
- * #ClutterTimeline is a base class for managing time based events such
+ * #EggTimeline is a base class for managing time based events such
  * as animations.
  *
- * Every timeline shares the same #ClutterTimeoutPool to decrease the
+ * Every timeline shares the same #EggTimeoutPool to decrease the
  * possibility of starving the main loop when using many timelines
  * at the same time; this might cause problems if you are also using
  * a library making heavy use of threads with no GLib main loop integration.
  *
  * In that case you might disable the common timeline pool by setting
- * the %CLUTTER_TIMELINE=no-pool environment variable prior to launching
+ * the %EGG_TIMELINE=no-pool environment variable prior to launching
  * your application.
  *
  * One way to visualise a timeline is as a path with marks along its length.
- * When creating a timeline of @n_frames via clutter_timeline_new(), then the
+ * When creating a timeline of @n_frames via egg_timeline_new(), then the
  * number of frames can be seen as the paths length, and each unit of length
  * (each frame) is delimited by a mark.
  *
@@ -50,7 +50,7 @@
  * looping timeline the start and end frame numbers are considered equivalent.
  *
  * When you create a timeline it starts with
- * clutter_timeline_get_current_frame() == 0.
+ * egg_timeline_get_current_frame() == 0.
  *
  * After starting a timeline, the first timeout is for current_frame_num == 1
  * (Notably it isn't 0 since there is a delay before the first timeout signals
@@ -83,22 +83,22 @@
 #include "config.h"
 #endif
 
-#include "clutter-timeout-pool.h"
-#include "clutter-timeline.h"
-// #include "clutter-main.h"
-// #include "clutter-marshal.h"
-// #include "clutter-private.h"
-#include "clutter-hack.h"
-#include "clutter-debug.h"
-// #include "clutter-enum-types.h"
+#include "egg-timeout-pool.h"
+#include "egg-timeline.h"
+// #include "egg-main.h"
+// #include "egg-marshal.h"
+// #include "egg-private.h"
+#include "egg-hack.h"
+#include "egg-debug.h"
+// #include "egg-enum-types.h"
 
-G_DEFINE_TYPE (ClutterTimeline, clutter_timeline, G_TYPE_OBJECT);
+G_DEFINE_TYPE (EggTimeline, egg_timeline, G_TYPE_OBJECT);
 
 #define FPS_TO_INTERVAL(f) (1000 / (f))
 
-struct _ClutterTimelinePrivate
+struct _EggTimelinePrivate
 {
-  ClutterTimelineDirection direction;
+  EggTimelineDirection direction;
 
   guint timeout_id;
   guint delay_id;
@@ -151,7 +151,7 @@ enum
 
 static guint               timeline_signals[LAST_SIGNAL] = { 0 };
 static gint                timeline_use_pool = -1;
-static ClutterTimeoutPool *timeline_pool = NULL;
+static EggTimeoutPool *timeline_pool = NULL;
 
 static inline void
 timeline_pool_init (void)
@@ -160,7 +160,7 @@ timeline_pool_init (void)
     {
       const gchar *timeline_env;
 
-      timeline_env = g_getenv ("CLUTTER_TIMELINE");
+      timeline_env = g_getenv ("EGG_TIMELINE");
       if (timeline_env && timeline_env[0] != '\0' &&
           strcmp (timeline_env, "no-pool") == 0)
         {
@@ -168,7 +168,7 @@ timeline_pool_init (void)
         }
       else
         {
-          timeline_pool = clutter_timeout_pool_new (CLUTTER_PRIORITY_TIMELINE);
+          timeline_pool = egg_timeout_pool_new (EGG_PRIORITY_TIMELINE);
           timeline_use_pool = TRUE;
         }
     }
@@ -185,14 +185,14 @@ timeout_add (guint          interval,
   if (G_LIKELY (timeline_use_pool))
     {
       g_assert (timeline_pool != NULL);
-      res = clutter_timeout_pool_add (timeline_pool,
+      res = egg_timeout_pool_add (timeline_pool,
                                       interval,
                                       func, data, notify);
     }
   else
     {
 #if 0
-      res = clutter_threads_add_frame_source_full (CLUTTER_PRIORITY_TIMELINE,
+      res = egg_threads_add_frame_source_full (EGG_PRIORITY_TIMELINE,
 						   interval,
 						   func, data, notify);
 #endif
@@ -208,7 +208,7 @@ timeout_remove (guint tag)
   if (G_LIKELY (timeline_use_pool))
     {
       g_assert (timeline_pool != NULL);
-      clutter_timeout_pool_remove (timeline_pool, tag);
+      egg_timeout_pool_remove (timeline_pool, tag);
     }
   else
     g_source_remove (tag);
@@ -242,24 +242,24 @@ timeline_marker_free (gpointer data)
 /* Object */
 
 static void
-clutter_timeline_set_property (GObject      *object,
+egg_timeline_set_property (GObject      *object,
 			       guint         prop_id,
 			       const GValue *value,
 			       GParamSpec   *pspec)
 {
-  ClutterTimeline        *timeline;
-  ClutterTimelinePrivate *priv;
+  EggTimeline        *timeline;
+  EggTimelinePrivate *priv;
 
-  timeline = CLUTTER_TIMELINE(object);
+  timeline = EGG_TIMELINE(object);
   priv = timeline->priv;
 
   switch (prop_id)
     {
     case PROP_FPS:
-      clutter_timeline_set_speed (timeline, g_value_get_uint (value));
+      egg_timeline_set_speed (timeline, g_value_get_uint (value));
       break;
     case PROP_NUM_FRAMES:
-      clutter_timeline_set_n_frames (timeline, g_value_get_uint (value));
+      egg_timeline_set_n_frames (timeline, g_value_get_uint (value));
       break;
     case PROP_LOOP:
       priv->loop = g_value_get_boolean (value);
@@ -268,10 +268,10 @@ clutter_timeline_set_property (GObject      *object,
       priv->delay = g_value_get_uint (value);
       break;
     case PROP_DURATION:
-      clutter_timeline_set_duration (timeline, g_value_get_uint (value));
+      egg_timeline_set_duration (timeline, g_value_get_uint (value));
       break;
     case PROP_DIRECTION:
-      clutter_timeline_set_direction (timeline, g_value_get_enum (value));
+      egg_timeline_set_direction (timeline, g_value_get_enum (value));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -280,15 +280,15 @@ clutter_timeline_set_property (GObject      *object,
 }
 
 static void
-clutter_timeline_get_property (GObject    *object,
+egg_timeline_get_property (GObject    *object,
 			       guint       prop_id,
 			       GValue     *value,
 			       GParamSpec *pspec)
 {
-  ClutterTimeline        *timeline;
-  ClutterTimelinePrivate *priv;
+  EggTimeline        *timeline;
+  EggTimelinePrivate *priv;
 
-  timeline = CLUTTER_TIMELINE(object);
+  timeline = EGG_TIMELINE(object);
   priv = timeline->priv;
 
   switch (prop_id)
@@ -306,7 +306,7 @@ clutter_timeline_get_property (GObject    *object,
       g_value_set_uint (value, priv->delay);
       break;
     case PROP_DURATION:
-      g_value_set_uint (value, clutter_timeline_get_duration (timeline));
+      g_value_set_uint (value, egg_timeline_get_duration (timeline));
       break;
     case PROP_DIRECTION:
       g_value_set_enum (value, priv->direction);
@@ -318,21 +318,21 @@ clutter_timeline_get_property (GObject    *object,
 }
 
 static void
-clutter_timeline_finalize (GObject *object)
+egg_timeline_finalize (GObject *object)
 {
-  ClutterTimelinePrivate *priv = CLUTTER_TIMELINE (object)->priv;
+  EggTimelinePrivate *priv = EGG_TIMELINE (object)->priv;
 
   g_hash_table_destroy (priv->markers_by_frame);
   g_hash_table_destroy (priv->markers_by_name);
 
-  G_OBJECT_CLASS (clutter_timeline_parent_class)->finalize (object);
+  G_OBJECT_CLASS (egg_timeline_parent_class)->finalize (object);
 }
 
 static void
-clutter_timeline_dispose (GObject *object)
+egg_timeline_dispose (GObject *object)
 {
-  ClutterTimeline *self = CLUTTER_TIMELINE(object);
-  ClutterTimelinePrivate *priv;
+  EggTimeline *self = EGG_TIMELINE(object);
+  EggTimelinePrivate *priv;
 
   priv = self->priv;
 
@@ -348,28 +348,28 @@ clutter_timeline_dispose (GObject *object)
       priv->timeout_id = 0;
     }
 
-  G_OBJECT_CLASS (clutter_timeline_parent_class)->dispose (object);
+  G_OBJECT_CLASS (egg_timeline_parent_class)->dispose (object);
 }
 
 static void
-clutter_timeline_class_init (ClutterTimelineClass *klass)
+egg_timeline_class_init (EggTimelineClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   timeline_pool_init ();
 
-  object_class->set_property = clutter_timeline_set_property;
-  object_class->get_property = clutter_timeline_get_property;
-  object_class->finalize     = clutter_timeline_finalize;
-  object_class->dispose      = clutter_timeline_dispose;
+  object_class->set_property = egg_timeline_set_property;
+  object_class->get_property = egg_timeline_get_property;
+  object_class->finalize     = egg_timeline_finalize;
+  object_class->dispose      = egg_timeline_dispose;
 
-  g_type_class_add_private (klass, sizeof (ClutterTimelinePrivate));
+  g_type_class_add_private (klass, sizeof (EggTimelinePrivate));
 
   /**
-   * ClutterTimeline:fps:
+   * EggTimeline:fps:
    *
    * Timeline frames per second. Because of the nature of the main
-   * loop used by Clutter this is to be considered a best approximation.
+   * loop used by Egg this is to be considered a best approximation.
    */
   g_object_class_install_property (object_class,
                                    PROP_FPS,
@@ -378,9 +378,9 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                                       "Timeline frames per second",
                                                       1, 1000,
                                                       60,
-                                                      CLUTTER_PARAM_READWRITE));
+                                                      EGG_PARAM_READWRITE));
   /**
-   * ClutterTimeline:num-frames:
+   * EggTimeline:num-frames:
    *
    * Total number of frames for the timeline.
    */
@@ -391,9 +391,9 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                                       "Timelines total number of frames",
                                                       1, G_MAXUINT,
                                                       1,
-                                                      CLUTTER_PARAM_READWRITE));
+                                                      EGG_PARAM_READWRITE));
   /**
-   * ClutterTimeline:loop:
+   * EggTimeline:loop:
    *
    * Whether the timeline should automatically rewind and restart.
    */
@@ -403,9 +403,9 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                                          "Loop",
                                                          "Should the timeline automatically restart",
                                                          FALSE,
-                                                         CLUTTER_PARAM_READWRITE));
+                                                         EGG_PARAM_READWRITE));
   /**
-   * ClutterTimeline:delay:
+   * EggTimeline:delay:
    *
    * A delay, in milliseconds, that should be observed by the
    * timeline before actually starting.
@@ -419,12 +419,12 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                                       "Delay before start",
                                                       0, G_MAXUINT,
                                                       0,
-                                                      CLUTTER_PARAM_READWRITE));
+                                                      EGG_PARAM_READWRITE));
   /**
-   * ClutterTimeline:duration:
+   * EggTimeline:duration:
    *
    * Duration of the timeline in milliseconds, depending on the
-   * ClutterTimeline:fps value.
+   * EggTimeline:fps value.
    *
    * Since: 0.6
    */
@@ -435,12 +435,12 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                                       "Duration of the timeline in milliseconds",
                                                       0, G_MAXUINT,
                                                       1000,
-                                                      CLUTTER_PARAM_READWRITE));
+                                                      EGG_PARAM_READWRITE));
   /**
-   * ClutterTimeline:direction:
+   * EggTimeline:direction:
    *
-   * The direction of the timeline, either %CLUTTER_TIMELINE_FORWARD or
-   * %CLUTTER_TIMELINE_BACKWARD.
+   * The direction of the timeline, either %EGG_TIMELINE_FORWARD or
+   * %EGG_TIMELINE_BACKWARD.
    *
    * Since: 0.6
    */
@@ -449,15 +449,15 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
                                    g_param_spec_enum ("direction",
                                                       "Direction",
                                                       "Direction of the timeline",
-                                                      CLUTTER_TYPE_TIMELINE_DIRECTION,
-                                                      CLUTTER_TIMELINE_FORWARD,
-                                                      CLUTTER_PARAM_READWRITE));
+                                                      EGG_TYPE_TIMELINE_DIRECTION,
+                                                      EGG_TIMELINE_FORWARD,
+                                                      EGG_PARAM_READWRITE));
 
   /**
-   * ClutterTimeline::new-frame:
+   * EggTimeline::new-frame:
    * @timeline: the timeline which received the signal
    * @frame_num: the number of the new frame between 0 and
-   * ClutterTimeline:num-frames
+   * EggTimeline:num-frames
    *
    * The ::new-frame signal is emitted each time a new frame in the
    * timeline is reached.
@@ -466,73 +466,73 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
     g_signal_new ("new-frame",
 		  G_TYPE_FROM_CLASS (object_class),
 		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (ClutterTimelineClass, new_frame),
+		  G_STRUCT_OFFSET (EggTimelineClass, new_frame),
 		  NULL, NULL,
-		  clutter_marshal_VOID__INT,
+		  egg_marshal_VOID__INT,
 		  G_TYPE_NONE,
 		  1, G_TYPE_INT);
   /**
-   * ClutterTimeline::completed:
-   * @timeline: the #ClutterTimeline which received the signal
+   * EggTimeline::completed:
+   * @timeline: the #EggTimeline which received the signal
    *
    * The ::completed signal is emitted when the timeline reaches the
-   * number of frames specified by the ClutterTimeline:num-frames property.
+   * number of frames specified by the EggTimeline:num-frames property.
    */
   timeline_signals[COMPLETED] =
     g_signal_new ("completed",
 		  G_TYPE_FROM_CLASS (object_class),
 		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (ClutterTimelineClass, completed),
+		  G_STRUCT_OFFSET (EggTimelineClass, completed),
 		  NULL, NULL,
-		  clutter_marshal_VOID__VOID,
+		  egg_marshal_VOID__VOID,
 		  G_TYPE_NONE, 0);
   /**
-   * ClutterTimeline::started:
-   * @timeline: the #ClutterTimeline which received the signal
+   * EggTimeline::started:
+   * @timeline: the #EggTimeline which received the signal
    *
    * The ::started signal is emitted when the timeline starts its run.
-   * This might be as soon as clutter_timeline_start() is invoked or
-   * after the delay set in the ClutterTimeline:delay property has
+   * This might be as soon as egg_timeline_start() is invoked or
+   * after the delay set in the EggTimeline:delay property has
    * expired.
    */
   timeline_signals[STARTED] =
     g_signal_new ("started",
 		  G_TYPE_FROM_CLASS (object_class),
 		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (ClutterTimelineClass, started),
+		  G_STRUCT_OFFSET (EggTimelineClass, started),
 		  NULL, NULL,
-		  clutter_marshal_VOID__VOID,
+		  egg_marshal_VOID__VOID,
 		  G_TYPE_NONE, 0);
   /**
-   * ClutterTimeline::paused:
-   * @timeline: the #ClutterTimeline which received the signal
+   * EggTimeline::paused:
+   * @timeline: the #EggTimeline which received the signal
    *
-   * The ::paused signal is emitted when clutter_timeline_pause() is invoked.
+   * The ::paused signal is emitted when egg_timeline_pause() is invoked.
    */
   timeline_signals[PAUSED] =
     g_signal_new ("paused",
 		  G_TYPE_FROM_CLASS (object_class),
 		  G_SIGNAL_RUN_LAST,
-		  G_STRUCT_OFFSET (ClutterTimelineClass, paused),
+		  G_STRUCT_OFFSET (EggTimelineClass, paused),
 		  NULL, NULL,
-		  clutter_marshal_VOID__VOID,
+		  egg_marshal_VOID__VOID,
 		  G_TYPE_NONE, 0);
   /**
-   * ClutterTimeline::marker-reached:
-   * @timeline: the #ClutterTimeline which received the signal
+   * EggTimeline::marker-reached:
+   * @timeline: the #EggTimeline which received the signal
    * @marker_name: the name of the marker reached
    * @frame_num: the frame number
    *
    * The ::marker-reached signal is emitted each time a timeline
-   * reaches a marker set with clutter_timeline_add_marker_at_frame()
-   * or clutter_timeline_add_marker_at_time(). This signal is
+   * reaches a marker set with egg_timeline_add_marker_at_frame()
+   * or egg_timeline_add_marker_at_time(). This signal is
    * detailed with the name of the marker as well, so it is
    * possible to connect a callback to the ::marker-reached signal
    * for a specific marker with:
    *
    * <informalexample><programlisting>
-   *   clutter_timeline_add_marker_at_frame (timeline, "foo", 24);
-   *   clutter_timeline_add_marker_at_frame (timeline, "bar", 48);
+   *   egg_timeline_add_marker_at_frame (timeline, "foo", 24);
+   *   egg_timeline_add_marker_at_frame (timeline, "bar", 48);
    *
    *   g_signal_connect (timeline, "marker-reached",
    *                     G_CALLBACK (each_marker_reached), NULL);
@@ -552,24 +552,24 @@ clutter_timeline_class_init (ClutterTimelineClass *klass)
     g_signal_new ("marker-reached",
                   G_TYPE_FROM_CLASS (object_class),
                   G_SIGNAL_RUN_LAST | G_SIGNAL_NO_RECURSE | G_SIGNAL_DETAILED | G_SIGNAL_NO_HOOKS,
-                  G_STRUCT_OFFSET (ClutterTimelineClass, marker_reached),
+                  G_STRUCT_OFFSET (EggTimelineClass, marker_reached),
                   NULL, NULL,
-                  clutter_marshal_VOID__STRING_INT,
+                  egg_marshal_VOID__STRING_INT,
                   G_TYPE_NONE, 2,
                   G_TYPE_STRING,
                   G_TYPE_INT);
 }
 
 static void
-clutter_timeline_init (ClutterTimeline *self)
+egg_timeline_init (EggTimeline *self)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
   self->priv = priv = G_TYPE_INSTANCE_GET_PRIVATE (self,
-                                                   CLUTTER_TYPE_TIMELINE,
-                                                   ClutterTimelinePrivate);
+                                                   EGG_TYPE_TIMELINE,
+                                                   EggTimelinePrivate);
 
-  priv->fps = clutter_get_default_frame_rate ();
+  priv->fps = egg_get_default_frame_rate ();
   priv->n_frames = 0;
   priv->msecs_delta = 0;
 
@@ -582,8 +582,8 @@ clutter_timeline_init (ClutterTimeline *self)
 static gboolean
 timeline_timeout_func (gpointer data)
 {
-  ClutterTimeline        *timeline = data;
-  ClutterTimelinePrivate *priv;
+  EggTimeline        *timeline = data;
+  EggTimelinePrivate *priv;
   GTimeVal                timeval;
   guint                   n_frames;
   gulong                  msecs;
@@ -595,13 +595,13 @@ timeline_timeout_func (gpointer data)
   /* Figure out potential frame skips */
   g_get_current_time (&timeval);
 
-  CLUTTER_TIMESTAMP (SCHEDULER, "Timeline [%p] activated (cur: %d)\n",
+  EGG_TIMESTAMP (SCHEDULER, "Timeline [%p] activated (cur: %d)\n",
                      timeline,
                      priv->current_frame_num);
 
   if (!priv->prev_frame_timeval.tv_sec)
     {
-      CLUTTER_NOTE (SCHEDULER,
+      EGG_NOTE (SCHEDULER,
                     "Timeline [%p] recieved timeout before being initialised!",
                     timeline);
       priv->prev_frame_timeval = timeval;
@@ -619,7 +619,7 @@ timeline_timeout_func (gpointer data)
   priv->skipped_frames = n_frames - 1;
 
   if (priv->skipped_frames)
-    CLUTTER_TIMESTAMP (SCHEDULER,
+    EGG_TIMESTAMP (SCHEDULER,
                        "Timeline [%p], skipping %d frames\n",
                        timeline,
                        priv->skipped_frames);
@@ -627,16 +627,16 @@ timeline_timeout_func (gpointer data)
   priv->prev_frame_timeval = timeval;
 
   /* Advance frames */
-  if (priv->direction == CLUTTER_TIMELINE_FORWARD)
+  if (priv->direction == EGG_TIMELINE_FORWARD)
     priv->current_frame_num += n_frames;
   else
     priv->current_frame_num -= n_frames;
 
   /* If we have not reached the end of the timeline: */
   if (!(
-      ((priv->direction == CLUTTER_TIMELINE_FORWARD) &&
+      ((priv->direction == EGG_TIMELINE_FORWARD) &&
        (priv->current_frame_num >= priv->n_frames)) ||
-      ((priv->direction == CLUTTER_TIMELINE_BACKWARD) &&
+      ((priv->direction == EGG_TIMELINE_BACKWARD) &&
        (priv->current_frame_num <= 0))
        ))
     {
@@ -657,7 +657,7 @@ timeline_timeout_func (gpointer data)
             {
               TimelineMarker *marker = l->data;
 
-              CLUTTER_NOTE (SCHEDULER, "Marker `%s' reached", marker->name);
+              EGG_NOTE (SCHEDULER, "Marker `%s' reached", marker->name);
 
               g_signal_emit (timeline, timeline_signals[MARKER_REACHED],
                              marker->quark,
@@ -679,14 +679,14 @@ timeline_timeout_func (gpointer data)
   else
     {
       /* Handle loop or stop */
-      ClutterTimelineDirection saved_direction = priv->direction;
+      EggTimelineDirection saved_direction = priv->direction;
       guint overflow_frame_num = priv->current_frame_num;
       gint end_frame;
 
       /* In case the signal handlers want to take a peek... */
-      if (priv->direction == CLUTTER_TIMELINE_FORWARD)
+      if (priv->direction == EGG_TIMELINE_FORWARD)
         priv->current_frame_num = priv->n_frames;
-      else if (priv->direction == CLUTTER_TIMELINE_BACKWARD)
+      else if (priv->direction == EGG_TIMELINE_BACKWARD)
         priv->current_frame_num = 0;
 
       end_frame = priv->current_frame_num;
@@ -705,7 +705,7 @@ timeline_timeout_func (gpointer data)
       /* Note: If the new-frame signal handler paused the timeline
        * on the last frame we will still go ahead and send the
        * completed signal */
-      CLUTTER_NOTE (SCHEDULER,
+      EGG_NOTE (SCHEDULER,
                     "Timeline [%p] completed (cur: %d, tot: %d, drop: %d)",
                     timeline,
                     priv->current_frame_num,
@@ -743,7 +743,7 @@ timeline_timeout_func (gpointer data)
       if (priv->loop)
         {
           /* We try and interpolate smoothly around a loop */
-          if (saved_direction == CLUTTER_TIMELINE_FORWARD)
+          if (saved_direction == EGG_TIMELINE_FORWARD)
             priv->current_frame_num = overflow_frame_num - priv->n_frames;
           else
             priv->current_frame_num = priv->n_frames + overflow_frame_num;
@@ -760,7 +760,7 @@ timeline_timeout_func (gpointer data)
         }
       else
         {
-          clutter_timeline_rewind (timeline);
+          egg_timeline_rewind (timeline);
 
           priv->prev_frame_timeval.tv_sec = 0;
           priv->prev_frame_timeval.tv_usec = 0;
@@ -772,13 +772,13 @@ timeline_timeout_func (gpointer data)
 }
 
 static guint
-timeline_timeout_add (ClutterTimeline *timeline,
+timeline_timeout_add (EggTimeline *timeline,
                       guint          interval,
                       GSourceFunc    func,
                       gpointer       data,
                       GDestroyNotify notify)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
   GTimeVal timeval;
 
   priv = timeline->priv;
@@ -797,8 +797,8 @@ timeline_timeout_add (ClutterTimeline *timeline,
 static gboolean
 delay_timeout_func (gpointer data)
 {
-  ClutterTimeline *timeline = data;
-  ClutterTimelinePrivate *priv = timeline->priv;
+  EggTimeline *timeline = data;
+  EggTimelinePrivate *priv = timeline->priv;
 
   priv->delay_id = 0;
 
@@ -813,17 +813,17 @@ delay_timeout_func (gpointer data)
 }
 
 /**
- * clutter_timeline_start:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_start:
+ * @timeline: A #EggTimeline
  *
- * Starts the #ClutterTimeline playing.
+ * Starts the #EggTimeline playing.
  **/
 void
-clutter_timeline_start (ClutterTimeline *timeline)
+egg_timeline_start (EggTimeline *timeline)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -851,17 +851,17 @@ clutter_timeline_start (ClutterTimeline *timeline)
 }
 
 /**
- * clutter_timeline_pause:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_pause:
+ * @timeline: A #EggTimeline
  *
- * Pauses the #ClutterTimeline on current frame
+ * Pauses the #EggTimeline on current frame
  **/
 void
-clutter_timeline_pause (ClutterTimeline *timeline)
+egg_timeline_pause (EggTimeline *timeline)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -884,30 +884,30 @@ clutter_timeline_pause (ClutterTimeline *timeline)
 }
 
 /**
- * clutter_timeline_stop:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_stop:
+ * @timeline: A #EggTimeline
  *
- * Stops the #ClutterTimeline and moves to frame 0
+ * Stops the #EggTimeline and moves to frame 0
  **/
 void
-clutter_timeline_stop (ClutterTimeline *timeline)
+egg_timeline_stop (EggTimeline *timeline)
 {
-  clutter_timeline_pause (timeline);
-  clutter_timeline_rewind (timeline);
+  egg_timeline_pause (timeline);
+  egg_timeline_rewind (timeline);
 }
 
 /**
- * clutter_timeline_set_loop:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_set_loop:
+ * @timeline: a #EggTimeline
  * @loop: %TRUE for enable looping
  *
  * Sets whether @timeline should loop.
  */
 void
-clutter_timeline_set_loop (ClutterTimeline *timeline,
+egg_timeline_set_loop (EggTimeline *timeline,
 			   gboolean         loop)
 {
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   if (timeline->priv->loop != loop)
     {
@@ -918,69 +918,69 @@ clutter_timeline_set_loop (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_get_loop:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_loop:
+ * @timeline: a #EggTimeline
  *
  * Gets whether @timeline is looping
  *
  * Return value: %TRUE if the timeline is looping
  */
 gboolean
-clutter_timeline_get_loop (ClutterTimeline *timeline)
+egg_timeline_get_loop (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), FALSE);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), FALSE);
 
   return timeline->priv->loop;
 }
 
 /**
- * clutter_timeline_rewind:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_rewind:
+ * @timeline: A #EggTimeline
  *
- * Rewinds #ClutterTimeline to the first frame if its direction is
- * CLUTTER_TIMELINE_FORWARD and the last frame if it is
- * CLUTTER_TIMELINE_BACKWARD.
+ * Rewinds #EggTimeline to the first frame if its direction is
+ * EGG_TIMELINE_FORWARD and the last frame if it is
+ * EGG_TIMELINE_BACKWARD.
  **/
 void
-clutter_timeline_rewind (ClutterTimeline *timeline)
+egg_timeline_rewind (EggTimeline *timeline)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
-  if (priv->direction == CLUTTER_TIMELINE_FORWARD)
-    clutter_timeline_advance (timeline, 0);
-  else if (priv->direction == CLUTTER_TIMELINE_BACKWARD)
-    clutter_timeline_advance (timeline, priv->n_frames);
+  if (priv->direction == EGG_TIMELINE_FORWARD)
+    egg_timeline_advance (timeline, 0);
+  else if (priv->direction == EGG_TIMELINE_BACKWARD)
+    egg_timeline_advance (timeline, priv->n_frames);
 }
 
 /**
- * clutter_timeline_skip:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_skip:
+ * @timeline: A #EggTimeline
  * @n_frames: Number of frames to skip
  *
  * Advance timeline by requested number of frames.
  **/
 void
-clutter_timeline_skip (ClutterTimeline *timeline,
+egg_timeline_skip (EggTimeline *timeline,
                        guint            n_frames)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
-  if (priv->direction == CLUTTER_TIMELINE_FORWARD)
+  if (priv->direction == EGG_TIMELINE_FORWARD)
     {
       priv->current_frame_num += n_frames;
 
       if (priv->current_frame_num > priv->n_frames)
         priv->current_frame_num = 1;
     }
-  else if (priv->direction == CLUTTER_TIMELINE_BACKWARD)
+  else if (priv->direction == EGG_TIMELINE_BACKWARD)
     {
       priv->current_frame_num -= n_frames;
 
@@ -990,19 +990,19 @@ clutter_timeline_skip (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_advance:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_advance:
+ * @timeline: A #EggTimeline
  * @frame_num: Frame number to advance to
  *
  * Advance timeline to requested frame number
  **/
 void
-clutter_timeline_advance (ClutterTimeline *timeline,
+egg_timeline_advance (EggTimeline *timeline,
                           guint            frame_num)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -1010,51 +1010,51 @@ clutter_timeline_advance (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_get_current_frame:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_get_current_frame:
+ * @timeline: A #EggTimeline
  *
  * Request the current frame number of the timeline.
  *
  * Return Value: current frame number
  **/
 gint
-clutter_timeline_get_current_frame (ClutterTimeline *timeline)
+egg_timeline_get_current_frame (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   return timeline->priv->current_frame_num;
 }
 
 /**
- * clutter_timeline_get_n_frames:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_get_n_frames:
+ * @timeline: A #EggTimeline
  *
- * Request the total number of frames for the #ClutterTimeline.
+ * Request the total number of frames for the #EggTimeline.
  *
- * Return Value: Number of frames for this #ClutterTimeline.
+ * Return Value: Number of frames for this #EggTimeline.
  **/
 guint
-clutter_timeline_get_n_frames (ClutterTimeline *timeline)
+egg_timeline_get_n_frames (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   return timeline->priv->n_frames;
 }
 
 /**
- * clutter_timeline_set_n_frames:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_set_n_frames:
+ * @timeline: a #EggTimeline
  * @n_frames: the number of frames
  *
  * Sets the total number of frames for @timeline
  */
 void
-clutter_timeline_set_n_frames (ClutterTimeline *timeline,
+egg_timeline_set_n_frames (EggTimeline *timeline,
                                guint            n_frames)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (n_frames > 0);
 
   priv = timeline->priv;
@@ -1076,19 +1076,19 @@ clutter_timeline_set_n_frames (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_set_speed:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_set_speed:
+ * @timeline: A #EggTimeline
  * @fps: New speed of timeline as frames per second
  *
  * Set the speed in frames per second of the timeline.
  **/
 void
-clutter_timeline_set_speed (ClutterTimeline *timeline,
+egg_timeline_set_speed (EggTimeline *timeline,
                             guint            fps)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (fps > 0);
 
   priv = timeline->priv;
@@ -1122,131 +1122,131 @@ clutter_timeline_set_speed (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_get_speed:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_speed:
+ * @timeline: a #EggTimeline
  *
  * Gets the frames per second played by @timeline
  *
  * Return value: the number of frames per second.
  */
 guint
-clutter_timeline_get_speed (ClutterTimeline *timeline)
+egg_timeline_get_speed (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   return timeline->priv->fps;
 }
 
 /**
- * clutter_timeline_is_playing:
- * @timeline: A #ClutterTimeline
+ * egg_timeline_is_playing:
+ * @timeline: A #EggTimeline
  *
- * Query state of a #ClutterTimeline instance.
+ * Query state of a #EggTimeline instance.
  *
  * Return Value: TRUE if timeline is currently playing, FALSE if not.
  */
 gboolean
-clutter_timeline_is_playing (ClutterTimeline *timeline)
+egg_timeline_is_playing (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), FALSE);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), FALSE);
 
   return (timeline->priv->timeout_id != 0);
 }
 
 /**
- * clutter_timeline_clone:
- * @timeline: #ClutterTimeline to duplicate.
+ * egg_timeline_clone:
+ * @timeline: #EggTimeline to duplicate.
  *
- * Create a new #ClutterTimeline instance which has property values
+ * Create a new #EggTimeline instance which has property values
  * matching that of supplied timeline. The cloned timeline will not
  * be started and will not be positioned to the current position of
- * @timeline: you will have to start it with clutter_timeline_start().
+ * @timeline: you will have to start it with egg_timeline_start().
  *
- * Return Value: a new #ClutterTimeline, cloned from @timeline
+ * Return Value: a new #EggTimeline, cloned from @timeline
  *
  * Since 0.4
  */
-ClutterTimeline *
-clutter_timeline_clone (ClutterTimeline *timeline)
+EggTimeline *
+egg_timeline_clone (EggTimeline *timeline)
 {
-  ClutterTimeline *copy;
+  EggTimeline *copy;
 
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), NULL);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), NULL);
 
-  copy = g_object_new (CLUTTER_TYPE_TIMELINE,
-                       "fps", clutter_timeline_get_speed (timeline),
-                       "num-frames", clutter_timeline_get_n_frames (timeline),
-                       "loop", clutter_timeline_get_loop (timeline),
-                       "delay", clutter_timeline_get_delay (timeline),
-                       "direction", clutter_timeline_get_direction (timeline),
+  copy = g_object_new (EGG_TYPE_TIMELINE,
+                       "fps", egg_timeline_get_speed (timeline),
+                       "num-frames", egg_timeline_get_n_frames (timeline),
+                       "loop", egg_timeline_get_loop (timeline),
+                       "delay", egg_timeline_get_delay (timeline),
+                       "direction", egg_timeline_get_direction (timeline),
                        NULL);
 
   return copy;
 }
 
 /**
- * clutter_timeline_new_for_duration:
+ * egg_timeline_new_for_duration:
  * @msecs: Duration of the timeline in milliseconds
  *
- * Creates a new #ClutterTimeline with a duration of @msecs using
- * the value of the ClutterTimeline:fps property to compute the
+ * Creates a new #EggTimeline with a duration of @msecs using
+ * the value of the EggTimeline:fps property to compute the
  * equivalent number of frames.
  *
- * Return value: the newly created #ClutterTimeline
+ * Return value: the newly created #EggTimeline
  *
  * Since: 0.6
  */
-ClutterTimeline *
-clutter_timeline_new_for_duration (guint msecs)
+EggTimeline *
+egg_timeline_new_for_duration (guint msecs)
 {
-  return g_object_new (CLUTTER_TYPE_TIMELINE,
+  return g_object_new (EGG_TYPE_TIMELINE,
                        "duration", msecs,
                        NULL);
 }
 
 /**
- * clutter_timeline_new:
+ * egg_timeline_new:
  * @n_frames: the number of frames
  * @fps: the number of frames per second
  *
- * Create a new  #ClutterTimeline instance.
+ * Create a new  #EggTimeline instance.
  *
- * Return Value: a new #ClutterTimeline
+ * Return Value: a new #EggTimeline
  */
-ClutterTimeline*
-clutter_timeline_new (guint n_frames,
+EggTimeline*
+egg_timeline_new (guint n_frames,
 		      guint fps)
 {
   g_return_val_if_fail (n_frames > 0, NULL);
   g_return_val_if_fail (fps > 0, NULL);
 
-  return g_object_new (CLUTTER_TYPE_TIMELINE,
+  return g_object_new (EGG_TYPE_TIMELINE,
 		       "fps", fps,
 		       "num-frames", n_frames,
 		       NULL);
 }
 
 /**
- * clutter_timeline_get_delay:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_delay:
+ * @timeline: a #EggTimeline
  *
- * Retrieves the delay set using clutter_timeline_set_delay().
+ * Retrieves the delay set using egg_timeline_set_delay().
  *
  * Return value: the delay in milliseconds.
  *
  * Since: 0.4
  */
 guint
-clutter_timeline_get_delay (ClutterTimeline *timeline)
+egg_timeline_get_delay (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   return timeline->priv->delay;
 }
 
 /**
- * clutter_timeline_set_delay:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_set_delay:
+ * @timeline: a #EggTimeline
  * @msecs: delay in milliseconds
  *
  * Sets the delay, in milliseconds, before @timeline should start.
@@ -1254,12 +1254,12 @@ clutter_timeline_get_delay (ClutterTimeline *timeline)
  * Since: 0.4
  */
 void
-clutter_timeline_set_delay (ClutterTimeline *timeline,
+egg_timeline_set_delay (EggTimeline *timeline,
                             guint            msecs)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -1271,22 +1271,22 @@ clutter_timeline_set_delay (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_get_duration:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_duration:
+ * @timeline: a #EggTimeline
  *
- * Retrieves the duration of a #ClutterTimeline in milliseconds.
- * See clutter_timeline_set_duration().
+ * Retrieves the duration of a #EggTimeline in milliseconds.
+ * See egg_timeline_set_duration().
  *
  * Return value: the duration of the timeline, in milliseconds.
  *
  * Since: 0.6
  */
 guint
-clutter_timeline_get_duration (ClutterTimeline *timeline)
+egg_timeline_get_duration (EggTimeline *timeline)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   priv = timeline->priv;
 
@@ -1294,23 +1294,23 @@ clutter_timeline_get_duration (ClutterTimeline *timeline)
 }
 
 /**
- * clutter_timeline_set_duration:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_set_duration:
+ * @timeline: a #EggTimeline
  * @msecs: duration of the timeline in milliseconds
  *
  * Sets the duration of the timeline, in milliseconds. The speed
- * of the timeline depends on the ClutterTimeline:fps setting.
+ * of the timeline depends on the EggTimeline:fps setting.
  *
  * Since: 0.6
  */
 void
-clutter_timeline_set_duration (ClutterTimeline *timeline,
+egg_timeline_set_duration (EggTimeline *timeline,
                                guint            msecs)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
   guint n_frames;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -1318,12 +1318,12 @@ clutter_timeline_set_duration (ClutterTimeline *timeline,
   if (n_frames < 1)
     n_frames = 1;
 
-  clutter_timeline_set_n_frames (timeline, n_frames);
+  egg_timeline_set_n_frames (timeline, n_frames);
 }
 
 /**
- * clutter_timeline_get_progress:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_progress:
+ * @timeline: a #EggTimeline
  *
  * The position of the timeline in a [0, 1] interval.
  *
@@ -1332,78 +1332,78 @@ clutter_timeline_set_duration (ClutterTimeline *timeline,
  * Since: 0.6
  */
 gdouble
-clutter_timeline_get_progress (ClutterTimeline *timeline)
+egg_timeline_get_progress (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0.);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0.);
 
-  return CLUTTER_FIXED_TO_DOUBLE (clutter_timeline_get_progressx (timeline));
+  return EGG_FIXED_TO_DOUBLE (egg_timeline_get_progressx (timeline));
 }
 
 /**
- * clutter_timeline_get_progressx:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_progressx:
+ * @timeline: a #EggTimeline
  *
- * Fixed point version of clutter_timeline_get_progress().
+ * Fixed point version of egg_timeline_get_progress().
  *
  * Return value: the position of the timeline as a fixed point value
  *
  * Since: 0.6
  */
-ClutterFixed
-clutter_timeline_get_progressx (ClutterTimeline *timeline)
+EggFixed
+egg_timeline_get_progressx (EggTimeline *timeline)
 {
-  ClutterTimelinePrivate *priv;
-  ClutterFixed progress;
+  EggTimelinePrivate *priv;
+  EggFixed progress;
 
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
   priv = timeline->priv;
 
-  progress = clutter_qdivx (CLUTTER_INT_TO_FIXED (priv->current_frame_num),
-			    CLUTTER_INT_TO_FIXED (priv->n_frames));
+  progress = egg_qdivx (EGG_INT_TO_FIXED (priv->current_frame_num),
+			    EGG_INT_TO_FIXED (priv->n_frames));
 
-  if (priv->direction == CLUTTER_TIMELINE_BACKWARD)
+  if (priv->direction == EGG_TIMELINE_BACKWARD)
     progress = CFX_ONE - progress;
 
   return progress;
 }
 
 /**
- * clutter_timeline_get_direction:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_direction:
+ * @timeline: a #EggTimeline
  *
  * Retrieves the direction of the timeline set with
- * clutter_timeline_set_direction().
+ * egg_timeline_set_direction().
  *
  * Return value: the direction of the timeline
  *
  * Since: 0.6
  */
-ClutterTimelineDirection
-clutter_timeline_get_direction (ClutterTimeline *timeline)
+EggTimelineDirection
+egg_timeline_get_direction (EggTimeline *timeline)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), CLUTTER_TIMELINE_FORWARD);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), EGG_TIMELINE_FORWARD);
 
   return timeline->priv->direction;
 }
 
 /**
- * clutter_timeline_set_direction:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_set_direction:
+ * @timeline: a #EggTimeline
  * @direction: the direction of the timeline
  *
- * Sets the direction of @timeline, either %CLUTTER_TIMELINE_FORWARD or
- * %CLUTTER_TIMELINE_BACKWARD.
+ * Sets the direction of @timeline, either %EGG_TIMELINE_FORWARD or
+ * %EGG_TIMELINE_BACKWARD.
  *
  * Since: 0.6
  */
 void
-clutter_timeline_set_direction (ClutterTimeline          *timeline,
-                                ClutterTimelineDirection  direction)
+egg_timeline_set_direction (EggTimeline          *timeline,
+                                EggTimelineDirection  direction)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
 
   priv = timeline->priv;
 
@@ -1419,13 +1419,13 @@ clutter_timeline_set_direction (ClutterTimeline          *timeline,
 }
 
 /**
- * clutter_timeline_get_delta:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_get_delta:
+ * @timeline: a #EggTimeline
  * @msecs: return location for the milliseconds elapsed since the last
  *   frame, or %NULL
  *
  * Retrieves the number of frames and the amount of time elapsed since
- * the last ClutterTimeline::new-frame signal.
+ * the last EggTimeline::new-frame signal.
  *
  * This function is only useful inside handlers for the ::new-frame
  * signal, and its behaviour is undefined if the timeline is not
@@ -1436,14 +1436,14 @@ clutter_timeline_set_direction (ClutterTimeline          *timeline,
  * Since: 0.6
  */
 guint
-clutter_timeline_get_delta (ClutterTimeline *timeline,
+egg_timeline_get_delta (EggTimeline *timeline,
                             guint           *msecs)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
 
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), 0);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), 0);
 
-  if (!clutter_timeline_is_playing (timeline))
+  if (!egg_timeline_is_playing (timeline))
     {
       if (msecs)
         *msecs = 0;
@@ -1460,11 +1460,11 @@ clutter_timeline_get_delta (ClutterTimeline *timeline,
 }
 
 static inline void
-clutter_timeline_add_marker_internal (ClutterTimeline *timeline,
+egg_timeline_add_marker_internal (EggTimeline *timeline,
                                       const gchar     *marker_name,
                                       guint            frame_num)
 {
-  ClutterTimelinePrivate *priv = timeline->priv;
+  EggTimelinePrivate *priv = timeline->priv;
   TimelineMarker *marker;
   GSList *markers;
 
@@ -1499,8 +1499,8 @@ clutter_timeline_add_marker_internal (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_add_marker_at_frame:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_add_marker_at_frame:
+ * @timeline: a #EggTimeline
  * @marker_name: the unique name for this marker
  * @frame_num: the marker's frame
  *
@@ -1508,55 +1508,55 @@ clutter_timeline_add_marker_internal (ClutterTimeline *timeline,
  * for a specific frame. Once @timeline reaches @frame_num, it will emit
  * a ::marker-reached signal for each marker attached to that frame.
  *
- * A marker can be removed with clutter_timeline_remove_marker(). The
+ * A marker can be removed with egg_timeline_remove_marker(). The
  * timeline can be advanced to a marker using
- * clutter_timeline_advance_to_marker().
+ * egg_timeline_advance_to_marker().
  *
  * Since: 0.8
  */
 void
-clutter_timeline_add_marker_at_frame (ClutterTimeline *timeline,
+egg_timeline_add_marker_at_frame (EggTimeline *timeline,
                                       const gchar     *marker_name,
                                       guint            frame_num)
 {
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (marker_name != NULL);
-  g_return_if_fail (frame_num <= clutter_timeline_get_n_frames (timeline));
+  g_return_if_fail (frame_num <= egg_timeline_get_n_frames (timeline));
 
-  clutter_timeline_add_marker_internal (timeline, marker_name, frame_num);
+  egg_timeline_add_marker_internal (timeline, marker_name, frame_num);
 }
 
 /**
- * clutter_timeline_add_marker_at_time:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_add_marker_at_time:
+ * @timeline: a #EggTimeline
  * @marker_name: the unique name for this marker
  * @msecs: position of the marker in milliseconds
  *
- * Time-based variant of clutter_timeline_add_marker_at_frame().
+ * Time-based variant of egg_timeline_add_marker_at_frame().
  *
  * Adds a named marker at @msecs.
  *
  * Since: 0.8
  */
 void
-clutter_timeline_add_marker_at_time (ClutterTimeline *timeline,
+egg_timeline_add_marker_at_time (EggTimeline *timeline,
                                      const gchar     *marker_name,
                                      guint            msecs)
 {
   guint frame_num;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (marker_name != NULL);
-  g_return_if_fail (msecs <= clutter_timeline_get_duration (timeline));
+  g_return_if_fail (msecs <= egg_timeline_get_duration (timeline));
 
   frame_num = msecs * timeline->priv->fps / 1000;
 
-  clutter_timeline_add_marker_internal (timeline, marker_name, frame_num);
+  egg_timeline_add_marker_internal (timeline, marker_name, frame_num);
 }
 
 /**
- * clutter_timeline_list_markers:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_list_markers:
+ * @timeline: a #EggTimeline
  * @frame_num: the frame number to check, or -1
  * @n_markers: the number of markers returned
  *
@@ -1571,15 +1571,15 @@ clutter_timeline_add_marker_at_time (ClutterTimeline *timeline,
  * Since: 0.8
  */
 gchar **
-clutter_timeline_list_markers (ClutterTimeline *timeline,
+egg_timeline_list_markers (EggTimeline *timeline,
                                gint             frame_num,
                                gsize           *n_markers)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
   gchar **retval = NULL;
   gsize i;
 
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), NULL);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), NULL);
 
   priv = timeline->priv;
 
@@ -1614,8 +1614,8 @@ clutter_timeline_list_markers (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_advance_to_marker:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_advance_to_marker:
+ * @timeline: a #EggTimeline
  * @marker_name: the name of the marker
  *
  * Advances @timeline to the frame of the given @marker_name.
@@ -1623,13 +1623,13 @@ clutter_timeline_list_markers (ClutterTimeline *timeline,
  * Since: 0.8
  */
 void
-clutter_timeline_advance_to_marker (ClutterTimeline *timeline,
+egg_timeline_advance_to_marker (EggTimeline *timeline,
                                     const gchar     *marker_name)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
   TimelineMarker *marker;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (marker_name != NULL);
 
   priv = timeline->priv;
@@ -1641,12 +1641,12 @@ clutter_timeline_advance_to_marker (ClutterTimeline *timeline,
       return;
     }
 
-  clutter_timeline_advance (timeline, marker->frame_num);
+  egg_timeline_advance (timeline, marker->frame_num);
 }
 
 /**
- * clutter_timeline_remove_marker:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_remove_marker:
+ * @timeline: a #EggTimeline
  * @marker_name: the name of the marker to remove
  *
  * Removes @marker_name, if found, from @timeline.
@@ -1654,14 +1654,14 @@ clutter_timeline_advance_to_marker (ClutterTimeline *timeline,
  * Since: 0.8
  */
 void
-clutter_timeline_remove_marker (ClutterTimeline *timeline,
+egg_timeline_remove_marker (EggTimeline *timeline,
                                 const gchar     *marker_name)
 {
-  ClutterTimelinePrivate *priv;
+  EggTimelinePrivate *priv;
   TimelineMarker *marker;
   GSList *markers;
 
-  g_return_if_fail (CLUTTER_IS_TIMELINE (timeline));
+  g_return_if_fail (EGG_IS_TIMELINE (timeline));
   g_return_if_fail (marker_name != NULL);
 
   priv = timeline->priv;
@@ -1703,8 +1703,8 @@ clutter_timeline_remove_marker (ClutterTimeline *timeline,
 }
 
 /**
- * clutter_timeline_has_marker:
- * @timeline: a #ClutterTimeline
+ * egg_timeline_has_marker:
+ * @timeline: a #EggTimeline
  * @marker_name: the name of the marker
  *
  * Checks whether @timeline has a marker set with the given name.
@@ -1714,10 +1714,10 @@ clutter_timeline_remove_marker (ClutterTimeline *timeline,
  * Since: 0.8
  */
 gboolean
-clutter_timeline_has_marker (ClutterTimeline *timeline,
+egg_timeline_has_marker (EggTimeline *timeline,
                              const gchar     *marker_name)
 {
-  g_return_val_if_fail (CLUTTER_IS_TIMELINE (timeline), FALSE);
+  g_return_val_if_fail (EGG_IS_TIMELINE (timeline), FALSE);
   g_return_val_if_fail (marker_name != NULL, FALSE);
 
   return NULL != g_hash_table_lookup (timeline->priv->markers_by_name,

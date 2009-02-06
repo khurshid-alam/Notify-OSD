@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter-hack.h>
+#include <egg/egg-hack.h>
 
 #define TEST_TIMELINE_FPS 10
 #define TEST_TIMELINE_FRAME_COUNT 5
 #define TEST_WATCHDOG_KICK_IN_SECONDS 10
 
 typedef struct _TestState {
-    ClutterTimeline *timeline;
+    EggTimeline *timeline;
     gint rewind_count;
 }TestState;
 
@@ -34,17 +34,17 @@ watchdog_timeout (TestState *state)
 
 
 static void
-new_frame_cb (ClutterTimeline *timeline,
+new_frame_cb (EggTimeline *timeline,
               gint frame_num,
               TestState *state)
 {
-  gint current_frame = clutter_timeline_get_current_frame (timeline);
+  gint current_frame = egg_timeline_get_current_frame (timeline);
 
   if (current_frame == TEST_TIMELINE_FRAME_COUNT)
     {
       g_print ("new-frame signal recieved (end of timeline)\n");
       g_print ("Rewinding timeline\n");
-      clutter_timeline_rewind (timeline);
+      egg_timeline_rewind (timeline);
       state->rewind_count++;
     }
   else
@@ -72,10 +72,10 @@ main (int argc, char **argv)
 {
   TestState state;
 
-  clutter_init (&argc, &argv);
+  egg_init (&argc, &argv);
   
   state.timeline = 
-    clutter_timeline_new (TEST_TIMELINE_FRAME_COUNT,
+    egg_timeline_new (TEST_TIMELINE_FRAME_COUNT,
                           TEST_TIMELINE_FPS);
   g_signal_connect (G_OBJECT(state.timeline),
                     "new-frame",
@@ -87,9 +87,9 @@ main (int argc, char **argv)
                  &state);
   state.rewind_count = 0;
 
-  clutter_timeline_start (state.timeline);
+  egg_timeline_start (state.timeline);
   
-  clutter_main();
+  egg_main();
   
   return EXIT_FAILURE;
 }

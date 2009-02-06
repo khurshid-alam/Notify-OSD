@@ -26,36 +26,36 @@
  */
 
 /**
- * SECTION:clutter-units
+ * SECTION:egg-units
  * @short_description: A logical distance unit.
  *
- * Clutter units are logical units with granularity greater than that of the
- * device units; they are used by #ClutterActorBox and the units-based family
- * of #ClutterActor functions. To convert between Clutter units and device
- * units, use %CLUTTER_UNITS_FROM_DEVICE and %CLUTTER_UNITS_TO_DEVICE macros.
+ * Egg units are logical units with granularity greater than that of the
+ * device units; they are used by #EggActorBox and the units-based family
+ * of #EggActor functions. To convert between Egg units and device
+ * units, use %EGG_UNITS_FROM_DEVICE and %EGG_UNITS_TO_DEVICE macros.
  *
- * #ClutterUnit<!-- -->s can be converted from other units like millimeters,
+ * #EggUnit<!-- -->s can be converted from other units like millimeters,
  * typographic points (at the current resolution) and percentages. It is
- * also possible to convert fixed point values to and from #ClutterUnit
+ * also possible to convert fixed point values to and from #EggUnit
  * values.
  *
- * In order to register a #ClutterUnit property, the #ClutterParamSpecUnit
+ * In order to register a #EggUnit property, the #EggParamSpecUnit
  * #GParamSpec sub-class should be used:
  *
  * |[
  *   GParamSpec *pspec;
  *
- *   pspec = clutter_param_spec_unit ("width",
+ *   pspec = egg_param_spec_unit ("width",
  *                                    "Width",
  *                                    "Width of the actor, in units",
- *                                    0, CLUTTER_MAXUNIT,
+ *                                    0, EGG_MAXUNIT,
  *                                    0,
  *                                    G_PARAM_READWRITE);
  *   g_object_class_install_property (gobject_class, PROP_WIDTH, pspec);
  * ]|
  *
- * A #GValue holding units can be manipulated using clutter_value_set_unit()
- * and clutter_value_get_unit(). #GValue<!-- -->s containing a #ClutterUnit
+ * A #GValue holding units can be manipulated using egg_value_set_unit()
+ * and egg_value_get_unit(). #GValue<!-- -->s containing a #EggUnit
  * value can also be transformed to #GValue<!-- -->s containing integer
  * values - with a loss of precision:
  *
@@ -64,7 +64,7 @@
  *   units_to_int (const GValue *src,
  *                 GValue       *dest)
  *   {
- *     g_return_val_if_fail (CLUTTER_VALUE_HOLDS_UNIT (src), FALSE);
+ *     g_return_val_if_fail (EGG_VALUE_HOLDS_UNIT (src), FALSE);
  *
  *     g_value_init (dest, G_TYPE_INT);
  *     return g_value_transform (src, &dest);
@@ -78,17 +78,17 @@
  *   units_to_int (const GValue *src,
  *                 GValue       *dest)
  *   {
- *     g_return_val_if_fail (CLUTTER_VALUE_HOLDS_UNIT (src), FALSE);
+ *     g_return_val_if_fail (EGG_VALUE_HOLDS_UNIT (src), FALSE);
  *
  *     g_value_init (dest, G_TYPE_INT);
  *     g_value_set_int (dest,
- *                      CLUTTER_UNITS_TO_INT (clutter_value_get_unit (src)));
+ *                      EGG_UNITS_TO_INT (egg_value_get_unit (src)));
  *
  *     return TRUE;
  *   }
  * ]|
  *
- * #ClutterUnit is available since Clutter 0.4
+ * #EggUnit is available since Egg 0.4
  */
 
 #ifdef HAVE_CONFIG_H
@@ -98,9 +98,9 @@
 #include <glib-object.h>
 #include <gobject/gvaluecollector.h>
 
-#include "clutter-units.h"
-// #include "clutter-private.h"
-#include "clutter-hack.h"
+#include "egg-units.h"
+// #include "egg-private.h"
+#include "egg-hack.h"
 
 static GTypeInfo _info = {
  0,
@@ -118,20 +118,20 @@ static GTypeInfo _info = {
 static GTypeFundamentalInfo _finfo = { 0, };
 
 static void
-clutter_value_init_unit (GValue *value)
+egg_value_init_unit (GValue *value)
 {
   value->data[0].v_int = 0;
 }
 
 static void
-clutter_value_copy_unit (const GValue *src,
+egg_value_copy_unit (const GValue *src,
                          GValue       *dest)
 {
   dest->data[0].v_int = src->data[0].v_int;
 }
 
 static gchar *
-clutter_value_collect_unit (GValue      *value,
+egg_value_collect_unit (GValue      *value,
                             guint        n_collect_values,
                             GTypeCValue *collect_values,
                             guint        collect_flags)
@@ -142,7 +142,7 @@ clutter_value_collect_unit (GValue      *value,
 }
 
 static gchar *
-clutter_value_lcopy_unit (const GValue *value,
+egg_value_lcopy_unit (const GValue *value,
                           guint         n_collect_values,
                           GTypeCValue  *collect_values,
                           guint         collect_flags)
@@ -159,55 +159,55 @@ clutter_value_lcopy_unit (const GValue *value,
 }
 
 static void
-clutter_value_transform_unit_int (const GValue *src,
+egg_value_transform_unit_int (const GValue *src,
                                   GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_UNITS_TO_INT (src->data[0].v_int);
+  dest->data[0].v_int = EGG_UNITS_TO_INT (src->data[0].v_int);
 }
 
 static void
-clutter_value_transform_int_unit (const GValue *src,
+egg_value_transform_int_unit (const GValue *src,
                                   GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_UNITS_FROM_INT (src->data[0].v_int);
+  dest->data[0].v_int = EGG_UNITS_FROM_INT (src->data[0].v_int);
 }
 
-static const GTypeValueTable _clutter_unit_value_table = {
-  clutter_value_init_unit,
+static const GTypeValueTable _egg_unit_value_table = {
+  egg_value_init_unit,
   NULL,
-  clutter_value_copy_unit,
+  egg_value_copy_unit,
   NULL,
   "i",
-  clutter_value_collect_unit,
+  egg_value_collect_unit,
   "p",
-  clutter_value_lcopy_unit
+  egg_value_lcopy_unit
 };
 
 GType
-clutter_unit_get_type (void)
+egg_unit_get_type (void)
 {
-  static GType _clutter_unit_type = 0;
+  static GType _egg_unit_type = 0;
 
-  if (G_UNLIKELY (_clutter_unit_type == 0))
+  if (G_UNLIKELY (_egg_unit_type == 0))
     {
-      _info.value_table = & _clutter_unit_value_table;
-      _clutter_unit_type =
+      _info.value_table = & _egg_unit_value_table;
+      _egg_unit_type =
         g_type_register_fundamental (g_type_fundamental_next (),
-                                     I_("ClutterUnit"),
+                                     I_("EggUnit"),
                                      &_info, &_finfo, 0);
 
-      g_value_register_transform_func (_clutter_unit_type, G_TYPE_INT,
-                                       clutter_value_transform_unit_int);
-      g_value_register_transform_func (G_TYPE_INT, _clutter_unit_type,
-                                       clutter_value_transform_int_unit);
+      g_value_register_transform_func (_egg_unit_type, G_TYPE_INT,
+                                       egg_value_transform_unit_int);
+      g_value_register_transform_func (G_TYPE_INT, _egg_unit_type,
+                                       egg_value_transform_int_unit);
     }
 
-  return _clutter_unit_type;
+  return _egg_unit_type;
 }
 
 /**
- * clutter_value_set_unit:
- * @value: a #GValue initialized to #CLUTTER_TYPE_UNIT
+ * egg_value_set_unit:
+ * @value: a #GValue initialized to #EGG_TYPE_UNIT
  * @units: the units to set
  *
  * Sets @value to @units
@@ -215,28 +215,28 @@ clutter_unit_get_type (void)
  * Since: 0.8
  */
 void
-clutter_value_set_unit (GValue      *value,
-                        ClutterUnit  units)
+egg_value_set_unit (GValue      *value,
+                        EggUnit  units)
 {
-  g_return_if_fail (CLUTTER_VALUE_HOLDS_UNIT (value));
+  g_return_if_fail (EGG_VALUE_HOLDS_UNIT (value));
 
   value->data[0].v_int = units;
 }
 
 /**
- * clutter_value_get_unit:
- * @value: a #GValue initialized to #CLUTTER_TYPE_UNIT
+ * egg_value_get_unit:
+ * @value: a #GValue initialized to #EGG_TYPE_UNIT
  *
- * Gets the #ClutterUnit<!-- -->s contained in @value.
+ * Gets the #EggUnit<!-- -->s contained in @value.
  *
  * Return value: the units inside the passed #GValue
  *
  * Since: 0.8
  */
-ClutterUnit
-clutter_value_get_unit (const GValue *value)
+EggUnit
+egg_value_get_unit (const GValue *value)
 {
-  g_return_val_if_fail (CLUTTER_VALUE_HOLDS_UNIT (value), 0);
+  g_return_val_if_fail (EGG_VALUE_HOLDS_UNIT (value), 0);
 
   return value->data[0].v_int;
 }
@@ -244,10 +244,10 @@ clutter_value_get_unit (const GValue *value)
 static void
 param_unit_init (GParamSpec *pspec)
 {
-  ClutterParamSpecUnit *uspec = CLUTTER_PARAM_SPEC_UNIT (pspec);
+  EggParamSpecUnit *uspec = EGG_PARAM_SPEC_UNIT (pspec);
 
-  uspec->minimum = CLUTTER_MINUNIT;
-  uspec->maximum = CLUTTER_MAXUNIT;
+  uspec->minimum = EGG_MINUNIT;
+  uspec->maximum = EGG_MAXUNIT;
   uspec->default_value = 0;
 }
 
@@ -255,25 +255,25 @@ static void
 param_unit_set_default (GParamSpec *pspec,
                         GValue     *value)
 {
-  value->data[0].v_int = CLUTTER_PARAM_SPEC_UNIT (pspec)->default_value;
+  value->data[0].v_int = EGG_PARAM_SPEC_UNIT (pspec)->default_value;
 }
 
 static gboolean
 param_unit_validate (GParamSpec *pspec,
                      GValue     *value)
 {
-  ClutterParamSpecUnit *uspec = CLUTTER_PARAM_SPEC_UNIT (pspec);
-  gint oval = CLUTTER_UNITS_TO_INT (value->data[0].v_int);
+  EggParamSpecUnit *uspec = EGG_PARAM_SPEC_UNIT (pspec);
+  gint oval = EGG_UNITS_TO_INT (value->data[0].v_int);
   gint min, max, val;
 
-  g_assert (CLUTTER_IS_PARAM_SPEC_UNIT (pspec));
+  g_assert (EGG_IS_PARAM_SPEC_UNIT (pspec));
 
   /* we compare the integer part of the value because the minimum
    * and maximum values cover just that part of the representation
    */
   min = uspec->minimum; 
   max = uspec->maximum;
-  val = CLUTTER_UNITS_TO_INT (value->data[0].v_int);
+  val = EGG_UNITS_TO_INT (value->data[0].v_int);
 
   val = CLAMP (val, min, max);
   if (val != oval)
@@ -297,24 +297,24 @@ param_unit_values_cmp (GParamSpec   *pspec,
 }
 
 GType
-clutter_param_unit_get_type (void)
+egg_param_unit_get_type (void)
 {
   static GType pspec_type = 0;
 
   if (G_UNLIKELY (pspec_type == 0))
     {
       const GParamSpecTypeInfo pspec_info = {
-        sizeof (ClutterParamSpecUnit),
+        sizeof (EggParamSpecUnit),
         16,
         param_unit_init,
-        CLUTTER_TYPE_UNIT,
+        EGG_TYPE_UNIT,
         NULL,
         param_unit_set_default,
         param_unit_validate,
         param_unit_values_cmp,
       };
 
-      pspec_type = g_param_type_register_static (I_("ClutterParamSpecUnit"),
+      pspec_type = g_param_type_register_static (I_("EggParamSpecUnit"),
                                                  &pspec_info);
     }
 
@@ -322,7 +322,7 @@ clutter_param_unit_get_type (void)
 }
 
 /**
- * clutter_param_spec_unit:
+ * egg_param_spec_unit:
  * @name: name of the property
  * @nick: short name
  * @blurb: description (can be translatable)
@@ -331,27 +331,27 @@ clutter_param_unit_get_type (void)
  * @default_value: default value
  * @flags: flags for the param spec
  *
- * Creates a #GParamSpec for properties using #ClutterUnit<!-- -->s.
+ * Creates a #GParamSpec for properties using #EggUnit<!-- -->s.
  *
  * Return value: the newly created #GParamSpec
  *
  * Since: 0.8
  */
 GParamSpec *
-clutter_param_spec_unit (const gchar *name,
+egg_param_spec_unit (const gchar *name,
                          const gchar *nick,
                          const gchar *blurb,
-                         ClutterUnit  minimum,
-                         ClutterUnit  maximum,
-                         ClutterUnit  default_value,
+                         EggUnit  minimum,
+                         EggUnit  maximum,
+                         EggUnit  default_value,
                          GParamFlags  flags)
 {
-  ClutterParamSpecUnit *uspec;
+  EggParamSpecUnit *uspec;
 
   g_return_val_if_fail (default_value >= minimum && default_value <= maximum,
                         NULL);
 
-  uspec = g_param_spec_internal (CLUTTER_TYPE_PARAM_UNIT,
+  uspec = g_param_spec_internal (EGG_TYPE_PARAM_UNIT,
                                  name, nick, blurb,
                                  flags);
   uspec->minimum = minimum;

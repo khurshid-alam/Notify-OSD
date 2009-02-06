@@ -25,8 +25,8 @@
 #include <pixman.h>
 #include <math.h>
 
-#include <clutter/clutter-hack.h>
-#include <clutter/clutter-alpha.h>
+#include <egg/egg-hack.h>
+#include <egg/egg-alpha.h>
 
 #include "bubble.h"
 #include "defaults.h"
@@ -56,8 +56,8 @@ struct _BubblePrivate {
 	gchar*       synchronous;
 	gboolean     urgent;
 	gboolean     composited;
-	ClutterAlpha *alpha;
-	ClutterTimeline *timeline;
+	EggAlpha *alpha;
+	EggTimeline *timeline;
 	guint        draw_handler_id;
 	guint        pointer_update_id;
 	cairo_surface_t* blurred_content;
@@ -2076,7 +2076,7 @@ bubble_get_window (Bubble *bubble)
 }
 
 static void
-fade_cb (ClutterTimeline *timeline,
+fade_cb (EggTimeline *timeline,
 	 gint frame_no,
 	 Bubble *bubble)
 {
@@ -2084,15 +2084,15 @@ fade_cb (ClutterTimeline *timeline,
 
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	opacity = (float)clutter_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
-		/ (float)CLUTTER_ALPHA_MAX_ALPHA
+	opacity = (float)egg_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
+		/ (float)EGG_ALPHA_MAX_ALPHA
 		* 0.95f;
 
 	gtk_window_set_opacity (bubble_get_window (bubble), opacity);
 }
 
 static void
-fade_out_completed_cb (ClutterTimeline *timeline,
+fade_out_completed_cb (EggTimeline *timeline,
 		       Bubble *bubble)
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
@@ -2104,7 +2104,7 @@ fade_out_completed_cb (ClutterTimeline *timeline,
 
 
 static void
-fade_in_completed_cb (ClutterTimeline *timeline,
+fade_in_completed_cb (EggTimeline *timeline,
 		      Bubble *bubble)
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
@@ -2131,7 +2131,7 @@ void
 bubble_fade_in (Bubble *self,
 		guint   msecs)
 {
-	ClutterTimeline *timeline;
+	EggTimeline *timeline;
 
 	g_return_if_fail (IS_BUBBLE (self));
 
@@ -2142,7 +2142,7 @@ bubble_fade_in (Bubble *self,
 		return;
 	}
 
-	timeline = clutter_timeline_new_for_duration (msecs);
+	timeline = egg_timeline_new_for_duration (msecs);
 
 	if (GET_PRIVATE (self)->alpha != NULL)
 	{
@@ -2151,8 +2151,8 @@ bubble_fade_in (Bubble *self,
 	}
 
 	GET_PRIVATE (self)->alpha =
-		clutter_alpha_new_full (timeline,
-					CLUTTER_ALPHA_RAMP_INC,
+		egg_alpha_new_full (timeline,
+					EGG_ALPHA_RAMP_INC,
 					NULL,
 					NULL);
 	g_object_unref (timeline);
@@ -2167,7 +2167,7 @@ bubble_fade_in (Bubble *self,
 			  G_CALLBACK (fade_cb),
 			  self);
 
-	clutter_timeline_start (timeline);
+	egg_timeline_start (timeline);
 
 	gtk_window_set_opacity (bubble_get_window (self), 0.0);
 	bubble_show (self);	
@@ -2177,11 +2177,11 @@ void
 bubble_fade_out (Bubble *self,
 		 guint   msecs)
 {
-	ClutterTimeline *timeline;
+	EggTimeline *timeline;
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	timeline = clutter_timeline_new_for_duration (msecs);
+	timeline = egg_timeline_new_for_duration (msecs);
 	GET_PRIVATE (self)->timeline = timeline;
 
 	if (GET_PRIVATE (self)->alpha != NULL)
@@ -2191,8 +2191,8 @@ bubble_fade_out (Bubble *self,
 	}
 
 	GET_PRIVATE (self)->alpha =
-		clutter_alpha_new_full (timeline,
-					CLUTTER_ALPHA_RAMP_DEC,
+		egg_alpha_new_full (timeline,
+					EGG_ALPHA_RAMP_DEC,
 					NULL,
 					NULL);
 
@@ -2205,7 +2205,7 @@ bubble_fade_out (Bubble *self,
 			  G_CALLBACK (fade_cb),
 			  self);
 
-	clutter_timeline_start (timeline);
+	egg_timeline_start (timeline);
 }
 
 gboolean
@@ -2238,7 +2238,7 @@ bubble_hide (Bubble* self)
 
 	if (GET_PRIVATE (self)->timeline)
 	{
-		clutter_timeline_stop (GET_PRIVATE (self)->timeline);
+		egg_timeline_stop (GET_PRIVATE (self)->timeline);
 		g_object_unref (GET_PRIVATE (self)->timeline);
 		GET_PRIVATE (self)->timeline = NULL;
 	}

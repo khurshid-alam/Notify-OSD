@@ -32,18 +32,18 @@
 #include <glib-object.h>
 #include <gobject/gvaluecollector.h>
 
-#include "clutter-fixed.h"
+#include "egg-fixed.h"
 
-// #include "clutter-private.h"
-#include "clutter-hack.h"
+// #include "egg-private.h"
+#include "egg-hack.h"
 
 
 
 /**
- * SECTION:clutter-fixed
+ * SECTION:egg-fixed
  * @short_description: Fixed Point API
  *
- * Clutter has a fixed point API targeted at platforms without a
+ * Egg has a fixed point API targeted at platforms without a
  * floating point unit, such as embedded devices. On such platforms
  * this API should be preferred to the floating point one as it does
  * not trigger the slow path of software emulation, relying on integer
@@ -69,7 +69,7 @@
  *   </listitem>
  *   <listitem>
  *     <para>Two fixed point numbers can only be multiplied and divided by the
- *     provided #CLUTTER_FIXED_MUL and #CLUTTER_FIXED_DIV macros.</para>
+ *     provided #EGG_FIXED_MUL and #EGG_FIXED_DIV macros.</para>
  *   </listitem>
  * </itemizedlist>
  */
@@ -83,7 +83,7 @@
  * curve is steep, but improving rapidly. If this precission
  * is not enough, we can increase the size of the table
  */
-static ClutterFixed sin_tbl [] =
+static EggFixed sin_tbl [] =
 {
  0x00000000L, 0x00000192L, 0x00000324L, 0x000004B6L,
  0x00000648L, 0x000007DAL, 0x0000096CL, 0x00000AFEL,
@@ -153,7 +153,7 @@ static ClutterFixed sin_tbl [] =
 };
 
 /* the difference of the angle for two adjacent values in the table
- * expressed as ClutterFixed number
+ * expressed as EggFixed number
  */
 #define CFX_SIN_STEP 0x00000192
 
@@ -170,7 +170,7 @@ const double _magic = 68719476736.0 * 1.5;
 #endif
 
 /*
- * clutter_double_to_fixed :
+ * egg_double_to_fixed :
  * @value: value to be converted
  *
  * A fast conversion from double precision floating to fixed point
@@ -179,11 +179,11 @@ const double _magic = 68719476736.0 * 1.5;
  *
  * Since: 0.2
  */
-ClutterFixed
-clutter_double_to_fixed (double val)
+EggFixed
+egg_double_to_fixed (double val)
 {
 #ifdef CFX_NO_FAST_CONVERSIONS
-    return (ClutterFixed)(val * (double)CFX_ONE);
+    return (EggFixed)(val * (double)CFX_ONE);
 #else
     union
     {
@@ -198,7 +198,7 @@ clutter_double_to_fixed (double val)
 }
 
 /*
- * clutter_double_to_int :
+ * egg_double_to_int :
  * @value: value to be converted
  *
  * A fast conversion from doulbe precision floatint point  to int;
@@ -209,7 +209,7 @@ clutter_double_to_fixed (double val)
  * Since: 0.2
  */
 gint
-clutter_double_to_int (double val)
+egg_double_to_int (double val)
 {
 #ifdef CFX_NO_FAST_CONVERSIONS
     return (gint)(val);
@@ -227,7 +227,7 @@ clutter_double_to_int (double val)
 }
 
 guint
-clutter_double_to_uint (double val)
+egg_double_to_uint (double val)
 {
 #ifdef CFX_NO_FAST_CONVERSIONS
     return (guint)(val);
@@ -247,20 +247,20 @@ clutter_double_to_uint (double val)
 #undef _CFX_MAN
 
 /**
- * clutter_sinx:
- * @angle: a #ClutterFixed angle in radians
+ * egg_sinx:
+ * @angle: a #EggFixed angle in radians
  *
  * Fixed point implementation of sine function
  *
- * Return value: #ClutterFixed sine value.
+ * Return value: #EggFixed sine value.
  *
  * Since: 0.2
  */
-ClutterFixed
-clutter_sinx (ClutterFixed angle)
+EggFixed
+egg_sinx (EggFixed angle)
 {
     int sign = 1, indx1, indx2;
-    ClutterFixed low, high, d1, d2;
+    EggFixed low, high, d1, d2;
 
     /* convert negative angle to positive + sign */
     if ((int)angle < 0)
@@ -301,10 +301,10 @@ clutter_sinx (ClutterFixed angle)
      *
      * Handle the end of the table gracefully
      */
-    indx1 = CLUTTER_FIXED_DIV (angle, CFX_SIN_STEP);
-    indx1 = CLUTTER_FIXED_TO_INT (indx1);
+    indx1 = EGG_FIXED_DIV (angle, CFX_SIN_STEP);
+    indx1 = EGG_FIXED_TO_INT (indx1);
 
-    if (indx1 == sizeof (sin_tbl)/sizeof (ClutterFixed) - 1)
+    if (indx1 == sizeof (sin_tbl)/sizeof (EggFixed) - 1)
     {
 	indx2 = indx1;
 	indx1 = indx2 - 1;
@@ -329,23 +329,23 @@ clutter_sinx (ClutterFixed angle)
 }
 
 /**
- * clutter_sini:
- * @angle: a #ClutterAngle
+ * egg_sini:
+ * @angle: a #EggAngle
  *
  * Very fast fixed point implementation of sine function.
  *
- * ClutterAngle is an integer such that 1024 represents
+ * EggAngle is an integer such that 1024 represents
  * full circle.
  *
- * Return value: #ClutterFixed sine value.
+ * Return value: #EggFixed sine value.
  *
  * Since: 0.2
  */
-ClutterFixed
-clutter_sini (ClutterAngle angle)
+EggFixed
+egg_sini (EggAngle angle)
 {
     int sign = 1;
-    ClutterFixed result;
+    EggFixed result;
 
     /* reduce negative angle to positive + sign */
     if (angle < 0)
@@ -394,7 +394,7 @@ clutter_sini (ClutterAngle angle)
  * Currently contains 257 entries.
  *
  */
-static ClutterFixed tan_tbl [] =
+static EggFixed tan_tbl [] =
 {
   0x00000000L, 0x00000192L, 0x00000324L, 0x000004b7L,
   0x00000649L, 0x000007dbL, 0x0000096eL, 0x00000b01L,
@@ -464,23 +464,23 @@ static ClutterFixed tan_tbl [] =
 };
 
 /**
- * clutter_tani:
- * @angle: a #ClutterAngle
+ * egg_tani:
+ * @angle: a #EggAngle
  *
  * Very fast fixed point implementation of tan function.
  *
- * ClutterAngle is an integer such that 1024 represents
+ * EggAngle is an integer such that 1024 represents
  * full circle.
  *
- * Return value: #ClutterFixed sine value.
+ * Return value: #EggFixed sine value.
  *
  * Since: 0.3
  */
-ClutterFixed
-clutter_tani (ClutterAngle angle)
+EggFixed
+egg_tani (EggAngle angle)
 {
     int sign = 1;
-    ClutterFixed result;
+    EggFixed result;
 
     /* reduce negative angle to positive + sign */
     if (angle < 0)
@@ -508,7 +508,7 @@ clutter_tani (ClutterAngle angle)
 }
 
 /* 257-value table of atan. atan_tbl[0] is atan(0.0) and atan_tbl[256]
-   is atan(1). The angles are radians in ClutterFixed
+   is atan(1). The angles are radians in EggFixed
    truncated to 16-bit (they're all less than one) */
 static guint16 atan_tbl[] =
   {
@@ -548,19 +548,19 @@ static guint16 atan_tbl[] =
   };
 
 /**
- * clutter_atani:
+ * egg_atani:
  * @x: The tangent to calculate the angle for
  *
  * Fast fixed-point version of the arctangent function.
  *
- * Return value: The angle in radians represented as a #ClutterFixed
+ * Return value: The angle in radians represented as a #EggFixed
  * for which the tangent is @x.
  */
-ClutterFixed
-clutter_atani (ClutterFixed x)
+EggFixed
+egg_atani (EggFixed x)
 {
   gboolean negative = FALSE;
-  ClutterFixed angle;
+  EggFixed angle;
 
   if (x < 0)
     {
@@ -578,7 +578,7 @@ clutter_atani (ClutterFixed x)
 }
 
 /**
- * clutter_atan2i:
+ * egg_atan2i:
  * @y: Numerator of tangent
  * @x: Denominator of tangent
  *
@@ -587,16 +587,16 @@ clutter_atani (ClutterFixed x)
  *
  * Return value: The arctangent of @y / @x
  */
-ClutterFixed
-clutter_atan2i (ClutterFixed y, ClutterFixed x)
+EggFixed
+egg_atan2i (EggFixed y, EggFixed x)
 {
-  ClutterFixed angle;
+  EggFixed angle;
 
   if (x == 0)
     angle = y >= 0 ? CFX_PI_2 : -CFX_PI_2;
   else
     {
-      angle = clutter_atani (CFX_QDIV (y, x));
+      angle = egg_atani (CFX_QDIV (y, x));
 
       if (x < 0)
 	angle += y >= 0 ? CFX_PI : -CFX_PI;
@@ -605,7 +605,7 @@ clutter_atan2i (ClutterFixed y, ClutterFixed x)
   return angle;
 }
 
-ClutterFixed sqrt_tbl [] =
+EggFixed sqrt_tbl [] =
 {
  0x00000000L, 0x00010000L, 0x00016A0AL, 0x0001BB68L,
  0x00020000L, 0x00023C6FL, 0x00027312L, 0x0002A550L,
@@ -675,17 +675,17 @@ ClutterFixed sqrt_tbl [] =
 };
 
 /**
- * clutter_sqrtx:
- * @x: a #ClutterFixed
+ * egg_sqrtx:
+ * @x: a #EggFixed
  *
  * A fixed point implementation of squre root
  *
- * Return value: #ClutterFixed square root.
+ * Return value: #EggFixed square root.
  *
  * Since: 0.2
  */
-ClutterFixed
-clutter_sqrtx (ClutterFixed x)
+EggFixed
+egg_sqrtx (EggFixed x)
 {
     /* The idea for this comes from the Alegro library, exploiting the
      * fact that,
@@ -708,7 +708,7 @@ clutter_sqrtx (ClutterFixed x)
     unsigned int mask = 0x40000000;
     unsigned fract = x & 0x0000ffff;
     unsigned int d1, d2;
-    ClutterFixed v1, v2;
+    EggFixed v1, v2;
 
     if (x <= 0)
 	return 0;
@@ -721,7 +721,7 @@ clutter_sqrtx (ClutterFixed x)
 #if __arm__
 	/* This actually requires at least arm v5, but gcc does not seem
 	 * to set the architecture defines correctly, and it is I think
-	 * very unlikely that anyone will want to use clutter on anything
+	 * very unlikely that anyone will want to use egg on anything
 	 * less than v5.
 	 */
 	int bit;
@@ -767,7 +767,7 @@ clutter_sqrtx (ClutterFixed x)
     }
     else
     {
-	t = CLUTTER_FIXED_TO_INT (x);
+	t = EGG_FIXED_TO_INT (x);
     }
 
     /* Do a weighted average of the two nearest values */
@@ -792,16 +792,16 @@ clutter_sqrtx (ClutterFixed x)
 }
 
 /**
- * clutter_sqrti:
+ * egg_sqrti:
  * @x: integer value
  *
  * Very fast fixed point implementation of square root for integers.
  *
  * This function is at least 6x faster than clib sqrt() on x86, and (this is
  * not a typo!) about 500x faster on ARM without FPU. It's error is < 5%
- * for arguments < #CLUTTER_SQRTI_ARG_5_PERCENT and < 10% for arguments <
- * #CLUTTER_SQRTI_ARG_10_PERCENT. The maximum argument that can be passed to
- * this function is CLUTTER_SQRTI_ARG_MAX.
+ * for arguments < #EGG_SQRTI_ARG_5_PERCENT and < 10% for arguments <
+ * #EGG_SQRTI_ARG_10_PERCENT. The maximum argument that can be passed to
+ * this function is EGG_SQRTI_ARG_MAX.
  *
  * Return value: integer square root.
  *
@@ -809,7 +809,7 @@ clutter_sqrtx (ClutterFixed x)
  * Since: 0.2
  */
 gint
-clutter_sqrti (gint number)
+egg_sqrti (gint number)
 {
 #if defined __SSE2__
     /* The GCC built-in with SSE2 (sqrtsd) is up to twice as fast as
@@ -830,9 +830,9 @@ clutter_sqrti (gint number)
      * below), which is only at the end turned to the inverse value. In order
      * for the algorithm to produce satisfactory results, the reciprocal value
      * must be represented with sufficient precission; the 16.16 we use
-     * elsewhere in clutter is not good enough, and 10.22 is used instead.
+     * elsewhere in egg is not good enough, and 10.22 is used instead.
      */
-    ClutterFixed x;
+    EggFixed x;
     guint32 y_1;        /* 10.22 fixed point */
     guint32 f = 0x600000; /* '1.5' as 10.22 fixed */
 
@@ -844,7 +844,7 @@ clutter_sqrti (gint number)
 
     flt.f = number;
 
-    x = CLUTTER_INT_TO_FIXED (number) / 2;
+    x = EGG_INT_TO_FIXED (number) / 2;
 
     /* The QIII initial estimate */
     flt.i = 0x5f3759df - ( flt.i >> 1 );
@@ -893,12 +893,12 @@ clutter_sqrti (gint number)
 }
 
 /**
- * clutter_qmulx:
- * @op1: #ClutterFixed
- * @op2: #ClutterFixed
+ * egg_qmulx:
+ * @op1: #EggFixed
+ * @op2: #EggFixed
  *
  * Multiplies two fixed values using 64bit arithmetic; this provides
- * significantly better precission than the #CLUTTER_FIXED_MUL macro,
+ * significantly better precission than the #EGG_FIXED_MUL macro,
  * but at performance cost (about 2.7 times slowdown on ARMv5e, and 2 times
  * on x86).
  *
@@ -906,8 +906,8 @@ clutter_sqrti (gint number)
  *
  * Since: 0.4
  */
-ClutterFixed
-clutter_qmulx (ClutterFixed op1, ClutterFixed op2)
+EggFixed
+egg_qmulx (EggFixed op1, EggFixed op2)
 {
 #ifdef __arm__
     /* This provides about 12% speedeup on the gcc -O2 optimised
@@ -924,7 +924,7 @@ clutter_qmulx (ClutterFixed op1, ClutterFixed op2)
 	     : "=r"(res_hi), "=r"(res_low)\
 	     : "r"(op1), "r"(op2), "i"(CFX_Q), "i"(32-CFX_Q));
 
-    return (ClutterFixed) res_low;
+    return (EggFixed) res_low;
 #else
     long long r = (long long) op1 * (long long) op2;
 
@@ -933,23 +933,23 @@ clutter_qmulx (ClutterFixed op1, ClutterFixed op2)
 }
 
 /**
- * clutter_qdivx:
- * @op1: #ClutterFixed
- * @op2: #ClutterFixed
+ * egg_qdivx:
+ * @op1: #EggFixed
+ * @op2: #EggFixed
  *
  * Divides two fixed values using 64bit arithmetic; this provides
- * significantly better precission than the #CLUTTER_FIXED_DIV macro,
+ * significantly better precission than the #EGG_FIXED_DIV macro,
  * but at performance cost.
  *
- * Return value: #ClutterFixed
+ * Return value: #EggFixed
  *
  * Since: 0.4
  */
-ClutterFixed
-clutter_qdivx (ClutterFixed op1,
-               ClutterFixed op2)
+EggFixed
+egg_qdivx (EggFixed op1,
+               EggFixed op2)
 {
-  return (ClutterFixed) ((((gint64) op1) << CFX_Q) / op2);
+  return (EggFixed) ((((gint64) op1) << CFX_Q) / op2);
 }
 
 /*
@@ -964,7 +964,7 @@ clutter_qdivx (ClutterFixed op1,
  */
 
 /**
- * clutter_log2x :
+ * egg_log2x :
  * @x: value to calculate base 2 logarithm from
  *
  * Calculates base 2 logarithm.
@@ -976,20 +976,20 @@ clutter_qdivx (ClutterFixed op1,
  *
  * Since: 0.4
  */
-ClutterFixed
-clutter_log2x (guint x)
+EggFixed
+egg_log2x (guint x)
 {
-  /* Note: we could easily have a version for ClutterFixed x, but the int
+  /* Note: we could easily have a version for EggFixed x, but the int
    *       precission is enough for the current purposes.
    */
   union
   {
     float        f;
-    ClutterFixed i;
+    EggFixed i;
   } flt;
 
-  ClutterFixed magic = 0x58bb;
-  ClutterFixed y;
+  EggFixed magic = 0x58bb;
+  EggFixed y;
 
   /*
    * Convert x to float, then extract exponent.
@@ -998,9 +998,9 @@ clutter_log2x (guint x)
    */
   flt.f = x;
   flt.i >>= 7;
-  flt.i -= CLUTTER_INT_TO_FIXED (127);
+  flt.i -= EGG_INT_TO_FIXED (127);
 
-  y = CLUTTER_FIXED_FRACTION (flt.i);
+  y = EGG_FIXED_FRACTION (flt.i);
 
   y = CFX_MUL ((y - CFX_MUL (y, y)), magic);
 
@@ -1008,7 +1008,7 @@ clutter_log2x (guint x)
 }
 
 /**
- * clutter_pow2x :
+ * egg_pow2x :
  * @x: exponent
  *
  * Calculates 2 to x power.
@@ -1021,9 +1021,9 @@ clutter_log2x (guint x)
  * Since: 0.4
  */
 guint
-clutter_pow2x (ClutterFixed x)
+egg_pow2x (EggFixed x)
 {
-  /* Note: we could easily have a version that produces ClutterFixed result,
+  /* Note: we could easily have a version that produces EggFixed result,
    *       but the the range would be limited to x < 15, and the int precission
    *       is enough for the current purposes.
    */
@@ -1034,8 +1034,8 @@ clutter_pow2x (ClutterFixed x)
     guint32      i;
   } flt;
 
-  ClutterFixed magic = 0x56f7;
-  ClutterFixed y;
+  EggFixed magic = 0x56f7;
+  EggFixed y;
 
   flt.i = x;
 
@@ -1044,36 +1044,36 @@ clutter_pow2x (ClutterFixed x)
    * floating point exponent, and mantisa adjusted with quadratic error
    * correction y.
    */
-  y = CLUTTER_FIXED_FRACTION (x);
+  y = EGG_FIXED_FRACTION (x);
   y = CFX_MUL ((y - CFX_MUL (y, y)), magic);
 
   /* Shift the exponent into it's position in the floating point
    * representation; as our number is not int but 16.16 fixed, shift only
    * by (23 - 16)
    */
-  flt.i += (CLUTTER_INT_TO_FIXED (127) - y);
+  flt.i += (EGG_INT_TO_FIXED (127) - y);
   flt.i <<= 7;
 
-  return CLUTTER_FLOAT_TO_UINT (flt.f);
+  return EGG_FLOAT_TO_UINT (flt.f);
 }
 
 
 /**
- * clutter_powx :
+ * egg_powx :
  * @x: base
- * @y: #ClutterFixed exponent
+ * @y: #EggFixed exponent
  *
  * Calculates x to y power. (Note, if x is a constant it will be faster to
- * calculate the power as clutter_pow2x (CLUTTER_FIXED_MUL(y, log2 (x)))
+ * calculate the power as egg_pow2x (EGG_FIXED_MUL(y, log2 (x)))
  *
  * Return value: x in y power.
  *
  * Since: 0.4
  */
 guint
-clutter_powx (guint x, ClutterFixed y)
+egg_powx (guint x, EggFixed y)
 {
-  return clutter_pow2x (CFX_MUL (y, clutter_log2x (x)));
+  return egg_pow2x (CFX_MUL (y, egg_log2x (x)));
 }
 
 static GTypeInfo _info = {
@@ -1092,20 +1092,20 @@ static GTypeInfo _info = {
 static GTypeFundamentalInfo _finfo = { 0, };
 
 static void
-clutter_value_init_fixed (GValue *value)
+egg_value_init_fixed (GValue *value)
 {
   value->data[0].v_int = 0;
 }
 
 static void
-clutter_value_copy_fixed (const GValue *src,
+egg_value_copy_fixed (const GValue *src,
                           GValue       *dest)
 {
   dest->data[0].v_int = src->data[0].v_int;
 }
 
 static gchar *
-clutter_value_collect_fixed (GValue      *value,
+egg_value_collect_fixed (GValue      *value,
                              guint        n_collect_values,
                              GTypeCValue *collect_values,
                              guint        collect_flags)
@@ -1116,7 +1116,7 @@ clutter_value_collect_fixed (GValue      *value,
 }
 
 static gchar *
-clutter_value_lcopy_fixed (const GValue *value,
+egg_value_lcopy_fixed (const GValue *value,
                            guint         n_collect_values,
                            GTypeCValue  *collect_values,
                            guint         collect_flags)
@@ -1133,92 +1133,92 @@ clutter_value_lcopy_fixed (const GValue *value,
 }
 
 static void
-clutter_value_transform_fixed_int (const GValue *src,
+egg_value_transform_fixed_int (const GValue *src,
                                    GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_FIXED_TO_INT (src->data[0].v_int);
+  dest->data[0].v_int = EGG_FIXED_TO_INT (src->data[0].v_int);
 }
 
 static void
-clutter_value_transform_fixed_double (const GValue *src,
+egg_value_transform_fixed_double (const GValue *src,
                                       GValue       *dest)
 {
-  dest->data[0].v_double = CLUTTER_FIXED_TO_DOUBLE (src->data[0].v_int);
+  dest->data[0].v_double = EGG_FIXED_TO_DOUBLE (src->data[0].v_int);
 }
 
 static void
-clutter_value_transform_fixed_float (const GValue *src,
+egg_value_transform_fixed_float (const GValue *src,
                                      GValue       *dest)
 {
-  dest->data[0].v_float = CLUTTER_FIXED_TO_FLOAT (src->data[0].v_int);
+  dest->data[0].v_float = EGG_FIXED_TO_FLOAT (src->data[0].v_int);
 }
 
 static void
-clutter_value_transform_int_fixed (const GValue *src,
+egg_value_transform_int_fixed (const GValue *src,
                                    GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_INT_TO_FIXED (src->data[0].v_int);
+  dest->data[0].v_int = EGG_INT_TO_FIXED (src->data[0].v_int);
 }
 
 static void
-clutter_value_transform_double_fixed (const GValue *src,
+egg_value_transform_double_fixed (const GValue *src,
                                       GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_FLOAT_TO_FIXED (src->data[0].v_double);
+  dest->data[0].v_int = EGG_FLOAT_TO_FIXED (src->data[0].v_double);
 }
 
 static void
-clutter_value_transform_float_fixed (const GValue *src,
+egg_value_transform_float_fixed (const GValue *src,
                                      GValue       *dest)
 {
-  dest->data[0].v_int = CLUTTER_FLOAT_TO_FIXED (src->data[0].v_float);
+  dest->data[0].v_int = EGG_FLOAT_TO_FIXED (src->data[0].v_float);
 }
 
 
-static const GTypeValueTable _clutter_fixed_value_table = {
-  clutter_value_init_fixed,
+static const GTypeValueTable _egg_fixed_value_table = {
+  egg_value_init_fixed,
   NULL,
-  clutter_value_copy_fixed,
+  egg_value_copy_fixed,
   NULL,
   "i",
-  clutter_value_collect_fixed,
+  egg_value_collect_fixed,
   "p",
-  clutter_value_lcopy_fixed
+  egg_value_lcopy_fixed
 };
 
 GType
-clutter_fixed_get_type (void)
+egg_fixed_get_type (void)
 {
-  static GType _clutter_fixed_type = 0;
+  static GType _egg_fixed_type = 0;
 
-  if (G_UNLIKELY (_clutter_fixed_type == 0))
+  if (G_UNLIKELY (_egg_fixed_type == 0))
     {
-      _info.value_table = & _clutter_fixed_value_table;
-      _clutter_fixed_type =
+      _info.value_table = & _egg_fixed_value_table;
+      _egg_fixed_type =
         g_type_register_fundamental (g_type_fundamental_next (),
-                                     I_("ClutterFixed"),
+                                     I_("EggFixed"),
                                      &_info, &_finfo, 0);
 
-      g_value_register_transform_func (_clutter_fixed_type, G_TYPE_INT,
-                                       clutter_value_transform_fixed_int);
-      g_value_register_transform_func (G_TYPE_INT, _clutter_fixed_type,
-                                       clutter_value_transform_int_fixed);
-      g_value_register_transform_func (_clutter_fixed_type, G_TYPE_FLOAT,
-                                       clutter_value_transform_fixed_float);
-      g_value_register_transform_func (G_TYPE_FLOAT, _clutter_fixed_type,
-                                       clutter_value_transform_float_fixed);
-      g_value_register_transform_func (_clutter_fixed_type, G_TYPE_DOUBLE,
-                                       clutter_value_transform_fixed_double);
-      g_value_register_transform_func (G_TYPE_DOUBLE, _clutter_fixed_type,
-                                       clutter_value_transform_double_fixed);
+      g_value_register_transform_func (_egg_fixed_type, G_TYPE_INT,
+                                       egg_value_transform_fixed_int);
+      g_value_register_transform_func (G_TYPE_INT, _egg_fixed_type,
+                                       egg_value_transform_int_fixed);
+      g_value_register_transform_func (_egg_fixed_type, G_TYPE_FLOAT,
+                                       egg_value_transform_fixed_float);
+      g_value_register_transform_func (G_TYPE_FLOAT, _egg_fixed_type,
+                                       egg_value_transform_float_fixed);
+      g_value_register_transform_func (_egg_fixed_type, G_TYPE_DOUBLE,
+                                       egg_value_transform_fixed_double);
+      g_value_register_transform_func (G_TYPE_DOUBLE, _egg_fixed_type,
+                                       egg_value_transform_double_fixed);
     }
 
-  return _clutter_fixed_type;
+  return _egg_fixed_type;
 }
 
 /**
- * clutter_value_set_fixed:
- * @value: a #GValue initialized to #CLUTTER_TYPE_FIXED
+ * egg_value_set_fixed:
+ * @value: a #GValue initialized to #EGG_TYPE_FIXED
  * @fixed_: the fixed point value to set
  *
  * Sets @value to @fixed_.
@@ -1226,17 +1226,17 @@ clutter_fixed_get_type (void)
  * Since: 0.8
  */
 void
-clutter_value_set_fixed (GValue       *value,
-                         ClutterFixed  fixed_)
+egg_value_set_fixed (GValue       *value,
+                         EggFixed  fixed_)
 {
-  g_return_if_fail (CLUTTER_VALUE_HOLDS_FIXED (value));
+  g_return_if_fail (EGG_VALUE_HOLDS_FIXED (value));
 
   value->data[0].v_int = fixed_;
 }
 
 /**
- * clutter_value_get_fixed:
- * @value: a #GValue initialized to #CLUTTER_TYPE_FIXED
+ * egg_value_get_fixed:
+ * @value: a #GValue initialized to #EGG_TYPE_FIXED
  *
  * Gets the fixed point value stored inside @value.
  *
@@ -1244,10 +1244,10 @@ clutter_value_set_fixed (GValue       *value,
  *
  * Since: 0.8
  */
-ClutterFixed
-clutter_value_get_fixed (const GValue *value)
+EggFixed
+egg_value_get_fixed (const GValue *value)
 {
-  g_return_val_if_fail (CLUTTER_VALUE_HOLDS_FIXED (value), 0);
+  g_return_val_if_fail (EGG_VALUE_HOLDS_FIXED (value), 0);
 
   return value->data[0].v_int;
 }
@@ -1255,10 +1255,10 @@ clutter_value_get_fixed (const GValue *value)
 static void
 param_fixed_init (GParamSpec *pspec)
 {
-  ClutterParamSpecFixed *fspec = CLUTTER_PARAM_SPEC_FIXED (pspec);
+  EggParamSpecFixed *fspec = EGG_PARAM_SPEC_FIXED (pspec);
 
-  fspec->minimum = CLUTTER_MINFIXED;
-  fspec->maximum = CLUTTER_MAXFIXED;
+  fspec->minimum = EGG_MINFIXED;
+  fspec->maximum = EGG_MAXFIXED;
   fspec->default_value = 0;
 }
 
@@ -1266,18 +1266,18 @@ static void
 param_fixed_set_default (GParamSpec *pspec,
                          GValue     *value)
 {
-  value->data[0].v_int = CLUTTER_PARAM_SPEC_FIXED (pspec)->default_value;
+  value->data[0].v_int = EGG_PARAM_SPEC_FIXED (pspec)->default_value;
 }
 
 static gboolean
 param_fixed_validate (GParamSpec *pspec,
                       GValue     *value)
 {
-  ClutterParamSpecFixed *fspec = CLUTTER_PARAM_SPEC_FIXED (pspec);
-  gint oval = CLUTTER_FIXED_TO_INT (value->data[0].v_int);
+  EggParamSpecFixed *fspec = EGG_PARAM_SPEC_FIXED (pspec);
+  gint oval = EGG_FIXED_TO_INT (value->data[0].v_int);
   gint min, max, val;
 
-  g_assert (CLUTTER_IS_PARAM_SPEC_FIXED (pspec));
+  g_assert (EGG_IS_PARAM_SPEC_FIXED (pspec));
 
   /* we compare the integer part of the value because the minimum
    * and maximum values cover just that part of the representation
@@ -1285,7 +1285,7 @@ param_fixed_validate (GParamSpec *pspec,
 
   min = fspec->minimum;
   max = fspec->maximum;
-  val = CLUTTER_FIXED_TO_INT (value->data[0].v_int);
+  val = EGG_FIXED_TO_INT (value->data[0].v_int);
 
   val = CLAMP (val, min, max);
   if (val != oval)
@@ -1309,24 +1309,24 @@ param_fixed_values_cmp (GParamSpec   *pspec,
 }
 
 GType
-clutter_param_fixed_get_type (void)
+egg_param_fixed_get_type (void)
 {
   static GType pspec_type = 0;
 
   if (G_UNLIKELY (pspec_type == 0))
     {
       const GParamSpecTypeInfo pspec_info = {
-        sizeof (ClutterParamSpecFixed),
+        sizeof (EggParamSpecFixed),
         16,
         param_fixed_init,
-        CLUTTER_TYPE_FIXED,
+        EGG_TYPE_FIXED,
         NULL,
         param_fixed_set_default,
         param_fixed_validate,
         param_fixed_values_cmp,
       };
 
-      pspec_type = g_param_type_register_static (I_("ClutterParamSpecFixed"),
+      pspec_type = g_param_type_register_static (I_("EggParamSpecFixed"),
                                                  &pspec_info);
     }
 
@@ -1334,7 +1334,7 @@ clutter_param_fixed_get_type (void)
 }
 
 /**
- * clutter_param_spec_fixed:
+ * egg_param_spec_fixed:
  * @name: name of the property
  * @nick: short name
  * @blurb: description (can be translatable)
@@ -1343,27 +1343,27 @@ clutter_param_fixed_get_type (void)
  * @default_value: default value
  * @flags: flags for the param spec
  *
- * Creates a #GParamSpec for properties using #ClutterFixed values
+ * Creates a #GParamSpec for properties using #EggFixed values
  *
  * Return value: the newly created #GParamSpec
  *
  * Since: 0.8
  */
 GParamSpec *
-clutter_param_spec_fixed (const gchar *name,
+egg_param_spec_fixed (const gchar *name,
                           const gchar *nick,
                           const gchar *blurb,
-                          ClutterUnit  minimum,
-                          ClutterUnit  maximum,
-                          ClutterUnit  default_value,
+                          EggUnit  minimum,
+                          EggUnit  maximum,
+                          EggUnit  default_value,
                           GParamFlags  flags)
 {
-  ClutterParamSpecFixed *fspec;
+  EggParamSpecFixed *fspec;
 
   g_return_val_if_fail (default_value >= minimum && default_value <= maximum,
                         NULL);
 
-  fspec = g_param_spec_internal (CLUTTER_TYPE_PARAM_FIXED,
+  fspec = g_param_spec_internal (EGG_TYPE_PARAM_FIXED,
                                  name, nick, blurb,
                                  flags);
   fspec->minimum = minimum;

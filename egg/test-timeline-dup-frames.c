@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter-hack.h>
+#include <egg/egg-hack.h>
 
 /* We use a nice slow timeline for this test since we
  * dont want the timeouts to interpolate the timeline
@@ -9,7 +9,7 @@
 #define TEST_TIMELINE_FRAME_COUNT 20
 
 typedef struct _TestState {
-  ClutterTimeline *timeline;
+  EggTimeline *timeline;
   gint prev_frame;
   gint completion_count;
   gint passed;
@@ -17,13 +17,13 @@ typedef struct _TestState {
 
 
 static void
-new_frame_cb (ClutterTimeline *timeline,
+new_frame_cb (EggTimeline *timeline,
               gint frame_num,
               TestState *state)
 {
-  gint current_frame = clutter_timeline_get_current_frame (state->timeline);
+  gint current_frame = egg_timeline_get_current_frame (state->timeline);
   
-  if (state->prev_frame != clutter_timeline_get_current_frame (state->timeline))
+  if (state->prev_frame != egg_timeline_get_current_frame (state->timeline))
     {
       g_print("timeline previous frame=%-4i actual frame=%-4i (OK)\n",
               state->prev_frame,
@@ -43,7 +43,7 @@ new_frame_cb (ClutterTimeline *timeline,
 
 
 static void
-completed_cb (ClutterTimeline *timeline,
+completed_cb (EggTimeline *timeline,
               TestState *state)
 {
   state->completion_count++;
@@ -69,12 +69,12 @@ main(int argc, char **argv)
 {
   TestState state;
 
-  clutter_init(&argc, &argv);
+  egg_init(&argc, &argv);
   
   state.timeline = 
-    clutter_timeline_new (TEST_TIMELINE_FRAME_COUNT,
+    egg_timeline_new (TEST_TIMELINE_FRAME_COUNT,
                           TEST_TIMELINE_FPS);
-  clutter_timeline_set_loop (state.timeline, TRUE);
+  egg_timeline_set_loop (state.timeline, TRUE);
   g_signal_connect (G_OBJECT(state.timeline),
                     "new-frame",
                     G_CALLBACK(new_frame_cb),
@@ -88,9 +88,9 @@ main(int argc, char **argv)
   state.completion_count = 0;
   state.passed = TRUE;
 
-  clutter_timeline_start (state.timeline);
+  egg_timeline_start (state.timeline);
   
-  clutter_main();
+  egg_main();
   
   return EXIT_FAILURE;
 }

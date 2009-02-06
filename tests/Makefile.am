@@ -16,7 +16,7 @@ test_modules_SOURCES =		\
 	../src/stack.c		\
 	../src/dbus.c		\
 	../src/apport.c		\
-	$(CLUTTER_MODULES)	\
+	$(EGG_MODULES)	\
 	test-modules-main.c     \
 	test-apport.c		\
 	test-dbus.c		\
@@ -41,34 +41,34 @@ test_modules_LDADD =		\
 	$(GTK_LIBS)		\
 	-lnotify
 
-CLUTTER_MODULES = \
-	../clutter/clutter-fixed.c		\
-	../clutter/clutter-units.c		\
-	../clutter/clutter-timeline.c		\
-	../clutter/clutter-timeout-pool.c	\
-	../clutter/clutter-alpha.c	\
-	../clutter/clutter-hack.c
+EGG_MODULES = \
+	../egg/egg-fixed.c		\
+	../egg/egg-units.c		\
+	../egg/egg-timeline.c		\
+	../egg/egg-timeout-pool.c	\
+	../egg/egg-alpha.c	\
+	../egg/egg-hack.c
 
 AM_CFLAGS = \
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
-	-I$(top_srcdir)/src -I$(top_srcdir)/clutter
+	-I$(top_srcdir)/src -I$(top_srcdir)/egg
 
 LDADD = $(GLIB_LIBS)
 
-test_timeline_SOURCES = ../clutter/test-timeline.c \
-	$(CLUTTER_MODULES)
-test_timeline_dup_frames_SOURCES = ../clutter/test-timeline-dup-frames.c \
-	$(CLUTTER_MODULES)
-test_timeline_interpolate_SOURCES = ../clutter/test-timeline-interpolate.c \
-	$(CLUTTER_MODULES)
-test_timeline_rewind_SOURCES = ../clutter/test-timeline-rewind.c \
-	$(CLUTTER_MODULES)
-test_timeline_smoothness_SOURCES = ../clutter/test-timeline-smoothness.c \
-	$(CLUTTER_MODULES)
+test_timeline_SOURCES = ../egg/test-timeline.c \
+	$(EGG_MODULES)
+test_timeline_dup_frames_SOURCES = ../egg/test-timeline-dup-frames.c \
+	$(EGG_MODULES)
+test_timeline_interpolate_SOURCES = ../egg/test-timeline-interpolate.c \
+	$(EGG_MODULES)
+test_timeline_rewind_SOURCES = ../egg/test-timeline-rewind.c \
+	$(EGG_MODULES)
+test_timeline_smoothness_SOURCES = ../egg/test-timeline-smoothness.c \
+	$(EGG_MODULES)
 
 test_alpha_animation_SOURCES = test-alpha-animation.c \
-	$(CLUTTER_MODULES)
+	$(EGG_MODULES)
 
 test: test-modules
 	gtester -o=test-modules.xml -k ./test-modules

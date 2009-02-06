@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include <glib.h>
-#include <clutter/clutter-hack.h>
+#include <egg/egg-hack.h>
 
 /* We ask for 1 frame per millisecond.
  * Whenever this rate can't be achieved then the timeline
@@ -14,7 +14,7 @@
 #define TEST_ERROR_TOLERANCE 20
 
 typedef struct _TestState {
-    ClutterTimeline *timeline;
+    EggTimeline *timeline;
     GTimeVal start_time;
     guint new_frame_counter;
     gint expected_frame;
@@ -24,7 +24,7 @@ typedef struct _TestState {
 
 
 static void
-new_frame_cb (ClutterTimeline *timeline,
+new_frame_cb (EggTimeline *timeline,
               gint frame_num,
 	      TestState *state)
 {
@@ -36,7 +36,7 @@ new_frame_cb (ClutterTimeline *timeline,
   
   g_get_current_time (&current_time);
 
-  current_frame = clutter_timeline_get_current_frame (state->timeline);
+  current_frame = egg_timeline_get_current_frame (state->timeline);
   
   msec_diff = (current_time.tv_sec - state->start_time.tv_sec) * 1000;
   msec_diff += (current_time.tv_usec - state->start_time.tv_usec)/1000;
@@ -44,7 +44,7 @@ new_frame_cb (ClutterTimeline *timeline,
   /* If we expect to have interpolated past the end of the timeline
    * we keep track of the overflow so we can determine when
    * the next timeout will happen. We then clip expected_frames
-   * to TEST_TIMELINE_FRAME_COUNT since clutter-timeline
+   * to TEST_TIMELINE_FRAME_COUNT since egg-timeline
    * semantics guaranty this frame is always signaled before
    * looping */
   if (state->expected_frame > TEST_TIMELINE_FRAME_COUNT)
@@ -99,7 +99,7 @@ new_frame_cb (ClutterTimeline *timeline,
 
 
 static void
-completed_cb (ClutterTimeline *timeline,
+completed_cb (EggTimeline *timeline,
               TestState *state)
 {
     state->completion_count++;
@@ -125,12 +125,12 @@ main (int argc, char **argv)
 {
   TestState state;
 
-  clutter_init (&argc, &argv);
+  egg_init (&argc, &argv);
 
   state.timeline = 
-    clutter_timeline_new (TEST_TIMELINE_FRAME_COUNT,
+    egg_timeline_new (TEST_TIMELINE_FRAME_COUNT,
                           TEST_TIMELINE_FPS);
-  clutter_timeline_set_loop (state.timeline, TRUE);
+  egg_timeline_set_loop (state.timeline, TRUE);
   g_signal_connect (G_OBJECT(state.timeline),
                     "new-frame",
                     G_CALLBACK(new_frame_cb),
@@ -146,9 +146,9 @@ main (int argc, char **argv)
   state.expected_frame = 0;
 
   g_get_current_time (&state.start_time);
-  clutter_timeline_start (state.timeline);
+  egg_timeline_start (state.timeline);
 
-  clutter_main();
+  egg_main();
 
   return EXIT_FAILURE;
 }
