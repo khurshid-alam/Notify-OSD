@@ -111,9 +111,6 @@ compare_id (gconstpointer a,
 	if (! IS_BUBBLE (a))
 		return -1;
 
-	if (! IS_BUBBLE (b))
-		return -1;
-
 	id_1 = bubble_get_id ((Bubble*) a);
 	id_2 = *((guint*) b);
 
