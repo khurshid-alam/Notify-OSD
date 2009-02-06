@@ -1316,8 +1316,7 @@ expose_handler (GtkWidget*      window,
 	return TRUE;
 }
 
-static
-gboolean
+static gboolean
 redraw_handler (Bubble* bubble)
 {
 	GtkWindow* window;
@@ -1336,7 +1335,6 @@ redraw_handler (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	/* new mouse-over behaviour */	    
 	if (bubble_is_mouse_over (bubble))
 		gtk_window_set_opacity (window, 0.1f);
 	else if (GET_PRIVATE(bubble)->alpha == NULL)
