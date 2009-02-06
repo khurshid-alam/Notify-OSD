@@ -108,10 +108,7 @@ compare_id (gconstpointer a,
 	if (!a || !b)
 		return -1;
 
-	if (! IS_BUBBLE (a))
-		return -1;
-
-	if (! IS_BUBBLE (b))
+	if (!IS_BUBBLE (a))
 		return -1;
 
 	id_1 = bubble_get_id ((Bubble*) a);
@@ -205,19 +202,10 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 	gint      x      = 0;
 	Defaults* d;
 
-	if (sync_bubble != NULL)
-	{
-		/* hide older synchronous bubbles,
-		   only keep the latest one on display */
-		/* TODO: try to discard it (see weak-refs) */
-		g_debug ("overriding sync. bubble %p", sync_bubble);
-		bubble_hide (sync_bubble);
-		g_object_unref (sync_bubble);
-	}
+	g_return_if_fail (IS_STACK (self));
+	g_return_if_fail (IS_BUBBLE (bubble));
 
-	sync_bubble = bubble;
-
-	g_debug ("displaying sync. bubble %p", sync_bubble);
+	g_debug ("displaying sync. bubble %p", bubble);
 
 	/* Position the bubble at the top left corner of the display. */
 	d = self->defaults;
@@ -235,9 +223,15 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
-	bubble_move (sync_bubble, x, y);
-	bubble_set_timeout (sync_bubble, 2); /* Warning: in *seconds*! */
-	bubble_fade_in (sync_bubble, 100);
+	bubble_move (bubble, x, y);
+	bubble_set_timeout (bubble, 2); /* Warning: in *seconds*! */
+
+	bubble_fade_in (bubble, 100);
+
+	if (sync_bubble != NULL)
+		g_object_unref (sync_bubble);
+
+	sync_bubble = bubble;
 }
 
 static void
@@ -528,8 +522,13 @@ stack_notify_handler (Stack*                 self,
 	if (!bubble)
 	{
 		bubble = bubble_new (self->defaults);
-	} else {
-		g_debug ("bubble with the same ID detected");
+	}
+
+	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
+		if (G_VALUE_HOLDS_STRING (data))
+			bubble_set_synchronous (bubble, g_value_get_string (data));
 	}
 
 	if (hints)
@@ -538,9 +537,6 @@ stack_notify_handler (Stack*                 self,
 		if (G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
 
-		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
-		if (G_VALUE_HOLDS_STRING (data))
-			bubble_set_synchronous (bubble, g_value_get_string (data));
 	}
 
 	if (summary)
@@ -548,18 +544,21 @@ stack_notify_handler (Stack*                 self,
 	if (body)
 		bubble_set_message_body (bubble, body);
 
-	data = (GValue*) g_hash_table_lookup (hints, "icon_data");
-	if (*icon == '\0' && data != NULL)
+	if (hints)
 	{
-		pixbuf = process_dbus_icon_data (data);
-		bubble_set_icon_from_pixbuf (bubble, pixbuf);
-	} else
-		bubble_set_icon (bubble, icon);
-
-	bubble_determine_layout (bubble);
+		data = (GValue*) g_hash_table_lookup (hints, "icon_data");
+		if (*icon == '\0' && data != NULL)
+		{
+			pixbuf = process_dbus_icon_data (data);
+			bubble_set_icon_from_pixbuf (bubble, pixbuf);
+		} else
+			bubble_set_icon (bubble, icon);
+	}
 
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);
+
+	bubble_determine_layout (bubble);
 
 	bubble_recalc_size (bubble);
 
