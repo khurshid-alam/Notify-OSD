@@ -108,6 +108,12 @@ compare_id (gconstpointer a,
 	if (!a || !b)
 		return -1;
 
+	if (! IS_BUBBLE (a))
+		return -1;
+
+	if (! IS_BUBBLE (b))
+		return -1;
+
 	id_1 = bubble_get_id ((Bubble*) a);
 	id_2 = *((guint*) b);
 
@@ -174,12 +180,15 @@ stack_purge_old_bubbles (Stack* self)
 	{
 		bubble = (Bubble*) list->data;
 		
-		if (! bubble_is_visible (bubble) &&
-		    (bubble_get_timeout (bubble) == 0))
+		if (! IS_BUBBLE (bubble))
 		{
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
-			g_debug ("purging bubble %p", bubble);
+		} else if (! bubble_is_visible (bubble) &&
+			   (bubble_get_timeout (bubble) == 0))
+		{
+			self->list = g_list_delete_link (self->list, list);
+			list = self->list;
 			g_object_unref (bubble);
 		} else {
 			list = g_list_next (list);
@@ -187,44 +196,28 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
-static gboolean
-stack_display_synchronous_bubble (Stack *self)
+static Bubble *sync_bubble = NULL;
+
+static void
+stack_display_sync_bubble (Stack *self, Bubble *bubble)
 {
-	Bubble*   sync_bubble = NULL;
-	GList*    list   = NULL;
-	Bubble*   bubble = NULL;
-	Defaults* d;
 	gint      y      = 0;
 	gint      x      = 0;
+	Defaults* d;
 
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
+	if (sync_bubble != NULL)
 	{
-		bubble = (Bubble*) list->data;
-
-		if (! bubble_is_synchronous (bubble))
-			continue;
-
-		if (sync_bubble != NULL &&
-		    bubble_is_visible (sync_bubble))
-		{
-			/* hide older synchronous bubbles,
-			   only keep the latest one on display */
-			/* TODO: try to discard it (see weak-refs) */
-			g_debug ("overriding sync. bubble %p", sync_bubble);
-			bubble_hide (sync_bubble);
-			bubble_del (sync_bubble);
-		}
-		
-		/* remember the /last/ incoming sync_bubble */
-		sync_bubble = bubble;
+		/* hide older synchronous bubbles,
+		   only keep the latest one on display */
+		/* TODO: try to discard it (see weak-refs) */
+		g_debug ("overriding sync. bubble %p", sync_bubble);
+		bubble_hide (sync_bubble);
+		g_object_unref (sync_bubble);
 	}
 
-	if (sync_bubble == NULL)
-		return FALSE;
+	sync_bubble = bubble;
 
-	g_debug ("displaying sync. bubble %p", bubble);
+	g_debug ("displaying sync. bubble %p", sync_bubble);
 
 	/* Position the bubble at the top left corner of the display. */
 	d = self->defaults;
@@ -242,11 +235,32 @@ stack_display_synchronous_bubble (Stack *self)
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
 
-	bubble_move (bubble, x, y);
-	bubble_set_timeout (bubble, 2); /* Warning: in *seconds*! */
-	bubble_fade_in (bubble, 100);
+	bubble_move (sync_bubble, x, y);
+	bubble_set_timeout (sync_bubble, 2); /* Warning: in *seconds*! */
+	bubble_fade_in (sync_bubble, 100);
+}
 
-	return TRUE;
+static void
+stack_resync_bubble_on_display (Stack *self)
+{
+	GList*    list   = NULL;
+	Bubble*   bubble = NULL;
+
+	g_return_if_fail (IS_STACK (self));
+
+	/* pickup the next bubble to display */
+	for (list = g_list_first (self->list);
+	     list != NULL;
+	     list = g_list_next (list))
+	{
+		bubble = (Bubble*) list->data;
+
+		if (bubble_is_visible (bubble)){
+			bubble_start_timer (bubble);
+			bubble_refresh (bubble);
+			return;
+		}
+	}
 }
 
 static void
@@ -264,9 +278,6 @@ stack_layout (Stack* self)
 	g_return_if_fail (self != NULL);
 
 	stack_purge_old_bubbles (self);
-
-	/* display a synchronous bubble if any */
-	reset = stack_display_synchronous_bubble (self);
 
 	/* pickup the next bubble to display */
 	for (list = g_list_first (self->list);
@@ -517,6 +528,8 @@ stack_notify_handler (Stack*                 self,
 	if (!bubble)
 	{
 		bubble = bubble_new (self->defaults);
+	} else {
+		g_debug ("bubble with the same ID detected");
 	}
 
 	if (hints)
@@ -546,13 +559,18 @@ stack_notify_handler (Stack*                 self,
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);
 
-	/* push the bubble in the stack */
-	stack_push_bubble (self, bubble);
 	bubble_recalc_size (bubble);
 
-	/* update the layout of the stack;
-	 * this will also open the new bubble */
-	stack_layout (self);
+	if (bubble_is_synchronous (bubble))
+	{
+		stack_display_sync_bubble (self, bubble);
+		stack_resync_bubble_on_display (self);
+	} else {
+		stack_push_bubble (self, bubble);
+		/* update the layout of the stack;
+		 * this will also open the new bubble */
+		stack_layout (self);
+	}
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
 
@@ -568,14 +586,11 @@ stack_close_notification_handler (Stack*   self,
 	g_return_val_if_fail (bubble != NULL, FALSE);
 
 	bubble_hide (bubble);
+	g_object_unref (bubble);
 
-	/* FIXME: use weak-refs */
-/*	g_object_unref (bubble);
 	stack_layout (self);
-*/
-        /* TODO: return FALSE as a reminder that the operation needs
-	   more work */
-	return FALSE;
+
+	return TRUE;
 }
 
 gboolean
