@@ -564,6 +564,10 @@ stack_notify_handler (Stack*                 self,
 
 	if (bubble_is_synchronous (bubble))
 	{
+		g_signal_connect (G_OBJECT (bubble),
+				  "timed-out",
+				  G_CALLBACK (timed_out_handler),
+				  self);
 		stack_display_sync_bubble (self, bubble);
 		stack_resync_bubble_on_display (self);
 	} else {
