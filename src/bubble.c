@@ -1690,7 +1690,9 @@ bubble_new (Defaults* defaults)
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
 				  GDK_WINDOW_TYPE_HINT_NOTIFICATION);
-
+	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
+	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
+					
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
 			       GDK_BUTTON_PRESS_MASK |
