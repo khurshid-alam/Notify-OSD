@@ -2312,6 +2312,7 @@ bubble_timed_out (Bubble* self)
 	if (! GET_PRIVATE (self)->composited)
 	{
 		bubble_hide (self);
+		g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);	
 		return FALSE;
 	}
 
