@@ -1481,11 +1481,6 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
-	if (GET_PRIVATE(gobject)->synchronous)
-		g_debug ("** sync. bubble %p finalized", gobject);
-	else
-		g_debug ("** bubble %p finalized", gobject);
-
 	cairo_status_t status;
 
 	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
@@ -2073,7 +2068,6 @@ bubble_show (Bubble* self)
 void
 bubble_refresh (Bubble* self)
 {
-	g_debug ("bubble_refresh()");
 	/* force a redraw */
 	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
 }
