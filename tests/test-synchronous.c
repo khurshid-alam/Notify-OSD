@@ -34,27 +34,32 @@ send_normal (const gchar *message)
 }
 
 static void
-send_synchronous (gint value)
+send_synchronous (const char *type,
+		  const char *icon,
+		  gint value)
 {
         static NotifyNotification *n = NULL;
 
 	if (n == NULL)
 		n = notify_notification_new (" ",
 					     "",
-					     "/home/dbarth/devel/alsdorf/icons/volume.svg",
+					     g_strdup (icon),
 					     NULL);
 	else
 		notify_notification_update (n,
 					    " ",
 					    "",
-					    "/home/dbarth/devel/alsdorf/icons/volume.svg");
+					    g_strdup (icon));
 		
 	notify_notification_set_hint_int32(n, "value", value);
-	notify_notification_set_hint_string(n, "synchronous", "volume");
+	notify_notification_set_hint_string(n, "synchronous", g_strdup (type));
 
 	notify_notification_show (n, NULL);
-	// g_object_unref(G_OBJECT(n));
 }
+
+#define set_volume(x) send_synchronous ("volume", "/home/dbarth/devel/alsdorf/icons/volume.svg", x)
+#define set_brightness(x) send_synchronous ("brightness", "/home/dbarth/devel/alsdorf/icons/brightness.svg", x)
+
 
 static void
 test_synchronous_layout (void)
@@ -67,19 +72,17 @@ test_synchronous_layout (void)
 		     "Would you go from your place by train or should I pick you up from work? What do you think?"
 		);
 	sleep (1);
-	send_synchronous (75);
+	set_volume (0);
 	sleep (1);
-	send_normal ("Hey, what about this restaurant? http://www.blafasel.org"
-		     ""
-		     "Would you go from your place by train or should I pick you up from work? What do you think?"
-		     "etc. etc. etc. etc. etc. etc etc. etc. etc. etc. etc. etc. etc. etc. etc. etc. etc. etc."
-		);
+	set_volume (75);
 	sleep (1);
-	send_synchronous (75);
+	set_volume (90);
 	sleep (1);
-	send_synchronous (80);
+	set_volume (100);
 	sleep (1);
-	send_synchronous (85);
+	send_normal ("Ok, let's go for this one");
+	sleep (1);
+	set_volume (99);
 }
 
 GTestSuite *

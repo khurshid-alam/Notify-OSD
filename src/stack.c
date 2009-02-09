@@ -193,6 +193,9 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
+/* fwd declaration */
+void timed_out_handler (Bubble* bubble, Stack*  stack);
+
 static Bubble *sync_bubble = NULL;
 
 static void
@@ -205,7 +208,13 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 	g_return_if_fail (IS_STACK (self));
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	g_debug ("displaying sync. bubble %p", bubble);
+	/* is the notification reusing the current bubble? */
+	if (sync_bubble == bubble)
+	{
+		bubble_start_timer (bubble);
+		bubble_refresh (bubble);
+		return;
+	}
 
 	/* Position the bubble at the top left corner of the display. */
 	d = self->defaults;
@@ -228,10 +237,12 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 
 	bubble_fade_in (bubble, 100);
 
-	if (sync_bubble != NULL)
-		g_object_unref (sync_bubble);
-
 	sync_bubble = bubble;
+
+	g_signal_connect (G_OBJECT (bubble),
+			  "timed-out",
+			  G_CALLBACK (timed_out_handler),
+			  self);
 }
 
 static void
@@ -242,7 +253,7 @@ stack_resync_bubble_on_display (Stack *self)
 
 	g_return_if_fail (IS_STACK (self));
 
-	/* pickup the next bubble to display */
+	/* find the bubble on display */
 	for (list = g_list_first (self->list);
 	     list != NULL;
 	     list = g_list_next (list))
@@ -378,7 +389,12 @@ void
 timed_out_handler (Bubble* bubble,
 		   Stack*  stack)
 {
-	stack_layout (stack);
+	if (bubble != NULL
+	    && IS_BUBBLE (bubble)
+	    && bubble_is_synchronous (bubble))
+		g_object_unref (bubble);
+	else 
+		stack_layout (stack);
 
 	/* TODO: use weak-refs to dispose the bubble.
 	   Meanwhile, do nothing here to avoid segfaults
@@ -517,18 +533,24 @@ stack_notify_handler (Stack*                 self,
 	GValue*      data = NULL;
 	GdkPixbuf* pixbuf = NULL;
 
-	/* check if a bubble exists with same id */
+        /* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
-	if (!bubble)
-	{
+	if (bubble == NULL)
 		bubble = bubble_new (self->defaults);
-	}
-
+	
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
 		if (G_VALUE_HOLDS_STRING (data))
+		{
+			if (sync_bubble != NULL
+			    && IS_BUBBLE (sync_bubble))
+			{
+				g_object_unref (bubble);
+				bubble = sync_bubble;
+			}
 			bubble_set_synchronous (bubble, g_value_get_string (data));
+		}
 	}
 
 	if (hints)
@@ -564,10 +586,6 @@ stack_notify_handler (Stack*                 self,
 
 	if (bubble_is_synchronous (bubble))
 	{
-		g_signal_connect (G_OBJECT (bubble),
-				  "timed-out",
-				  G_CALLBACK (timed_out_handler),
-				  self);
 		stack_display_sync_bubble (self, bubble);
 		stack_resync_bubble_on_display (self);
 	} else {
