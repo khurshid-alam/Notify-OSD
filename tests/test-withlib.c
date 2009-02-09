@@ -47,6 +47,29 @@ test_withlib_get_server_information (void)
 }
 
 static void
+test_withlib_get_server_caps (void)
+{
+	GList *cap, *caps = NULL;
+	gboolean test = FALSE;
+
+        notify_init (__FILE__);
+
+	caps = notify_get_server_caps ();
+
+	g_assert (caps);
+
+	for (cap = g_list_first (caps);
+	     cap != NULL;
+	     cap = g_list_next (cap))
+	{
+		if (! g_strcmp0 (cap->data, "canonical-private-1"))
+			test = TRUE;
+	}
+
+	g_assert (test);
+}
+
+static void
 test_withlib_show_notification (void)
 {
         NotifyNotification *n;
@@ -149,6 +172,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_get_server_information,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("can get private server cap",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_get_server_caps,
 					     NULL)
 		);
 	g_test_suite_add(ts,

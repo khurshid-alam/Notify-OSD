@@ -624,7 +624,7 @@ stack_get_capabilities (Stack*   self,
 
 	(*out_caps)[0] = g_strdup ("body");
 	(*out_caps)[1] = g_strdup ("icon-static");
-	(*out_caps)[2] = g_strdup ("body-markup");
+	(*out_caps)[2] = g_strdup ("canonical-private-1"); /* means synchronous */
 	(*out_caps)[3] = NULL;
 
 	return TRUE;
