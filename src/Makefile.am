@@ -18,6 +18,7 @@ alsdorf_sources =		\
 	observer.c		\
 	stack.c			\
 	dbus.c			\
+	dnd.c			\
 	apport.c		\
 	../egg/egg-fixed.c		\
 	../egg/egg-units.c		\
@@ -34,6 +35,7 @@ alsdorf_headers =		\
 	stack.h			\
 	stack-glue.h		\
 	dbus.h			\
+	dnd.h			\
 	apport.h		\
 	../egg/egg-fixed.h		\
 	../egg/egg-units.h		\

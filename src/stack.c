@@ -22,7 +22,7 @@
 #include "stack.h"
 #include "bubble.h"
 #include "apport.h"
-
+#include "dnd.h"
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
@@ -271,6 +271,7 @@ stack_resync_bubble_on_display (Stack *self)
 	}
 }
 
+
 static void
 stack_layout (Stack* self)
 {
@@ -322,6 +323,10 @@ stack_layout (Stack* self)
 			next_to_display = bubble;
 		}
 	}
+
+	if (dnd_dont_disturb_user ()
+	    && urgent_bubble == NULL)
+		return;
 
 	if (next_to_display == NULL)
 		/* this actually happens when we're called for a synchronous
