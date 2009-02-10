@@ -580,6 +580,17 @@ stack_notify_handler (Stack*                 self,
 
 	}
 
+	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "urgency");
+		if (G_VALUE_HOLDS_UCHAR (data))
+			bubble_set_urgent (bubble,
+					   (g_value_get_uchar (data) == 2));
+		/* Note: urgency was defined as an enum: LOW, NORMAL, CRITICAL
+		   So, 2 means CRITICAL
+		*/
+	}
+
 	if (summary)
 		bubble_set_title (bubble, summary);
 	if (body)

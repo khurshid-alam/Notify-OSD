@@ -15,6 +15,7 @@ test_modules_SOURCES =		\
 	../src/observer.c	\
 	../src/stack.c		\
 	../src/dbus.c		\
+	../src/dnd.c		\
 	../src/apport.c		\
 	$(EGG_MODULES)	\
 	test-modules-main.c     \

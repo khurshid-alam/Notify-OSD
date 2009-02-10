@@ -135,6 +135,34 @@ test_withlib_pass_icon_data (void)
 }
 
 static void
+test_withlib_priority (void)
+{
+        NotifyNotification *n1, *n2, *n3;
+        GMainLoop* loop;
+
+	n1 = notify_notification_new ("Normal Notification",
+				      "This is the 2nd notification you should see",
+				      "", NULL);
+	notify_notification_show (n1, NULL);
+	n3 = notify_notification_new ("Synchronous Notification",
+				      "You should always see this notification",
+				      "", NULL);
+	notify_notification_show (n3, NULL);
+	n2 = notify_notification_new ("Urgent Notification",
+				      "This is the 1st notification you should see",
+				      "", NULL);
+	notify_notification_show (n2, NULL);
+	
+	loop = g_main_loop_new(NULL, FALSE);
+        g_timeout_add (8000, (GSourceFunc) stop_main_loop, loop);
+        g_main_loop_run (loop);
+
+	g_object_unref(G_OBJECT(n1));
+	g_object_unref(G_OBJECT(n2));
+	g_object_unref(G_OBJECT(n3));
+}
+
+static void
 test_withlib_close_notification (void)
 {
         NotifyNotification *n;
@@ -158,6 +186,7 @@ test_withlib_close_notification (void)
 
 	g_object_unref(G_OBJECT(n));
 }
+
 
 GTestSuite *
 test_withlib_create_test_suite (void)
@@ -212,6 +241,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_close_notification,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("honors priority level",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_priority,
 					     NULL)
 		);
 
