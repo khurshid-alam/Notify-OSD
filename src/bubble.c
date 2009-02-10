@@ -54,6 +54,7 @@ struct _BubblePrivate {
 	gdouble      inc_factor;
 	gint         value; /* "empty": -1, valid range: 0 - 100 */
 	gchar*       synchronous;
+	gchar*       sender;
 	gboolean     urgent;
 	gboolean     composited;
 	EggAlpha *alpha;
@@ -1503,6 +1504,18 @@ bubble_finalize (GObject* gobject)
 		GET_PRIVATE (gobject)->message_body = NULL;
 	}
 
+    	if (GET_PRIVATE (gobject)->synchronous)
+	{
+		g_free ((gpointer) GET_PRIVATE (gobject)->synchronous);
+		GET_PRIVATE (gobject)->synchronous = NULL;
+	}
+
+    	if (GET_PRIVATE (gobject)->sender)
+	{
+		g_free ((gpointer) GET_PRIVATE (gobject)->sender);
+		GET_PRIVATE (gobject)->sender = NULL;
+	}
+
 	if (GET_PRIVATE (gobject)->icon_pixbuf)
 	{
 		g_object_unref (GET_PRIVATE (gobject)->icon_pixbuf);
@@ -1580,6 +1593,7 @@ bubble_init (Bubble* self)
 	priv->icon_pixbuf      = NULL;
 	priv->value            = -1;
 	priv->synchronous      = NULL;
+	priv->sender           = NULL;
 	priv->draw_handler_id  = 0;
 	priv->pointer_update_id= 0;
 }
@@ -1766,6 +1780,13 @@ bubble_get_synchronous (Bubble* self)
 	return GET_PRIVATE (self)->synchronous;
 }
 
+gchar*
+bubble_get_sender (Bubble* self)
+{
+	g_return_val_if_fail (IS_BUBBLE (self), NULL);
+
+	return GET_PRIVATE (self)->sender;
+}
 
 void
 bubble_del (Bubble* self)
@@ -2686,7 +2707,22 @@ bubble_set_synchronous (Bubble *self,
 {
 	g_return_if_fail (IS_BUBBLE (self));
 
+	if (GET_PRIVATE (self)->synchronous != NULL)
+		g_free (GET_PRIVATE (self)->synchronous);
+
 	GET_PRIVATE (self)->synchronous = g_strdup (sync);
+}
+
+void
+bubble_set_sender (Bubble *self,
+		   const gchar *sender)
+{
+	g_return_if_fail (IS_BUBBLE (self));
+
+	if (GET_PRIVATE (self)->sender != NULL)
+		g_free (GET_PRIVATE (self)->sender);
+
+	GET_PRIVATE (self)->sender = g_strdup (sender);
 }
 
 gboolean

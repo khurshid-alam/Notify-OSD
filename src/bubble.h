@@ -72,6 +72,9 @@ bubble_new (Defaults* defaults);
 gchar*
 bubble_get_synchronous (Bubble *self);
 
+gchar*
+bubble_get_sender (Bubble *self);
+
 void
 bubble_del (Bubble* self);
 
@@ -173,6 +176,10 @@ bubble_is_synchronous (Bubble *self);
 void
 bubble_set_synchronous (Bubble *self,
 			const gchar *sync);
+
+void
+bubble_set_sender (Bubble *self,
+		   const gchar *sender);
 
 gboolean
 bubble_is_urgent (Bubble *self);

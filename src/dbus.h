@@ -25,6 +25,11 @@
 DBusGConnection*
 dbus_create_service_instance ();
 
+void
+dbus_send_close_signal (gchar *dest,
+			guint id, 
+			guint reason);
+
 G_END_DECLS
 
 #endif /* __DEFAULTS_H */

@@ -17,9 +17,12 @@
 *******************************************************************************/
 
 #include <assert.h>
+#include "dbus.h"
+#include <dbus/dbus-glib-lowlevel.h>
 #include "stack.h"
 #include "bubble.h"
 #include "apport.h"
+
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
@@ -389,12 +392,19 @@ void
 timed_out_handler (Bubble* bubble,
 		   Stack*  stack)
 {
+
 	if (bubble != NULL
-	    && IS_BUBBLE (bubble)
-	    && bubble_is_synchronous (bubble))
-		g_object_unref (bubble);
-	else 
-		stack_layout (stack);
+	    && IS_BUBBLE (bubble))
+	{
+		dbus_send_close_signal (bubble_get_sender (bubble),
+					bubble_get_id (bubble),
+					1);
+		
+		if (bubble_is_synchronous (bubble))
+			g_object_unref (bubble);
+		else 
+			stack_layout (stack);
+	}
 
 	/* TODO: use weak-refs to dispose the bubble.
 	   Meanwhile, do nothing here to avoid segfaults
@@ -536,7 +546,11 @@ stack_notify_handler (Stack*                 self,
         /* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
 	if (bubble == NULL)
+	{
 		bubble = bubble_new (self->defaults);
+		bubble_set_sender (bubble,
+				   dbus_g_method_get_sender (context));
+	}
 	
 	if (hints)
 	{
@@ -608,6 +622,9 @@ stack_close_notification_handler (Stack*   self,
 	Bubble *bubble = find_bubble_by_id (self, id);
 	g_return_val_if_fail (bubble != NULL, FALSE);
 
+	dbus_send_close_signal (bubble_get_sender (bubble),
+				bubble_get_id (bubble),
+				3);
 	bubble_hide (bubble);
 	g_object_unref (bubble);
 

@@ -20,11 +20,14 @@
 #include <stdlib.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
+#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus/dbus.h>
+
+static DBusGConnection* connection = NULL;
 
 DBusGConnection*
 dbus_create_service_instance (char *service_name)
 {
-	DBusGConnection* connection = NULL;
 	DBusGProxy*      proxy      = NULL;
 	guint            request_name_result;
 	GError*          error      = NULL;
@@ -34,6 +37,7 @@ dbus_create_service_instance (char *service_name)
 	{
 		g_print ("%s", error->message);
 		g_error_free (error);
+		return NULL;
 	}
 
 	proxy = dbus_g_proxy_new_for_name (connection,
@@ -61,3 +65,28 @@ dbus_create_service_instance (char *service_name)
 
 	return connection;
 }
+
+
+void
+dbus_send_close_signal (gchar *dest,
+			guint id, 
+			guint reason)
+{
+	DBusMessage *msg;
+
+	msg = dbus_message_new_signal ("/org/freedesktop/Notifications",
+				       "org.freedesktop.Notifications",
+				       "NotificationClosed");
+	dbus_message_set_destination (msg, dest);
+	dbus_message_append_args (msg, DBUS_TYPE_UINT32, &id,
+				  DBUS_TYPE_INVALID);
+	dbus_message_append_args (msg, DBUS_TYPE_UINT32, &reason,
+				  DBUS_TYPE_INVALID);
+
+	dbus_connection_send (dbus_g_connection_get_connection (connection),
+			      msg,
+			      NULL);
+
+	dbus_message_unref (msg);
+}
+
