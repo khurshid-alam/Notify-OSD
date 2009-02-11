@@ -63,6 +63,8 @@ struct _BubblePrivate {
 	guint        pointer_update_id;
 	cairo_surface_t* blurred_content;
 	cairo_surface_t* blurred_bubble;
+	cairo_surface_t* glow_surface;
+	cairo_surface_t* dim_surface;
 	gint             title_width;
 	gint             title_height;
 	gint             body_width;
@@ -575,7 +577,7 @@ _render_icon_indicator (Bubble*  self,
 			GET_PRIVATE (self)->alpha) /
 			(float)EGG_ALPHA_MAX_ALPHA;
 	} else
-		dim_glow_opacity = 0.8f;
+		dim_glow_opacity = 0.0f;
 
 
 	switch (GET_PRIVATE (self)->value)
@@ -1741,25 +1743,27 @@ bubble_new (Defaults* defaults)
 
 	/* TODO: fold some of that back into bubble_init */
 	this->priv = GET_PRIVATE (this);
-	GET_PRIVATE(this)->layout        = LAYOUT_NONE;
-	GET_PRIVATE(this)->widget        = window;
-	GET_PRIVATE(this)->title         = g_string_new ("");
-	GET_PRIVATE(this)->message_body  = g_string_new ("");
-	GET_PRIVATE(this)->icon_pixbuf   = NULL;
-	GET_PRIVATE(this)->value         = -1;
-	GET_PRIVATE(this)->visible       = FALSE;
-	GET_PRIVATE(this)->timeout       = 2;
-	GET_PRIVATE(this)->mouse_over    = FALSE;
-	GET_PRIVATE(this)->start_y       = 0;
-	GET_PRIVATE(this)->end_y         = 0;
-	GET_PRIVATE(this)->inc_factor    = 0.0f;
-	GET_PRIVATE(this)->delta_y       = 0;
-	GET_PRIVATE(this)->composited    = gdk_screen_is_composited (
+	GET_PRIVATE(this)->layout          = LAYOUT_NONE;
+	GET_PRIVATE(this)->widget          = window;
+	GET_PRIVATE(this)->title           = g_string_new ("");
+	GET_PRIVATE(this)->message_body    = g_string_new ("");
+	GET_PRIVATE(this)->icon_pixbuf     = NULL;
+	GET_PRIVATE(this)->value           = -1;
+	GET_PRIVATE(this)->visible         = FALSE;
+	GET_PRIVATE(this)->timeout         = 2;
+	GET_PRIVATE(this)->mouse_over      = FALSE;
+	GET_PRIVATE(this)->start_y         = 0;
+	GET_PRIVATE(this)->end_y           = 0;
+	GET_PRIVATE(this)->inc_factor      = 0.0f;
+	GET_PRIVATE(this)->delta_y         = 0;
+	GET_PRIVATE(this)->composited      = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
-	GET_PRIVATE(this)->alpha         = NULL;
-	GET_PRIVATE(this)->timeline      = NULL;
+	GET_PRIVATE(this)->alpha           = NULL;
+	GET_PRIVATE(this)->timeline        = NULL;
 	GET_PRIVATE(this)->blurred_content = NULL;
 	GET_PRIVATE(this)->blurred_bubble  = NULL;
+	GET_PRIVATE(this)->glow_surface    = NULL;
+	GET_PRIVATE(this)->dim_surface     = NULL;
 	GET_PRIVATE(this)->title_width     = 0;
 	GET_PRIVATE(this)->title_height    = 0;
 	GET_PRIVATE(this)->body_width      = 0;
@@ -1793,6 +1797,22 @@ bubble_del (Bubble* self)
 {
 	if (!self || !IS_BUBBLE (self))
 		return;
+
+	if (GET_PRIVATE(self)->blurred_content != NULL &&
+	    cairo_surface_status (GET_PRIVATE(self)->blurred_content) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (GET_PRIVATE(self)->blurred_content);
+
+	if (GET_PRIVATE(self)->blurred_bubble != NULL &&
+	    cairo_surface_status (GET_PRIVATE(self)->blurred_bubble) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (GET_PRIVATE(self)->blurred_bubble);
+
+	if (GET_PRIVATE(self)->glow_surface != NULL &&
+	    cairo_surface_status (GET_PRIVATE(self)->glow_surface) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (GET_PRIVATE(self)->glow_surface);
+
+	if (GET_PRIVATE(self)->dim_surface != NULL &&
+	    cairo_surface_status (GET_PRIVATE(self)->dim_surface) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (GET_PRIVATE(self)->dim_surface);
 
 	g_object_unref (self);
 }
@@ -2637,11 +2657,23 @@ bubble_recalc_size (Bubble *self)
 			}
 			else
 			{
-				new_bubble_height =
-					GET_PRIVATE (self)->body_height +
-					GET_PRIVATE (self)->title_height +
-					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
-					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				if (GET_PRIVATE (self)->body_height +
+				    GET_PRIVATE (self)->title_height <
+				    EM2PIXELS (defaults_get_icon_size (d), d))
+				{
+					new_bubble_height =
+						EM2PIXELS (defaults_get_icon_size (d), d) +
+						2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
+						2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				}
+				else
+				{
+					new_bubble_height =
+						GET_PRIVATE (self)->body_height +
+						GET_PRIVATE (self)->title_height +
+						2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
+						2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				}
 			}
 		}
 		break;
