@@ -52,6 +52,9 @@ AC_SUBST(ALSDORF_LIBS)
 # example python module
 # AM_CHECK_PYMOD(gobject)
 
+dnl CFLAGS
+CFLAGS="$CFLAGS -lm"
+
 AC_OUTPUT([
 Makefile
 src/Makefile
