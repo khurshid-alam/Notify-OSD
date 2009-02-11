@@ -202,6 +202,13 @@ bubble_determine_layout (Bubble* self);
 BubbleLayout
 bubble_get_layout (Bubble* self);
 
+void
+bubble_set_append (Bubble*  self,
+		   gboolean allowed);
+
+gboolean
+bubble_is_append_allowed (Bubble* self);
+
 G_END_DECLS
 
 #endif /* __BUBBLE_H */

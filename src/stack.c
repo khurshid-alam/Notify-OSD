@@ -607,6 +607,18 @@ stack_notify_handler (Stack*                 self,
 			bubble_set_icon (bubble, icon);
 	}
 
+	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "append");
+		if (G_VALUE_HOLDS_STRING (data))
+		{
+			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
+				bubble_set_append (bubble, TRUE);
+			else
+				bubble_set_append (bubble, FALSE);
+		}
+	}
+
 	if (timeout || actions != NULL)
 		apport_report (app_name, summary, actions, timeout);
 

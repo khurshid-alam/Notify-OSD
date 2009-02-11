@@ -69,6 +69,7 @@ struct _BubblePrivate {
 	gint             title_height;
 	gint             body_width;
 	gint             body_height;
+	gboolean         append;
 };
 
 enum
@@ -1768,6 +1769,7 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->title_height    = 0;
 	GET_PRIVATE(this)->body_width      = 0;
 	GET_PRIVATE(this)->body_height     = 0;
+	GET_PRIVATE(this)->append          = FALSE;
 
 	update_input_shape (window, 1, 1);
 
@@ -2845,4 +2847,23 @@ bubble_get_layout (Bubble* self)
 		return LAYOUT_NONE;
 
 	return GET_PRIVATE (self)->layout;
+}
+
+void
+bubble_set_append (Bubble*  self,
+		   gboolean allowed)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE (self)->append = allowed;
+}
+
+gboolean
+bubble_is_append_allowed (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return FALSE;
+
+	return GET_PRIVATE (self)->append;
 }
