@@ -209,6 +209,10 @@ bubble_set_append (Bubble*  self,
 gboolean
 bubble_is_append_allowed (Bubble* self);
 
+void
+bubble_append_message_body (Bubble*      self,
+			    const gchar* append_body);
+
 G_END_DECLS
 
 #endif /* __BUBBLE_H */

@@ -2867,3 +2867,29 @@ bubble_is_append_allowed (Bubble* self)
 
 	return GET_PRIVATE (self)->append;
 }
+
+void
+bubble_append_message_body (Bubble*      self,
+			    const gchar* append_body)
+{
+	gboolean result;
+	gchar*   text;
+	GError*  error = NULL;
+
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	/* filter out any HTML/markup if possible */
+    	result = pango_parse_markup (append_body,
+				     -1,
+				     0,    /* no accel-marker needed */
+				     NULL, /* no PangoAttr needed */
+				     &text,
+				     NULL, /* no accel-marker-return needed */
+				     &error);
+
+	/* append text to current message-body */
+	g_string_append (GET_PRIVATE (self)->message_body, text);
+
+	g_free ((gpointer) text);
+}

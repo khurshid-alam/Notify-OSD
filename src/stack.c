@@ -544,14 +544,16 @@ stack_notify_handler (Stack*                 self,
 		      gint                   timeout,
 		      DBusGMethodInvocation* context)
 {
-	Bubble*    bubble = NULL;
-	GValue*      data = NULL;
-	GdkPixbuf* pixbuf = NULL;
+	Bubble*    bubble     = NULL;
+	GValue*      data     = NULL;
+	GdkPixbuf* pixbuf     = NULL;
+	gboolean   new_bubble = FALSE;
 
         /* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
 	if (bubble == NULL)
 	{
+		new_bubble = TRUE;
 		bubble = bubble_new (self->defaults);
 		bubble_set_sender (bubble,
 				   dbus_g_method_get_sender (context));
@@ -591,12 +593,35 @@ stack_notify_handler (Stack*                 self,
 		*/
 	}
 
-	if (summary)
-		bubble_set_title (bubble, summary);
-	if (body)
-		bubble_set_message_body (bubble, body);
-
 	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "append");
+		if (G_VALUE_HOLDS_STRING (data) && !new_bubble)
+		{
+			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
+				bubble_set_append (bubble, TRUE);
+			else
+				bubble_set_append (bubble, FALSE);
+		}
+	}
+
+	if (!new_bubble && bubble_is_append_allowed (bubble))
+	{
+		if (body)
+		{
+			bubble_append_message_body (bubble, "\n");
+			bubble_append_message_body (bubble, body);
+		}
+	}
+	else
+	{
+		if (summary)
+			bubble_set_title (bubble, summary);
+		if (body)
+			bubble_set_message_body (bubble, body);
+	}
+
+	if (hints && !bubble_is_append_allowed (bubble))
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "icon_data");
 		if (*icon == '\0' && data != NULL)
@@ -605,18 +630,6 @@ stack_notify_handler (Stack*                 self,
 			bubble_set_icon_from_pixbuf (bubble, pixbuf);
 		} else
 			bubble_set_icon (bubble, icon);
-	}
-
-	if (hints)
-	{
-		data = (GValue*) g_hash_table_lookup (hints, "append");
-		if (G_VALUE_HOLDS_STRING (data))
-		{
-			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
-				bubble_set_append (bubble, TRUE);
-			else
-				bubble_set_append (bubble, FALSE);
-		}
 	}
 
 	if (timeout || actions != NULL)
