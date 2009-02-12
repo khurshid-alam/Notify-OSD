@@ -38,3 +38,9 @@ tests/.libs
 tests/test-modules.html
 src/stack-glue.h
 data/org.freedesktop.Notifications.service
+tests/test-alpha-animation
+tests/test-timeline
+tests/test-timeline-dup-frames
+tests/test-timeline-interpolate
+tests/test-timeline-rewind
+tests/test-timeline-smoothness
