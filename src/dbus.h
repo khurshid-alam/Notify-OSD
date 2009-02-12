@@ -29,6 +29,10 @@ void
 dbus_send_close_signal (gchar *dest,
 			guint id, 
 			guint reason);
+void
+dbus_send_action_signal (gchar *dest,
+			 guint id, 
+			 const char *action_key);
 
 G_END_DECLS
 

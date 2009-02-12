@@ -137,21 +137,27 @@ test_withlib_pass_icon_data (void)
 static void
 test_withlib_priority (void)
 {
-        NotifyNotification *n1, *n2, *n3;
+        NotifyNotification *n1, *n2, *n3, *n4;
         GMainLoop* loop;
 
-	n1 = notify_notification_new ("Normal Notification",
-				      "This is the 2nd notification you should see",
+	n1 = notify_notification_new ("Dummy Notification",
+				      "This is a test notification",
 				      "", NULL);
 	notify_notification_show (n1, NULL);
-	n3 = notify_notification_new ("Synchronous Notification",
-				      "You should always see this notification",
-				      "", NULL);
-	notify_notification_show (n3, NULL);
-	n2 = notify_notification_new ("Urgent Notification",
-				      "This is the 1st notification you should see",
+	n2 = notify_notification_new ("Normal Notification",
+				      "You should see this *after* the urgent notification.",
 				      "", NULL);
 	notify_notification_show (n2, NULL);
+	n3 = notify_notification_new ("Synchronous Notification",
+				      "You should immediately see this notification.",
+				      "", NULL);
+	notify_notification_set_hint_string (n3, "synchronous", "test");
+	notify_notification_show (n3, NULL);
+	n4 = notify_notification_new ("Urgent Notification",
+				      "You should see a dialog box, and after, a normal notification.",
+				      "", NULL);
+	notify_notification_set_urgency(n4, NOTIFY_URGENCY_CRITICAL);
+	notify_notification_show (n4, NULL);
 	
 	loop = g_main_loop_new(NULL, FALSE);
         g_timeout_add (8000, (GSourceFunc) stop_main_loop, loop);
@@ -160,6 +166,40 @@ test_withlib_priority (void)
 	g_object_unref(G_OBJECT(n1));
 	g_object_unref(G_OBJECT(n2));
 	g_object_unref(G_OBJECT(n3));
+	g_object_unref(G_OBJECT(n4));
+}
+
+static GMainLoop* loop;
+
+static void
+callback (NotifyNotification *n,
+	  const char *action,
+	  void *user_data)
+{
+	g_assert (g_strcmp0 (action, "default") == 0);
+	g_main_loop_quit (loop);
+}
+
+static void
+test_withlib_actions (void)
+{
+        NotifyNotification *n1;
+
+	n1 = notify_notification_new ("Notification with a default action",
+				      "You should see that in a dialog box",
+				      "", NULL);
+	notify_notification_add_action (n1,
+					"default",
+					"default",
+					(NotifyActionCallback)callback,
+					NULL,
+					NULL);
+	notify_notification_show (n1, NULL);
+	
+	loop = g_main_loop_new(NULL, FALSE);
+        g_main_loop_run (loop);
+
+	g_object_unref(G_OBJECT(n1));
 }
 
 static void
@@ -175,7 +215,7 @@ test_withlib_close_notification (void)
 	notify_notification_show (n, NULL);
 	
 	loop = g_main_loop_new(NULL, FALSE);
-        g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
+        g_timeout_add (1000, (GSourceFunc) stop_main_loop, loop);
         g_main_loop_run (loop);
 
 	res = notify_notification_close (n, NULL);
@@ -325,6 +365,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_swallow_markup,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("interprets actions",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_actions,
 					     NULL)
 		);
 

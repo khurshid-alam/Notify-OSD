@@ -31,6 +31,8 @@
 #include "bubble.h"
 #include "defaults.h"
 #include "stack.h"
+#include "dbus.h"
+
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -1919,6 +1921,14 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	GET_PRIVATE (self)->icon_pixbuf = pixbuf;
 }
 
+GdkPixbuf*
+bubble_get_icon_pixbuf (Bubble *self)
+{
+	g_return_val_if_fail (IS_BUBBLE (self), NULL);
+
+	return GET_PRIVATE (self)->icon_pixbuf;
+}
+
 void
 bubble_set_value (Bubble* self,
 		  gint    value)
@@ -2228,8 +2238,12 @@ fade_out_completed_cb (EggTimeline *timeline,
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
 
+	bubble_set_timeout (bubble, 0);
 	bubble_hide (bubble);
 
+	dbus_send_close_signal (bubble_get_sender (bubble),
+				bubble_get_id (bubble),
+				1);
 	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
 }
 
@@ -2346,14 +2360,17 @@ bubble_timed_out (Bubble* self)
 
 	bubble_set_timeout (self, 0);
 
-	if (! GET_PRIVATE (self)->composited)
+	if (GET_PRIVATE (self)->composited)
 	{
-		bubble_hide (self);
-		g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);	
+		bubble_fade_out (self, 300);
 		return FALSE;
 	}
 
-	bubble_fade_out (self, 300);
+	bubble_hide (self);
+	dbus_send_close_signal (bubble_get_sender (self),
+				bubble_get_id (self),
+				1);
+	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);	
 
 	return FALSE;
 }
@@ -2893,3 +2910,6 @@ bubble_append_message_body (Bubble*      self,
 
 	g_free ((gpointer) text);
 }
+
+#include "dialog.c"
+

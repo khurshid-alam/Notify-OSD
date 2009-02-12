@@ -19,6 +19,7 @@
 #include <assert.h>
 #include "dbus.h"
 #include <dbus/dbus-glib-lowlevel.h>
+#include <glib-object.h>
 #include "stack.h"
 #include "bubble.h"
 #include "apport.h"
@@ -197,7 +198,7 @@ stack_purge_old_bubbles (Stack* self)
 }
 
 /* fwd declaration */
-void timed_out_handler (Bubble* bubble, Stack*  stack);
+void close_handler (GObject* n, Stack*  stack);
 
 static Bubble *sync_bubble = NULL;
 
@@ -244,7 +245,7 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 
 	g_signal_connect (G_OBJECT (bubble),
 			  "timed-out",
-			  G_CALLBACK (timed_out_handler),
+			  G_CALLBACK (close_handler),
 			  self);
 }
 
@@ -394,28 +395,23 @@ stack_del (Stack* self)
 }
 
 void
-timed_out_handler (Bubble* bubble,
-		   Stack*  stack)
+close_handler (GObject *n,
+	       Stack*  stack)
 {
-
-	if (bubble != NULL
-	    && IS_BUBBLE (bubble))
-	{
-		dbus_send_close_signal (bubble_get_sender (bubble),
-					bubble_get_id (bubble),
-					1);
-		
-		if (bubble_is_synchronous (bubble))
-			g_object_unref (bubble);
-		else 
-			stack_layout (stack);
-	}
-
 	/* TODO: use weak-refs to dispose the bubble.
 	   Meanwhile, do nothing here to avoid segfaults
 	   and rely on the stack_purge_old_bubbles() call
 	   later on in the thread.
 	*/
+
+	if (n != NULL)
+	{
+		if (IS_BUBBLE (n)
+		    && bubble_is_synchronous (BUBBLE (n)))
+			g_object_unref (n);
+		else 
+			stack_layout (stack);
+	}
 
 	return;
 }
@@ -448,7 +444,7 @@ stack_push_bubble (Stack*  self,
 
 	g_signal_connect (G_OBJECT (bubble),
 			  "timed-out",
-			  G_CALLBACK (timed_out_handler),
+			  G_CALLBACK (close_handler),
 			  self);
 
 	/* return current/new id to caller (usually our DBus-dispatcher) */
@@ -632,8 +628,23 @@ stack_notify_handler (Stack*                 self,
 			bubble_set_icon (bubble, icon);
 	}
 
-	if (timeout || actions != NULL)
-		apport_report (app_name, summary, actions, timeout);
+	if ((timeout == 0)
+	    || actions[0] != NULL)
+		/* || bubble_is_urgent (bubble)) */
+	{
+		/* TODO: apport_report (app_name, summary, actions, timeout); */
+
+		GObject *dialog = G_OBJECT (
+			bubble_show_dialog (bubble, app_name, actions));
+		g_signal_connect (dialog,
+				  "destroy-event",
+				  G_CALLBACK (close_handler),
+				  self);
+
+		dbus_g_method_return (context, bubble_get_id (bubble));
+
+		return TRUE;
+	}
 
 	bubble_determine_layout (bubble);
 
@@ -661,7 +672,11 @@ stack_close_notification_handler (Stack*   self,
 				  GError** error)
 {
 	Bubble *bubble = find_bubble_by_id (self, id);
-	g_return_val_if_fail (bubble != NULL, FALSE);
+
+	/* exit but pretend it's ok, for applications
+	   that call us after an action button was clicked */
+	if (bubble == NULL)
+		return TRUE;
 
 	dbus_send_close_signal (bubble_get_sender (bubble),
 				bubble_get_id (bubble),

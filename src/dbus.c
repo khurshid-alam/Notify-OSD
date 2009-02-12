@@ -90,3 +90,26 @@ dbus_send_close_signal (gchar *dest,
 	dbus_message_unref (msg);
 }
 
+void
+dbus_send_action_signal (gchar *dest,
+			 guint id, 
+			 const char *action_key)
+{
+	DBusMessage *msg;
+
+	msg = dbus_message_new_signal ("/org/freedesktop/Notifications",
+				       "org.freedesktop.Notifications",
+				       "ActionInvoked");
+	dbus_message_set_destination (msg, dest);
+	dbus_message_append_args (msg, DBUS_TYPE_UINT32, &id,
+				  DBUS_TYPE_INVALID);
+	dbus_message_append_args (msg, DBUS_TYPE_STRING, &action_key,
+				  DBUS_TYPE_INVALID);
+
+	dbus_connection_send (dbus_g_connection_get_connection (connection),
+			      msg,
+			      NULL);
+
+	dbus_message_unref (msg);
+}
+

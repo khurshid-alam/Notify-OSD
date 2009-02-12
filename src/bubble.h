@@ -94,6 +94,9 @@ void
 bubble_set_icon_from_pixbuf (Bubble*      self,
 			     GdkPixbuf*   pixbuf);
 
+GdkPixbuf*
+bubble_get_icon_pixbuf (Bubble *self);
+
 void
 bubble_set_value (Bubble* self,
 		  gint    value);
@@ -212,6 +215,11 @@ bubble_is_append_allowed (Bubble* self);
 void
 bubble_append_message_body (Bubble*      self,
 			    const gchar* append_body);
+
+GObject*
+bubble_show_dialog (Bubble *bubble,
+		    const char *process_name,
+		    gchar **actions);
 
 G_END_DECLS
 
