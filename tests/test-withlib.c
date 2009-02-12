@@ -229,6 +229,25 @@ test_withlib_append_hint (void)
 	g_object_unref(G_OBJECT(n));
 }
 
+static void
+test_withlib_swallow_markup (void)
+{
+        NotifyNotification *n;
+	gboolean res = FALSE;
+
+        notify_init (__FILE__);
+
+	n = notify_notification_new ("Swallow markup test",
+				     "This text is hopefully neither <b>bold</b>, <i>italic</i> nor <u>underlined</u>.\n\nA little math-notation:\n\n\ta &gt; b &lt; c = 0",
+				     "./icons/avatar.png",
+				     NULL);
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+	sleep (2);
+
+	g_object_unref(G_OBJECT(n));
+}
+
 GTestSuite *
 test_withlib_create_test_suite (void)
 {
@@ -298,6 +317,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_append_hint,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("swallows markup",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_swallow_markup,
 					     NULL)
 		);
 
