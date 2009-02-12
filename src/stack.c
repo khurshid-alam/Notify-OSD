@@ -609,7 +609,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		if (body)
 		{
-			bubble_append_message_body (bubble, "\n\n");
+			bubble_append_message_body (bubble, "\n");
 			bubble_append_message_body (bubble, body);
 		}
 	}
