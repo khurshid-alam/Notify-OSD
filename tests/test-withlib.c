@@ -187,6 +187,47 @@ test_withlib_close_notification (void)
 	g_object_unref(G_OBJECT(n));
 }
 
+static void
+test_withlib_append_hint (void)
+{
+        NotifyNotification *n;
+	gboolean res = FALSE;
+
+        notify_init (__FILE__);
+
+	/* init notification, supply first line of body-text */
+	n = notify_notification_new ("Test (append-hint)",
+				     "The quick brown fox jumps over the lazy dog.",
+				     "./icons/avatar.png",
+				     NULL);
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+	sleep (2);
+
+	/* append second part of body-text */
+	res = notify_notification_update (n,
+					  " ",
+					  "Polyfon zwitschernd aßen Mäxchens Vögel Rüben, Joghurt und Quark. (first append)",
+					  NULL);
+	notify_notification_set_hint_string (n, "append", "allowed");
+	g_assert (res);
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+ 	sleep (2);
+
+	/* append third part of body-text */
+	res = notify_notification_update (n,
+					  " ",
+					  "Съешь ещё этих мягких французских булок, да выпей чаю. (last append)",
+					  NULL);
+	notify_notification_set_hint_string (n, "append", "allowed");
+	g_assert (res);
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+ 	sleep (2);
+
+	g_object_unref(G_OBJECT(n));
+}
 
 GTestSuite *
 test_withlib_create_test_suite (void)
@@ -249,6 +290,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_priority,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("supports append-hint",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_append_hint,
 					     NULL)
 		);
 
