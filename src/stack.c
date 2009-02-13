@@ -585,7 +585,6 @@ stack_notify_handler (Stack*                 self,
 		data = (GValue*) g_hash_table_lookup (hints, "value");
 		if (G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
-
 	}
 
 	if (hints)

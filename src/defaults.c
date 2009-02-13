@@ -30,6 +30,7 @@
 #include <X11/Xatom.h>
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
+#include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
 
 #include "defaults.h"
@@ -364,6 +365,14 @@ defaults_constructed (GObject* gobject)
 		      "bubble-min-height",
 		      &bubble_height,
 		      NULL);
+
+#if 0
+	/* try to register the non-standard size for the gtk_icon_theme_lookup
+	   calls to work */
+	gtk_icon_size_register ("52x52",
+				pixels_per_em * icon_size,
+				pixels_per_em * icon_size);
+#endif
 
 	new_bubble_height = 2.0f * margin_size + icon_size;
 

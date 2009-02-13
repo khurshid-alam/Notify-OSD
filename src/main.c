@@ -39,6 +39,7 @@
 #define DBUS_PATH "/org/freedesktop/Notifications"
 #define DBUS_NAME "org.freedesktop.Notifications"
 
+#define ICONS_DIR  (DATADIR G_DIR_SEPARATOR_S "alsdorf" G_DIR_SEPARATOR_S "icons")
 
 int
 main (int    argc,
@@ -53,6 +54,10 @@ main (int    argc,
 	dbus_g_thread_init ();
 
 	gtk_init (&argc, &argv);
+
+	/* Init some theme/icon stuff */
+	gtk_icon_theme_append_search_path(gtk_icon_theme_get_default(),
+	                                  ICONS_DIR);
 
 	defaults = defaults_new ();
 	observer = observer_new ();

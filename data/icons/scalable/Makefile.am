@@ -1,4 +1,4 @@
-iconsdir = $(datadir)/alsdorf/icons/hicolor/scalable
+iconsdir = $(pkgdatadir)/icons
 
 icons_DATA =  \
 	notification-volume.svg \

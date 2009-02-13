@@ -67,8 +67,8 @@ send_synchronous (const char *type,
 	notify_notification_show (n, NULL);
 }
 
-#define set_volume(x) send_synchronous ("volume", "/home/dbarth/devel/alsdorf/icons/volume.svg", x)
-#define set_brightness(x) send_synchronous ("brightness", "/home/dbarth/devel/alsdorf/icons/brightness.svg", x)
+#define set_volume(x) send_synchronous ("volume", "notification-volume", x)
+#define set_brightness(x) send_synchronous ("brightness", "notification-brightness", x)
 
 
 static void

@@ -61,6 +61,7 @@ alsdorf_LDADD =			\
 
 alsdorf_CFLAGS = 		\
 	-Wall -Werror -std=c99	\
+	-DDATADIR=\""$(datadir)"\" \
 	$(GTK_CFLAGS) 		\
 	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
