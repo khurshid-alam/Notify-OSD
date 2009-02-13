@@ -703,12 +703,13 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	*out_caps = g_malloc0 (4 * sizeof(char *));
+	*out_caps = g_malloc0 (10 * sizeof(char *));
 
 	(*out_caps)[0] = g_strdup ("body");
 	(*out_caps)[1] = g_strdup ("icon-static");
-	(*out_caps)[2] = g_strdup ("canonical-private-1"); /* means synchronous */
-	(*out_caps)[3] = NULL;
+	(*out_caps)[2] = g_strdup ("canonical-private-1"); /* synchronous */
+	(*out_caps)[3] = g_strdup ("canonical-private-2"); /* append */
+	(*out_caps)[4] = NULL;
 
 	return TRUE;
 }
