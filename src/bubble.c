@@ -2845,7 +2845,7 @@ bubble_set_sender (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (priv);
+	priv = GET_PRIVATE (self);
 
 	if (priv->sender != NULL)
 		g_free (priv->sender);
