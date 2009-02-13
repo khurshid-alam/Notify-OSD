@@ -43,7 +43,6 @@
 #include "stack.h"
 #include "dbus.h"
 
-
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
 #define GET_PRIVATE(o) \
@@ -573,6 +572,7 @@ _render_icon_indicator (Bubble*  self,
 				     INDICATOR_UNLIT_A};
 	gint             blur_radius = 10;
 	gdouble          dim_glow_opacity;
+	BubblePrivate*   priv = GET_PRIVATE (self);
 
 	/* create "scratch-pad" surface */
 	glow_surface = cairo_image_surface_create (
@@ -604,7 +604,7 @@ _render_icon_indicator (Bubble*  self,
 
 	/* render icon to scratch-pad context */
 	gdk_cairo_set_source_pixbuf (glow_cr,
-				     GET_PRIVATE (self)->icon_pixbuf,
+				     priv->icon_pixbuf,
 				     blur_radius,
 				     blur_radius);
 	cairo_paint (glow_cr);
@@ -612,7 +612,7 @@ _render_icon_indicator (Bubble*  self,
 	/* render value-bar(s) to scratch-pad context */
 	draw_value_indicator (
 		glow_cr,
-		GET_PRIVATE (self)->value,
+		priv->value,
 		EM2PIXELS (defaults_get_margin_size (d), d) +
 		EM2PIXELS (defaults_get_icon_size (d), d) +
 		blur_radius,
@@ -636,16 +636,16 @@ _render_icon_indicator (Bubble*  self,
 				  blur_radius);
 	cairo_paint (cr);
 
-	if (GET_PRIVATE (self)->alpha != NULL)
+	if (priv->alpha != NULL)
 	{
 		dim_glow_opacity = (float)egg_alpha_get_alpha (
-			GET_PRIVATE (self)->alpha) /
+			priv->alpha) /
 			(float)EGG_ALPHA_MAX_ALPHA;
 	} else
 		dim_glow_opacity = 0.0f;
 
 
-	switch (GET_PRIVATE (self)->value)
+	switch (priv->value)
 	{
 		/* "undershoot" effect */
 		case 0:
@@ -743,6 +743,7 @@ _render_icon_title (Bubble*  self,
 	PangoLayout*          layout = NULL;
 	PangoRectangle        ink_rect;
 	PangoRectangle        log_rect;
+	BubblePrivate*        priv = GET_PRIVATE (self);
 
 	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -751,7 +752,7 @@ _render_icon_title (Bubble*  self,
 
 	/* render icon */
 	gdk_cairo_set_source_pixbuf (cr,
-				     GET_PRIVATE (self)->icon_pixbuf,
+				     priv->icon_pixbuf,
 				     left_margin,
 				     left_margin);
 	cairo_paint (cr);
@@ -782,9 +783,7 @@ _render_icon_title (Bubble*  self,
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 	/* print and layout string (pango-wise) */
-	pango_layout_set_text (layout,
-			       GET_PRIVATE (self)->title->str,
-			       GET_PRIVATE (self)->title->len);
+	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -819,6 +818,7 @@ _render_icon_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
+	BubblePrivate*        priv = GET_PRIVATE (self);
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -827,7 +827,7 @@ _render_icon_title_body (Bubble*  self,
 
 	/* render icon */
 	gdk_cairo_set_source_pixbuf (cr,
-				     GET_PRIVATE (self)->icon_pixbuf,
+				     priv->icon_pixbuf,
 				     left_margin,
 				     left_margin);
 	cairo_paint (cr);
@@ -850,12 +850,9 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_free (desc);
 
 	/* print and layout string (pango-wise) */
-	pango_layout_set_text (layout,
-			       GET_PRIVATE (self)->title->str,
-			       GET_PRIVATE (self)->title->len);
+	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
-	pango_layout_set_width (layout,
-				GET_PRIVATE (self)->title_width * PANGO_SCALE);
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -891,13 +888,12 @@ _render_icon_title_body (Bubble*  self,
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	pango_layout_set_width (layout,
-				GET_PRIVATE (self)->body_width * PANGO_SCALE);
+	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
-			       GET_PRIVATE (self)->message_body->str,
-			       GET_PRIVATE (self)->message_body->len);
+			       priv->message_body->str,
+			       priv->message_body->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -928,6 +924,7 @@ _render_title_body (Bubble*  self,
 	gint                  margin_gap;
 	gint                  top_margin;
 	gint                  left_margin;
+	BubblePrivate*        priv = GET_PRIVATE (self);
 
 	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
 	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -948,15 +945,12 @@ _render_title_body (Bubble*  self,
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
-	pango_layout_set_width (layout,
-				GET_PRIVATE (self)->title_width * PANGO_SCALE);
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
 	/* print and layout string (pango-wise) */
-	pango_layout_set_text (layout,
-			       GET_PRIVATE (self)->title->str,
-			       GET_PRIVATE (self)->title->len);
+	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -992,13 +986,12 @@ _render_title_body (Bubble*  self,
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	pango_layout_set_width (layout,
-				GET_PRIVATE (self)->body_width * PANGO_SCALE);
+	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
-			       GET_PRIVATE (self)->message_body->str,
-			       GET_PRIVATE (self)->message_body->len);
+			       priv->message_body->str,
+			       priv->message_body->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -1081,32 +1074,29 @@ update_input_shape (GtkWidget* window,
 static void
 update_shape (Bubble* self)
 {
-	GdkBitmap* mask = NULL;
-	cairo_t*   cr   = NULL;
-	gint       width;
-	gint       height;
-	Defaults*  d;
+	GdkBitmap*     mask = NULL;
+	cairo_t*       cr   = NULL;
+	gint           width;
+	gint           height;
+	Defaults*      d;
+	BubblePrivate* priv;
 
 	/* sanity test */
 	if (!self || !IS_BUBBLE (self))
 		return;
 
 	d = self->defaults;
+	priv = GET_PRIVATE (self);
 
 	/* do we actually need a shape-mask at all? */
-	if (GET_PRIVATE (self)->composited)
+	if (priv->composited)
 	{
-		gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
-					       NULL,
-					       0,
-					       0);
+		gtk_widget_shape_combine_mask (priv->widget, NULL, 0, 0);
 		return;
 	}
 
 	/* guess we need one */
-	gtk_widget_get_size_request (GET_PRIVATE(self)->widget,
-				     &width,
-				     &height);
+	gtk_widget_get_size_request (priv->widget, &width, &height);
 	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 	if (mask)
 	{
@@ -1150,16 +1140,10 @@ update_shape (Bubble* self)
 			cairo_destroy (cr);
 
 			/* remove any current shape-mask */
-			gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
-						       NULL,
-						       0,
-						       0);
+			gtk_widget_shape_combine_mask (priv->widget,NULL, 0, 0);
 
 			/* set new shape-mask */
-			gtk_widget_shape_combine_mask (GET_PRIVATE (self)->widget,
-						       mask,
-						       0,
-						       0);
+			gtk_widget_shape_combine_mask (priv->widget,mask, 0, 0);
 		}
 
 		g_object_unref ((gpointer) mask);
@@ -1290,9 +1274,11 @@ _render_background (cairo_t*  cr,
 		    gint      height,
 		    Bubble*   bubble)
 {
+	BubblePrivate* priv = GET_PRIVATE (bubble);
+
         /* clear and render drop-shadow and bubble-background */
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	if (GET_PRIVATE (bubble)->composited)
+	if (priv->composited)
 	{
 		draw_shadow (cr,
 			     width,
@@ -1319,7 +1305,7 @@ _render_background (cairo_t*  cr,
 	}
 
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	if (GET_PRIVATE (bubble)->composited)
+	if (priv->composited)
 	{
 		cairo_set_source_rgba (cr,
 				       BUBBLE_BG_COLOR_R,
@@ -1415,7 +1401,8 @@ expose_handler (GtkWidget*      window,
 static gboolean
 redraw_handler (Bubble* bubble)
 {
-	GtkWindow* window;
+	GtkWindow*     window;
+	BubblePrivate* priv;
 
 	if (!bubble)
 		return FALSE;
@@ -1423,17 +1410,19 @@ redraw_handler (Bubble* bubble)
 	if (!bubble_is_visible (bubble))
 		return FALSE;
 
-	if (!GET_PRIVATE (bubble)->composited)
+	priv = GET_PRIVATE (bubble);
+
+	if (!priv->composited)
 		return TRUE;
 
-	window = GTK_WINDOW (GET_PRIVATE(bubble)->widget);
+	window = GTK_WINDOW (priv->widget);
 
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
 	if (bubble_is_mouse_over (bubble))
 		gtk_window_set_opacity (window, 0.1f);
-	else if (GET_PRIVATE(bubble)->alpha == NULL)
+	else if (priv->alpha == NULL)
 		gtk_window_set_opacity (window, 0.95f);
 
 	return TRUE;
@@ -1496,15 +1485,16 @@ static
 gboolean
 pointer_update (Bubble* bubble)
 {
-	gint       pointer_rel_x;
-	gint       pointer_rel_y;
-	gint       pointer_abs_x;
-	gint       pointer_abs_y;
-	gint       win_x;
-	gint       win_y;
-	gint       width;
-	gint       height;
-	GtkWidget* window;
+	gint           pointer_rel_x;
+	gint           pointer_rel_y;
+	gint           pointer_abs_x;
+	gint           pointer_abs_y;
+	gint           win_x;
+	gint           win_y;
+	gint           width;
+	gint           height;
+	GtkWidget*     window;
+	BubblePrivate* priv;
 
 	if (!bubble)
 		return FALSE;
@@ -1512,7 +1502,8 @@ pointer_update (Bubble* bubble)
 	if (!bubble_is_visible (bubble))
 		return FALSE;
 
-	window = GET_PRIVATE(bubble)->widget;
+	priv   = GET_PRIVATE (bubble);
+	window = priv->widget;
 
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
@@ -1554,92 +1545,93 @@ static void
 bubble_finalize (GObject* gobject)
 {
 	cairo_status_t status;
+	BubblePrivate* priv = GET_PRIVATE (gobject);
 
-	if (GTK_IS_WIDGET (BUBBLE (gobject)->priv->widget))
+	if (GTK_IS_WIDGET (priv->widget))
 	{
-		gtk_widget_destroy (GTK_WIDGET (BUBBLE (gobject)->priv->widget));
-		BUBBLE (gobject)->priv->widget = NULL;
+		gtk_widget_destroy (GTK_WIDGET (priv->widget));
+		priv->widget = NULL;
 	}
 
-    	if (GET_PRIVATE (gobject)->title)
+    	if (priv->title)
 	{
-		g_string_free ((gpointer) GET_PRIVATE (gobject)->title,
+		g_string_free ((gpointer) priv->title,
 			       TRUE);
-		GET_PRIVATE (gobject)->title = NULL;
+		priv->title = NULL;
 	}
 
-    	if (GET_PRIVATE (gobject)->message_body)
+    	if (priv->message_body)
 	{
-		g_string_free ((gpointer) GET_PRIVATE (gobject)->message_body,
+		g_string_free ((gpointer) priv->message_body,
 			       TRUE);
-		GET_PRIVATE (gobject)->message_body = NULL;
+		priv->message_body = NULL;
 	}
 
-    	if (GET_PRIVATE (gobject)->synchronous)
+    	if (priv->synchronous)
 	{
-		g_free ((gpointer) GET_PRIVATE (gobject)->synchronous);
-		GET_PRIVATE (gobject)->synchronous = NULL;
+		g_free ((gpointer) priv->synchronous);
+		priv->synchronous = NULL;
 	}
 
-    	if (GET_PRIVATE (gobject)->sender)
+    	if (priv->sender)
 	{
-		g_free ((gpointer) GET_PRIVATE (gobject)->sender);
-		GET_PRIVATE (gobject)->sender = NULL;
+		g_free ((gpointer) priv->sender);
+		priv->sender = NULL;
 	}
 
-	if (GET_PRIVATE (gobject)->icon_pixbuf)
+	if (priv->icon_pixbuf)
 	{
-		g_object_unref (GET_PRIVATE (gobject)->icon_pixbuf);
-		GET_PRIVATE (gobject)->icon_pixbuf = NULL;
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = NULL;
 	}
 
-	if (GET_PRIVATE (gobject)->alpha)
+	if (priv->alpha)
 	{
-		g_object_unref (GET_PRIVATE (gobject)->alpha);
-		GET_PRIVATE (gobject)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	if (GET_PRIVATE (gobject)->timeline)
+	if (priv->timeline)
 	{
-		g_object_unref (GET_PRIVATE (gobject)->timeline);
-		GET_PRIVATE (gobject)->timeline = NULL;
+		g_object_unref (priv->timeline);
+		priv->timeline = NULL;
 	}
 
-	if (GET_PRIVATE (gobject)->pointer_update_id)
+	if (priv->pointer_update_id)
 	{
-		g_source_remove (GET_PRIVATE (gobject)->pointer_update_id);
-		GET_PRIVATE (gobject)->pointer_update_id = 0;
+		g_source_remove (priv->pointer_update_id);
+		priv->pointer_update_id = 0;
 	}
 
-	if (GET_PRIVATE (gobject)->draw_handler_id)
+	if (priv->draw_handler_id)
 	{
-		g_source_remove (GET_PRIVATE (gobject)->draw_handler_id);
-		GET_PRIVATE (gobject)->draw_handler_id = 0;
+		g_source_remove (priv->draw_handler_id);
+		priv->draw_handler_id = 0;
 	}
 
-	if (GET_PRIVATE (gobject)->timer_id)
+	if (priv->timer_id)
 	{
-		g_source_remove (GET_PRIVATE (gobject)->timer_id);
-		GET_PRIVATE (gobject)->timer_id = 0;
+		g_source_remove (priv->timer_id);
+		priv->timer_id = 0;
 	}
 
-	if (GET_PRIVATE (gobject)->blurred_content)
+	if (priv->blurred_content)
 	{
-		status = cairo_surface_status (GET_PRIVATE (gobject)->blurred_content);
+		status = cairo_surface_status (priv->blurred_content);
 		if (status == CAIRO_STATUS_SUCCESS)
 		{
-			cairo_surface_destroy (GET_PRIVATE (gobject)->blurred_content);
-			GET_PRIVATE (gobject)->blurred_content = NULL;
+			cairo_surface_destroy (priv->blurred_content);
+			priv->blurred_content = NULL;
 		}
 	}
 
-	if (GET_PRIVATE (gobject)->blurred_bubble)
+	if (priv->blurred_bubble)
 	{
-		status = cairo_surface_status (GET_PRIVATE (gobject)->blurred_bubble);
+		status = cairo_surface_status (priv->blurred_bubble);
 		if (status == CAIRO_STATUS_SUCCESS)
 		{
-			cairo_surface_destroy (GET_PRIVATE (gobject)->blurred_bubble);
-			GET_PRIVATE (gobject)->blurred_bubble = NULL;
+			cairo_surface_destroy (priv->blurred_bubble);
+			priv->blurred_bubble = NULL;
 		}
 	}
 
@@ -1656,17 +1648,17 @@ bubble_init (Bubble* self)
 
 	BubblePrivate *priv;
 
-	self->priv = priv      = GET_PRIVATE (self);
-	priv->layout           = LAYOUT_NONE;
-	priv->title            = NULL;
-	priv->message_body     = NULL;
-	priv->visible          = FALSE;
-	priv->icon_pixbuf      = NULL;
-	priv->value            = -1;
-	priv->synchronous      = NULL;
-	priv->sender           = NULL;
-	priv->draw_handler_id  = 0;
-	priv->pointer_update_id= 0;
+	self->priv = priv       = GET_PRIVATE (self);
+	priv->layout            = LAYOUT_NONE;
+	priv->title             = NULL;
+	priv->message_body      = NULL;
+	priv->visible           = FALSE;
+	priv->icon_pixbuf       = NULL;
+	priv->value             = -1;
+	priv->synchronous       = NULL;
+	priv->sender            = NULL;
+	priv->draw_handler_id   = 0;
+	priv->pointer_update_id = 0;
 }
 
 static void
@@ -1715,17 +1707,19 @@ bubble_class_init (BubbleClass* klass)
 Bubble*
 bubble_new (Defaults* defaults)
 {
-	Bubble*    this   = NULL;
-	GtkWidget* window = NULL;
+	Bubble*        this   = NULL;
+	GtkWidget*     window = NULL;
+	BubblePrivate* priv;
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
 		return NULL;
 
 	this->defaults = defaults;
+	priv = GET_PRIVATE (this);
 
-	GET_PRIVATE (this)->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
-	window = GET_PRIVATE (this)->widget;
+	priv->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	window = priv->widget;
 	if (!window)
 		return NULL;
 
@@ -1775,32 +1769,32 @@ bubble_new (Defaults* defaults)
 
 	/* TODO: fold some of that back into bubble_init */
 	this->priv = GET_PRIVATE (this);
-	GET_PRIVATE(this)->layout          = LAYOUT_NONE;
-	GET_PRIVATE(this)->widget          = window;
-	GET_PRIVATE(this)->title           = g_string_new ("");
-	GET_PRIVATE(this)->message_body    = g_string_new ("");
-	GET_PRIVATE(this)->icon_pixbuf     = NULL;
-	GET_PRIVATE(this)->value           = -1;
-	GET_PRIVATE(this)->visible         = FALSE;
-	GET_PRIVATE(this)->timeout         = 2;
-	GET_PRIVATE(this)->mouse_over      = FALSE;
-	GET_PRIVATE(this)->start_y         = 0;
-	GET_PRIVATE(this)->end_y           = 0;
-	GET_PRIVATE(this)->inc_factor      = 0.0f;
-	GET_PRIVATE(this)->delta_y         = 0;
-	GET_PRIVATE(this)->composited      = gdk_screen_is_composited (
+	this->priv->layout          = LAYOUT_NONE;
+	this->priv->widget          = window;
+	this->priv->title           = g_string_new ("");
+	this->priv->message_body    = g_string_new ("");
+	this->priv->icon_pixbuf     = NULL;
+	this->priv->value           = -1;
+	this->priv->visible         = FALSE;
+	this->priv->timeout         = 2;
+	this->priv->mouse_over      = FALSE;
+	this->priv->start_y         = 0;
+	this->priv->end_y           = 0;
+	this->priv->inc_factor      = 0.0f;
+	this->priv->delta_y         = 0;
+	this->priv->composited      = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
-	GET_PRIVATE(this)->alpha           = NULL;
-	GET_PRIVATE(this)->timeline        = NULL;
-	GET_PRIVATE(this)->blurred_content = NULL;
-	GET_PRIVATE(this)->blurred_bubble  = NULL;
-	GET_PRIVATE(this)->glow_surface    = NULL;
-	GET_PRIVATE(this)->dim_surface     = NULL;
-	GET_PRIVATE(this)->title_width     = 0;
-	GET_PRIVATE(this)->title_height    = 0;
-	GET_PRIVATE(this)->body_width      = 0;
-	GET_PRIVATE(this)->body_height     = 0;
-	GET_PRIVATE(this)->append          = FALSE;
+	this->priv->alpha           = NULL;
+	this->priv->timeline        = NULL;
+	this->priv->blurred_content = NULL;
+	this->priv->blurred_bubble  = NULL;
+	this->priv->glow_surface    = NULL;
+	this->priv->dim_surface     = NULL;
+	this->priv->title_width     = 0;
+	this->priv->title_height    = 0;
+	this->priv->body_width      = 0;
+	this->priv->body_height     = 0;
+	this->priv->append          = FALSE;
 
 	update_input_shape (window, 1, 1);
 
@@ -1826,24 +1820,28 @@ bubble_get_sender (Bubble* self)
 void
 bubble_del (Bubble* self)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	if (GET_PRIVATE(self)->blurred_content != NULL &&
-	    cairo_surface_status (GET_PRIVATE(self)->blurred_content) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (GET_PRIVATE(self)->blurred_content);
+	priv = GET_PRIVATE (self);
 
-	if (GET_PRIVATE(self)->blurred_bubble != NULL &&
-	    cairo_surface_status (GET_PRIVATE(self)->blurred_bubble) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (GET_PRIVATE(self)->blurred_bubble);
+	if (priv->blurred_content != NULL &&
+	    cairo_surface_status (priv->blurred_content) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (priv->blurred_content);
 
-	if (GET_PRIVATE(self)->glow_surface != NULL &&
-	    cairo_surface_status (GET_PRIVATE(self)->glow_surface) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (GET_PRIVATE(self)->glow_surface);
+	if (priv->blurred_bubble != NULL &&
+	    cairo_surface_status (priv->blurred_bubble) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (priv->blurred_bubble);
 
-	if (GET_PRIVATE(self)->dim_surface != NULL &&
-	    cairo_surface_status (GET_PRIVATE(self)->dim_surface) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (GET_PRIVATE(self)->dim_surface);
+	if (priv->glow_surface != NULL &&
+	    cairo_surface_status (priv->glow_surface) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (priv->glow_surface);
+
+	if (priv->dim_surface != NULL &&
+	    cairo_surface_status (priv->dim_surface) != CAIRO_STATUS_SUCCESS)
+		cairo_surface_destroy (priv->dim_surface);
 
 	g_object_unref (self);
 }
@@ -1852,28 +1850,35 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	if (GET_PRIVATE (self)->title->len != 0)
-		g_string_free (GET_PRIVATE (self)->title, TRUE);
+	priv = GET_PRIVATE (self);
 
-	GET_PRIVATE (self)->title = g_string_new (title);
+	if (priv->title->len != 0)
+		g_string_free (priv->title, TRUE);
+
+	priv->title = g_string_new (title);
 }
 
 void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	gboolean result;
-	gchar*   text;
-	GError*  error = NULL;
+	gboolean       result;
+	gchar*         text;
+	GError*        error = NULL;
+	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	if (GET_PRIVATE (self)->message_body->len != 0)
-		g_string_free (GET_PRIVATE (self)->message_body, TRUE);
+	priv = GET_PRIVATE (self);
+
+	if (priv->message_body->len != 0)
+		g_string_free (priv->message_body, TRUE);
 
 	/* filter out any HTML/markup if possible */
     	result = pango_parse_markup (body,
@@ -1884,7 +1889,7 @@ bubble_set_message_body (Bubble*      self,
 				     NULL, /* no accel-marker-return needed */
 				     &error);
 
-	GET_PRIVATE (self)->message_body = g_string_new (text);
+	priv->message_body = g_string_new (text);
 	g_free ((gpointer) text);
 }
 
@@ -1892,39 +1897,45 @@ void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
-	Defaults* d;
+	Defaults*      d;
+	BubblePrivate* priv;
 
  	if (!self || !IS_BUBBLE (self))
 		return;
 
-	if (GET_PRIVATE (self)->icon_pixbuf)
+	priv = GET_PRIVATE (self);
+
+	if (priv->icon_pixbuf)
 	{
-		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
-		GET_PRIVATE (self)->icon_pixbuf = NULL;
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = NULL;
 	}
 
 	d = self->defaults;
-	GET_PRIVATE (self)->icon_pixbuf = load_icon (
-						filename,
-						EM2PIXELS (defaults_get_icon_size (d), d));
+	priv->icon_pixbuf = load_icon (filename,
+				       EM2PIXELS (defaults_get_icon_size (d),
+						  d));
 }
 
 void
 bubble_set_icon_from_pixbuf (Bubble*    self,
 			     GdkPixbuf* pixbuf)
 {
-	GdkPixbuf* scaled;
-	gint       height;
-	gint       width;
-	Defaults*  d;
+	GdkPixbuf*     scaled;
+	gint           height;
+	gint           width;
+	Defaults*      d;
+	BubblePrivate* priv;
 
  	if (!self || !IS_BUBBLE (self) || !pixbuf)
 		return;
 
-	if (GET_PRIVATE (self)->icon_pixbuf)
+	priv = GET_PRIVATE (self);
+
+	if (priv->icon_pixbuf)
 	{
-		g_object_unref (GET_PRIVATE (self)->icon_pixbuf);
-		GET_PRIVATE (self)->icon_pixbuf = NULL;
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = NULL;
 	}
 
 	height = gdk_pixbuf_get_height (pixbuf);
@@ -1945,7 +1956,7 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 		pixbuf = scaled;
 	}
 
-	GET_PRIVATE (self)->icon_pixbuf = pixbuf;
+	priv->icon_pixbuf = pixbuf;
 }
 
 GdkPixbuf*
@@ -2022,13 +2033,17 @@ void
 bubble_set_mouse_over (Bubble*  self,
 		       gboolean flag)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
+	priv = GET_PRIVATE (self);
+
 	/* did anything change? */
-	if (GET_PRIVATE(self)->mouse_over != flag)
+	if (priv->mouse_over != flag)
 	{
-		GET_PRIVATE(self)->mouse_over = flag;
+		priv->mouse_over = flag;
 		update_shape (self);
 	}
 
@@ -2058,19 +2073,23 @@ static void
 glow_completed_cb (EggTimeline *timeline,
 		   Bubble *bubble)
 {
+	BubblePrivate* priv;
+
 	g_return_if_fail (IS_BUBBLE (bubble));
 
+	priv = GET_PRIVATE (bubble);
+
 	/* get rid of the alpha, so that the mouse-over algorithm notices */
-	if (GET_PRIVATE (bubble)->alpha)
+	if (priv->alpha)
 	{
-		g_object_unref (GET_PRIVATE (bubble)->alpha);
-		GET_PRIVATE (bubble)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	if (GET_PRIVATE (bubble)->timeline)
+	if (priv->timeline)
 	{
-		g_object_unref (GET_PRIVATE (bubble)->timeline);
-		GET_PRIVATE (bubble)->timeline = NULL;
+		g_object_unref (priv->timeline);
+		priv->timeline = NULL;
 	}
 }
 
@@ -2088,24 +2107,26 @@ static void
 bubble_start_glow_effect (Bubble *self,
 			  guint   msecs)
 {
-	EggTimeline *timeline;
+	EggTimeline*   timeline;
+	BubblePrivate* priv;
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	timeline = egg_timeline_new_for_duration (msecs);
-	GET_PRIVATE (self)->timeline = timeline;
+	priv = GET_PRIVATE (self);
 
-	if (GET_PRIVATE (self)->alpha != NULL)
+	timeline = egg_timeline_new_for_duration (msecs);
+	priv->timeline = timeline;
+
+	if (priv->alpha != NULL)
 	{
-		g_object_unref (GET_PRIVATE (self)->alpha);
-		GET_PRIVATE (self)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	GET_PRIVATE (self)->alpha =
-		egg_alpha_new_full (timeline,
-				    EGG_ALPHA_RAMP_DEC,
-				    NULL,
-				    NULL);
+	priv->alpha = egg_alpha_new_full (timeline,
+					  EGG_ALPHA_RAMP_DEC,
+					  NULL,
+					  NULL);
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
@@ -2122,24 +2143,26 @@ bubble_start_glow_effect (Bubble *self,
 void
 bubble_show (Bubble* self)
 {
+	BubblePrivate* priv;
+ 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->visible = TRUE;
-	gtk_widget_show_all (GET_PRIVATE (self)->widget);
+	priv = GET_PRIVATE (self);
+
+	priv->visible = TRUE;
+	gtk_widget_show_all (priv->widget);
 
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	GET_PRIVATE (self)->draw_handler_id
-		= g_timeout_add (1000/60,
-				 (GSourceFunc) redraw_handler,
-				 self);
+	priv->draw_handler_id = g_timeout_add (1000/60,
+					       (GSourceFunc) redraw_handler,
+					       self);
 
 	/* FIXME: read out current mouse-pointer position every 1/10 second */
 
-        GET_PRIVATE (self)->pointer_update_id
-		= g_timeout_add (100,
-				 (GSourceFunc) pointer_update,
-				 self);
+        priv->pointer_update_id = g_timeout_add (100,
+						 (GSourceFunc) pointer_update,
+						 self);
 }
 
 /* mostly called when we change the content of the bubble
@@ -2156,41 +2179,42 @@ static
 gboolean
 do_slide_bubble (Bubble* self)
 {
-	gint x = 0;
-	gint y = 0;
-
+	gint           x = 0;
+	gint           y = 0;
+	BubblePrivate* priv;
+ 
 	/* sanity check */
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
+	priv = GET_PRIVATE (self);
+
 	/* where is the bubble at the moment? */
-	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
-				 &x,
-				 &y);
+	gtk_window_get_position (GTK_WINDOW (priv->widget), &x, &y);
 
 	/* check if we arrived at the destination ... or overshot */
-	if (GET_PRIVATE (self)->delta_y > 0)
+	if (priv->delta_y > 0)
 	{
 		/* stop the callback/animation */
-		if (y >= GET_PRIVATE (self)->end_y)
+		if (y >= priv->end_y)
 			return FALSE;
 	}
 	else
 	{
 		/* stop the callback/animation */
-		if (y <= GET_PRIVATE (self)->end_y)
+		if (y <= priv->end_y)
 			return FALSE;
 	}
 
 	/* move the bubble to the new position */
 	bubble_move (self,
 		     x,
-		     GET_PRIVATE (self)->start_y +
-		     GET_PRIVATE (self)->delta_y *
-		     sin (GET_PRIVATE (self)->inc_factor) * G_PI / 2.0f);
+		     priv->start_y +
+		     priv->delta_y *
+		     sin (priv->inc_factor) * G_PI / 2.0f);
 
 	/* "advance" the increase-factor */
-	GET_PRIVATE (self)->inc_factor += 1.0f / 30.0f;
+	priv->inc_factor += 1.0f / 30.0f;
 
 	/* keep going */
 	return TRUE;
@@ -2201,26 +2225,27 @@ bubble_slide_to (Bubble* self,
 		 gint    end_x,
 		 gint    end_y)
 {
-	guint timer_id = 0;
-	gint  start_x  = 0;
-	gint  start_y  = 0;
+	guint          timer_id = 0;
+	gint           start_x  = 0;
+	gint           start_y  = 0;
+	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
+	priv = GET_PRIVATE (self);
+
 	/* determine direction to take */
-	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
-				 &start_x,
-				 &start_y);
+	gtk_window_get_position (GTK_WINDOW (priv->widget), &start_x, &start_y);
 
 	/* don't do anything if we got the same target/end y-position */
 	if (end_y == start_y)
 		return;
 
-	GET_PRIVATE (self)->inc_factor = 0.0f;
-	GET_PRIVATE (self)->start_y    = start_y;
-	GET_PRIVATE (self)->end_y      = end_y;
-	GET_PRIVATE (self)->delta_y    = end_y - start_y;
+	priv->inc_factor = 0.0f;
+	priv->start_y    = start_y;
+	priv->end_y      = end_y;
+	priv->delta_y    = end_y - start_y;
 
 	/* and now let the timer tick... */
 	timer_id = g_timeout_add (1000/60,
@@ -2276,22 +2301,26 @@ fade_out_completed_cb (EggTimeline *timeline,
 
 
 static void
-fade_in_completed_cb (EggTimeline *timeline,
-		      Bubble *bubble)
+fade_in_completed_cb (EggTimeline* timeline,
+		      Bubble*      bubble)
 {
+	BubblePrivate* priv;
+
 	g_return_if_fail (IS_BUBBLE (bubble));
 
+	priv = GET_PRIVATE (bubble);
+
 	/* get rid of the alpha, so that the mouse-over algorithm notices */
-	if (GET_PRIVATE (bubble)->alpha)
+	if (priv->alpha)
 	{
-		g_object_unref (GET_PRIVATE (bubble)->alpha);
-		GET_PRIVATE (bubble)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	if (GET_PRIVATE (bubble)->timeline)
+	if (priv->timeline)
 	{
-		g_object_unref (GET_PRIVATE (bubble)->timeline);
-		GET_PRIVATE (bubble)->timeline = NULL;
+		g_object_unref (priv->timeline);
+		priv->timeline = NULL;
 	}
 
 	gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
@@ -2300,12 +2329,15 @@ fade_in_completed_cb (EggTimeline *timeline,
 }
 
 void
-bubble_fade_in (Bubble *self,
+bubble_fade_in (Bubble* self,
 		guint   msecs)
 {
-	EggTimeline *timeline;
+	EggTimeline*   timeline;
+	BubblePrivate* priv;
 
 	g_return_if_fail (IS_BUBBLE (self));
+
+	priv = GET_PRIVATE (self);
 
 	if (!bubble_is_composited (self)
 	    || msecs == 0)
@@ -2317,17 +2349,16 @@ bubble_fade_in (Bubble *self,
 
 	timeline = egg_timeline_new_for_duration (msecs);
 
-	if (GET_PRIVATE (self)->alpha != NULL)
+	if (priv->alpha != NULL)
 	{
-		g_object_unref (GET_PRIVATE (self)->alpha);
-		GET_PRIVATE (self)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	GET_PRIVATE (self)->alpha =
-		egg_alpha_new_full (timeline,
-					EGG_ALPHA_RAMP_INC,
-					NULL,
-					NULL);
+	priv->alpha = egg_alpha_new_full (timeline,
+					  EGG_ALPHA_RAMP_INC,
+					  NULL,
+					  NULL);
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
@@ -2346,27 +2377,29 @@ bubble_fade_in (Bubble *self,
 }
 
 void
-bubble_fade_out (Bubble *self,
+bubble_fade_out (Bubble* self,
 		 guint   msecs)
 {
-	EggTimeline *timeline;
+	EggTimeline*   timeline;
+	BubblePrivate* priv;
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	timeline = egg_timeline_new_for_duration (msecs);
-	GET_PRIVATE (self)->timeline = timeline;
+	priv = GET_PRIVATE (self);
 
-	if (GET_PRIVATE (self)->alpha != NULL)
+	timeline = egg_timeline_new_for_duration (msecs);
+	priv->timeline = timeline;
+
+	if (priv->alpha != NULL)
 	{
-		g_object_unref (GET_PRIVATE (self)->alpha);
-		GET_PRIVATE (self)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
-	GET_PRIVATE (self)->alpha =
-		egg_alpha_new_full (timeline,
-					EGG_ALPHA_RAMP_DEC,
-					NULL,
-					NULL);
+	priv->alpha = egg_alpha_new_full (timeline,
+					  EGG_ALPHA_RAMP_DEC,
+					  NULL,
+					  NULL);
 
 	g_signal_connect (G_OBJECT (timeline),
 			  "completed",
@@ -2406,23 +2439,27 @@ bubble_timed_out (Bubble* self)
 gboolean
 bubble_hide (Bubble* self)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self) || !bubble_is_visible (self))
 		return FALSE;
 
-	GET_PRIVATE (self)->visible = FALSE;
-	gtk_widget_hide (GET_PRIVATE (self)->widget);
+	priv = GET_PRIVATE (self);
 
-	if (GET_PRIVATE (self)->timeline)
+	priv->visible = FALSE;
+	gtk_widget_hide (priv->widget);
+
+	if (priv->timeline)
 	{
-		egg_timeline_stop (GET_PRIVATE (self)->timeline);
-		g_object_unref (GET_PRIVATE (self)->timeline);
-		GET_PRIVATE (self)->timeline = NULL;
+		egg_timeline_stop (priv->timeline);
+		g_object_unref (priv->timeline);
+		priv->timeline = NULL;
 	}
 
-	if (GET_PRIVATE (self)->alpha)
+	if (priv->alpha)
 	{
-		g_object_unref (GET_PRIVATE (self)->alpha);
-		GET_PRIVATE (self)->alpha = NULL;
+		g_object_unref (priv->alpha);
+		priv->alpha = NULL;
 	}
 
 	return FALSE; /* this also instructs the timer to stop */
@@ -2459,10 +2496,13 @@ bubble_is_visible (Bubble* self)
 void
 bubble_start_timer (Bubble* self)
 {
-	guint timer_id;
+	guint          timer_id;
+	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
+
+	priv = GET_PRIVATE (self);
 
 	timer_id = bubble_get_timer_id (self);
 	if (timer_id > 0)
@@ -2480,8 +2520,7 @@ bubble_start_timer (Bubble* self)
 
 	/* if the bubble is displaying a value that is out of bounds
 	   trigger a dim/glow animation */
-	if (GET_PRIVATE (self)->value == 0
-	    || GET_PRIVATE (self)->value == 100)
+	if (priv->value == 0 || priv->value == 100)
 		bubble_start_glow_effect (self, 500);
 }
 
@@ -2524,11 +2563,13 @@ _calc_title_height (Bubble* self,
 	PangoLayout*          layout  = NULL;
 	PangoRectangle        log_rect = {0, 0, 0, 0};
 	gint                  title_height;
+	BubblePrivate*        priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	d = self->defaults;
+	d    = self->defaults;
+	priv = GET_PRIVATE (self);
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
@@ -2562,10 +2603,7 @@ _calc_title_height (Bubble* self,
 	pango_layout_set_width (layout, title_width);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
-	pango_layout_set_text (
-		layout,
-		GET_PRIVATE (self)->title->str,
-		GET_PRIVATE (self)->title->len);
+	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
 	title_height = log_rect.height / PANGO_SCALE;
@@ -2586,18 +2624,20 @@ _calc_body_height (Bubble* self,
 	PangoLayout*          layout  = NULL;
 	PangoRectangle        log_rect;
 	gint                  body_height;
+	BubblePrivate*        priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	d = self->defaults;
+	d    = self->defaults;
+	priv = GET_PRIVATE (self);
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
 	/*cr = cairo_create (surface);*/
-	cr = gdk_cairo_create (GET_PRIVATE (self)->widget->window);
+	cr = gdk_cairo_create (priv->widget->window);
 	cairo_surface_destroy (surface);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 		return 0;
@@ -2621,10 +2661,10 @@ _calc_body_height (Bubble* self,
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 
-	pango_layout_set_text (
-		layout,
-		GET_PRIVATE (self)->message_body->str,
-		GET_PRIVATE (self)->message_body->len);
+	pango_layout_set_text (layout,
+			       priv->message_body->str,
+			       priv->message_body->len);
+
 	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
@@ -2640,14 +2680,16 @@ _calc_body_height (Bubble* self,
 void
 bubble_recalc_size (Bubble *self)
 {
-	gint      new_bubble_width  = 0;
-	gint      new_bubble_height = 0;
-	Defaults* d;
+	gint           new_bubble_width  = 0;
+	gint           new_bubble_height = 0;
+	Defaults*      d;
+	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	d = self->defaults;
+	d    = self->defaults;
+	priv = GET_PRIVATE (self);
 
 	bubble_determine_layout (self);
 
@@ -2655,7 +2697,7 @@ bubble_recalc_size (Bubble *self)
 		EM2PIXELS (defaults_get_bubble_width (d), d) +
 		2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
-	switch (GET_PRIVATE (self)->layout)
+	switch (priv->layout)
 	{
 		case LAYOUT_ICON_INDICATOR:
 		case LAYOUT_ICON_TITLE:
@@ -2669,23 +2711,23 @@ bubble_recalc_size (Bubble *self)
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
 
-			GET_PRIVATE (self)->title_width =
+			priv->title_width =
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
 				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
 				EM2PIXELS (defaults_get_icon_size (d), d);
 
-			GET_PRIVATE (self)->title_height = _calc_title_height (
+			priv->title_height = _calc_title_height (
 					self,
 					GET_PRIVATE (self)->title_width);
 
-			GET_PRIVATE (self)->body_width =
+			priv->body_width =
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
 				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
 				EM2PIXELS (defaults_get_icon_size (d), d);
 
-			GET_PRIVATE (self)->body_height = _calc_body_height (
+			priv->body_height = _calc_body_height (
 					self,
-					GET_PRIVATE(self)->body_width);
+					priv->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
@@ -2693,8 +2735,8 @@ bubble_recalc_size (Bubble *self)
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
 			bubble_height =
-				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
-				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				PIXELS2EM (priv->title_height, d) +
+				PIXELS2EM (priv->body_height, d) +
 				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
@@ -2703,8 +2745,8 @@ bubble_recalc_size (Bubble *self)
 			}
 			else
 			{
-				if (GET_PRIVATE (self)->body_height +
-				    GET_PRIVATE (self)->title_height <
+				if (priv->body_height +
+				    priv->title_height <
 				    EM2PIXELS (defaults_get_icon_size (d), d))
 				{
 					new_bubble_height =
@@ -2715,8 +2757,8 @@ bubble_recalc_size (Bubble *self)
 				else
 				{
 					new_bubble_height =
-						GET_PRIVATE (self)->body_height +
-						GET_PRIVATE (self)->title_height +
+						priv->body_height +
+						priv->title_height +
 						2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 						2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 				}
@@ -2729,21 +2771,21 @@ bubble_recalc_size (Bubble *self)
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
 
-			GET_PRIVATE (self)->title_width =
+			priv->title_width =
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
 				2 * EM2PIXELS (defaults_get_margin_size (d), d);
 
-			GET_PRIVATE (self)->title_height = _calc_title_height (
+			priv->title_height = _calc_title_height (
 					self,
-					GET_PRIVATE (self)->title_width);
+					priv->title_width);
 
-			GET_PRIVATE (self)->body_width = 
+			priv->body_width = 
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
 				2 * EM2PIXELS (defaults_get_margin_size (d), d);
 
-			GET_PRIVATE (self)->body_height = _calc_body_height (
+			priv->body_height = _calc_body_height (
 					self,
-					GET_PRIVATE (self)->body_width);
+					priv->body_width);
 
 			available_height = PIXELS2EM (defaults_get_desktop_height (d), d) -
 					   defaults_get_desktop_bottom_gap (d) -
@@ -2751,8 +2793,8 @@ bubble_recalc_size (Bubble *self)
 					   2.0f * defaults_get_bubble_vert_gap (d);
 
 			bubble_height =
-				PIXELS2EM (GET_PRIVATE (self)->title_height, d) +
-				PIXELS2EM (GET_PRIVATE (self)->body_height, d) +
+				PIXELS2EM (priv->title_height, d) +
+				PIXELS2EM (priv->body_height, d) +
 				2.0f * defaults_get_margin_size (d);
 
 			if (bubble_height >= available_height)
@@ -2762,8 +2804,8 @@ bubble_recalc_size (Bubble *self)
 			else
 			{
 				new_bubble_height =
-					GET_PRIVATE (self)->body_height +
-					GET_PRIVATE (self)->title_height +
+					priv->body_height +
+					priv->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
@@ -2783,24 +2825,32 @@ void
 bubble_set_synchronous (Bubble *self,
 			const gchar *sync)
 {
+	BubblePrivate* priv;
+
 	g_return_if_fail (IS_BUBBLE (self));
 
-	if (GET_PRIVATE (self)->synchronous != NULL)
-		g_free (GET_PRIVATE (self)->synchronous);
+	priv = GET_PRIVATE (self);
 
-	GET_PRIVATE (self)->synchronous = g_strdup (sync);
+	if (priv->synchronous != NULL)
+		g_free (priv->synchronous);
+
+	priv->synchronous = g_strdup (sync);
 }
 
 void
 bubble_set_sender (Bubble *self,
 		   const gchar *sender)
 {
+	BubblePrivate* priv;
+
 	g_return_if_fail (IS_BUBBLE (self));
 
-	if (GET_PRIVATE (self)->sender != NULL)
-		g_free (GET_PRIVATE (self)->sender);
+	priv = GET_PRIVATE (priv);
 
-	GET_PRIVATE (self)->sender = g_strdup (sender);
+	if (priv->sender != NULL)
+		g_free (priv->sender);
+
+	priv->sender = g_strdup (sender);
 }
 
 gboolean
@@ -2832,54 +2882,58 @@ bubble_set_urgent (Bubble *self,
 void
 bubble_determine_layout (Bubble* self)
 {
+	BubblePrivate* priv;
+
 	/* sanity test */
 	if (!self || !IS_BUBBLE (self))
 		return;
 
+	priv = GET_PRIVATE (self);
+
 	/* set a sane default */
-	GET_PRIVATE (self)->layout = LAYOUT_NONE;
+	priv->layout = LAYOUT_NONE;
 
 	/* icon + indicator layout-case, e.g. volume */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             >= 0))
+	if ((priv->icon_pixbuf       != NULL) &&
+	    (priv->title->len        != 0) &&
+	    (priv->message_body->len == 0) &&
+	    (priv->value             >= 0))
 	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_INDICATOR;
+		priv->layout = LAYOUT_ICON_INDICATOR;
 		return;
 	}
 
 	/* icon + title layout-case, e.g. "Wifi signal lost" */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len == 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
+	if ((priv->icon_pixbuf       != NULL) &&
+	    (priv->title->len        != 0) &&
+	    (priv->message_body->len == 0) &&
+	    (priv->value             == -1))
 	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE;
+		priv->layout = LAYOUT_ICON_TITLE;
 		return;	    
 	}
 
 	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
-	if ((GET_PRIVATE (self)->icon_pixbuf       != NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
+	if ((priv->icon_pixbuf       != NULL) &&
+	    (priv->title->len        != 0) &&
+	    (priv->message_body->len != 0) &&
+	    (priv->value             == -1))
 	{
-		GET_PRIVATE (self)->layout = LAYOUT_ICON_TITLE_BODY;
+		priv->layout = LAYOUT_ICON_TITLE_BODY;
 		return;
 	}
 
 	/* title + body/message layout-case, e.g. IM-message without avatar */
-	if ((GET_PRIVATE (self)->icon_pixbuf       == NULL) &&
-	    (GET_PRIVATE (self)->title->len        != 0) &&
-	    (GET_PRIVATE (self)->message_body->len != 0) &&
-	    (GET_PRIVATE (self)->value             == -1))
+	if ((priv->icon_pixbuf       == NULL) &&
+	    (priv->title->len        != 0) &&
+	    (priv->message_body->len != 0) &&
+	    (priv->value             == -1))
 	{
-		GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+		priv->layout = LAYOUT_TITLE_BODY;
 		return;
 	}
 
-	GET_PRIVATE (self)->layout = LAYOUT_TITLE_BODY;
+	priv->layout = LAYOUT_TITLE_BODY;
 
 	return;
 }

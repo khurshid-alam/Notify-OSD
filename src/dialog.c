@@ -113,21 +113,25 @@ bubble_show_dialog (Bubble *bubble,
 		    const char *app_name,
 		    gchar **actions)
 {
-	GtkWidget *dialog;
-	GtkWidget *hbox;
-	GtkWidget *vbox;
-	GtkWidget *title;
-	GtkWidget *body;
-	GtkWidget *image;
-	Defaults  *d = bubble->defaults;
-	char *esc, *txt;
-	guint gap = EM2PIXELS (defaults_get_margin_size (d), d);
+	GtkWidget*     dialog;
+	GtkWidget*     hbox;
+	GtkWidget*     vbox;
+	GtkWidget*     title;
+	GtkWidget*     body;
+	GtkWidget*     image;
+	Defaults*      d = bubble->defaults;
+	gchar*         esc;
+	gchar*         txt;
+	guint          gap = EM2PIXELS (defaults_get_margin_size (d), d);
+	BubblePrivate* priv;
 
 	dialog = gtk_dialog_new ();
 
 	hbox = g_object_new (GTK_TYPE_HBOX,
 			     "spacing", gap,
 			     NULL);
+
+	priv = GET_PRIVATE (bubble);
 
 	image = gtk_image_new_from_pixbuf (bubble_get_icon_pixbuf (bubble));
 	gtk_misc_set_alignment (GTK_MISC (image), 0.5, 0.0);
@@ -137,15 +141,14 @@ bubble_show_dialog (Bubble *bubble,
 			     NULL);
 
 	title = gtk_label_new (NULL);
-	esc = g_markup_escape_text (GET_PRIVATE (bubble)->title->str, -1);
+	esc = g_markup_escape_text (priv->title->str, -1);
 	txt = g_strdup_printf ("<b>%s</b>", esc);
 	gtk_label_set_markup (GTK_LABEL (title), txt);
 	gtk_label_set_line_wrap (GTK_LABEL (title), TRUE);
 	g_free (esc); g_free (txt);
 
 	body = gtk_label_new (NULL);
-	gtk_label_set_markup (GTK_LABEL (body),
-			      GET_PRIVATE (bubble)->message_body->str);
+	gtk_label_set_markup (GTK_LABEL (body), priv->message_body->str);
 	gtk_label_set_line_wrap (GTK_LABEL (body), TRUE);
 
 	gtk_misc_set_alignment (GTK_MISC (title), 0.0, 0.0);
@@ -216,7 +219,7 @@ bubble_show_dialog (Bubble *bubble,
 
 	/* pretend its visible, so that the purge algorithm
 	   does not try to unreference the bubble */
-	GET_PRIVATE (bubble)->visible = TRUE;
+	priv->visible = TRUE;
 
 	return G_OBJECT (dialog);
 }
