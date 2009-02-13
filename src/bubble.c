@@ -1436,7 +1436,6 @@ load_icon (const gchar* filename,
 	GdkPixbuf*    pixbuf = NULL;
 	GtkIconTheme*  theme = NULL;
 	GtkIconInfo*    info = NULL;
-	GError*        error = NULL;
 	GFile*          file = NULL;
 	
 	/* sanity check */
@@ -1455,12 +1454,14 @@ load_icon (const gchar* filename,
 							    icon_size,
 							    icon_size,
 							    TRUE,
-							    &error);
+							    NULL);
 	} else {
-		/* TODO: rewrite, check for SVG support, raise apport notification for low-res icons */
+		/* TODO: rewrite, check for SVG support, raise apport
+		   notification for low-res icons */
 
 		theme = gtk_icon_theme_get_default ();
-		info  = gtk_icon_theme_lookup_icon (theme, filename,
+		info  = gtk_icon_theme_lookup_icon (theme,
+						    filename,
 						    icon_size,
 						    GTK_ICON_LOOKUP_USE_BUILTIN);
 		g_return_val_if_fail (info, NULL);
@@ -1470,11 +1471,15 @@ load_icon (const gchar* filename,
 		    !g_str_has_suffix (f, ".svg"))
 			g_warning ("icon '%s' not available in SVG", filename);
 
-		pixbuf = gtk_icon_theme_load_icon (theme, filename,
-						   icon_size,
-						   GTK_ICON_LOOKUP_USE_BUILTIN,
-						   NULL);
-		
+		filename = gtk_icon_info_get_filename (info);
+		if (filename == NULL)
+			pixbuf = gtk_icon_info_get_builtin_pixbuf (info);
+		else
+			pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
+								    icon_size,
+								    icon_size,
+								    TRUE,
+								    NULL);
 		gtk_icon_info_free (info);
 	}
 
