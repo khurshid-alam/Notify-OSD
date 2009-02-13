@@ -299,6 +299,58 @@ blur_image_surface (cairo_surface_t* surface,
         return surface;
 }
 
+/* the behind-bubble blur only works with the enabled/working compiz-plugin blur
+ * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window */
+void
+_set_bg_blur (GtkWidget* window,
+	      gboolean   set_blur,
+	      gint       shadow_size)
+{
+	glong data[8];
+	gint  width;
+	gint  height;
+
+	/* sanity check */
+	if (!window)
+		return;
+
+	width  = window->allocation.width;
+	height = window->allocation.height;
+
+	/* this is meant to tell the blur-plugin what and how to blur, somehow
+	 * the y-coords are interpreted as being CenterGravity, I wonder why */
+	data[0] = 2;                           /* threshold               */
+	data[1] = 0;                           /* filter                  */
+	data[2] = NorthWestGravity;            /* gravity of top-left     */
+	data[3] = shadow_size;                 /* x-coord of top-left     */
+	data[4] = (-height / 2) + shadow_size; /* y-coord of top-left     */
+	data[5] = NorthWestGravity;            /* gravity of bottom-right */
+	data[6] = width - shadow_size;         /* bottom-right x-coord    */
+	data[7] = (height / 2) - shadow_size;  /* bottom-right y-coord    */
+
+	if (set_blur)
+	{
+		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
+				 GDK_WINDOW_XID (window->window),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+					      "_COMPIZ_WM_WINDOW_BLUR",
+					      FALSE),
+				 XA_INTEGER,
+				 32,
+				 PropModeReplace,
+				 (guchar *) data,
+				 8);
+	}
+	else
+	{
+		XDeleteProperty (GDK_WINDOW_XDISPLAY (window->window),
+				 GDK_WINDOW_XID (window->window),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+					      "_COMPIZ_WM_WINDOW_BLUR",
+					      FALSE));
+	}
+}
+
 #if 0
 static void
 draw_layout_grid (cairo_t* cr,
@@ -1341,6 +1393,10 @@ expose_handler (GtkWidget*      window,
 
 	cairo_destroy (cr);
 
+	_set_bg_blur (window,
+		      TRUE,
+		      EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+
 	return TRUE;
 }
 
@@ -1642,43 +1698,6 @@ bubble_class_init (BubbleClass* klass)
 		0);
 }
 
-/* the behind-bubble blur only works with the enabled/working compiz-plugin blur
- * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window, thanks to
- * the opacity-threshold of the blur-plugin we might not need to unset it for
- * fade-on-hover case */
-// static
- void
-_set_bg_blur (GtkWidget* window,
-	      gboolean   set_blur)
-{
-	glong data[] = {2, /* threshold */
-			0  /* filter    */};
-
-	/* sanity check */
-	if (!window)
-		return;
-
-	if (set_blur)
-	{
-		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
-				 GDK_WINDOW_XID (window->window),
-				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
-					      "_COMPIZ_WM_WINDOW_BLUR",
-					      FALSE),
-				 XA_INTEGER,
-				 32,
-				 PropModeReplace,
-				 (guchar *) data,
-				 2);
-	}
-	else
-	{
-		/* FIXME: not sure yet if we really need to unset it, because
-		 * the compiz blur-plugin has a opacity-threshold for applying
-		 * the blur */
-	}
-}
-
 /*-- public API --------------------------------------------------------------*/
 
 Bubble*
@@ -1772,8 +1791,6 @@ bubble_new (Defaults* defaults)
 	GET_PRIVATE(this)->append          = FALSE;
 
 	update_input_shape (window, 1, 1);
-
-	_set_bg_blur (window, TRUE);
 
 	return this;
 }
