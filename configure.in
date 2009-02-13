@@ -60,4 +60,6 @@ Makefile
 src/Makefile
 tests/Makefile
 data/Makefile
+data/icons/Makefile
+data/icons/scalable/Makefile
 ])
