@@ -169,11 +169,6 @@ void
 bubble_start_timer (Bubble* self);
 
 void
-bubble_slide_to (Bubble* self,
-		 gint    x,
-		 gint    y);
-
-void
 bubble_get_position (Bubble* self,
 		     gint*   x,
 		     gint*   y);

@@ -44,38 +44,6 @@ stop_main_loop (GMainLoop *loop)
 
 static
 void
-test_bubble_slide (void)
-{
-        GMainLoop *loop;
-	Bubble* bubble;
-	gint x         = 0;
-	gint y         = 0;
-	Defaults* defaults;
-
-	defaults = defaults_new ();
-	bubble = bubble_new (defaults);
-	g_assert (bubble != NULL);
-
-	bubble_move (bubble, 0, 0);
-	bubble_slide_to (bubble, 100, 200);
-
-	/* let the main loop run to have the slide being performed */
-        loop = g_main_loop_new(NULL, FALSE);
-        g_timeout_add(2000, (GSourceFunc)stop_main_loop, loop);
-        g_main_loop_run(loop);
-
-	/* check position */
-	bubble_get_position (bubble, &x, &y);
-
-	g_assert_cmpint (x, ==, 100);
-
-	g_object_unref (bubble);
-	g_object_unref (defaults);
-}
-
-
-static
-void
 test_bubble_new (void)
 {
 	Bubble* bubble;
@@ -123,7 +91,7 @@ test_bubble_set_attributes (void)
 	bubble_move (bubble, 30, 30);
 	bubble_show (bubble);
 
-	/* let the main loop run to have the slide being performed */
+	/* let the main loop run */
         loop = g_main_loop_new (NULL, FALSE);
         g_timeout_add (2000, (GSourceFunc) stop_main_loop, loop);
         g_main_loop_run (loop);
@@ -156,15 +124,6 @@ test_bubble_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_bubble_del,
-					     NULL)
-		);
-
-	g_test_suite_add(ts,
-			 g_test_create_case ("can slide a bubble to a new position",
-					     0,
-					     NULL,
-					     NULL,
-					     test_bubble_slide,
 					     NULL)
 		);
 
