@@ -566,10 +566,12 @@ stack_get_capabilities (Stack*   self,
 	*out_caps = g_malloc0 (10 * sizeof(char *));
 
 	(*out_caps)[0] = g_strdup ("body");
-	(*out_caps)[1] = g_strdup ("icon-static");
-	(*out_caps)[2] = g_strdup ("canonical-private-1"); /* synchronous */
-	(*out_caps)[3] = g_strdup ("canonical-private-2"); /* append */
-	(*out_caps)[4] = NULL;
+	(*out_caps)[1] = g_strdup ("body-markup");
+	(*out_caps)[2] = g_strdup ("icon-static");
+	(*out_caps)[3] = g_strdup ("image/svg+xml");
+	(*out_caps)[4] = g_strdup ("canonical-private-1"); /* synchronous */
+	(*out_caps)[5] = g_strdup ("canonical-private-2"); /* append */
+	(*out_caps)[6] = NULL;
 
 	return TRUE;
 }
@@ -583,8 +585,8 @@ stack_get_server_information (Stack*  self,
 {
 	*out_name     = g_strdup ("alsdorf (Canonical's Notification Daemon");
 	*out_vendor   = g_strdup ("Canonical Ltd");
-	*out_version  = g_strdup ("0.1");
-	*out_spec_ver = g_strdup ("1.0-with-twists");
+	*out_version  = g_strdup ("1.0");
+	*out_spec_ver = g_strdup ("0.9");
 
 	return TRUE;
 }
