@@ -80,14 +80,6 @@ stack_get_top_corner (Stack *self, gint *x, gint *y)
 		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
-
-	Bubble *bubble = stack_find_bubble_on_display (self);
-	if (bubble != NULL)
-	{
-		*y += bubble_get_height (bubble);
-		*y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-		      2*EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	}
 }
 
 static gboolean
