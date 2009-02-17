@@ -252,7 +252,7 @@ test_withlib_append_hint (void)
 				     NULL);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
-	sleep (2);
+	sleep (1);
 
 	/* append second part of body-text */
 	res = notify_notification_update (n,
@@ -263,7 +263,7 @@ test_withlib_append_hint (void)
 	g_assert (res);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
- 	sleep (2);
+ 	sleep (1);
 
 	/* append third part of body-text */
 	res = notify_notification_update (n,
@@ -274,7 +274,7 @@ test_withlib_append_hint (void)
 	g_assert (res);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
- 	sleep (2);
+ 	sleep (1);
 
 	g_object_unref(G_OBJECT(n));
 }

@@ -4,7 +4,7 @@
 **
 ** Codename "alsdorf"
 **
-** stack.c - manages the list of incoming notifications to display
+** stack.c - manages the stack/queue of incoming notifications
 **
 ** Copyright 2009 Canonical Ltd.
 **
@@ -212,165 +212,7 @@ void close_handler (GObject* n, Stack*  stack);
 
 static Bubble *sync_bubble = NULL;
 
-static void
-stack_display_sync_bubble (Stack *self, Bubble *bubble)
-{
-	gint      y      = 0;
-	gint      x      = 0;
-	Defaults* d;
-
-	g_return_if_fail (IS_STACK (self));
-	g_return_if_fail (IS_BUBBLE (bubble));
-
-	/* is the notification reusing the current bubble? */
-	if (sync_bubble == bubble)
-	{
-		bubble_start_timer (bubble);
-		bubble_refresh (bubble);
-		return;
-	}
-
-	/* Position the bubble at the top left corner of the display. */
-	d = self->defaults;
-	y  =  defaults_get_desktop_top (d);
-	y  -= EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
-		 EM2PIXELS (defaults_get_bubble_width (d), d))
-		:
-		(defaults_get_desktop_left (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
-		;
-
-	bubble_move (bubble, x, y);
-	bubble_set_timeout (bubble, 2); /* Warning: in *seconds*! */
-
-	bubble_fade_in (bubble, 100);
-
-	sync_bubble = bubble;
-
-	g_signal_connect (G_OBJECT (bubble),
-			  "timed-out",
-			  G_CALLBACK (close_handler),
-			  self);
-}
-
-static void
-stack_resync_bubble_on_display (Stack *self)
-{
-	GList*    list   = NULL;
-	Bubble*   bubble = NULL;
-
-	g_return_if_fail (IS_STACK (self));
-
-	/* find the bubble on display */
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-
-		if (bubble_is_visible (bubble)){
-			bubble_start_timer (bubble);
-			bubble_refresh (bubble);
-			return;
-		}
-	}
-}
-
-
-static void
-stack_layout (Stack* self)
-{
-	Bubble*   next_to_display = NULL;
-	Bubble*   urgent_bubble   = NULL;
-	GList*    list   = NULL;
-	Bubble*   bubble = NULL;
-	gint      y      = 0;
-	gint      x      = 0;
-	gboolean  reset  = 0;
-	Defaults* d;
-
-	g_return_if_fail (self != NULL);
-
-	stack_purge_old_bubbles (self);
-
-	/* pickup the next bubble to display */
-	for (list = g_list_first (self->list);
-	     list != NULL;
-	     list = g_list_next (list))
-	{
-		bubble = (Bubble*) list->data;
-
-		/* sync. bubbles have already been taken care of */
-		if (bubble_is_synchronous (bubble))
-		    continue;
-
-		/* if there is already one bubble on display
-		   we don't have room for another one */
-		if (bubble_is_visible (bubble)){
-			/* but if a synchronous notification is on
-			   screen, synchronize both timers */
-			if (reset) {
-				bubble_start_timer (bubble);
-				bubble_refresh (bubble);
-			}
-			return;
-		}
-
-		if (bubble_is_urgent (bubble))
-		{
-			/* pick-up the /first/ urgent bubble
-			   in the queue (FIFO) */
-			if (urgent_bubble == NULL) {
-				urgent_bubble = bubble;
-				next_to_display = bubble;
-			}
-		} else if (next_to_display == NULL) {
-			next_to_display = bubble;
-		}
-	}
-
-	if (dnd_dont_disturb_user ()
-	    && urgent_bubble == NULL)
-		return;
-
-	if (next_to_display == NULL)
-		/* this actually happens when we're called for a synchronous
-		   bubble or after a bubble timed out, but there where no other
-		   notifications waiting in the queue */
-		return;
-
-	/* Position the top left corner of the stack. */
-	d = self->defaults;
-	y  =  defaults_get_desktop_top (d);
-	y  += 2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-	y  += EM2PIXELS (defaults_get_bubble_min_height (d), d);
-
-	x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(defaults_get_desktop_right (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d) -
-		 EM2PIXELS (defaults_get_bubble_width (d), d))
-		:
-		(defaults_get_desktop_left (d) -
-		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
-		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
-		;
-
-	bubble_move (next_to_display, x, y);
-
-	/* TODO: adjust timings for bubbles that appear in a serie of bubbles */
-	if (urgent_bubble != NULL)
-		bubble_fade_in (urgent_bubble, 100);
-	else 
-		bubble_fade_in (next_to_display, 200);
-}
-
+#include "display.c"
 
 /*-- public API --------------------------------------------------------------*/
 
@@ -418,9 +260,22 @@ close_handler (GObject *n,
 	{
 		if (IS_BUBBLE (n)
 		    && bubble_is_synchronous (BUBBLE (n)))
+		{
 			g_object_unref (n);
-		else 
+			sync_bubble = NULL;
+		} else {
+			/* Fix for a tricky race condition
+			   where a bubble fades out in sync
+			   with a synchronous bubble: the symc.
+			   one is still considered visible while
+			   the normal one has triggered this signal.
+			   This ensures the display slot of the
+			   sync. bubble is recycled, and no gap is
+			   left on the screen */
+			sync_bubble = NULL;
+
 			stack_layout (stack);
+		}
 	}
 
 	return;
@@ -662,7 +517,12 @@ stack_notify_handler (Stack*                 self,
 	if (bubble_is_synchronous (bubble))
 	{
 		stack_display_sync_bubble (self, bubble);
-		stack_resync_bubble_on_display (self);
+		Bubble *other = stack_find_bubble_on_display (self);
+		if (other != NULL)
+		{
+			bubble_start_timer (other);
+			bubble_refresh (other);
+		}
 	} else {
 		stack_push_bubble (self, bubble);
 		/* update the layout of the stack;
