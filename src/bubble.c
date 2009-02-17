@@ -2295,7 +2295,6 @@ fade_out_completed_cb (EggTimeline *timeline,
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	bubble_set_timeout (bubble, 0);
 	bubble_hide (bubble);
 
 	dbus_send_close_signal (bubble_get_sender (bubble),
@@ -2423,8 +2422,6 @@ bubble_timed_out (Bubble* self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
-	bubble_set_timeout (self, 0);
-
 	if (GET_PRIVATE (self)->composited)
 	{
 		bubble_fade_out (self, 300);
@@ -2432,27 +2429,30 @@ bubble_timed_out (Bubble* self)
 	}
 
 	bubble_hide (self);
+
 	dbus_send_close_signal (bubble_get_sender (self),
 				bubble_get_id (self),
 				1);
-	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);	
+	g_signal_emit (self, g_bubble_signals[TIMED_OUT], 0);
 
 	return FALSE;
 }
 
 
-gboolean
+void
 bubble_hide (Bubble* self)
 {
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self) || !bubble_is_visible (self))
-		return FALSE;
+		return;
 
 	priv = GET_PRIVATE (self);
 
 	priv->visible = FALSE;
 	gtk_widget_hide (priv->widget);
+
+	priv->timeout = 0;
 
 	if (priv->timeline)
 	{
@@ -2466,8 +2466,6 @@ bubble_hide (Bubble* self)
 		g_object_unref (priv->alpha);
 		priv->alpha = NULL;
 	}
-
-	return FALSE; /* this also instructs the timer to stop */
 }
 
 void

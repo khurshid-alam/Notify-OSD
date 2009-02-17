@@ -152,7 +152,7 @@ bubble_show (Bubble* self);
 void
 bubble_refresh (Bubble* self);
 
-gboolean
+void
 bubble_hide (Bubble* self);
 
 void
