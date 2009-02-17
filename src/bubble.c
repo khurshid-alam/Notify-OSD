@@ -1194,7 +1194,7 @@ draw_shadow (cairo_t* cr,
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr_surf);
 	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 0.75f);
+	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 1.0f);
 	cairo_arc (cr_surf,
 		   2 * shadow_radius,
 		   2 * shadow_radius,
@@ -1203,7 +1203,7 @@ draw_shadow (cairo_t* cr,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
 	cairo_destroy (cr_surf);
-	tmp_surface = blur_image_surface (tmp_surface, shadow_radius, 0.0f);
+	tmp_surface = blur_image_surface (tmp_surface, shadow_radius, 4.0f);
 	new_surface = cairo_image_surface_create_for_data (
 			cairo_image_surface_get_data (tmp_surface),
 			cairo_image_surface_get_format (tmp_surface),
