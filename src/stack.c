@@ -299,6 +299,12 @@ stack_push_bubble (Stack*  self,
 		bubble_start_timer (bubble);
 		bubble_refresh (bubble);
 
+		/* resync the synchronous bubble if it's at the top */
+		if (sync_bubble != NULL
+		    && bubble_is_visible (sync_bubble))
+			if (stack_is_at_top_corner (self, sync_bubble))
+				bubble_sync_with (sync_bubble, bubble);
+
 		return bubble_get_id (bubble);
 	}
 
@@ -517,12 +523,7 @@ stack_notify_handler (Stack*                 self,
 	if (bubble_is_synchronous (bubble))
 	{
 		stack_display_sync_bubble (self, bubble);
-		Bubble *other = stack_find_bubble_on_display (self);
-		if (other != NULL)
-		{
-			bubble_start_timer (other);
-			bubble_refresh (other);
-		}
+
 	} else {
 		stack_push_bubble (self, bubble);
 		/* update the layout of the stack;

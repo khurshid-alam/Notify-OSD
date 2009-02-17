@@ -80,24 +80,43 @@ stack_get_top_corner (Stack *self, gint *x, gint *y)
 		 EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		 EM2PIXELS (defaults_get_bubble_horz_gap (d), d))
 		;
+}
 
+static gboolean
+stack_is_at_top_corner (Stack *self, Bubble *bubble)
+{
+	gint x, y1, y2;
 
-	Bubble *bubble = stack_find_bubble_on_display (self);
-	if (bubble != NULL)
-	{
-		*y += bubble_get_height (bubble);
-		*y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d);
-	}
+	stack_get_top_corner (self, &x, &y1);
+	bubble_get_position (bubble, &x, &y2);
+
+	return y1 == y2;
 }
 
 static void
 stack_display_sync_bubble (Stack *self, Bubble *bubble)
 {
+	Defaults* d;
 	gint      y      = 0;
 	gint      x      = 0;
 
 	g_return_if_fail (IS_STACK (self));
 	g_return_if_fail (IS_BUBBLE (bubble));
+
+	bubble_set_timeout (bubble, 2000);
+
+	Bubble *other = stack_find_bubble_on_display (self);
+	if (other != NULL)
+	{
+		/* synchronize the sync bubble with 
+		   the timeout of the bubble at the bottom */
+		if (stack_is_at_top_corner (self, bubble))
+			bubble_sync_with (bubble, other);
+		else 
+			bubble_sync_with (bubble, other);
+		
+		bubble_refresh (other);
+	}
 
 	/* is the notification reusing the current bubble? */
 	if (sync_bubble == bubble)
@@ -109,9 +128,16 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 
 	stack_get_top_corner (self, &x, &y);
 
-	bubble_move (bubble, x, y);
+	Bubble *async = stack_find_bubble_on_display (self);
+	if (async != NULL)
+	{
+		d = self->defaults;
+		y += bubble_get_height (async);
+		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	}
 
-	bubble_set_timeout (bubble, 2000);
+	bubble_move (bubble, x, y);
 
 	bubble_fade_in (bubble, 100);
 
@@ -171,6 +197,7 @@ static void
 stack_layout (Stack* self)
 {
 	Bubble*   bubble = NULL;
+	Defaults* d;
 	gint      y      = 0;
 	gint      x      = 0;
 
@@ -189,12 +216,26 @@ stack_layout (Stack* self)
 	    && bubble_is_urgent (bubble))
 		return;
 
-	stack_get_top_corner (self, &x, &y);
-
-	bubble_move (bubble, x, y);
-
 	bubble_set_timeout (bubble,
 			    defaults_get_on_screen_timeout (self->defaults));
+
+	stack_get_top_corner (self, &x, &y);
+
+	if (sync_bubble != NULL
+	    && bubble_is_visible (sync_bubble))
+	{
+		d = self->defaults;
+		y += bubble_get_height (sync_bubble);
+		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
+		/* synchronize the sync bubble with 
+		   the timeout of the bubble at the bottom */
+		if (stack_is_at_top_corner (self, sync_bubble))
+			bubble_sync_with (sync_bubble, bubble);
+	}
+
+	bubble_move (bubble, x, y);
 
 	/* TODO: adjust timings for bubbles that appear in a serie of bubbles */
 	if (bubble_is_urgent (bubble))
