@@ -1781,7 +1781,7 @@ bubble_new (Defaults* defaults)
 	this->priv->icon_pixbuf     = NULL;
 	this->priv->value           = -1;
 	this->priv->visible         = FALSE;
-	this->priv->timeout         = 2;
+	this->priv->timeout         = 5000;
 	this->priv->mouse_over      = FALSE;
 	this->priv->start_y         = 0;
 	this->priv->end_y           = 0;
@@ -2517,7 +2517,7 @@ bubble_start_timer (Bubble* self)
 	** and improve system-power-usage to be more efficient */
 	bubble_set_timer_id (
 		self,
-		g_timeout_add_seconds (bubble_get_timeout (self),
+		g_timeout_add_seconds (bubble_get_timeout (self) / 1000,
 				       (GSourceFunc) bubble_timed_out,
 				       self));
 

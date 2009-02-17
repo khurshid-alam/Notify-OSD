@@ -111,7 +111,7 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 
 	bubble_move (bubble, x, y);
 
-	bubble_set_timeout (bubble, 2); /* Warning: in *seconds*! */
+	bubble_set_timeout (bubble, 2000);
 
 	bubble_fade_in (bubble, 100);
 
@@ -192,6 +192,9 @@ stack_layout (Stack* self)
 	stack_get_top_corner (self, &x, &y);
 
 	bubble_move (bubble, x, y);
+
+	bubble_set_timeout (bubble,
+			    defaults_get_on_screen_timeout (self->defaults));
 
 	/* TODO: adjust timings for bubbles that appear in a serie of bubbles */
 	if (bubble_is_urgent (bubble))
