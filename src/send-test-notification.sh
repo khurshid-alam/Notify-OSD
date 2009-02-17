@@ -9,13 +9,13 @@ notify-send "Jamshed Kakar" "Hey, what about this restaurant? http://www.blafase
 
 Would you go from your place by train or should I pick you up from work? What do you think?"
 sleep 2
-notify-send " " -i $DIR/icons/volume.svg -h int:value:75 -h string:synchronous:volume
+notify-send " " -i notification-volume -h int:value:75 -h string:synchronous:volume
 sleep 2
-notify-send " " -i $DIR/icons/volume.svg -h int:value:30 -h string:synchronous:volume
+notify-send " " -i notification-volume -h int:value:30 -h string:synchronous:volume
 sleep 2
-notify-send " " -i $DIR/icons/brightness.svg -h int:value:100 -h string:synchronous:brightness
+notify-send " " -i notification-brightness -h int:value:100 -h string:synchronous:brightness
 sleep 2
-notify-send " " -i $DIR/icons/brightness.svg -h int:value:45 -h string:synchronous:brightness
+notify-send " " -i notification-brightness -h int:value:45 -h string:synchronous:brightness
 sleep 2
 notify-send "WiFi signal found" -i $DIR/icons/wifi-75.svg
 sleep 2
