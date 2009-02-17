@@ -125,6 +125,8 @@ enum
 #define INDICATOR_LIT_B    1.0f
 #define INDICATOR_LIT_A    1.0f
 
+#define FPS                60
+
 /*-- private functions  --------------------------------------------------------------*/
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
@@ -2120,6 +2122,7 @@ bubble_start_glow_effect (Bubble *self,
 	priv = GET_PRIVATE (self);
 
 	timeline = egg_timeline_new_for_duration (msecs);
+	egg_timeline_set_speed (timeline, FPS);
 	priv->timeline = timeline;
 
 	if (priv->alpha != NULL)
@@ -2159,13 +2162,13 @@ bubble_show (Bubble* self)
 	gtk_widget_show_all (priv->widget);
 
 	/* FIXME: do nasty busy-polling rendering in the drawing-area */
-	priv->draw_handler_id = g_timeout_add (1000/60,
+	priv->draw_handler_id = g_timeout_add (1000/FPS,
 					       (GSourceFunc) redraw_handler,
 					       self);
 
-	/* FIXME: read out current mouse-pointer position every 1/10 second */
+	/* FIXME: read out current mouse-pointer position every 1/25 second */
 
-        priv->pointer_update_id = g_timeout_add (100,
+        priv->pointer_update_id = g_timeout_add (1000/FPS,
 						 (GSourceFunc) pointer_update,
 						 self);
 }
@@ -2286,7 +2289,10 @@ fade_cb (EggTimeline *timeline,
 		/ (float)EGG_ALPHA_MAX_ALPHA
 		* 0.95f;
 
-	gtk_window_set_opacity (bubble_get_window (bubble), opacity);
+	if (bubble_is_mouse_over (bubble))
+		gtk_window_set_opacity (bubble_get_window (bubble), 0.1f);
+	else
+		gtk_window_set_opacity (bubble_get_window (bubble), opacity);
 }
 
 static void
@@ -2327,7 +2333,10 @@ fade_in_completed_cb (EggTimeline* timeline,
 		priv->timeline = NULL;
 	}
 
-	gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
+	if (bubble_is_mouse_over (bubble))
+		gtk_window_set_opacity (bubble_get_window (bubble), 0.1f);
+	else
+		gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
 
 	bubble_start_timer (bubble);
 }
@@ -2352,6 +2361,7 @@ bubble_fade_in (Bubble* self,
 	}
 
 	timeline = egg_timeline_new_for_duration (msecs);
+	egg_timeline_set_speed (timeline, FPS);
 
 	if (priv->alpha != NULL)
 	{
@@ -2376,7 +2386,8 @@ bubble_fade_in (Bubble* self,
 
 	egg_timeline_start (timeline);
 
-	gtk_window_set_opacity (bubble_get_window (self), 0.0);
+	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
+
 	bubble_show (self);	
 }
 
@@ -2392,6 +2403,7 @@ bubble_fade_out (Bubble* self,
 	priv = GET_PRIVATE (self);
 
 	timeline = egg_timeline_new_for_duration (msecs);
+	egg_timeline_set_speed (timeline, FPS);
 	priv->timeline = timeline;
 
 	if (priv->alpha != NULL)
