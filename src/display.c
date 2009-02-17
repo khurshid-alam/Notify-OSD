@@ -67,8 +67,8 @@ stack_get_top_corner (Stack *self, gint *x, gint *y)
 	/* Position the top left corner of the stack. */
 	d = self->defaults;
 	*y  =  defaults_get_desktop_top (d);
-	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-	       EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
+	       - EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 	*x  =  (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
 		(defaults_get_desktop_right (d) -
@@ -141,8 +141,8 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 	{
 		d = self->defaults;
 		y += bubble_get_height (async);
-		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
+		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	}
 
 	bubble_move (bubble, x, y);
@@ -234,8 +234,8 @@ stack_layout (Stack* self)
 	{
 		d = self->defaults;
 		y += bubble_get_height (sync_bubble);
-		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
+		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 		/* synchronize the sync bubble with 
 		   the timeout of the bubble at the bottom */
