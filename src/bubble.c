@@ -3007,5 +3007,17 @@ bubble_append_message_body (Bubble*      self,
 	g_free ((gpointer) text);
 }
 
+void
+bubble_sync_with (Bubble *self,
+		  Bubble *other)
+{
+	g_return_if_fail (IS_BUBBLE (self) && IS_BUBBLE (other));
+
+	bubble_set_timeout (self,
+			    bubble_get_timeout (other));
+	bubble_start_timer (self);
+	bubble_start_timer (other);
+}
+
 #include "dialog.c"
 

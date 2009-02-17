@@ -222,6 +222,10 @@ void
 bubble_append_message_body (Bubble*      self,
 			    const gchar* append_body);
 
+void
+bubble_sync_with (Bubble *self,
+		  Bubble *other);
+
 GObject*
 bubble_show_dialog (Bubble *bubble,
 		    const char *process_name,
