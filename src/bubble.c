@@ -1725,7 +1725,7 @@ bubble_new (Defaults* defaults)
 	this->defaults = defaults;
 	priv = GET_PRIVATE (this);
 
-	priv->widget = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	priv->widget = gtk_window_new (GTK_WINDOW_POPUP);
 	window = priv->widget;
 	if (!window)
 		return NULL;
