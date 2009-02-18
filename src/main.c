@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** main.c - pulling it all together
 **
@@ -39,7 +39,7 @@
 #define DBUS_PATH "/org/freedesktop/Notifications"
 #define DBUS_NAME "org.freedesktop.Notifications"
 
-#define ICONS_DIR  (DATADIR G_DIR_SEPARATOR_S "alsdorf" G_DIR_SEPARATOR_S "icons")
+#define ICONS_DIR  (DATADIR G_DIR_SEPARATOR_S "notify-osd" G_DIR_SEPARATOR_S "icons")
 
 int
 main (int    argc,

@@ -5,13 +5,13 @@ INCLUDES =			\
 	-I$(srcdir)		\
 	$(NULL)
 
-alsdorfdir = $(libexecdir)
+notify_osddir = $(libexecdir)
 
-alsdorf_PROGRAMS = \
-	alsdorf			\
+notify_osd_PROGRAMS = \
+	notify-osd		\
 	$(NULL)
 
-alsdorf_sources =		\
+notify_osd_sources =		\
 	bubble.c		\
 	defaults.c		\
 	main.c			\
@@ -28,7 +28,7 @@ alsdorf_sources =		\
 	../egg/egg-hack.c		\
 	$(NULL)
 
-alsdorf_headers =		\
+notify_osd_headers =		\
 	bubble.h		\
 	defaults.h		\
 	observer.h		\
@@ -46,12 +46,12 @@ alsdorf_headers =		\
 	../egg/egg-hack.h		\
 	$(NULL)
 
-alsdorf_SOURCES =		\
-	$(alsdorf_sources)	\
-	$(alsdorf_headers)	\
+notify_osd_SOURCES =		\
+	$(notify_osd_sources)	\
+	$(notify_osd_headers)	\
 	$(NULL)
 
-alsdorf_LDADD =			\
+notify_osd_LDADD =			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS) 		\
 	$(GCONF_LIBS) 		\
@@ -59,7 +59,7 @@ alsdorf_LDADD =			\
 	$(DBUS_LIBS)     	\
 	$(NULL)
 
-alsdorf_CFLAGS = 		\
+notify_osd_CFLAGS = 		\
 	-Wall -Werror -std=c99	\
 	-DDATADIR=\""$(datadir)"\" \
 	$(GTK_CFLAGS) 		\
@@ -67,20 +67,22 @@ alsdorf_CFLAGS = 		\
 	$(DBUS_CFLAGS)		\
 	$(NULL)
 
-alsdorf_LDFLAGS = 		\
+notify_osd_LDFLAGS = 		\
 	-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions \
 	$(NULL)
 
 # this comes from distutils.sysconfig.get_config_var('LINKFORSHARED')
 
-stack-glue.h: alsdorf.xml Makefile
+stack-glue.h: notify-osd.xml Makefile
 	$(LIBTOOL) --mode=execute $(DBUS_GLIB_BIN)/dbus-binding-tool --prefix=stack --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES =			\
 	stack-glue.h
 
 EXTRA_DIST =			\
-	alsdorf.xml		\
+	notify-osd.xml		\
+	dialog.c		\
+	display.c		\
 	$(NULL)
 
 CLEANFILES = 			\

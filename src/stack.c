@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** stack.c - manages the stack/queue of incoming notifications
 **
@@ -583,7 +583,7 @@ stack_get_server_information (Stack*  self,
 			      gchar** out_version,
 			      gchar** out_spec_ver)
 {
-	*out_name     = g_strdup ("alsdorf (Canonical's Notification Daemon");
+	*out_name     = g_strdup ("notify-osd");
 	*out_vendor   = g_strdup ("Canonical Ltd");
 	*out_version  = g_strdup ("1.0");
 	*out_spec_ver = g_strdup ("0.9");

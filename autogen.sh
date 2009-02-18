@@ -4,7 +4,7 @@
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
-PKG_NAME="alsdorf"
+PKG_NAME="notify-osd"
 REQUIRED_AUTOCONF_VERSION=2.59
 REQUIRED_AUTOMAKE_VERSION=1.8
 REQUIRED_MACROS="python.m4"

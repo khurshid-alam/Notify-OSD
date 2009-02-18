@@ -1,4 +1,4 @@
-AC_INIT(alsdorf, 0.1, dx-team@canonical.com)
+AC_INIT(notify_osd, 0.9, dx-team@canonical.com)
 
 AC_CONFIG_SRCDIR(src/main.c)
 AC_CONFIG_HEADERS(config.h)
@@ -45,10 +45,10 @@ AC_SUBST(DBUS_GLIB_BIN)
 AM_PATH_GTK_2_0
 
 
-PKG_CHECK_MODULES(alsdorf, 
+PKG_CHECK_MODULES(notify_osd, 
 		  gtk+-2.0 >= 2.6)
-AC_SUBST(ALSDORF_CFLAGS)
-AC_SUBST(ALSDORF_LIBS)
+AC_SUBST(NOTIFY_OSD_CFLAGS)
+AC_SUBST(NOTIFY_OSD_LIBS)
 # example python module
 # AM_CHECK_PYMOD(gobject)
 

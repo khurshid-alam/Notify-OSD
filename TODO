@@ -1,5 +1,2 @@
-Here are a couple of longer term goals we still like to implement:
-
- * in-Xserver keyboard- and mouse-listener
- * multi-monitor awareness
- * patching more applications complying the the proposed spec
+TODO
+ * remove the bubble->visible attribute and turn the method calls into gdk_window_is_visible
