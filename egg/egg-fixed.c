@@ -705,7 +705,9 @@ egg_sqrtx (EggFixed x)
      */
     int t = 0;
     int sh = 0;
+#ifndef __arm__
     unsigned int mask = 0x40000000;
+#endif
     unsigned fract = x & 0x0000ffff;
     unsigned int d1, d2;
     EggFixed v1, v2;
