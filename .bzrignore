@@ -44,3 +44,4 @@ tests/test-timeline-dup-frames
 tests/test-timeline-interpolate
 tests/test-timeline-rewind
 tests/test-timeline-smoothness
+src/notify-osd
