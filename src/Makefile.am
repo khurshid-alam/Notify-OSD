@@ -1,5 +1,7 @@
 NULL =
 
+transform = s/_/-/g
+
 INCLUDES =			\
 	-I.			\
 	-I$(srcdir)		\
