@@ -113,7 +113,7 @@ enum
 #define BUBBLE_BG_COLOR_R  0.07f
 #define BUBBLE_BG_COLOR_G  0.07f
 #define BUBBLE_BG_COLOR_B  0.07f
-#define BUBBLE_BG_COLOR_A  0.8f
+#define BUBBLE_BG_COLOR_A  0.9f
 
 #define INDICATOR_UNLIT_R  1.0f
 #define INDICATOR_UNLIT_G  1.0f
