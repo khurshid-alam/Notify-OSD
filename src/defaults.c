@@ -1271,7 +1271,7 @@ defaults_class_init (DefaultsClass* klass)
 				"pixels-per-em",
 				"pixels-per-em",
 				"Number of pixels for one em-unit",
-				0,
+				1,
 				100,
 				DEFAULT_PIXELS_PER_EM,
 				G_PARAM_CONSTRUCT |
