@@ -94,9 +94,15 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title);
 
+const gchar*
+bubble_get_title (Bubble* self);
+
 void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body);
+
+const gchar*
+bubble_get_message_body (Bubble* self);
 
 void
 bubble_set_icon (Bubble*      self,
@@ -112,6 +118,9 @@ bubble_get_icon_pixbuf (Bubble *self);
 void
 bubble_set_value (Bubble* self,
 		  gint    value);
+
+gint
+bubble_get_value (Bubble* self);
 
 void
 bubble_set_size (Bubble* self,

@@ -358,7 +358,7 @@ defaults_constructed (GObject* gobject)
 					1.0f / 72.0f * dpi);
 		g_object_set (self,
 			      "pixels-per-em",
-			      pixels_per_em,
+			      (gint) pixels_per_em,
 			      NULL);
 	}
 
@@ -1271,7 +1271,7 @@ defaults_class_init (DefaultsClass* klass)
 				"pixels-per-em",
 				"pixels-per-em",
 				"Number of pixels for one em-unit",
-				1,
+				0,
 				100,
 				DEFAULT_PIXELS_PER_EM,
 				G_PARAM_CONSTRUCT |
