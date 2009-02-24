@@ -94,7 +94,24 @@ bubble_accessible_new (GObject *obj)
 static const char*
 bubble_accessible_get_name (AtkObject *obj)
 {
-  return "Awesome bubble!";
+    
+    AtkGObjectAccessible *atk_gobj;
+    Bubble *bubble;
+    GObject *g_obj;
+    const gchar *title;
+    
+    atk_gobj = ATK_GOBJECT_ACCESSIBLE (obj);
+
+    g_obj = atk_gobject_accessible_get_object (atk_gobj);
+    if (g_obj == NULL)
+        return "";
+
+    g_return_val_if_fail (IS_BUBBLE (g_obj), "");
+    bubble = BUBBLE (g_obj);
+
+    title = bubble_get_title(bubble);
+    
+    return bubble_get_title(bubble);
 }
 
 static const char*
