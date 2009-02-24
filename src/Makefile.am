@@ -22,6 +22,11 @@ notify_osd_sources =		\
 	dbus.c			\
 	dnd.c			\
 	apport.c		\
+	bubble-accessible.c \
+	bubble-accessible-factory.c \
+	bubble-window.c \
+	bubble-window-accessible.c \
+	bubble-window-accessible-factory.c \
 	../egg/egg-fixed.c		\
 	../egg/egg-units.c		\
 	../egg/egg-timeline.c		\
@@ -39,6 +44,11 @@ notify_osd_headers =		\
 	dbus.h			\
 	dnd.h			\
 	apport.h		\
+	bubble-accessible.h \
+	bubble-accessible-factory.h \
+	bubble-window.h \
+	bubble-window-accessible.h \
+	bubble-window-accessible-factory.h \
 	../egg/egg-fixed.h		\
 	../egg/egg-units.h		\
 	../egg/egg-timeline.h		\

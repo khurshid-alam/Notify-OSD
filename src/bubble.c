@@ -42,6 +42,7 @@
 #include "defaults.h"
 #include "stack.h"
 #include "dbus.h"
+#include "bubble-window.h"
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -1725,12 +1726,12 @@ bubble_new (Defaults* defaults)
 	this->defaults = defaults;
 	priv = GET_PRIVATE (this);
 
-	priv->widget = gtk_window_new (GTK_WINDOW_POPUP);
+	priv->widget = bubble_window_new();
 	window = priv->widget;
 	if (!window)
 		return NULL;
 
-	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) &this);
+	g_object_set_data (G_OBJECT(window), "bubble", this);
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
 				  GDK_WINDOW_TYPE_HINT_NOTIFICATION);
