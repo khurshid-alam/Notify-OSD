@@ -95,11 +95,9 @@ bubble_accessible_new (GObject *obj)
 static const char*
 bubble_accessible_get_name (AtkObject *obj)
 {
-    
     AtkGObjectAccessible *atk_gobj;
     Bubble *bubble;
     GObject *g_obj;
-    const gchar *title;
     
     atk_gobj = ATK_GOBJECT_ACCESSIBLE (obj);
 
@@ -110,22 +108,26 @@ bubble_accessible_get_name (AtkObject *obj)
     g_return_val_if_fail (IS_BUBBLE (g_obj), "");
     bubble = BUBBLE (g_obj);
 
-    title = bubble_get_title(bubble);
-    
     return bubble_get_title(bubble);
 }
 
 static const char*
 bubble_accessible_get_description (AtkObject *obj)
 {
-  g_return_val_if_fail (IS_BUBBLE_ACCESSIBLE (obj), NULL);
+    AtkGObjectAccessible *atk_gobj;
+    Bubble *bubble;
+    GObject *g_obj;
+    
+    atk_gobj = ATK_GOBJECT_ACCESSIBLE (obj);
 
-  if (obj->description != NULL)
-    {
-      return obj->description;
-    }
-  else
-    return NULL;
+    g_obj = atk_gobject_accessible_get_object (atk_gobj);
+    if (g_obj == NULL)
+        return "";
+
+    g_return_val_if_fail (IS_BUBBLE (g_obj), "");
+    bubble = BUBBLE (g_obj);
+
+    return bubble_get_message_body (bubble);
 }
 
 static gint
@@ -133,5 +135,5 @@ bubble_accessible_get_index_in_parent (AtkObject *obj)
 {
   g_return_val_if_fail (IS_BUBBLE_ACCESSIBLE (obj), -1);
 
-  return BUBBLE_ACCESSIBLE (obj)->index;
+  return 0;
 }
