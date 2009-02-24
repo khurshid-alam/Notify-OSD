@@ -31,9 +31,9 @@
 #include "bubble-accessible.h"
 
 static void        bubble_accessible_class_init          (BubbleAccessibleClass *klass);
-static const char* bubble_accessible_get_name            (AtkObject                    *obj);
-static const char* bubble_accessible_get_description     (AtkObject                    *obj);
-static int         bubble_accessible_get_index_in_parent (AtkObject                    *obj);
+static const char* bubble_accessible_get_name            (AtkObject             *obj);
+static const char* bubble_accessible_get_description     (AtkObject             *obj);
+static int         bubble_accessible_get_index_in_parent (AtkObject             *obj);
 
 GType
 bubble_accessible_get_type (void)
@@ -56,7 +56,8 @@ bubble_accessible_get_type (void)
         NULL /* value table */
       };
 
-      type = g_type_register_static (ATK_TYPE_GOBJECT_ACCESSIBLE, "BubbleAccessible", &tinfo, 0);
+      type = g_type_register_static (ATK_TYPE_GOBJECT_ACCESSIBLE,
+                                     "BubbleAccessible", &tinfo, 0);
   }
   return type;
 }
