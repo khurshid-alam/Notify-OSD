@@ -471,6 +471,18 @@ stack_notify_handler (Stack*                 self,
 		}
 	}
 
+	if (hints)
+	{
+		data = (GValue*) g_hash_table_lookup (hints, "icon-only");
+		if (G_VALUE_HOLDS_STRING (data))
+		{
+			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
+				bubble_set_icon_only (bubble, TRUE);
+			else
+				bubble_set_icon_only (bubble, FALSE);
+		}
+	}
+
 	if (!new_bubble && bubble_is_append_allowed (bubble))
 	{
 		if (body)
@@ -571,7 +583,8 @@ stack_get_capabilities (Stack*   self,
 	(*out_caps)[3] = g_strdup ("image/svg+xml");
 	(*out_caps)[4] = g_strdup ("canonical-private-1"); /* synchronous */
 	(*out_caps)[5] = g_strdup ("canonical-private-2"); /* append */
-	(*out_caps)[6] = NULL;
+	(*out_caps)[6] = g_strdup ("canonical-private-3"); /* icon-only */
+	(*out_caps)[7] = NULL;
 
 	return TRUE;
 }

@@ -82,6 +82,7 @@ struct _BubblePrivate {
 	gint             body_width;
 	gint             body_height;
 	gboolean         append;
+	gboolean         icon_only;
 };
 
 enum
@@ -491,67 +492,162 @@ draw_layout_grid (cairo_t* cr,
 }
 #endif
 
+/* color-, alpha-, radius-, width-, height- and gradient-values were determined
+ * by very close obvervation of a SVG-mockup from the design-team */
 static void
 draw_value_indicator (cairo_t* cr,
-		      gint     value,   /* value to render: 0 - 100        */
-		      gint     start_x, /* top of surrounding rect         */
-		      gint     start_y, /* left of surrounding rect        */
-		      gint     width,   /* width of surrounding rect       */
-		      gint     height,  /* height of surrounding rect      */
-		      gint     bars,    /* how may bars to use for display */
-		      gdouble* lit,     /* lit-color as gdouble[4]         */
-		      gdouble* unlit    /* unlit-color as gdouble[4]       */)
+		      gint     value,   /* value to render: 0 - 100   */
+		      gint     start_x, /* top of surrounding rect    */
+		      gint     start_y, /* left of surrounding rect   */
+		      gint     width,   /* width of surrounding rect  */
+		      gint     height   /* height of surrounding rect */)
 {
-	gint    step;
-	gdouble x = (gdouble) start_x;
-	gdouble y = (gdouble) start_y;
-	gdouble w = (gdouble) width;
-	gdouble h = (gdouble) height;
-	gdouble radius;           /* corner-radius of a bar         */
-	gdouble x_gap;            /* gap between two bars           */
-	gdouble y_start = 0.275f; /* normalized height of first bar */
-	gdouble x_step;           /* width of a bar                 */
-	gdouble y_step;           /* increment-step for bar-height  */
-	gint    step_value;
+	gdouble          outline_radius;
+	gdouble          outline_thickness;
+	gdouble          outline_width;
+	gdouble          outline_height;
+	gdouble          bar_radius;
+	gdouble          bar_width;
+	gdouble          bar_height;
+	cairo_pattern_t* gradient;
 
-	/* sanity checks */
-	if (bars < 0 || lit == NULL || unlit == NULL)
-		return;
+	outline_radius    = 2.0f;
+	outline_thickness = 2.0f;
+	outline_width     = width - 2 * outline_radius;
+	outline_height    = height / 5.0f;
 
-	step_value = 100.0f / (gdouble) bars;
-	x_gap = w * 0.3f / (gdouble) (bars - 1);
-	x_step = w * 0.7f / (gdouble) bars;
-	radius = 0.3f * x_step;
-	y_step = (h - (h * y_start)) / (bars - 1);
+	/* draw bar-background */
+	cairo_set_line_width (cr, outline_thickness);
+	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.3f);
+	draw_round_rect (cr,
+			 1.0f,
+			 (gdouble) start_x + 0.5f,
+			 (gdouble) start_y +
+			 height / 2.0f -
+			 outline_height / 2.0f +
+			 0.5f,
+			 outline_radius,
+			 (gdouble) outline_width,
+			 (gdouble) outline_height);
+	cairo_stroke_preserve (cr);
+	gradient = cairo_pattern_create_linear (0.0f,
+						(gdouble) start_y +
+						height / 2.0f -
+						outline_height / 2.0f +
+						0.5f,
+						0.0f,
+						(gdouble) start_y +
+						height / 2.0f -
+						outline_height / 2.0f +
+						0.5f +
+						outline_height);
+	cairo_pattern_add_color_stop_rgba (gradient,
+					   0.0f,
+					   0.866f,
+					   0.866f,
+					   0.866f,
+					   0.3f);
+	cairo_pattern_add_color_stop_rgba (gradient,
+					   0.2f,
+					   0.827f,
+					   0.827f,
+					   0.827f,
+					   0.3f);
+	cairo_pattern_add_color_stop_rgba (gradient,
+					   0.3f,
+					   0.772f,
+					   0.772f,
+					   0.772f,
+					   0.3f);
+	cairo_pattern_add_color_stop_rgba (gradient,
+					   1.0f,
+					   0.623f,
+					   0.623f,
+					   0.623f,
+					   0.3f);
+	cairo_set_source (cr, gradient);
+	cairo_fill (cr);
+	cairo_pattern_destroy (gradient);
 
-	for (step = 0; step < bars; step++)
+	bar_radius = 0.8f;
+	bar_width  = outline_width - outline_radius;
+	bar_height = outline_height - outline_radius;
+
+	/* draw value-bar */
+	if (value > 0)
 	{
-		if (step * step_value >= value)
-		{
-			cairo_set_source_rgba (cr,
-					       unlit[R],
-					       unlit[G],
-					       unlit[B],
-					       unlit[A]);
-		}
-		else
-		{
-			cairo_set_source_rgba (cr,
-					       lit[R],
-					       lit[G],
-					       lit[B],
-					       lit[A]);
-		}
-
 		draw_round_rect (cr,
 				 1.0f,
-				 x + (x_step + x_gap) * (gdouble) step,
-				 h + y - y_step * (gdouble) step - y_start * h,
-				 radius,
-				 x_step,
-				 y_start * h + y_step * (gdouble) step);
+				 (gdouble) start_x + outline_thickness + 0.5f,
+				 (gdouble) start_y +
+				 height / 2.0f -
+				 outline_height / 2.0f +
+				 outline_thickness / 2.0f +
+				 0.5f,
+				 bar_radius,
+				 bar_width / 100.0f * (gdouble) value,
+				 bar_height);
+		gradient = cairo_pattern_create_linear (0.0f,
+							(gdouble) start_x +
+							outline_thickness +
+							0.5f,
+							0.0f,
+							(gdouble) start_y +
+							height / 2.0f -
+							outline_height / 2.0f +
+							outline_thickness / 2.0f +
+							0.5f);
+		cairo_pattern_add_color_stop_rgba (gradient,
+						   0.0f,
+						   1.0f,
+						   1.0f,
+						   1.0f,
+						   1.0f);
+		cairo_pattern_add_color_stop_rgba (gradient,
+						   0.2f,
+						   0.95f,
+						   0.95f,
+						   0.95f,
+						   1.0f);
+		cairo_pattern_add_color_stop_rgba (gradient,
+						   0.3f,
+						   0.8f,
+						   0.8f,
+						   0.8f,
+						   1.0f);
+		cairo_pattern_add_color_stop_rgba (gradient,
+						   1.0f,
+						   0.623f,
+						   0.623f,
+						   0.623f,
+						   1.0f);
+		cairo_set_source (cr, gradient);
 		cairo_fill (cr);
+		cairo_pattern_destroy (gradient);
 	}
+}
+
+static void
+_render_icon_only (Bubble*  self,
+		   cairo_t* cr)
+{
+	Defaults* d = self->defaults;
+	gint      shadow;
+	gint      icon_half;
+	gint      width_half;
+	gint      height_half;
+
+	shadow      = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	icon_half   = EM2PIXELS (defaults_get_icon_size (d), d) / 2;
+	width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
+	height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
+
+	/* render icon */
+	gdk_cairo_set_source_pixbuf (cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     shadow + width_half - icon_half,
+				     shadow + height_half - icon_half);
+	cairo_paint (cr);
 }
 
 static void
@@ -564,15 +660,6 @@ _render_icon_indicator (Bubble*  self,
 	cairo_surface_t* tmp;
 	cairo_status_t   status;
 	cairo_pattern_t* pattern;
-	gint             bars = 13;
-	gdouble          lit[4]   = {INDICATOR_LIT_R,
-				     INDICATOR_LIT_G,
-				     INDICATOR_LIT_B,
-				     INDICATOR_LIT_A};
-	gdouble          unlit[4] = {INDICATOR_UNLIT_R,
-				     INDICATOR_UNLIT_G,
-				     INDICATOR_UNLIT_B,
-				     INDICATOR_UNLIT_A};
 	gint             blur_radius = 10;
 	gdouble          dim_glow_opacity;
 	BubblePrivate*   priv = GET_PRIVATE (self);
@@ -623,10 +710,7 @@ _render_icon_indicator (Bubble*  self,
 		EM2PIXELS (defaults_get_bubble_width (d), d) -
 		3 * EM2PIXELS (defaults_get_margin_size (d), d) -
 		EM2PIXELS (defaults_get_icon_size (d), d),
-		EM2PIXELS (defaults_get_icon_size (d), d),
-		bars,
-		lit,
-		unlit);
+		EM2PIXELS (defaults_get_icon_size (d), d));
 
 	/* "blit" scratch-pad context to context of bubble */
 	cairo_set_source_surface (cr,
@@ -1368,6 +1452,10 @@ expose_handler (GtkWidget*      window,
 
 	switch (bubble_get_layout (bubble))
 	{
+		case LAYOUT_ICON_ONLY:
+			_render_icon_only (bubble, cr);
+		break;
+
 		case LAYOUT_ICON_INDICATOR:
 			_render_icon_indicator (bubble, cr);
 		break;
@@ -1803,6 +1891,7 @@ bubble_new (Defaults* defaults)
 	this->priv->body_width      = 0;
 	this->priv->body_height     = 0;
 	this->priv->append          = FALSE;
+	this->priv->icon_only       = FALSE;
 
 	update_input_shape (window, 1, 1);
 
@@ -1858,6 +1947,9 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
+	gboolean       result;
+	gchar*         text;
+	GError*        error = NULL;
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
@@ -1868,7 +1960,17 @@ bubble_set_title (Bubble*      self,
 	if (priv->title->len != 0)
 		g_string_free (priv->title, TRUE);
 
-	priv->title = g_string_new (title);
+	/* filter out any HTML/markup if possible */
+    	result = pango_parse_markup (title,
+				     -1,
+				     0,    /* no accel-marker needed */
+				     NULL, /* no PangoAttr needed */
+				     &text,
+				     NULL, /* no accel-marker-return needed */
+				     &error);
+
+	priv->title = g_string_new (text);
+	g_free ((gpointer) text);
 }
 
 void
@@ -2715,6 +2817,7 @@ bubble_recalc_size (Bubble *self)
 
 	switch (priv->layout)
 	{
+		case LAYOUT_ICON_ONLY:
 		case LAYOUT_ICON_INDICATOR:
 		case LAYOUT_ICON_TITLE:
 			new_bubble_height =
@@ -2909,11 +3012,19 @@ bubble_determine_layout (Bubble* self)
 	/* set a sane default */
 	priv->layout = LAYOUT_NONE;
 
+	/* icon-only layout-case, e.g. eject */
+	if (priv->icon_only)
+	{
+		priv->layout = LAYOUT_ICON_ONLY;
+		return;
+	}
+
 	/* icon + indicator layout-case, e.g. volume */
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             >= 0))
+	    (priv->value             >= 0) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_INDICATOR;
 		return;
@@ -2923,7 +3034,8 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_TITLE;
 		return;	    
@@ -2933,7 +3045,8 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_TITLE_BODY;
 		return;
@@ -2943,13 +3056,14 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_TITLE_BODY;
 		return;
 	}
 
-	priv->layout = LAYOUT_TITLE_BODY;
+	/*priv->layout = LAYOUT_TITLE_BODY;*/
 
 	return;
 }
@@ -2964,6 +3078,16 @@ bubble_get_layout (Bubble* self)
 }
 
 void
+bubble_set_icon_only (Bubble*  self,
+		      gboolean allowed)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE (self)->icon_only = allowed;
+}
+
+void
 bubble_set_append (Bubble*  self,
 		   gboolean allowed)
 {
@@ -2972,6 +3096,7 @@ bubble_set_append (Bubble*  self,
 
 	GET_PRIVATE (self)->append = allowed;
 }
+
 
 gboolean
 bubble_is_append_allowed (Bubble* self)

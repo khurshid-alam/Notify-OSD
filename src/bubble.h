@@ -37,6 +37,7 @@
 typedef enum
 {
 	LAYOUT_NONE = 0,
+	LAYOUT_ICON_ONLY,
 	LAYOUT_ICON_INDICATOR,
 	LAYOUT_ICON_TITLE,
 	LAYOUT_ICON_TITLE_BODY,
@@ -210,6 +211,10 @@ bubble_determine_layout (Bubble* self);
 
 BubbleLayout
 bubble_get_layout (Bubble* self);
+
+void
+bubble_set_icon_only (Bubble*  self,
+		      gboolean allowed);
 
 void
 bubble_set_append (Bubble*  self,
