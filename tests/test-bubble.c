@@ -100,8 +100,28 @@ test_bubble_set_attributes (void)
 	g_object_unref (defaults);
 }
 
+static
+void
+test_bubble_get_attributes (void)
+{
+	Bubble*    bubble;
+	Defaults*  defaults;
 
+	defaults = defaults_new ();
+	bubble = bubble_new (defaults);
+	bubble_set_title (bubble, "Foo Bar");
+	bubble_set_message_body (bubble, "Some message-body text.");
+	bubble_set_value (bubble, 42);
 
+	g_assert_cmpstr (bubble_get_title (bubble), ==, "Foo Bar");
+	g_assert_cmpstr (bubble_get_message_body (bubble),
+			 ==,
+			 "Some message-body text.");
+	g_assert_cmpint (bubble_get_value (bubble), ==, 42);
+
+	g_object_unref (bubble);
+	g_object_unref (defaults);
+}
 
 GTestSuite *
 test_bubble_create_test_suite (void)
@@ -133,6 +153,14 @@ test_bubble_create_test_suite (void)
 					      NULL,
 					      NULL,
 					      test_bubble_set_attributes,
+					      NULL));
+
+	g_test_suite_add (ts,
+			  g_test_create_case ("can get bubble attributes",
+					      0,
+					      NULL,
+					      NULL,
+					      test_bubble_get_attributes,
 					      NULL));
 
 	return ts;

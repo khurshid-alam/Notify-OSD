@@ -1972,6 +1972,15 @@ bubble_set_title (Bubble*      self,
 	g_free ((gpointer) text);
 }
 
+const gchar*
+bubble_get_title (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return NULL;
+
+	return GET_PRIVATE (self)->title->str;
+}
+
 void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
@@ -2000,6 +2009,15 @@ bubble_set_message_body (Bubble*      self,
 
 	priv->message_body = g_string_new (text);
 	g_free ((gpointer) text);
+}
+
+const gchar*
+bubble_get_message_body (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return NULL;
+
+	return GET_PRIVATE (self)->message_body->str;
 }
 
 void
@@ -2084,6 +2102,15 @@ bubble_set_value (Bubble* self,
 		return;
 
 	GET_PRIVATE (self)->value = value;
+}
+
+gint
+bubble_get_value (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return -1;
+
+	return GET_PRIVATE (self)->value;
 }
 
 void
