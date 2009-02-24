@@ -81,6 +81,7 @@ struct _BubblePrivate {
 	gint             body_width;
 	gint             body_height;
 	gboolean         append;
+	gboolean         icon_only;
 };
 
 enum
@@ -551,6 +552,29 @@ draw_value_indicator (cairo_t* cr,
 				 y_start * h + y_step * (gdouble) step);
 		cairo_fill (cr);
 	}
+}
+
+static void
+_render_icon_only (Bubble*  self,
+		   cairo_t* cr)
+{
+	Defaults* d = self->defaults;
+	gint      shadow;
+	gint      icon_half;
+	gint      width_half;
+	gint      height_half;
+
+	shadow      = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	icon_half   = EM2PIXELS (defaults_get_icon_size (d), d) / 2;
+	width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
+	height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
+
+	/* render icon */
+	gdk_cairo_set_source_pixbuf (cr,
+				     GET_PRIVATE (self)->icon_pixbuf,
+				     shadow + width_half - icon_half,
+				     shadow + height_half - icon_half);
+	cairo_paint (cr);
 }
 
 static void
@@ -1367,6 +1391,10 @@ expose_handler (GtkWidget*      window,
 
 	switch (bubble_get_layout (bubble))
 	{
+		case LAYOUT_ICON_ONLY:
+			_render_icon_only (bubble, cr);
+		break;
+
 		case LAYOUT_ICON_INDICATOR:
 			_render_icon_indicator (bubble, cr);
 		break;
@@ -1802,6 +1830,7 @@ bubble_new (Defaults* defaults)
 	this->priv->body_width      = 0;
 	this->priv->body_height     = 0;
 	this->priv->append          = FALSE;
+	this->priv->icon_only       = FALSE;
 
 	update_input_shape (window, 1, 1);
 
@@ -2727,6 +2756,7 @@ bubble_recalc_size (Bubble *self)
 
 	switch (priv->layout)
 	{
+		case LAYOUT_ICON_ONLY:
 		case LAYOUT_ICON_INDICATOR:
 		case LAYOUT_ICON_TITLE:
 			new_bubble_height =
@@ -2921,11 +2951,19 @@ bubble_determine_layout (Bubble* self)
 	/* set a sane default */
 	priv->layout = LAYOUT_NONE;
 
+	/* icon-only layout-case, e.g. eject */
+	if (priv->icon_only)
+	{
+		priv->layout = LAYOUT_ICON_ONLY;
+		return;
+	}
+
 	/* icon + indicator layout-case, e.g. volume */
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             >= 0))
+	    (priv->value             >= 0) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_INDICATOR;
 		return;
@@ -2935,7 +2973,8 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_TITLE;
 		return;	    
@@ -2945,7 +2984,8 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_TITLE_BODY;
 		return;
@@ -2955,13 +2995,14 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_TITLE_BODY;
 		return;
 	}
 
-	priv->layout = LAYOUT_TITLE_BODY;
+	/*priv->layout = LAYOUT_TITLE_BODY;*/
 
 	return;
 }
@@ -2976,6 +3017,16 @@ bubble_get_layout (Bubble* self)
 }
 
 void
+bubble_set_icon_only (Bubble*  self,
+		      gboolean allowed)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	GET_PRIVATE (self)->icon_only = allowed;
+}
+
+void
 bubble_set_append (Bubble*  self,
 		   gboolean allowed)
 {
@@ -2984,6 +3035,7 @@ bubble_set_append (Bubble*  self,
 
 	GET_PRIVATE (self)->append = allowed;
 }
+
 
 gboolean
 bubble_is_append_allowed (Bubble* self)

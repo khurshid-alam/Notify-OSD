@@ -280,6 +280,27 @@ test_withlib_append_hint (void)
 }
 
 static void
+test_withlib_icon_only_hint (void)
+{
+        NotifyNotification *n;
+	gboolean res = FALSE;
+
+        notify_init (__FILE__);
+
+	/* init notification, supply first line of body-text */
+	n = notify_notification_new (" ", /* needs this to be non-NULL */
+				     NULL,
+				     "notification-audio-play",
+				     NULL);
+	notify_notification_set_hint_string (n, "icon-only", "allowed");
+	res = notify_notification_show (n, NULL);
+	g_assert (res);
+	sleep (1);
+
+	g_object_unref(G_OBJECT(n));
+}
+
+static void
 test_withlib_swallow_markup (void)
 {
         NotifyNotification *n;
@@ -367,6 +388,14 @@ test_withlib_create_test_suite (void)
 					     NULL,
 					     NULL,
 					     test_withlib_append_hint,
+					     NULL)
+		);
+	g_test_suite_add(ts,
+			 g_test_create_case ("supports icon-only-hint",
+					     0,
+					     NULL,
+					     NULL,
+					     test_withlib_icon_only_hint,
 					     NULL)
 		);
 	g_test_suite_add(ts,
