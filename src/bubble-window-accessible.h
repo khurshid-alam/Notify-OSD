@@ -54,7 +54,7 @@ struct _BubbleWindowAccessible
 	GtkAccessible parent_instance;
 };
 
-GType bubble_window_accessible_get_type (void) G_GNUC_CONST;
+GType bubble_window_accessible_get_type (void);
 
 AtkObject* bubble_window_accessible_new (GtkWidget *widget);
 

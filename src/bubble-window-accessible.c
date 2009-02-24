@@ -28,13 +28,64 @@
 #include "bubble-window-accessible.h"
 #include "bubble.h"
 
+static int         bubble_window_accessible_get_n_children (AtkObject*                   obj);
+static AtkObject*  bubble_window_accessible_ref_child      (AtkObject*                   obj,
+															int                          i);
+static void        bubble_window_accessible_init           (BubbleWindowAccessible*      object);
+static void        bubble_window_accessible_finalize       (GObject*                     object);
+static void        bubble_window_accessible_class_init     (BubbleWindowAccessibleClass* klass);
 
+static void* bubble_window_accessible_parent_class;
 
-G_DEFINE_TYPE (BubbleWindowAccessible, bubble_window_accessible, GTK_TYPE_ACCESSIBLE);
+GType
+bubble_window_accessible_get_type (void)
+{
+    static GType type = 0;
+    
+    if (!type) 
+    {
+        GTypeInfo tinfo = 
+        {
+            sizeof (BubbleWindowAccessibleClass),
+            (GBaseInitFunc) bubble_window_accessible_init, /* base init */
+            (GBaseFinalizeFunc) bubble_window_accessible_finalize, /* base finalize */
+            (GClassInitFunc) bubble_window_accessible_class_init, /* class init */
+            (GClassFinalizeFunc) NULL, /* class finalize */
+            NULL, /* class data */
+            sizeof (BubbleWindowAccessible), /* instance size */
+            0, /* nb preallocs */
+            NULL, /* instance init */
+            NULL /* value table */
+        };
+                
+        /*
+         * Figure out the size of the class and instance
+         * we are deriving from
+         */
+        AtkObjectFactory *factory;
+        GType derived_type;
+        GTypeQuery query;
+        GType derived_atk_type;
+        
+        derived_type = g_type_parent (BUBBLE_TYPE_WINDOW);  
+        
+        factory = atk_registry_get_factory (atk_get_default_registry (),
+                                            derived_type);
+        derived_atk_type = atk_object_factory_get_accessible_type (factory);
+        
+        printf("derived_atk_type: %s\n", g_type_name(derived_atk_type));
+        g_type_query (derived_atk_type, &query);
+        tinfo.class_size = query.class_size;
+        tinfo.instance_size = query.instance_size;
+        
+        type = g_type_register_static (derived_atk_type,
+                                       "BubbleWindowAccessible", &tinfo, 0);
+        
+    }
+    
+    return type;
+}
 
-static int         bubble_window_accessible_get_n_children (AtkObject *obj);
-static AtkObject*  bubble_window_accessible_ref_child      (AtkObject *obj,
-															int        i);
 
 static void
 bubble_window_accessible_init (BubbleWindowAccessible *object)
@@ -55,6 +106,8 @@ bubble_window_accessible_class_init (BubbleWindowAccessibleClass *klass)
 {
 	GObjectClass* object_class = G_OBJECT_CLASS (klass);
 	AtkObjectClass *class = ATK_OBJECT_CLASS (klass);
+    
+    bubble_window_accessible_parent_class = g_type_class_peek_parent (klass);
 
 	class->get_n_children = bubble_window_accessible_get_n_children;
 	class->ref_child = bubble_window_accessible_ref_child;
