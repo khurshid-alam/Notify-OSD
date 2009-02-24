@@ -44,7 +44,6 @@ bubble_window_new (void)
 {
 	GtkWidget *bubble_window;
 
-	printf("Win!\n");
 	bubble_window = g_object_new (BUBBLE_TYPE_WINDOW, 
 						 "type", GTK_WINDOW_POPUP, NULL);
 	return bubble_window;

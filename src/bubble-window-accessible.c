@@ -73,7 +73,6 @@ bubble_window_accessible_get_type (void)
                                             derived_type);
         derived_atk_type = atk_object_factory_get_accessible_type (factory);
         
-        printf("derived_atk_type: %s\n", g_type_name(derived_atk_type));
         g_type_query (derived_atk_type, &query);
         tinfo.class_size = query.class_size;
         tinfo.instance_size = query.instance_size;
@@ -176,8 +175,6 @@ bubble_window_accessible_ref_child (AtkObject *obj,
 	default_registry = atk_get_default_registry ();
 	factory = atk_registry_get_factory (default_registry, BUBBLE_TYPE);
 	
-	printf("Bubble: %p %d\n", bubble, IS_BUBBLE(bubble));
-
     bubble_accessible = atk_gobject_accessible_for_object (G_OBJECT (bubble));
 
 	if (atk_object_get_parent (bubble_accessible) == NULL)
