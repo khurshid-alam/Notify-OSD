@@ -185,8 +185,9 @@ bubble_window_accessible_new (GtkWidget *widget)
 static const char* 
 bubble_window_accessible_get_name (AtkObject* obj)
 {
-    GtkAccessible *accessible;
- 	Bubble *bubble;
+    GtkAccessible* accessible;
+ 	Bubble*        bubble;
+    const gchar*   title;
  
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
  	
@@ -199,7 +200,23 @@ bubble_window_accessible_get_name (AtkObject* obj)
 
     g_return_val_if_fail (IS_BUBBLE (bubble), "");
     
-    return bubble_get_title(bubble);
+    
+    title = bubble_get_title(bubble);
+    if (g_strcmp0(title, " ") == 0)
+    {
+        /* Titles should never be empty:
+           https://bugs.launchpad.net/notify-osd/+bug/334292
+           This solution is extremely wrong. */
+        const gchar* synch_str;    
+        synch_str = bubble_get_synchronous(bubble);
+        if (synch_str != NULL)
+            return synch_str;
+        else
+            return " ";
+    } 
+    
+    
+    return title;
 }
 
 static const char*
