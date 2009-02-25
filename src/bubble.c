@@ -879,16 +879,16 @@ _render_icon_title (Bubble*  self,
 
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
 			       TEXT_TITLE_COLOR_R,
 			       TEXT_TITLE_COLOR_G,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 }
 
@@ -946,16 +946,16 @@ _render_icon_title_body (Bubble*  self,
 
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
 			       TEXT_TITLE_COLOR_R,
 			       TEXT_TITLE_COLOR_G,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 
 	top_margin += log_rect.height / PANGO_SCALE;
@@ -986,15 +986,15 @@ _render_icon_title_body (Bubble*  self,
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_source_rgba (cr,
 			       TEXT_BODY_COLOR_R,
 			       TEXT_BODY_COLOR_G,
 			       TEXT_BODY_COLOR_B,
 			       TEXT_BODY_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 }
 
@@ -1044,16 +1044,16 @@ _render_title_body (Bubble*  self,
 
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
 			       TEXT_TITLE_COLOR_R,
 			       TEXT_TITLE_COLOR_G,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 
 	top_margin += (gdouble) log_rect.height / PANGO_SCALE;
@@ -1084,15 +1084,15 @@ _render_title_body (Bubble*  self,
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_source_rgba (cr,
 			       TEXT_BODY_COLOR_R,
 			       TEXT_BODY_COLOR_G,
 			       TEXT_BODY_COLOR_B,
 			       TEXT_BODY_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 }
 
@@ -1138,16 +1138,16 @@ _render_title_only (Bubble*  self,
 
 	cairo_move_to (cr, left_margin, top_margin);
 
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr,
 			       TEXT_TITLE_COLOR_R,
 			       TEXT_TITLE_COLOR_G,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
-	cairo_fill (cr);
+
+	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	pango_cairo_show_layout (cr, layout);
+
 	g_object_unref (layout);
 }
 
