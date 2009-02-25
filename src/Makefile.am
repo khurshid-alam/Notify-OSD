@@ -22,8 +22,6 @@ notify_osd_sources =		\
 	dbus.c			\
 	dnd.c			\
 	apport.c		\
-	bubble-accessible.c \
-	bubble-accessible-factory.c \
 	bubble-window.c \
 	bubble-window-accessible.c \
 	bubble-window-accessible-factory.c \
@@ -44,8 +42,6 @@ notify_osd_headers =		\
 	dbus.h			\
 	dnd.h			\
 	apport.h		\
-	bubble-accessible.h \
-	bubble-accessible-factory.h \
 	bubble-window.h \
 	bubble-window-accessible.h \
 	bubble-window-accessible-factory.h \

@@ -28,12 +28,11 @@
 #include "bubble-window-accessible.h"
 #include "bubble.h"
 
-static int         bubble_window_accessible_get_n_children (AtkObject*                   obj);
-static AtkObject*  bubble_window_accessible_ref_child      (AtkObject*                   obj,
-															int                          i);
-static void        bubble_window_accessible_init           (BubbleWindowAccessible*      object);
-static void        bubble_window_accessible_finalize       (GObject*                     object);
-static void        bubble_window_accessible_class_init     (BubbleWindowAccessibleClass* klass);
+static void        bubble_window_accessible_init            (BubbleWindowAccessible*      object);
+static void        bubble_window_accessible_finalize        (GObject*                     object);
+static void        bubble_window_accessible_class_init      (BubbleWindowAccessibleClass* klass);
+static const char* bubble_window_accessible_get_name        (AtkObject*                   obj);
+static const char* bubble_window_accessible_get_description (AtkObject*                   obj);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -107,10 +106,10 @@ bubble_window_accessible_class_init (BubbleWindowAccessibleClass *klass)
 	AtkObjectClass *class = ATK_OBJECT_CLASS (klass);
     
     bubble_window_accessible_parent_class = g_type_class_peek_parent (klass);
+    
+    class->get_name = bubble_window_accessible_get_name;
+    class->get_description = bubble_window_accessible_get_description;
 
-	class->get_n_children = bubble_window_accessible_get_n_children;
-	class->ref_child = bubble_window_accessible_ref_child;
-	
 	object_class->finalize = bubble_window_accessible_finalize;
 }
 
@@ -118,70 +117,58 @@ AtkObject*
 bubble_window_accessible_new (GtkWidget *widget)
 {
 	GObject *object;
-	AtkObject *aobj_pager;
+	AtkObject *aobj;
 	GtkAccessible *gtk_accessible;
 	
 	object = g_object_new (BUBBLE_WINDOW_TYPE_ACCESSIBLE, NULL);
 	
-	aobj_pager = ATK_OBJECT (object);
+	aobj = ATK_OBJECT (object);
 	
-	gtk_accessible = GTK_ACCESSIBLE (aobj_pager);
+	gtk_accessible = GTK_ACCESSIBLE (aobj);
 	gtk_accessible->widget = widget;
 	
-	atk_object_initialize (aobj_pager, widget);
-	//aobj_pager->role = ATK_ROLE_PANEL;
+	atk_object_initialize (aobj, widget);
+	//aobj->role = ATK_ROLE_PANEL;
 	
-	return aobj_pager;
+	return aobj;
 }
 
-static int 
-bubble_window_accessible_get_n_children (AtkObject *obj)
+static const char* 
+bubble_window_accessible_get_name (AtkObject* obj)
 {
-	GtkAccessible *accessible;
-	GtkWidget *widget;
-	gpointer bubble;
-	
-	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
-	
-	accessible = GTK_ACCESSIBLE (obj);
-	widget = accessible->widget;
-	
-	bubble = g_object_get_data (G_OBJECT(widget), "bubble");
-	
-	if (bubble != NULL)
-		return 1;
+    GtkAccessible *accessible;
+ 	Bubble *bubble;
+ 
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return "";
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
-	return 0;
+    g_return_val_if_fail (IS_BUBBLE (bubble), "");
+    
+    return bubble_get_title(bubble);
 }
 
-static AtkObject*
-bubble_window_accessible_ref_child (AtkObject *obj,
-									int        i)
+static const char*
+bubble_window_accessible_get_description (AtkObject* obj)
 {
-	GtkAccessible *accessible;
-	AtkObject *bubble_accessible;
-	GtkWidget *widget;
-	Bubble *bubble;
-	AtkRegistry *default_registry;   
-	AtkObjectFactory *factory;
+    GtkAccessible *accessible;
+ 	Bubble *bubble;
+ 
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return "";
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
-	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
-	
-	accessible = GTK_ACCESSIBLE (obj);
-	widget = accessible->widget;
-	
-	bubble = g_object_get_data (G_OBJECT(widget), "bubble");
-	
-	default_registry = atk_get_default_registry ();
-	factory = atk_registry_get_factory (default_registry, BUBBLE_TYPE);
-	
-    bubble_accessible = atk_gobject_accessible_for_object (G_OBJECT (bubble));
-
-	if (atk_object_get_parent (bubble_accessible) == NULL)
-		atk_object_set_parent (bubble_accessible, obj); 
-															 
-	g_object_ref (G_OBJECT (bubble_accessible));
-	
-	return bubble_accessible;
-
+    g_return_val_if_fail (IS_BUBBLE (bubble), "");
+    
+    return bubble_get_message_body(bubble);
 }

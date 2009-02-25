@@ -8,7 +8,6 @@
 #include "bubble-window.h"
 #include "bubble.h"
 #include "bubble-window-accessible-factory.h"
-#include "bubble-accessible-factory.h"
 
 G_DEFINE_TYPE (BubbleWindow, bubble_window, GTK_TYPE_WINDOW);
 
@@ -79,10 +78,6 @@ bubble_window_get_accessible (GtkWidget *widget)
 			 * Specify what factory to use to create accessible
 			 * objects
 			 */
-			atk_registry_set_factory_type (registry,
-										   BUBBLE_TYPE,
-										   BUBBLE_TYPE_ACCESSIBLE_FACTORY);
-		
 			atk_registry_set_factory_type (registry,
 										   BUBBLE_TYPE_WINDOW,
 										   BUBBLE_WINDOW_TYPE_ACCESSIBLE_FACTORY);

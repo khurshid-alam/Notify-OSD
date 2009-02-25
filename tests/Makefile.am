@@ -9,14 +9,17 @@ noinst_PROGRAMS = test-modules \
 check_PROGRAMS = test-modules
 TESTS = test-modules
 
-test_modules_SOURCES =		\
-	../src/bubble.c		\
-	../src/defaults.c	\
-	../src/observer.c	\
-	../src/stack.c		\
-	../src/dbus.c		\
-	../src/dnd.c		\
-	../src/apport.c		\
+test_modules_SOURCES =		                   \
+	../src/bubble.c		                   \
+	../src/defaults.c	                   \ 
+	../src/observer.c	                   \
+	../src/stack.c		                   \
+	../src/dbus.c		                   \
+	../src/dnd.c		                   \
+	../src/apport.c		                   \
+	../src/bubble-window.c                     \
+	../src/bubble-window-accessible.c          \
+	../src/bubble-window-accessible-factory.c  \
 	$(EGG_MODULES)	\
 	test-modules-main.c     \
 	test-apport.c		\
