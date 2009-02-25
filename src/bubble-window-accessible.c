@@ -34,6 +34,8 @@ static void        bubble_window_accessible_finalize        (GObject*           
 static void        bubble_window_accessible_class_init      (BubbleWindowAccessibleClass* klass);
 static const char* bubble_window_accessible_get_name        (AtkObject*                   obj);
 static const char* bubble_window_accessible_get_description (AtkObject*                   obj);
+static void        bubble_window_real_initialize            (AtkObject*                   obj,
+                                                             gpointer                     data);
 static void        atk_value_interface_init                 (AtkValueIface*               iface);
 static void        bubble_window_get_current_value          (AtkValue*                    obj,
                                                              GValue*                      value);
@@ -41,6 +43,9 @@ static void        bubble_window_get_maximum_value          (AtkValue*          
                                                              GValue*                      value);
 static void        bubble_window_get_minimum_value          (AtkValue*                    obj,
                                                              GValue*                      value);
+static void        bubble_value_changed_event               (Bubble*                      bubble,
+                                                             gint                         value,
+                                                             AtkObject                   *obj);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -100,7 +105,6 @@ bubble_window_accessible_get_type (void)
     return type;
 }
 
-
 static void
 atk_value_interface_init (AtkValueIface* iface)
 {
@@ -110,7 +114,6 @@ atk_value_interface_init (AtkValueIface* iface)
     iface->get_maximum_value = bubble_window_get_maximum_value;
     iface->get_minimum_value = bubble_window_get_minimum_value;
 }
-
 
 static void
 bubble_window_accessible_init (BubbleWindowAccessible *object)
@@ -136,8 +139,27 @@ bubble_window_accessible_class_init (BubbleWindowAccessibleClass *klass)
     
     class->get_name = bubble_window_accessible_get_name;
     class->get_description = bubble_window_accessible_get_description;
+    class->initialize = bubble_window_real_initialize;
 
 	object_class->finalize = bubble_window_accessible_finalize;
+}
+
+static void
+bubble_window_real_initialize (AtkObject* obj,
+                               gpointer   data)
+{
+    GtkWidget* widget = GTK_WIDGET (data);
+    Bubble*    bubble; 
+
+    ATK_OBJECT_CLASS (bubble_window_accessible_parent_class)->initialize (obj, data);
+
+    bubble = g_object_get_data (G_OBJECT(widget), "bubble");
+    
+    g_signal_connect (bubble,
+                      "value-changed",
+                      G_CALLBACK (bubble_value_changed_event),
+                      obj);
+
 }
 
 AtkObject*
@@ -243,3 +265,10 @@ bubble_window_get_minimum_value (AtkValue             *obj,
     g_value_set_double (value, 0.0);
 }
 
+static void
+bubble_value_changed_event (Bubble*    bubble,
+                            gint       value,
+                            AtkObject* obj)
+{
+    g_object_notify (G_OBJECT (obj), "accessible-value");
+}

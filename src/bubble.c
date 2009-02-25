@@ -88,6 +88,7 @@ struct _BubblePrivate {
 enum
 {
 	TIMED_OUT,
+    VALUE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -1796,6 +1797,18 @@ bubble_class_init (BubbleClass* klass)
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE,
 		0);
+
+    g_bubble_signals[VALUE_CHANGED] = g_signal_new (
+		"value-changed",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, value_changed),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__INT,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_INT);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -2103,6 +2116,8 @@ bubble_set_value (Bubble* self,
 		return;
 
 	GET_PRIVATE (self)->value = value;
+    
+    g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);	
 }
 
 gint
