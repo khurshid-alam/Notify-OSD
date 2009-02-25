@@ -581,9 +581,9 @@ stack_get_capabilities (Stack*   self,
 	(*out_caps)[1] = g_strdup ("body-markup");
 	(*out_caps)[2] = g_strdup ("icon-static");
 	(*out_caps)[3] = g_strdup ("image/svg+xml");
-	(*out_caps)[4] = g_strdup ("canonical-private-1"); /* synchronous */
-	(*out_caps)[5] = g_strdup ("canonical-private-2"); /* append */
-	(*out_caps)[6] = g_strdup ("canonical-private-3"); /* icon-only */
+	(*out_caps)[4] = g_strdup ("private-synchronous");
+	(*out_caps)[5] = g_strdup ("append");
+	(*out_caps)[6] = g_strdup ("private-icon-only"); 
 	(*out_caps)[7] = NULL;
 
 	return TRUE;
