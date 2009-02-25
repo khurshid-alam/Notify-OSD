@@ -1096,6 +1096,61 @@ _render_title_body (Bubble*  self,
 	g_object_unref (layout);
 }
 
+static void
+_render_title_only (Bubble*  self,
+		    cairo_t* cr)
+{
+	Defaults*             d      = self->defaults;
+	PangoFontDescription* desc   = NULL;
+	PangoLayout*          layout = NULL;
+	gint                  margin_gap;
+	gint                  top_margin;
+	gint                  left_margin;
+	BubblePrivate*        priv = GET_PRIVATE (self);
+
+	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		      EM2PIXELS (defaults_get_margin_size (d), d);
+
+	/* render title */
+	layout = pango_cairo_create_layout (cr);
+	desc = pango_font_description_new ();
+
+	pango_font_description_set_size (desc,
+					 EM2PIXELS (defaults_get_text_title_size (d), d) *
+					 PANGO_SCALE);
+	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
+	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
+	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
+	pango_layout_set_font_description (layout, desc);
+	pango_font_description_free (desc);
+
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
+
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+
+	/* print and layout string (pango-wise) */
+	pango_layout_set_text (layout, priv->title->str, priv->title->len);
+
+	top_margin += margin_gap;
+
+	cairo_move_to (cr, left_margin, top_margin);
+
+	/* draw pango-text as path to our cairo-context */
+	pango_cairo_layout_path (cr, layout);
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr,
+			       TEXT_TITLE_COLOR_R,
+			       TEXT_TITLE_COLOR_G,
+			       TEXT_TITLE_COLOR_B,
+			       TEXT_TITLE_COLOR_A);
+	cairo_fill (cr);
+	g_object_unref (layout);
+}
+
 static
 void
 screen_changed_handler (GtkWidget* window,
@@ -1471,6 +1526,10 @@ expose_handler (GtkWidget*      window,
 			_render_title_body (bubble, cr);
 		break;
 
+		case LAYOUT_TITLE_ONLY:
+			_render_title_only (bubble, cr);
+		break;
+
 		case LAYOUT_NONE:
 			/* should be intercepted by stack_notify_handler() */
 			g_warning ("WARNING: No layout defined!!!\n");
@@ -1570,6 +1629,7 @@ load_icon (const gchar* filename,
 								    icon_size,
 								    TRUE,
 								    NULL);
+
 		gtk_icon_info_free (info);
 	}
 
@@ -1818,13 +1878,14 @@ bubble_new (Defaults* defaults)
 	if (!window)
 		return NULL;
 
-	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) &this);
+	g_object_set_data (G_OBJECT(window), "bubble", (gpointer) this);
 
 	gtk_window_set_type_hint (GTK_WINDOW (window),
 				  GDK_WINDOW_TYPE_HINT_NOTIFICATION);
 	gtk_window_set_skip_pager_hint (GTK_WINDOW (window), TRUE);
 	gtk_window_set_skip_taskbar_hint (GTK_WINDOW (window), TRUE);
-					
+	gtk_window_stick (GTK_WINDOW (window));
+
 	gtk_widget_add_events (window,
 			       GDK_POINTER_MOTION_MASK |
 			       GDK_BUTTON_PRESS_MASK |
@@ -2912,6 +2973,7 @@ bubble_recalc_size (Bubble *self)
 		break;
 
 		case LAYOUT_TITLE_BODY:
+		case LAYOUT_TITLE_ONLY:
 		{
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
@@ -3089,7 +3151,16 @@ bubble_determine_layout (Bubble* self)
 		return;
 	}
 
-	/*priv->layout = LAYOUT_TITLE_BODY;*/
+	/* title-only layout-case, use discouraged but needs to be supported */
+	if ((priv->icon_pixbuf       == NULL) &&
+	    (priv->title->len        != 0) &&
+	    (priv->message_body->len == 0) &&
+	    (priv->value             == -1) &&
+	    !(priv->icon_only))
+	{
+		priv->layout = LAYOUT_TITLE_ONLY;
+		return;
+	}
 
 	return;
 }
