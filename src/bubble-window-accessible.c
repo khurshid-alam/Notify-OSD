@@ -27,12 +27,20 @@
 
 #include "bubble-window-accessible.h"
 #include "bubble.h"
+#include <string.h>
 
 static void        bubble_window_accessible_init            (BubbleWindowAccessible*      object);
 static void        bubble_window_accessible_finalize        (GObject*                     object);
 static void        bubble_window_accessible_class_init      (BubbleWindowAccessibleClass* klass);
 static const char* bubble_window_accessible_get_name        (AtkObject*                   obj);
 static const char* bubble_window_accessible_get_description (AtkObject*                   obj);
+static void        atk_value_interface_init                 (AtkValueIface*               iface);
+static void        bubble_window_get_current_value          (AtkValue*                    obj,
+                                                             GValue*                      value);
+static void        bubble_window_get_maximum_value          (AtkValue*                    obj,
+                                                             GValue*                      value);
+static void        bubble_window_get_minimum_value          (AtkValue*                    obj,
+                                                             GValue*                      value);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -57,6 +65,13 @@ bubble_window_accessible_get_type (void)
             NULL /* value table */
         };
                 
+        const GInterfaceInfo atk_value_info = 
+        {
+            (GInterfaceInitFunc) atk_value_interface_init,
+            (GInterfaceFinalizeFunc) NULL,
+            NULL
+        };
+        
         /*
          * Figure out the size of the class and instance
          * we are deriving from
@@ -78,10 +93,22 @@ bubble_window_accessible_get_type (void)
         
         type = g_type_register_static (derived_atk_type,
                                        "BubbleWindowAccessible", &tinfo, 0);
-        
+
+        g_type_add_interface_static (type, ATK_TYPE_VALUE, &atk_value_info);
     }
     
     return type;
+}
+
+
+static void
+atk_value_interface_init (AtkValueIface* iface)
+{
+    g_return_if_fail (iface != NULL);
+    
+    iface->get_current_value = bubble_window_get_current_value;
+    iface->get_maximum_value = bubble_window_get_maximum_value;
+    iface->get_minimum_value = bubble_window_get_minimum_value;
 }
 
 
@@ -172,3 +199,47 @@ bubble_window_accessible_get_description (AtkObject* obj)
     
     return bubble_get_message_body(bubble);
 }
+
+static void      
+bubble_window_get_current_value (AtkValue             *obj,
+                                 GValue               *value)
+{
+    gdouble current_value;
+    GtkAccessible *accessible;
+ 	Bubble *bubble;
+ 
+ 	g_return_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj));
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return;
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+    
+    current_value = (gdouble) bubble_get_value(bubble);
+    
+    memset (value,  0, sizeof (GValue));
+    g_value_init (value, G_TYPE_DOUBLE);
+    g_value_set_double (value,current_value);
+}
+
+static void      
+bubble_window_get_maximum_value (AtkValue             *obj,
+                                 GValue               *value)
+{
+    memset (value,  0, sizeof (GValue));
+    g_value_init (value, G_TYPE_DOUBLE);
+    g_value_set_double (value, 100.0);
+    
+}
+
+static void      
+bubble_window_get_minimum_value (AtkValue             *obj,
+                                 GValue               *value)
+{
+    memset (value,  0, sizeof (GValue));
+    g_value_init (value, G_TYPE_DOUBLE);
+    g_value_set_double (value, 0.0);
+}
+
