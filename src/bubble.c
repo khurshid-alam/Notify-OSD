@@ -3104,6 +3104,8 @@ bubble_determine_layout (Bubble* self)
 	if (priv->icon_only)
 	{
 		priv->layout = LAYOUT_ICON_ONLY;
+		if (priv->icon_pixbuf == NULL)
+			priv->layout = LAYOUT_NONE;
 		return;
 	}
 
