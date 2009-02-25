@@ -177,7 +177,7 @@ bubble_window_accessible_new (GtkWidget *widget)
 	gtk_accessible->widget = widget;
 	
 	atk_object_initialize (aobj, widget);
-	//aobj->role = ATK_ROLE_PANEL;
+	aobj->role = ATK_ROLE_GLASS_PANE;
 	
 	return aobj;
 }
