@@ -4,7 +4,7 @@
 **
 ** Codename "alsdorf"
 **
-** bubble-accessible-factory.c - implements an accessible object factory
+** bubble-window-accessible-factory.c - implements an accessible object factory
 **
 ** Copyright 2009 Canonical Ltd.
 **
@@ -30,8 +30,8 @@
 
 G_DEFINE_TYPE (BubbleWindowAccessibleFactory, bubble_window_accessible_factory, ATK_TYPE_OBJECT_FACTORY);
 
-static AtkObject* bubble_window_accessible_factory_create_accessible (GObject *obj);
-static GType bubble_window_accessible_factory_get_accessible_type (void);
+static AtkObject* bubble_window_accessible_factory_create_accessible   (GObject *obj);
+static GType      bubble_window_accessible_factory_get_accessible_type (void);
 
 
 static void

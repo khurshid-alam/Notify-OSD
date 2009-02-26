@@ -4,7 +4,7 @@
 **
 ** Codename "alsdorf"
 **
-** bubble-accessible-factory.c - implements an accessible object factory
+** bubble-window-accessible.c - implements an accessible bubble window
 **
 ** Copyright 2009 Canonical Ltd.
 **
@@ -132,8 +132,8 @@ bubble_window_accessible_finalize (GObject *object)
 static void
 bubble_window_accessible_class_init (BubbleWindowAccessibleClass *klass)
 {
-	GObjectClass* object_class = G_OBJECT_CLASS (klass);
-	AtkObjectClass *class = ATK_OBJECT_CLASS (klass);
+	GObjectClass*   object_class = G_OBJECT_CLASS (klass);
+	AtkObjectClass* class        = ATK_OBJECT_CLASS (klass);
     
     bubble_window_accessible_parent_class = g_type_class_peek_parent (klass);
     
@@ -165,8 +165,8 @@ bubble_window_real_initialize (AtkObject* obj,
 AtkObject*
 bubble_window_accessible_new (GtkWidget *widget)
 {
-	GObject *object;
-	AtkObject *aobj;
+	GObject       *object;
+	AtkObject     *aobj;
 	GtkAccessible *gtk_accessible;
 	
 	object = g_object_new (BUBBLE_WINDOW_TYPE_ACCESSIBLE, NULL);
@@ -204,15 +204,14 @@ bubble_window_accessible_get_name (AtkObject* obj)
     title = bubble_get_title(bubble);
     if (g_strcmp0(title, " ") == 0)
     {
-        /* Titles should never be empty:
-           https://bugs.launchpad.net/notify-osd/+bug/334292
-           This solution is extremely wrong. */
+        /* HACK: Titles should never be empty. This solution is extremely wrong.
+           https://bugs.launchpad.net/notify-osd/+bug/334292 */
         const gchar* synch_str;    
         synch_str = bubble_get_synchronous(bubble);
         if (synch_str != NULL)
             return synch_str;
         else
-            return " ";
+            return "";
     } 
     
     
@@ -223,7 +222,7 @@ static const char*
 bubble_window_accessible_get_description (AtkObject* obj)
 {
     GtkAccessible *accessible;
- 	Bubble *bubble;
+ 	Bubble        *bubble;
  
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
  	
@@ -240,12 +239,12 @@ bubble_window_accessible_get_description (AtkObject* obj)
 }
 
 static void      
-bubble_window_get_current_value (AtkValue             *obj,
-                                 GValue               *value)
+bubble_window_get_current_value (AtkValue* obj,
+                                 GValue*   value)
 {
-    gdouble current_value;
-    GtkAccessible *accessible;
- 	Bubble *bubble;
+    gdouble        current_value;
+    GtkAccessible* accessible;
+ 	Bubble*        bubble;
  
  	g_return_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj));
  	
@@ -264,18 +263,17 @@ bubble_window_get_current_value (AtkValue             *obj,
 }
 
 static void      
-bubble_window_get_maximum_value (AtkValue             *obj,
-                                 GValue               *value)
+bubble_window_get_maximum_value (AtkValue* obj,
+                                 GValue*   value)
 {
     memset (value,  0, sizeof (GValue));
     g_value_init (value, G_TYPE_DOUBLE);
     g_value_set_double (value, 100.0);
-    
 }
 
 static void      
-bubble_window_get_minimum_value (AtkValue             *obj,
-                                 GValue               *value)
+bubble_window_get_minimum_value (AtkValue* obj,
+                                 GValue*   value)
 {
     memset (value,  0, sizeof (GValue));
     g_value_init (value, G_TYPE_DOUBLE);

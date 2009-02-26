@@ -4,7 +4,7 @@
 **
 ** Codename "alsdorf"
 **
-** bubble-accessible-factory.c - implements an accessible object factory
+** bubble-window-accessible-factory.h - implements an accessible object factory
 **
 ** Copyright 2009 Canonical Ltd.
 **
