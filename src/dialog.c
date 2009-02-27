@@ -215,6 +215,11 @@ bubble_show_dialog (Bubble *bubble,
 			  G_CALLBACK (handle_response),
 			  dialog);
 
+	gtk_window_set_focus (GTK_WINDOW (dialog),
+			      NULL);
+	gtk_window_set_default (GTK_WINDOW (dialog),
+				NULL);
+
 	gtk_widget_show_all (dialog);
 
 	/* pretend its visible, so that the purge algorithm
