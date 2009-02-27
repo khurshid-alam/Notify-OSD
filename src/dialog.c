@@ -166,6 +166,8 @@ bubble_show_dialog (Bubble *bubble,
 
 	gtk_container_set_border_width (GTK_CONTAINER (dialog), 2);
 
+	gtk_window_set_position (GTK_WINDOW (dialog),
+				 GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size (GTK_WINDOW (dialog),
 				     EM2PIXELS (defaults_get_bubble_width (d) * 1.2f, d),
 				     -1);
