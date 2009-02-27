@@ -1,6 +1,7 @@
 iconsdir = $(pkgdatadir)/icons/hicolor/scalable/status
 
 icons_DATA =  \
+	README \
 	notification-audio-next.svg \
 	notification-audio-play.svg \
 	notification-audio-previous.svg \
