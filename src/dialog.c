@@ -133,7 +133,13 @@ bubble_show_dialog (Bubble *bubble,
 
 	priv = GET_PRIVATE (bubble);
 
-	image = gtk_image_new_from_pixbuf (bubble_get_icon_pixbuf (bubble));
+	/* We deliberately use the gtk-dialog-warning icon rather than
+	 * the specified one to discourage people from trying to use
+	 * the notification system as a way of showing custom alert
+	 * dialogs.
+	 */
+	image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_WARNING,
+					  GTK_ICON_SIZE_DIALOG);
 	gtk_misc_set_alignment (GTK_MISC (image), 0.5, 0.0);
 	gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
 
