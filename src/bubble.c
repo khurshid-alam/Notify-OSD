@@ -2027,7 +2027,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
-	gboolean       result;
+	gboolean       success;
 	gchar*         text;
 	GError*        error = NULL;
 	BubblePrivate* priv;
@@ -2041,16 +2041,23 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	result = pango_parse_markup (title,
-				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
-				     &text,
-				     NULL, /* no accel-marker-return needed */
-				     &error);
+    	success = pango_parse_markup (title,
+				      -1,
+				      0,    /* no accel-marker needed */
+				      NULL, /* no PangoAttr needed */
+				      &text,
+				      NULL, /* no accel-marker-return needed */
+				      &error);
 
-	priv->title = g_string_new (text);
-	g_free ((gpointer) text);
+	/* if parsing worked out set the "filtered" text ...*/
+	if (success)
+	{
+		priv->title = g_string_new (text);
+		g_free ((gpointer) text);
+	}
+	/* ... other pass it as-is */
+	else
+		priv->title = g_string_new (title);
 }
 
 const gchar*
@@ -2066,7 +2073,7 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	gboolean       result;
+	gboolean       success;
 	gchar*         text;
 	GError*        error = NULL;
 	BubblePrivate* priv;
@@ -2080,16 +2087,23 @@ bubble_set_message_body (Bubble*      self,
 		g_string_free (priv->message_body, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	result = pango_parse_markup (body,
-				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
-				     &text,
-				     NULL, /* no accel-marker-return needed */
-				     &error);
+    	success = pango_parse_markup (body,
+				      -1,
+				      0,    /* no accel-marker needed */
+				      NULL, /* no PangoAttr needed */
+				      &text,
+				      NULL, /* no accel-marker-return needed */
+				      &error);
 
-	priv->message_body = g_string_new (text);
-	g_free ((gpointer) text);
+ 	/* if parsing worked out set the "filtered" text ...*/
+	if (success)
+	{
+		priv->message_body = g_string_new (text);
+		g_free ((gpointer) text);
+	}
+	/* ... other pass it as-is */
+	else
+		priv->message_body = g_string_new (body);
 }
 
 const gchar*
