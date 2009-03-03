@@ -478,9 +478,8 @@ stack_notify_handler (Stack*                 self,
 		{
 			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
 				bubble_set_icon_only (bubble, TRUE);
-			else
-				bubble_set_icon_only (bubble, FALSE);
-		}
+		} else
+			bubble_set_icon_only (bubble, FALSE);
 	}
 
 	if (!new_bubble && bubble_is_append_allowed (bubble))

@@ -133,7 +133,13 @@ bubble_show_dialog (Bubble *bubble,
 
 	priv = GET_PRIVATE (bubble);
 
-	image = gtk_image_new_from_pixbuf (bubble_get_icon_pixbuf (bubble));
+	/* We deliberately use the gtk-dialog-warning icon rather than
+	 * the specified one to discourage people from trying to use
+	 * the notification system as a way of showing custom alert
+	 * dialogs.
+	 */
+	image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_WARNING,
+					  GTK_ICON_SIZE_DIALOG);
 	gtk_misc_set_alignment (GTK_MISC (image), 0.5, 0.0);
 	gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
 
@@ -166,6 +172,8 @@ bubble_show_dialog (Bubble *bubble,
 
 	gtk_container_set_border_width (GTK_CONTAINER (dialog), 2);
 
+	gtk_window_set_position (GTK_WINDOW (dialog),
+				 GTK_WIN_POS_CENTER);
 	gtk_window_set_default_size (GTK_WINDOW (dialog),
 				     EM2PIXELS (defaults_get_bubble_width (d) * 1.2f, d),
 				     -1);
@@ -214,6 +222,11 @@ bubble_show_dialog (Bubble *bubble,
 			  "button-release-event",
 			  G_CALLBACK (handle_response),
 			  dialog);
+
+	gtk_window_set_focus (GTK_WINDOW (dialog),
+			      NULL);
+	gtk_window_set_default (GTK_WINDOW (dialog),
+				NULL);
 
 	gtk_widget_show_all (dialog);
 
