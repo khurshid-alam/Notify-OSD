@@ -971,10 +971,12 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_MIDDLE);
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
+	pango_layout_set_height (layout, -10);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
@@ -1069,10 +1071,12 @@ _render_title_body (Bubble*  self,
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_MIDDLE);
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
+	pango_layout_set_height (layout, -10);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
@@ -2863,14 +2867,16 @@ _calc_body_height (Bubble* self,
 		defaults_get_text_body_weight (d));
 
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_font_description (layout, desc);
+
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_MIDDLE);
+	pango_layout_set_width (layout, body_width * PANGO_SCALE);
+	pango_layout_set_height (layout, -10);
 
 	pango_layout_set_text (layout,
 			       priv->message_body->str,
 			       priv->message_body->len);
-
-	pango_layout_set_width (layout, body_width * PANGO_SCALE);
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
 	body_height = PANGO_PIXELS (log_rect.height);
