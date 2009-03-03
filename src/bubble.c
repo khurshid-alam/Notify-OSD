@@ -827,12 +827,10 @@ _render_icon_title (Bubble*  self,
 	gint                  left_margin;
 	PangoFontDescription* desc   = NULL;
 	PangoLayout*          layout = NULL;
-	PangoRectangle        ink_rect;
-	PangoRectangle        log_rect;
 	BubblePrivate*        priv = GET_PRIVATE (self);
 
-	margin_gap   = EM2PIXELS (defaults_get_margin_size (d), d);
-	top_margin   = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	margin_gap  = EM2PIXELS (defaults_get_margin_size (d), d);
+	top_margin  = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		      EM2PIXELS (defaults_get_margin_size (d), d);
 
@@ -856,26 +854,40 @@ _render_icon_title (Bubble*  self,
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
 	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
-	pango_layout_set_width (layout,
-				(EM2PIXELS (defaults_get_bubble_width (d), d) -
-				 left_margin -
-				 margin_gap) *
-				PANGO_SCALE);
-
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
+	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
+	switch (pango_layout_get_line_count (layout))
+	{
+		case 1:
+			top_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				     EM2PIXELS (defaults_get_margin_size (d), d) +
+				     EM2PIXELS (1.0f, d);
+		break;
 
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
+		case 2:
+			top_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				     EM2PIXELS (defaults_get_margin_size (d), d) +
+				     EM2PIXELS (0.4f, d);
+		break;
 
-	top_margin = (bubble_get_height (self) / 2) -
-		     (ink_rect.height / PANGO_SCALE) +
-		     0.25f * (ink_rect.height / PANGO_SCALE);
+		case 3:
+			top_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+				     EM2PIXELS (defaults_get_margin_size (d), d) -
+				     EM2PIXELS (0.6f, d);
+		break;
+
+		default:
+			/* that should never ever happen */
+		break;
+	}
 
 	cairo_move_to (cr, left_margin, top_margin);
 
@@ -932,13 +944,15 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
-	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 	pango_font_description_free (desc);
+
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
+	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
-
-	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
@@ -959,6 +973,7 @@ _render_icon_title_body (Bubble*  self,
 	g_object_unref (layout);
 
 	top_margin += log_rect.height / PANGO_SCALE;
+	/*top_margin += priv->title_height;*/
 
 	/* render body-message */
 	layout = pango_cairo_create_layout (cr);
@@ -973,17 +988,16 @@ _render_icon_title_body (Bubble*  self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_MIDDLE);
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
-	pango_layout_set_height (layout, -10);
+	pango_layout_set_height (layout, priv->body_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
 			       priv->message_body->str,
 			       priv->message_body->len);
-
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_move_to (cr, left_margin, top_margin);
@@ -1029,13 +1043,13 @@ _render_title_body (Bubble*  self,
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
 	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
-	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
-
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
+	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
@@ -1073,10 +1087,11 @@ _render_title_body (Bubble*  self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_MIDDLE);
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
-	pango_layout_set_height (layout, -10);
+	pango_layout_set_height (layout, priv->body_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout,
@@ -1127,18 +1142,19 @@ _render_title_only (Bubble*  self,
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
 	pango_font_description_set_weight (desc, defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
+ 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
-
-	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
 	/* print and layout string (pango-wise) */
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
-	top_margin += margin_gap;
+	top_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		     EM2PIXELS (defaults_get_margin_size (d), d);
 
 	cairo_move_to (cr, left_margin, top_margin);
 
@@ -2805,17 +2821,18 @@ _calc_title_height (Bubble* self,
 		defaults_get_text_title_weight (d));
 
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
 
-	pango_layout_set_width (layout, title_width);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
+	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
+	pango_layout_set_width (layout, title_width * PANGO_SCALE);
+	pango_layout_set_height (layout, -3);
 
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, NULL, &log_rect);
-	title_height = log_rect.height / PANGO_SCALE;
+	title_height = PANGO_PIXELS (log_rect.height);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
@@ -2913,6 +2930,15 @@ bubble_recalc_size (Bubble *self)
 		case LAYOUT_ICON_ONLY:
 		case LAYOUT_ICON_INDICATOR:
 		case LAYOUT_ICON_TITLE:
+			priv->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				3 * EM2PIXELS (defaults_get_margin_size (d), d) -
+				EM2PIXELS (defaults_get_icon_size (d), d);
+
+			priv->title_height = _calc_title_height (
+					self,
+					GET_PRIVATE (self)->title_width);
+
 			new_bubble_height =
 				EM2PIXELS (defaults_get_bubble_min_height (d), d) +
 				2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
@@ -2979,7 +3005,6 @@ bubble_recalc_size (Bubble *self)
 		break;
 
 		case LAYOUT_TITLE_BODY:
-		case LAYOUT_TITLE_ONLY:
 		{
 			gdouble available_height = 0.0f;
 			gdouble bubble_height    = 0.0f;
@@ -3022,6 +3047,22 @@ bubble_recalc_size (Bubble *self)
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
 					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			}
+		}
+		break;
+
+		case LAYOUT_TITLE_ONLY:
+		{
+			priv->title_width =
+				EM2PIXELS (defaults_get_bubble_width (d), d) -
+				2 * EM2PIXELS (defaults_get_margin_size (d), d);
+
+			priv->title_height = _calc_title_height (
+					self,
+					priv->title_width);
+
+			new_bubble_height = priv->title_height +
+				2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
+				2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 		}
 		break;
 
