@@ -582,8 +582,9 @@ stack_get_capabilities (Stack*   self,
 	(*out_caps)[3] = g_strdup ("image/svg+xml");
 	(*out_caps)[4] = g_strdup ("private-synchronous");
 	(*out_caps)[5] = g_strdup ("append");
-	(*out_caps)[6] = g_strdup ("private-icon-only"); 
-	(*out_caps)[7] = NULL;
+	(*out_caps)[6] = g_strdup ("private-icon-only");
+	(*out_caps)[7] = g_strdup ("truncation");
+	(*out_caps)[8] = NULL;
 
 	return TRUE;
 }
