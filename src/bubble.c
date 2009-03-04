@@ -1274,7 +1274,10 @@ update_shape (Bubble* self)
 			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 			/* draw rounded rectangle shape/mask */
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+			if (bubble_is_mouse_over (self))
+				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+			else
+				cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 			draw_round_rect (cr,
 					 1.0f,
@@ -1284,7 +1287,7 @@ update_shape (Bubble* self)
 					 width,
 					 height);
 			cairo_fill (cr);
-			if (bubble_is_mouse_over (self))
+			/*if (bubble_is_mouse_over (self))
 			{
 				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 				draw_round_rect (
@@ -1296,7 +1299,7 @@ update_shape (Bubble* self)
 					width - 4,
 					height - 4);
 				cairo_fill (cr);
-			}
+			}*/
 
 			cairo_destroy (cr);
 
