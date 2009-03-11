@@ -78,9 +78,11 @@ add_pathological_action_buttons (GtkWidget *dialog,
 {
 	int i;
 
+
 	for (i = 0; actions[i] != NULL; i += 2)
 	{
 		gchar *label = actions[i + 1];
+		g_print ("called\n");
 
 		if (label == NULL)
 		{
@@ -91,7 +93,7 @@ add_pathological_action_buttons (GtkWidget *dialog,
 		}
 
 		if (g_strcmp0 (actions[i], "default") == 0)
-			break;
+			continue;
 
 		GtkWidget *button =
 			gtk_dialog_add_button (GTK_DIALOG (dialog),
