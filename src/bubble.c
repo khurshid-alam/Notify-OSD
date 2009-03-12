@@ -1605,11 +1605,12 @@ GdkPixbuf*
 load_icon (const gchar* filename,
 	   gint         icon_size)
 {
+	GdkPixbuf*    buffer = NULL;
 	GdkPixbuf*    pixbuf = NULL;
-	GtkIconTheme*  theme = NULL;
-	GtkIconInfo*    info = NULL;
-	GFile*          file = NULL;
-	
+	GtkIconTheme* theme  = NULL;
+	GFile*        file   = NULL;
+	GError*       error  = NULL;
+
 	/* sanity check */
 	g_return_val_if_fail (filename, NULL);
 
@@ -1629,31 +1630,32 @@ load_icon (const gchar* filename,
 							    NULL);
 	} else {
 		/* TODO: rewrite, check for SVG support, raise apport
-		   notification for low-res icons */
-
+		** notification for low-res icons */
 		theme = gtk_icon_theme_get_default ();
-		info  = gtk_icon_theme_lookup_icon (theme,
-						    filename,
-						    icon_size,
-						    GTK_ICON_LOOKUP_USE_BUILTIN);
-		g_return_val_if_fail (info, NULL);
-
-		const gchar *f = gtk_icon_info_get_filename (info);
-		if (f == NULL ||
-		    !g_str_has_suffix (f, ".svg"))
-			g_warning ("icon '%s' not available in SVG", filename);
-
-		filename = gtk_icon_info_get_filename (info);
-		if (filename == NULL)
-			pixbuf = gtk_icon_info_get_builtin_pixbuf (info);
+		buffer = gtk_icon_theme_load_icon (theme,
+						   filename,
+                                                   icon_size,
+						   GTK_ICON_LOOKUP_FORCE_SVG |
+						   GTK_ICON_LOOKUP_FORCE_SIZE,
+						   &error);
+		if (error)
+		{
+			g_object_unref (buffer);
+			pixbuf = NULL;
+			g_warning ("loading icon '%s' caused error: '%s'",
+				   filename,
+				   error->message);
+		}
 		else
-			pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-								    icon_size,
-								    icon_size,
-								    TRUE,
-								    NULL);
-
-		gtk_icon_info_free (info);
+		{
+			/* copy and unref buffer so on an icon-theme change old
+			** icons are not kept in memory due to dangling
+			** references, this also makes sure we do not need to
+			** connect to GtkWidget::style-set signal for the
+			** GdkPixbuf we get from gtk_icon_theme_load_icon() */
+			pixbuf = gdk_pixbuf_copy (buffer);
+			g_object_unref (buffer);
+		}
 	}
 
 	return pixbuf;
@@ -2140,8 +2142,6 @@ bubble_set_icon (Bubble*      self,
 	priv->icon_pixbuf = load_icon (filename,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
-	g_print ("icon-filename: \"%s\"\n", filename);
-	g_assert (priv->icon_pixbuf != NULL);
 }
 
 void
