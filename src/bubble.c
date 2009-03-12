@@ -2125,7 +2125,7 @@ bubble_set_icon (Bubble*      self,
 	Defaults*      d;
 	BubblePrivate* priv;
 
- 	if (!self || !IS_BUBBLE (self))
+ 	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
 
 	priv = GET_PRIVATE (self);
@@ -2140,6 +2140,8 @@ bubble_set_icon (Bubble*      self,
 	priv->icon_pixbuf = load_icon (filename,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
+	g_print ("icon-filename: \"%s\"\n", filename);
+	g_assert (priv->icon_pixbuf != NULL);
 }
 
 void
