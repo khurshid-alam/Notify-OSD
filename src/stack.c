@@ -428,7 +428,7 @@ stack_notify_handler (Stack*                 self,
 	
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
+		data = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
 		if (G_VALUE_HOLDS_STRING (data))
 		{
 			if (sync_bubble != NULL
@@ -461,7 +461,7 @@ stack_notify_handler (Stack*                 self,
 
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "append");
+		data = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		if (G_VALUE_HOLDS_STRING (data) && !new_bubble)
 		{
 			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
@@ -473,7 +473,7 @@ stack_notify_handler (Stack*                 self,
 
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "icon-only");
+		data = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		if (G_VALUE_HOLDS_STRING (data))
 		{
 			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
@@ -580,10 +580,10 @@ stack_get_capabilities (Stack*   self,
 	(*out_caps)[1] = g_strdup ("body-markup");
 	(*out_caps)[2] = g_strdup ("icon-static");
 	(*out_caps)[3] = g_strdup ("image/svg+xml");
-	(*out_caps)[4] = g_strdup ("private-synchronous");
-	(*out_caps)[5] = g_strdup ("append");
-	(*out_caps)[6] = g_strdup ("private-icon-only");
-	(*out_caps)[7] = g_strdup ("truncation");
+	(*out_caps)[4] = g_strdup ("x-canonical-private-synchronous");
+	(*out_caps)[5] = g_strdup ("x-canonical-append");
+	(*out_caps)[6] = g_strdup ("x-canonical-private-icon-only");
+	(*out_caps)[7] = g_strdup ("x-canonical-truncation");
 	(*out_caps)[8] = NULL;
 
 	return TRUE;
