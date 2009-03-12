@@ -2,19 +2,19 @@
 
 notify-send "Take note" "The next example will test the icon-only layout-case" -i dialog-info
 sleep 2
-notify-send " " -i notification-device-eject -h string:icon-only:allowed
+notify-send " " -i notification-device-eject -h string:x-canonical-private-icon-only:allowed
 sleep 2
 notify-send "WiFi signal found" -i notification-network-wireless-medium
 sleep 2
 notify-send "WiFi signal lost" -i notification-network-wireless-disconnected
 sleep 2
-notify-send " " -i notification-audio-volume-medium -h int:value:75 -h string:synchronous:volume
+notify-send " " -i notification-audio-volume-medium -h int:value:75 -h string:x-canonical-private-synchronous:volume
 sleep 2
-notify-send " " -i notification-audio-volume-low -h int:value:30 -h string:synchronous:volume
+notify-send " " -i notification-audio-volume-low -h int:value:30 -h string:x-canonical-private-synchronous:volume
 sleep 2
-notify-send " " -i notification-display-brightness-high -h int:value:100 -h string:synchronous:brightness
+notify-send " " -i notification-display-brightness-high -h int:value:100 -h string:x-canonical-private-synchronous:brightness
 sleep 2
-notify-send " " -i notification-keyboard-brightness-medium -h int:value:45 -h string:synchronous:brightness
+notify-send " " -i notification-keyboard-brightness-medium -h int:value:45 -h string:x-canonical-private-synchronous:brightness
 sleep 2
 notify-send "Testing markup" "Some <b>bold</b>, <u>underlined</u>, <i>italic</i> text. Note, you should not see any marked up text."
 sleep 2
