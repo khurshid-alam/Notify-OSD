@@ -463,22 +463,17 @@ stack_notify_handler (Stack*                 self,
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		if (G_VALUE_HOLDS_STRING (data) && !new_bubble)
-		{
-			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
-				bubble_set_append (bubble, TRUE);
-			else
-				bubble_set_append (bubble, FALSE);
-		}
+			bubble_set_append (bubble, TRUE);
+		else
+			bubble_set_append (bubble, FALSE);
 	}
 
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		if (G_VALUE_HOLDS_STRING (data))
-		{
-			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
-				bubble_set_icon_only (bubble, TRUE);
-		} else
+			bubble_set_icon_only (bubble, TRUE);
+		else
 			bubble_set_icon_only (bubble, FALSE);
 	}
 
