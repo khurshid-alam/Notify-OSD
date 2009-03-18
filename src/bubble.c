@@ -2028,13 +2028,24 @@ bubble_del (Bubble* self)
 	g_object_unref (self);
 }
 
+static gchar *
+filter_html (const gchar *text)
+{
+	gchar *ret;
+	GRegex *regex;
+
+	regex = g_regex_new ("<(.|\n)*?>", 0, 0, NULL);
+
+	ret = g_regex_replace (regex, text, -1, 0, "", 0, NULL);
+
+	return ret;
+}
+
 void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
-	gboolean       success;
 	gchar*         text;
-	GError*        error = NULL;
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
@@ -2046,23 +2057,10 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	success = pango_parse_markup (title,
-				      -1,
-				      0,    /* no accel-marker needed */
-				      NULL, /* no PangoAttr needed */
-				      &text,
-				      NULL, /* no accel-marker-return needed */
-				      &error);
+	text = filter_html (title);
 
-	/* if parsing worked out set the "filtered" text ...*/
-	if (success)
-	{
-		priv->title = g_string_new (text);
-		g_free ((gpointer) text);
-	}
-	/* ... other pass it as-is */
-	else
-		priv->title = g_string_new (title);
+	priv->title = g_string_new (text);
+	g_free ((gpointer) text);
 }
 
 const gchar*
