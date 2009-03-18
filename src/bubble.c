@@ -1276,7 +1276,10 @@ update_shape (Bubble* self)
 			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 			/* draw rounded rectangle shape/mask */
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+			if (bubble_is_mouse_over (self))
+				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+			else
+				cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 			draw_round_rect (cr,
 					 1.0f,
@@ -1286,7 +1289,7 @@ update_shape (Bubble* self)
 					 width,
 					 height);
 			cairo_fill (cr);
-			if (bubble_is_mouse_over (self))
+			/*if (bubble_is_mouse_over (self))
 			{
 				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 				draw_round_rect (
@@ -1298,7 +1301,7 @@ update_shape (Bubble* self)
 					width - 4,
 					height - 4);
 				cairo_fill (cr);
-			}
+			}*/
 
 			cairo_destroy (cr);
 
@@ -1604,11 +1607,12 @@ GdkPixbuf*
 load_icon (const gchar* filename,
 	   gint         icon_size)
 {
+	GdkPixbuf*    buffer = NULL;
 	GdkPixbuf*    pixbuf = NULL;
-	GtkIconTheme*  theme = NULL;
-	GtkIconInfo*    info = NULL;
-	GFile*          file = NULL;
-	
+	GtkIconTheme* theme  = NULL;
+	GFile*        file   = NULL;
+	GError*       error  = NULL;
+
 	/* sanity check */
 	g_return_val_if_fail (filename, NULL);
 
@@ -1628,31 +1632,32 @@ load_icon (const gchar* filename,
 							    NULL);
 	} else {
 		/* TODO: rewrite, check for SVG support, raise apport
-		   notification for low-res icons */
-
+		** notification for low-res icons */
 		theme = gtk_icon_theme_get_default ();
-		info  = gtk_icon_theme_lookup_icon (theme,
-						    filename,
-						    icon_size,
-						    GTK_ICON_LOOKUP_USE_BUILTIN);
-		g_return_val_if_fail (info, NULL);
-
-		const gchar *f = gtk_icon_info_get_filename (info);
-		if (f == NULL ||
-		    !g_str_has_suffix (f, ".svg"))
-			g_warning ("icon '%s' not available in SVG", filename);
-
-		filename = gtk_icon_info_get_filename (info);
-		if (filename == NULL)
-			pixbuf = gtk_icon_info_get_builtin_pixbuf (info);
+		buffer = gtk_icon_theme_load_icon (theme,
+						   filename,
+                                                   icon_size,
+						   GTK_ICON_LOOKUP_FORCE_SVG |
+						   GTK_ICON_LOOKUP_FORCE_SIZE,
+						   &error);
+		if (error)
+		{
+			g_object_unref (buffer);
+			pixbuf = NULL;
+			g_warning ("loading icon '%s' caused error: '%s'",
+				   filename,
+				   error->message);
+		}
 		else
-			pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-								    icon_size,
-								    icon_size,
-								    TRUE,
-								    NULL);
-
-		gtk_icon_info_free (info);
+		{
+			/* copy and unref buffer so on an icon-theme change old
+			** icons are not kept in memory due to dangling
+			** references, this also makes sure we do not need to
+			** connect to GtkWidget::style-set signal for the
+			** GdkPixbuf we get from gtk_icon_theme_load_icon() */
+			pixbuf = gdk_pixbuf_copy (buffer);
+			g_object_unref (buffer);
+		}
 	}
 
 	return pixbuf;
@@ -2041,7 +2046,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
-	gboolean       result;
+	gboolean       success;
 	gchar*         text;
 	GError*        error = NULL;
 	BubblePrivate* priv;
@@ -2055,16 +2060,23 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	result = pango_parse_markup (title,
-				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
-				     &text,
-				     NULL, /* no accel-marker-return needed */
-				     &error);
+    	success = pango_parse_markup (title,
+				      -1,
+				      0,    /* no accel-marker needed */
+				      NULL, /* no PangoAttr needed */
+				      &text,
+				      NULL, /* no accel-marker-return needed */
+				      &error);
 
-	priv->title = g_string_new (text);
-	g_free ((gpointer) text);
+	/* if parsing worked out set the "filtered" text ...*/
+	if (success)
+	{
+		priv->title = g_string_new (text);
+		g_free ((gpointer) text);
+	}
+	/* ... other pass it as-is */
+	else
+		priv->title = g_string_new (title);
 }
 
 const gchar*
@@ -2080,7 +2092,7 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	gboolean       result;
+	gboolean       success;
 	gchar*         text;
 	GError*        error = NULL;
 	BubblePrivate* priv;
@@ -2094,16 +2106,23 @@ bubble_set_message_body (Bubble*      self,
 		g_string_free (priv->message_body, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	result = pango_parse_markup (body,
-				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
-				     &text,
-				     NULL, /* no accel-marker-return needed */
-				     &error);
+    	success = pango_parse_markup (body,
+				      -1,
+				      0,    /* no accel-marker needed */
+				      NULL, /* no PangoAttr needed */
+				      &text,
+				      NULL, /* no accel-marker-return needed */
+				      &error);
 
-	priv->message_body = g_string_new (text);
-	g_free ((gpointer) text);
+ 	/* if parsing worked out set the "filtered" text ...*/
+	if (success)
+	{
+		priv->message_body = g_string_new (text);
+		g_free ((gpointer) text);
+	}
+	/* ... other pass it as-is */
+	else
+		priv->message_body = g_string_new (body);
 }
 
 const gchar*
@@ -2122,7 +2141,7 @@ bubble_set_icon (Bubble*      self,
 	Defaults*      d;
 	BubblePrivate* priv;
 
- 	if (!self || !IS_BUBBLE (self))
+ 	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
 
 	priv = GET_PRIVATE (self);

@@ -413,6 +413,7 @@ stack_notify_handler (Stack*                 self,
 {
 	Bubble*    bubble     = NULL;
 	GValue*      data     = NULL;
+	GValue*    compat     = NULL;
 	GdkPixbuf* pixbuf     = NULL;
 	gboolean   new_bubble = FALSE;
 
@@ -428,8 +429,9 @@ stack_notify_handler (Stack*                 self,
 	
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "synchronous");
-		if (G_VALUE_HOLDS_STRING (data))
+		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
+		compat = (GValue*) g_hash_table_lookup (hints, "synchronous");
+		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
 		{
 			if (sync_bubble != NULL
 			    && IS_BUBBLE (sync_bubble))
@@ -437,7 +439,12 @@ stack_notify_handler (Stack*                 self,
 				g_object_unref (bubble);
 				bubble = sync_bubble;
 			}
-			bubble_set_synchronous (bubble, g_value_get_string (data));
+
+			if (G_VALUE_HOLDS_STRING (data))
+				bubble_set_synchronous (bubble, g_value_get_string (data));
+
+			if (G_VALUE_HOLDS_STRING (compat))
+				bubble_set_synchronous (bubble, g_value_get_string (compat));
 		}
 	}
 
@@ -461,26 +468,24 @@ stack_notify_handler (Stack*                 self,
 
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "append");
-		if (G_VALUE_HOLDS_STRING (data) && !new_bubble)
-		{
-			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
-				bubble_set_append (bubble, TRUE);
-			else
-				bubble_set_append (bubble, FALSE);
-		}
+		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
+		compat = (GValue*) g_hash_table_lookup (hints, "append");
+		if ((G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat)) && !new_bubble)
+			bubble_set_append (bubble, TRUE);
+		else
+			bubble_set_append (bubble, FALSE);
 	}
 
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "icon-only");
-		if (G_VALUE_HOLDS_STRING (data))
-		{
-			if (!g_strcmp0 (g_value_get_string (data), "allowed"))
-				bubble_set_icon_only (bubble, TRUE);
-		} else
+		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
+		compat = (GValue*) g_hash_table_lookup (hints, "icon-only");
+		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+			bubble_set_icon_only (bubble, TRUE);
+		else
 			bubble_set_icon_only (bubble, FALSE);
 	}
+
 
 	if (!new_bubble && bubble_is_append_allowed (bubble))
 	{
@@ -574,16 +579,26 @@ gboolean
 stack_get_capabilities (Stack*   self,
 			gchar*** out_caps)
 {
-	*out_caps = g_malloc0 (10 * sizeof(char *));
+	*out_caps = g_malloc0 (13 * sizeof(char *));
 
-	(*out_caps)[0] = g_strdup ("body");
-	(*out_caps)[1] = g_strdup ("body-markup");
-	(*out_caps)[2] = g_strdup ("icon-static");
-	(*out_caps)[3] = g_strdup ("image/svg+xml");
-	(*out_caps)[4] = g_strdup ("private-synchronous");
-	(*out_caps)[5] = g_strdup ("append");
-	(*out_caps)[6] = g_strdup ("private-icon-only"); 
-	(*out_caps)[7] = NULL;
+	(*out_caps)[0]  = g_strdup ("body");
+	(*out_caps)[1]  = g_strdup ("body-markup");
+	(*out_caps)[2]  = g_strdup ("icon-static");
+	(*out_caps)[3]  = g_strdup ("image/svg+xml");
+	(*out_caps)[4]  = g_strdup ("x-canonical-private-synchronous");
+	(*out_caps)[5]  = g_strdup ("x-canonical-append");
+	(*out_caps)[6]  = g_strdup ("x-canonical-private-icon-only");
+	(*out_caps)[7]  = g_strdup ("x-canonical-truncation");
+
+	/* a temp. compatibility-check for the transition time to allow apps a
+	** grace-period to catch up with the capability- and hint-name-changes
+	** introduced with notify-osd rev. 224 */
+	(*out_caps)[8]  = g_strdup ("private-synchronous");
+	(*out_caps)[9]  = g_strdup ("append");
+	(*out_caps)[10] = g_strdup ("private-icon-only");
+	(*out_caps)[11] = g_strdup ("truncation");
+
+	(*out_caps)[12] = NULL;
 
 	return TRUE;
 }

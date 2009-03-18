@@ -62,13 +62,13 @@ send_synchronous (const char *type,
 					    g_strdup (icon));
 		
 	notify_notification_set_hint_int32(n, "value", value);
-	notify_notification_set_hint_string(n, "synchronous", g_strdup (type));
+	notify_notification_set_hint_string(n, "x-canonical-private-synchronous", g_strdup (type));
 
 	notify_notification_show (n, NULL);
 }
 
-#define set_volume(x) send_synchronous ("volume", "notification-volume", x)
-#define set_brightness(x) send_synchronous ("brightness", "notification-brightness", x)
+#define set_volume(x) send_synchronous ("volume", "notification-audio-volume-medium", x)
+#define set_brightness(x) send_synchronous ("brightness", "notification-display-brightness-medium", x)
 
 
 static void
