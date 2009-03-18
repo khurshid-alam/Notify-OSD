@@ -42,6 +42,11 @@ test_dnd_screensaver (void)
 
 	if (test)
 		g_debug ("screensaver is inhibited");
+
+	test = is_screensaver_active();
+
+	if (test)
+		g_debug ("screensaver is active");
 }
 
 GTestSuite *

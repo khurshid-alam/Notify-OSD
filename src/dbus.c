@@ -37,18 +37,18 @@
 
 static DBusGConnection* connection = NULL;
 
-DBusConnection*
+DBusGConnection*
 dbus_get_connection (void)
 {
 	/* usefull mostly for unit tests */
 	if (connection == NULL)
 		connection = dbus_create_service_instance (DBUS_NAME);
 
-	return dbus_g_connection_get_connection (connection);
+	return connection;
 }
 
 DBusGConnection*
-dbus_create_service_instance (char *service_name)
+dbus_create_service_instance (const char *service_name)
 {
 	DBusGProxy*      proxy      = NULL;
 	guint            request_name_result;
@@ -134,4 +134,3 @@ dbus_send_action_signal (gchar *dest,
 
 	dbus_message_unref (msg);
 }
-

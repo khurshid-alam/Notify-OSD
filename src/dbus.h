@@ -41,9 +41,9 @@
 #endif
 
 DBusGConnection*
-dbus_create_service_instance ();
+dbus_create_service_instance (const char *service_name);
 
-DBusConnection*
+DBusGConnection*
 dbus_get_connection (void);
 
 void
