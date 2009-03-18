@@ -249,7 +249,7 @@ create_gaussian_blur_kernel (gint    radius,
 static cairo_surface_t*
 blur_image_surface (cairo_surface_t* surface,
                     gint             radius,
-                    gdouble          sigma /* pass 0.0f for auto-calculation */) 
+                    gdouble          sigma /* pass 0.0f for auto-calculation */)
 {
         static cairo_user_data_key_t data_key;
         pixman_fixed_t*              params = NULL;
@@ -1177,10 +1177,10 @@ void
 screen_changed_handler (GtkWidget* window,
 			GdkScreen* old_screen,
 			gpointer   data)
-{                       
+{
 	GdkScreen*   screen   = gtk_widget_get_screen (window);
 	GdkColormap* colormap = gdk_screen_get_rgba_colormap (screen);
-      
+
 	if (!colormap)
 		colormap = gdk_screen_get_rgb_colormap (screen);
 
@@ -1938,7 +1938,7 @@ bubble_new (Defaults* defaults)
 	g_signal_connect (G_OBJECT (window),
 			  "expose-event",
 			  G_CALLBACK (expose_handler),
-			  this);       
+			  this);
 
 	/*  "clear" input-mask, set title/icon/attributes */
 	gtk_widget_set_app_paintable (window, TRUE);
@@ -2034,7 +2034,10 @@ bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
 	gchar*         text;
+	gchar*         new_title;
+	gboolean       success;
 	BubblePrivate* priv;
+	GError*        error = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
@@ -2046,9 +2049,17 @@ bubble_set_title (Bubble*      self,
 
 	/* filter out any HTML/markup if possible */
 	text = filter_text (title);
+	success = pango_parse_markup (text,
+				      -1,
+				      0,            /* no accel-marker needed */
+				      NULL,         /* No PangoAttr needed */
+				      &new_title,
+				      NULL,         /* No accel-marker-return needed */
+				      &error);
 
-	priv->title = g_string_new (text);
-	g_free ((gpointer) text);
+	priv->title = g_string_new (new_title);
+	g_free (text);
+	g_free (new_title);
 }
 
 const gchar*
@@ -2323,7 +2334,7 @@ glow_cb (EggTimeline *timeline,
 	g_return_if_fail (IS_BUBBLE (bubble));
 
 	bubble_refresh (bubble);
-}	
+}
 
 static void
 bubble_start_glow_effect (Bubble *self,
@@ -2367,7 +2378,7 @@ void
 bubble_show (Bubble* self)
 {
 	BubblePrivate* priv;
- 
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
@@ -2405,7 +2416,7 @@ do_slide_bubble (Bubble* self)
 	gint           x = 0;
 	gint           y = 0;
 	BubblePrivate* priv;
- 
+
 	/* sanity check */
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
@@ -2521,7 +2532,7 @@ fade_out_completed_cb (EggTimeline *timeline,
 	dbus_send_close_signal (bubble_get_sender (bubble),
 				bubble_get_id (bubble),
 				1);
-	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);	
+	g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);
 }
 
 
@@ -2603,7 +2614,7 @@ bubble_fade_in (Bubble* self,
 
 	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
 
-	bubble_show (self);	
+	bubble_show (self);
 }
 
 void
@@ -3022,7 +3033,7 @@ bubble_recalc_size (Bubble *self)
 					self,
 					priv->title_width);
 
-			priv->body_width = 
+			priv->body_width =
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
 				2 * EM2PIXELS (defaults_get_margin_size (d), d);
 
@@ -3180,7 +3191,7 @@ bubble_determine_layout (Bubble* self)
 	    !(priv->icon_only))
 	{
 		priv->layout = LAYOUT_ICON_TITLE;
-		return;	    
+		return;
 	}
 
 	/* icon/avatar + title + body/message layout-case, e.g. IM-message */
