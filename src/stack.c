@@ -273,9 +273,9 @@ close_handler (GObject *n,
 			   sync. bubble is recycled, and no gap is
 			   left on the screen */
 			sync_bubble = NULL;
-
-			stack_layout (stack);
 		}
+
+		stack_layout (stack);
 	}
 
 	return;
