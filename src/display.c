@@ -213,8 +213,21 @@ stack_layout (Stack* self)
 		return;
 
 	if (dnd_dont_disturb_user ()
-	    && bubble_is_urgent (bubble))
+	    && (! bubble_is_urgent (bubble)))
+	{
+		guint id = bubble_get_id (bubble);
+
+		/* find entry in list corresponding to id and remove it */
+		self->list =
+			g_list_delete_link (self->list,
+					    find_entry_by_id (self, id));
+		g_object_unref (bubble);
+
+		/* loop, in case there are other bubbles to discard */
+		stack_layout (self);
+
 		return;
+	}
 
 	bubble_set_timeout (bubble,
 			    defaults_get_on_screen_timeout (self->defaults));

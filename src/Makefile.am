@@ -59,6 +59,7 @@ notify_osd_LDADD =			\
 	$(GCONF_LIBS) 		\
 	$(GTK_LIBS) 		\
 	$(DBUS_LIBS)     	\
+	$(WNCK_LIBS)     	\
 	$(NULL)
 
 notify_osd_CFLAGS = 		\
@@ -67,6 +68,7 @@ notify_osd_CFLAGS = 		\
 	$(GTK_CFLAGS) 		\
 	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
+	$(WNCK_CFLAGS)		\
 	$(NULL)
 
 notify_osd_LDFLAGS = 		\

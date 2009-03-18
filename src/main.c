@@ -36,9 +36,6 @@
 #include "observer.h"
 #include "dbus.h"
 
-#define DBUS_PATH "/org/freedesktop/Notifications"
-#define DBUS_NAME "org.freedesktop.Notifications"
-
 #define ICONS_DIR  (DATADIR G_DIR_SEPARATOR_S "notify-osd" G_DIR_SEPARATOR_S "icons")
 
 int

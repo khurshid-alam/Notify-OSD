@@ -26,14 +26,25 @@
 **
 *******************************************************************************/
 
-#ifndef __DBUS_H
-#define __DBUS_H
+#ifndef __NOTIFY_OSD_DBUS_H
+#define __NOTIFY_OSD_DBUS_H
 
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 
+#ifndef DBUS_PATH
+#define DBUS_PATH "/org/freedesktop/Notifications"
+#endif
+#ifndef DBUS_NAME
+#define DBUS_NAME "org.freedesktop.Notifications"
+#endif
+
 DBusGConnection*
 dbus_create_service_instance ();
+
+DBusConnection*
+dbus_get_connection (void);
 
 void
 dbus_send_close_signal (gchar *dest,
@@ -46,4 +57,4 @@ dbus_send_action_signal (gchar *dest,
 
 G_END_DECLS
 
-#endif /* __DEFAULTS_H */
+#endif /* __NOTIFY_OSD_DBUS_H */

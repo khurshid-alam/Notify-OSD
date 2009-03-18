@@ -30,7 +30,7 @@
 #include "dbus.h"
 #include "stack.h"
 
-#define DBUS_NAME "org.freedesktop.Notificationstest"
+#define TEST_DBUS_NAME "org.freedesktop.Notificationstest"
 
 static
 void
@@ -38,7 +38,7 @@ test_dbus_instance (void)
 {
 	DBusGConnection* connection = NULL;
 
-	connection = dbus_create_service_instance (DBUS_NAME);
+	connection = dbus_create_service_instance (TEST_DBUS_NAME);
 	g_assert (connection != NULL);
 }
 
@@ -54,7 +54,7 @@ test_dbus_collision (void)
 	if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT |
                                G_TEST_TRAP_SILENCE_STDERR))
         {
-		connection = dbus_create_service_instance (DBUS_NAME);
+		connection = dbus_create_service_instance (TEST_DBUS_NAME);
 		exit (0); /* should never be triggered */
         }
 	g_test_trap_assert_failed();

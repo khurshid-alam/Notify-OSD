@@ -28,12 +28,24 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-bindings.h>
 #include <dbus/dbus-glib-lowlevel.h>
-#include <dbus/dbus.h>
+
+#include "dbus.h"
 
 static DBusGConnection* connection = NULL;
+
+DBusConnection*
+dbus_get_connection (void)
+{
+	/* usefull mostly for unit tests */
+	if (connection == NULL)
+		connection = dbus_create_service_instance (DBUS_NAME);
+
+	return dbus_g_connection_get_connection (connection);
+}
 
 DBusGConnection*
 dbus_create_service_instance (char *service_name)

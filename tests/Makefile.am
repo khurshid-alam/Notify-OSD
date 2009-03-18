@@ -15,7 +15,6 @@ test_modules_SOURCES =		\
 	../src/observer.c	\
 	../src/stack.c		\
 	../src/dbus.c		\
-	../src/dnd.c		\
 	../src/apport.c		\
 	$(EGG_MODULES)	\
 	test-modules-main.c     \
@@ -27,17 +26,20 @@ test_modules_SOURCES =		\
 	test-observer.c		\
 	test-i18n.c		\
 	test-synchronous.c	\
+	test-dnd.c	\
 	test-stack.c
 
 test_modules_CFLAGS =		\
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
 	$(GTK_CFLAGS)		\
+	$(WNCK_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	-I$(top_srcdir)/src
 
 test_modules_LDADD =		\
 	$(GLIB_LIBS)		\
+	$(WNCK_LIBS)		\
 	$(DBUS_LIBS)		\
 	$(GTK_LIBS)		\
 	-lnotify
