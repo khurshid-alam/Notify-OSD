@@ -4,7 +4,7 @@
 **
 ** notify-osd
 **
-** apport.h - apport hooks for triggering bug-reports on non-spec notifications
+** util.h - all sorts of helper functions
 **
 ** Copyright 2009 Canonical Ltd.
 **
@@ -27,3 +27,4 @@
 
 gchar*
 filter_text (const gchar* app_name);
+

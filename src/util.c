@@ -4,7 +4,7 @@
  **
  ** notify-osd
  **
- ** bubble.c - implements all the rendering of a notification bubble
+ ** util.c - all sorts of helper functions
  **
  ** Copyright 2009 Canonical Ltd.
  **
@@ -39,3 +39,4 @@ filter_text (const gchar *text)
 
 	return ret;
 }
+
