@@ -63,7 +63,9 @@ main (int    argc,
 	connection = dbus_create_service_instance (DBUS_NAME);
 	if (connection == NULL)
 	{
-		g_error ("Could not register instance");
+		g_warning ("Could not register instance");
+		stack_del (stack);
+		return 0;
 	}
 
 	dbus_g_connection_register_g_object (connection,
@@ -71,6 +73,8 @@ main (int    argc,
 					     G_OBJECT (stack));
 
 	gtk_main ();
+
+	stack_del (stack);
 
 	return 0;
 }
