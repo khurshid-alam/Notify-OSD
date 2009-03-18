@@ -2076,6 +2076,7 @@ bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
 	gboolean       success;
+	gchar*         new_body;
 	gchar*         text;
 	GError*        error = NULL;
 	BubblePrivate* priv;
@@ -2089,23 +2090,18 @@ bubble_set_message_body (Bubble*      self,
 		g_string_free (priv->message_body, TRUE);
 
 	/* filter out any HTML/markup if possible */
-    	success = pango_parse_markup (body,
+	text = filter_text (body);
+    	success = pango_parse_markup (text,
 				      -1,
 				      0,    /* no accel-marker needed */
 				      NULL, /* no PangoAttr needed */
-				      &text,
+				      &new_body,
 				      NULL, /* no accel-marker-return needed */
 				      &error);
 
- 	/* if parsing worked out set the "filtered" text ...*/
-	if (success)
-	{
-		priv->message_body = g_string_new (text);
-		g_free ((gpointer) text);
-	}
-	/* ... other pass it as-is */
-	else
-		priv->message_body = g_string_new (body);
+	priv->message_body = g_string_new (new_body);
+	g_free (text);
+	g_free (new_body);
 }
 
 const gchar*
