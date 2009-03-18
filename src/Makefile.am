@@ -22,6 +22,7 @@ notify_osd_sources =		\
 	dbus.c			\
 	dnd.c			\
 	apport.c		\
+	util.c			\
 	../egg/egg-fixed.c		\
 	../egg/egg-units.c		\
 	../egg/egg-timeline.c		\

@@ -31,7 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "bubble.h"
-
+#include "util.h"
 
 static
 gboolean
