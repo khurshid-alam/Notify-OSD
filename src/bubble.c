@@ -42,6 +42,7 @@
 #include "defaults.h"
 #include "stack.h"
 #include "dbus.h"
+#include "util.h"
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -2028,19 +2029,6 @@ bubble_del (Bubble* self)
 	g_object_unref (self);
 }
 
-static gchar *
-filter_html (const gchar *text)
-{
-	gchar *ret;
-	GRegex *regex;
-
-	regex = g_regex_new ("<(.|\n)*?>", 0, 0, NULL);
-
-	ret = g_regex_replace (regex, text, -1, 0, "", 0, NULL);
-
-	return ret;
-}
-
 void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
@@ -2057,7 +2045,7 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	/* filter out any HTML/markup if possible */
-	text = filter_html (title);
+	text = filter_text (title);
 
 	priv->title = g_string_new (text);
 	g_free ((gpointer) text);
