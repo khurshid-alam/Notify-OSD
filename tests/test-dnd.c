@@ -32,18 +32,16 @@
 
 #include "dnd.h"
 
-#include "../src/dnd.c"
-
 static
 void
 test_dnd_screensaver (void)
 {
-	gboolean test = is_screensaver_inhibited();
+	gboolean test = dnd_is_screensaver_inhibited();
 
 	if (test)
 		g_debug ("screensaver is inhibited");
 
-	test = is_screensaver_active();
+	test = dnd_is_screensaver_active();
 
 	if (test)
 		g_debug ("screensaver is active");

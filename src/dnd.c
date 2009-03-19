@@ -44,8 +44,8 @@
 
 static DBusGProxy *gsmgr = NULL;
 
-static gboolean
-is_xscreensaver_active ()
+gboolean
+dnd_is_xscreensaver_active ()
 {
 	GdkDisplay *display = gdk_display_get_default ();
 
@@ -104,8 +104,8 @@ get_screensaver_proxy (void)
 	return gsmgr;
 }	
 
-static gboolean
-is_screensaver_inhibited ()
+gboolean
+dnd_is_screensaver_inhibited ()
 {
 	GError  *error;
 	gboolean inhibited = FALSE;
@@ -132,8 +132,8 @@ is_screensaver_inhibited ()
 	return inhibited;
 }
 
-static gboolean
-is_screensaver_active ()
+gboolean
+dnd_is_screensaver_active ()
 {
 	GError  *error;
 	gboolean active = FALSE;;
@@ -154,7 +154,7 @@ is_screensaver_active ()
 }
 
 static gboolean
-is_online_presence_dnd ()
+dnd_is_online_presence_dnd ()
 {
 	/* TODO: ask FUSA if we're in DND mode */
 
@@ -165,9 +165,9 @@ is_online_presence_dnd ()
 gboolean
 dnd_dont_disturb_user (void)
 {
-	return (is_online_presence_dnd()
-		|| is_xscreensaver_active()
-		|| is_screensaver_active()
-		|| is_screensaver_inhibited()
+	return (dnd_is_online_presence_dnd()
+		|| dnd_is_xscreensaver_active()
+		|| dnd_is_screensaver_active()
+		|| dnd_is_screensaver_inhibited()
 		);
 }

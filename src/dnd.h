@@ -35,6 +35,16 @@ G_BEGIN_DECLS
 gboolean
 dnd_dont_disturb_user (void);
 
+gboolean
+dnd_is_xscreensaver_active (void);
+
+gboolean
+dnd_is_screensaver_inhibited (void);
+
+gboolean
+dnd_is_screensaver_active (void);
+
+
 G_END_DECLS
 
 #endif /* __DND_H */
