@@ -32,6 +32,8 @@
 
 #include "dnd.h"
 
+#define TEST_DBUS_NAME "org.freedesktop.Notificationstest"
+
 static
 void
 test_dnd_screensaver (void)

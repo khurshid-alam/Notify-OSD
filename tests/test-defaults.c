@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-defaults.c - implements unit-tests for defaults class
 **
@@ -143,8 +143,8 @@ test_defaults_get_bubble_width ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_bubble_width (defaults), <=, 1024);
-	g_assert_cmpint (defaults_get_bubble_width (defaults), >=, 200);
+	g_assert_cmpfloat (defaults_get_bubble_width (defaults), <=, 256.0f);
+	g_assert_cmpfloat (defaults_get_bubble_width (defaults), >=, 0.0f);
 	defaults_del (defaults);
 }
 

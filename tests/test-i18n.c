@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-i18n.c - unit-tests for internationalization
 **
@@ -72,6 +72,7 @@ test_stack_layout (void)
 	bubble_set_icon (bubble, "../icons/chat.svg");
 	bubble_set_title (bubble, "LTR Text");
 	bubble_set_message_body (bubble, "This should be displayed at the right of your screen. Ubuntu Ubuntu  Ubuntu Ubuntu Ubuntu Ubuntu Ubuntu");
+	bubble_determine_layout (bubble);
 
 	stack_push_bubble (stack, bubble);
 	wait_a_little (10000);
@@ -95,6 +96,7 @@ test_stack_layout_rtl (void)
 	bubble_set_icon (bubble, "../icons/chat.svg");
 	bubble_set_title (bubble, "RTL Text");
 	bubble_set_message_body (bubble, "This should be displayed at the left of your screen. Ubuntu Ubuntu  Ubuntu Ubuntu Ubuntu Ubuntu Ubuntu");
+	bubble_determine_layout (bubble);
 
 	stack_push_bubble (stack, bubble);
 	wait_a_little (10000);
@@ -110,7 +112,7 @@ test_stack_layout_rtl (void)
 	bubble_set_icon (bubble, "../icons/chat.svg"); \
 	bubble_set_title (bubble, y);		       \
 	bubble_set_message_body (bubble, #y#y#y#y#y);  \
-	bubble_set_size (bubble, 300, 100);	       \
+	bubble_determine_layout (bubble);	       \
 	bubble_move (bubble, 30, 30);		       \
 	bubble_show (bubble);			       \
 	wait_a_little (1000);			       \

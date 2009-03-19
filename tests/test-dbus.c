@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-dbus.c - implements unit-tests for dbus glue-code
 **
@@ -88,8 +88,8 @@ test_dbus_get_server_information (void)
 	ret = stack_get_server_information (NULL, &name, &vendor,
 					    &version, &specver);
 	g_assert (ret);
-	g_assert (g_strrstr (name, "alsdorf"));
-	g_assert (g_strrstr (specver, "1.0"));
+	g_assert (g_strrstr (name, "notify-osd"));
+	g_assert (g_strrstr (specver, "0.9"));
 }
 
 GTestSuite *
