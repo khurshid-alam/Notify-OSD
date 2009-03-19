@@ -230,6 +230,7 @@ defaults_constructed (GObject* gobject)
 				     &items_read,
 				     &items_left,
 				     (guchar **) (void*) &coords);
+	gdk_flush ();
 	gdk_error_trap_pop ();
 
 	if (result == Success && items_read)

@@ -67,11 +67,15 @@ dnd_is_xscreensaver_active ()
 	Display *dpy = gdk_x11_get_default_xdisplay ();
 	Window   win = gdk_x11_get_default_root_xwindow ();
 
+	gdk_error_trap_push ();
 	status = XGetWindowProperty (dpy, win,
 				     XA_SCREENSAVER_STATUS,
 				     0, 999, False, XA_INTEGER,
 				     &type, &format, &nitems, &bytesafter,
 				     (unsigned char **) &data);
+	gdk_flush ();
+	gdk_error_trap_pop ();
+
 	if (status == Success
 	    && type == XA_INTEGER
 	    && nitems >= 3
