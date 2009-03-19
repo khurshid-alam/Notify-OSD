@@ -43,6 +43,7 @@
 #include "stack.h"
 #include "dbus.h"
 #include "util.h"
+#include "bubble-window.h"
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -88,6 +89,7 @@ struct _BubblePrivate {
 enum
 {
 	TIMED_OUT,
+    VALUE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -1881,6 +1883,18 @@ bubble_class_init (BubbleClass* klass)
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE,
 		0);
+
+    g_bubble_signals[VALUE_CHANGED] = g_signal_new (
+		"value-changed",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, value_changed),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__INT,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_INT);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -1899,7 +1913,7 @@ bubble_new (Defaults* defaults)
 	this->defaults = defaults;
 	priv = GET_PRIVATE (this);
 
-	priv->widget = gtk_window_new (GTK_WINDOW_POPUP);
+	priv->widget = bubble_window_new();
 	window = priv->widget;
 	if (!window)
 		return NULL;
@@ -2195,6 +2209,8 @@ bubble_set_value (Bubble* self,
 		return;
 
 	GET_PRIVATE (self)->value = value;
+    
+    g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);	
 }
 
 gint
