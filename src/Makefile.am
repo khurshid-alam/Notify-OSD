@@ -22,6 +22,7 @@ notify_osd_sources =		\
 	dbus.c			\
 	dnd.c			\
 	apport.c		\
+	log.c			\
 	util.c			\
 	../egg/egg-fixed.c		\
 	../egg/egg-units.c		\
@@ -39,6 +40,7 @@ notify_osd_headers =		\
 	stack-glue.h		\
 	dbus.h			\
 	dnd.h			\
+	log.h			\
 	apport.h		\
 	../egg/egg-fixed.h		\
 	../egg/egg-units.h		\

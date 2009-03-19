@@ -35,6 +35,7 @@
 #include "stack.h"
 #include "observer.h"
 #include "dbus.h"
+#include "log.h"
 
 #define ICONS_DIR  (DATADIR G_DIR_SEPARATOR_S "notify-osd" G_DIR_SEPARATOR_S "icons")
 
@@ -49,6 +50,7 @@ main (int    argc,
 
 	g_thread_init (NULL);
 	dbus_g_thread_init ();
+	log_init ();
 
 	gtk_init (&argc, &argv);
 

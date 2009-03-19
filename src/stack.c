@@ -34,6 +34,7 @@
 #include "bubble.h"
 #include "apport.h"
 #include "dnd.h"
+#include "log.h"
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
@@ -542,6 +543,14 @@ stack_notify_handler (Stack*                 self,
 
 	} else {
 		stack_push_bubble (self, bubble);
+
+		if (! new_bubble && bubble_is_append_allowed (bubble))
+			log_bubble (bubble, app_name, "appended");
+		else if (! new_bubble)
+			log_bubble (bubble, app_name, "replaced");
+		else
+			log_bubble (bubble, app_name, "");
+
 		/* update the layout of the stack;
 		 * this will also open the new bubble */
 		stack_layout (self);
