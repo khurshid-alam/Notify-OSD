@@ -121,10 +121,14 @@ bubble_show_dialog (Bubble *bubble,
 	GtkWidget*     body;
 	GtkWidget*     image;
 	Defaults*      d = bubble->defaults;
-	gchar*         esc;
-	gchar*         txt;
+	gchar*         title_text;
+	gchar*         new_title_text;
+	gchar*         body_message;
+	gchar*         new_body_message;
 	guint          gap = EM2PIXELS (defaults_get_margin_size (d), d);
 	BubblePrivate* priv;
+	gboolean       success;
+	GError*        error = NULL;
 
 	dialog = gtk_dialog_new ();
 
@@ -148,14 +152,33 @@ bubble_show_dialog (Bubble *bubble,
 			     NULL);
 
 	title = gtk_label_new (NULL);
-	esc = g_markup_escape_text (priv->title->str, -1);
-	txt = g_strdup_printf ("<b>%s</b>", esc);
-	gtk_label_set_markup (GTK_LABEL (title), txt);
+	title_text = filter_text (priv->title->str);
+	success = pango_parse_markup (title_text,
+				      -1,
+				      0,
+				      NULL,
+				      &new_title_text,
+				      NULL,
+				      &error);
+	gtk_label_set_text (GTK_LABEL (title), new_title_text);
+	g_free (title_text);
+	g_free (new_title_text);
+
 	gtk_label_set_line_wrap (GTK_LABEL (title), TRUE);
-	g_free (esc); g_free (txt);
 
 	body = gtk_label_new (NULL);
-	gtk_label_set_markup (GTK_LABEL (body), priv->message_body->str);
+	body_message = filter_text (priv->message_body->str);
+	success = pango_parse_markup (body_message,
+				      -1,
+				      0,
+				      NULL,
+				      &new_body_message,
+				      NULL,
+				      &error);
+	gtk_label_set_text (GTK_LABEL (body), new_body_message);
+	g_free (body_message);
+	g_free (new_body_message);
+
 	gtk_label_set_line_wrap (GTK_LABEL (body), TRUE);
 
 	gtk_misc_set_alignment (GTK_MISC (title), 0.0, 0.0);
