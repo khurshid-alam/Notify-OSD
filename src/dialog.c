@@ -82,7 +82,6 @@ add_pathological_action_buttons (GtkWidget *dialog,
 	for (i = 0; actions[i] != NULL; i += 2)
 	{
 		gchar *label = actions[i + 1];
-		g_print ("called\n");
 
 		if (label == NULL)
 		{
