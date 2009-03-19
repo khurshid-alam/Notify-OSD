@@ -17,6 +17,7 @@ test_modules_SOURCES =		\
 	../src/dbus.c		\
 	../src/apport.c		\
 	../src/util.c		\
+	../src/log.c		\
 	$(EGG_MODULES)	\
 	test-modules-main.c     \
 	test-apport.c		\
