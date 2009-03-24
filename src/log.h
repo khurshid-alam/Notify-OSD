@@ -37,6 +37,11 @@ log_init (void);
 void
 log_bubble (Bubble *bubble, const char *app_name, const char *option);
 
+char*
+log_create_timestamp (void);
+
+void
+log_bubble_debug (Bubble *bubble, const char *app_name, const char *icon);
 
 G_END_DECLS
 

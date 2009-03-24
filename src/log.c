@@ -33,7 +33,16 @@
 
 #include "bubble.h"
 
-static FILE *logfile;
+static FILE *logfile = NULL;
+
+static void
+log_logger_null(const char     *domain,
+		GLogLevelFlags  log_level,
+		const char     *message,
+		gpointer        user_data)
+{
+	return;
+}
 
 void
 log_init (void)
@@ -48,9 +57,19 @@ log_init (void)
 	logfile = fopen (filename, "w");
 
 	g_free (filename);
+
+	/* discard all debug messages unless DEBUG is set */
+	if (! g_getenv ("DEBUG"))
+		g_log_set_handler (NULL,
+				   G_LOG_LEVEL_MESSAGE
+				   | G_LOG_FLAG_FATAL
+				   | G_LOG_FLAG_RECURSION,
+				   log_logger_null, NULL);
+
+	g_message ("DEBUG mode enabled");
 }
 
-static
+
 char*
 log_create_timestamp (void)
 {
@@ -87,6 +106,22 @@ log_bubble (Bubble *bubble, const char *app_name, const char *option)
 		 bubble_get_message_body (bubble));
 
 	fflush (logfile);
+
+	g_free (ts);
+}
+
+void
+log_bubble_debug (Bubble *bubble, const char *app_name, const char *icon)
+{
+	g_return_if_fail (IS_BUBBLE (bubble));
+
+	char *ts = log_create_timestamp ();
+
+	g_debug ("[%s, %s, id:%d, icon:%s%s] %s\n%s\n",
+		 ts, app_name, bubble_get_id (bubble), icon,
+		 bubble_is_synchronous (bubble) ? " (synchronous)" : "",
+		 bubble_get_title (bubble),
+		 bubble_get_message_body (bubble));
 
 	g_free (ts);
 }
