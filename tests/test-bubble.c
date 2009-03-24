@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-bubble.c - implements unit-tests for rendering/displaying a bubble
 **
@@ -84,10 +84,10 @@ test_bubble_set_attributes (void)
 
 	defaults = defaults_new ();
 	bubble = bubble_new (defaults);
-	bubble_set_icon (bubble, "../icons/chat.svg");
+	bubble_set_icon (bubble, "/usr/share/icons/Human/scalable/status/notification-message-im.svg");
 	bubble_set_title (bubble, "Unit Testing");
 	bubble_set_message_body (bubble, "Long text that is hopefully wrapped");
-	bubble_set_size (bubble, 300, 100);
+	bubble_determine_layout (bubble);
 	bubble_move (bubble, 30, 30);
 	bubble_show (bubble);
 

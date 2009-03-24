@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-withlib.c - libnotify based unit-tests
 **
@@ -52,8 +52,8 @@ test_withlib_get_server_information (void)
 	ret = notify_get_server_info (&name, &vendor, &version, &specver);
 	
 	g_assert (ret);
-	g_assert (g_strrstr (name, "alsdorf"));
-	g_assert (g_strrstr (specver, "1.0"));
+	g_assert (g_strrstr (name, "notify-osd"));
+	g_assert (g_strrstr (specver, "0.9"));
 }
 
 static void
@@ -72,7 +72,10 @@ test_withlib_get_server_caps (void)
 	     cap != NULL;
 	     cap = g_list_next (cap))
 	{
-		if (! g_strcmp0 (cap->data, "canonical-private-1"))
+		if (!g_strcmp0 (cap->data, "x-canonical-private-synchronous") ||
+		    !g_strcmp0 (cap->data, "x-canonical-append") ||
+		    !g_strcmp0 (cap->data, "x-canonical-private-icon-only") ||
+		    !g_strcmp0 (cap->data, "x-canonical-truncation"))
 			test = TRUE;
 	}
 

@@ -2,7 +2,7 @@
 **3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
 **      10        20        30        40        50        60        70        80
 **
-** Codename "alsdorf"
+** notify-osd
 **
 ** test-stack.c - unit-tests for stack class
 **
@@ -76,8 +76,6 @@ test_stack_push ()
 
 	g_assert (replaced_id == id);
 
-	g_object_unref (G_OBJECT (defaults));
-	g_object_unref (G_OBJECT (observer));
 	g_object_unref (G_OBJECT (stack));
 }
 
