@@ -211,6 +211,12 @@ defaults_get_text_body_size (Defaults* self);
 gint
 defaults_get_pixel_per_em (Defaults* self);
 
+void
+defaults_refresh_screen_dimension_properties (Defaults *self);
+
+void
+defaults_get_top_corner (Defaults *self, gint *x, gint *y);
+
 G_END_DECLS
 
 #endif /* __DEFAULTS_H */

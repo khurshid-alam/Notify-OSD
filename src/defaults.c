@@ -32,6 +32,9 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
+#include <libwnck/application.h>
+#include <libwnck/class-group.h>
+#include <libwnck/workspace.h>
 
 #include "defaults.h"
 
@@ -186,8 +189,8 @@ _get_average_char_width (Defaults* self)
 	return PIXELS2EM (char_width / PANGO_SCALE, self);
 }
 
-static void
-defaults_constructed (GObject* gobject)
+void
+defaults_refresh_screen_dimension_properties (Defaults *self)
 {
 	Atom         real_type;
 	gint         result;
@@ -196,23 +199,8 @@ defaults_constructed (GObject* gobject)
 	gulong       items_left;
 	glong*       coords;
 	Atom         workarea_atom;
-	Defaults*    self;
-	GConfClient* context       = NULL;
-	GString*     string        = NULL;
-	gdouble      dpi           = 0.0f;
-	GError*      error         = NULL;
-	GString*     font_face     = NULL;
-	gint         points        = 0;
-	gint         pixels_per_em = 0;
-	gdouble      margin_size;
-	gdouble      icon_size;
-	gdouble      bubble_height;
-	gdouble      new_bubble_height;
-	gdouble      bubble_width;
-	gdouble      new_bubble_width;
-	gdouble      average_char_width;
 
-	self = DEFAULTS (gobject);
+	g_return_if_fail ((self != NULL) && IS_DEFAULTS (self));
 
 	/* get real desktop-area without the panels */
 	workarea_atom = gdk_x11_get_xatom_by_name ("_NET_WORKAREA");
@@ -230,6 +218,7 @@ defaults_constructed (GObject* gobject)
 				     &items_read,
 				     &items_left,
 				     (guchar **) (void*) &coords);
+	gdk_flush ();
 	gdk_error_trap_pop ();
 
 	if (result == Success && items_read)
@@ -242,22 +231,10 @@ defaults_constructed (GObject* gobject)
 			      "desktop-height",
 			      (gint) coords[3],
 			      NULL);
-
-		/* FIXME: temp. workaround for notify-osd being started before
-		 * strut is set by gnome-panel, assume the usual value of 27,
-		 * in the long run this will be made dynamic and adapt to any
-		 * updates to the strut */
-		if ((gint) coords[1] != 0)
-			g_object_set (self,
-				      "desktop-top",
-				      (gint) coords[1],
-				      NULL);
-		else
-			g_object_set (self,
-				      "desktop-top",
-				      27,
-				      NULL);
-
+		g_object_set (self,
+			      "desktop-top",
+			      (gint) coords[1],
+			      NULL);
 		g_object_set (self,
 			      "desktop-bottom",
 			      (gint) coords[3],
@@ -277,6 +254,30 @@ defaults_constructed (GObject* gobject)
 			      NULL);*/
 		XFree (coords);
 	}
+}
+
+static void
+defaults_constructed (GObject* gobject)
+{
+	Defaults*    self;
+	GConfClient* context       = NULL;
+	GString*     string        = NULL;
+	gdouble      dpi           = 0.0f;
+	GError*      error         = NULL;
+	GString*     font_face     = NULL;
+	gint         points        = 0;
+	gint         pixels_per_em = 0;
+	gdouble      margin_size;
+	gdouble      icon_size;
+	gdouble      bubble_height;
+	gdouble      new_bubble_height;
+	gdouble      bubble_width;
+	gdouble      new_bubble_width;
+	gdouble      average_char_width;
+
+	self = DEFAULTS (gobject);
+
+	defaults_refresh_screen_dimension_properties (self);
 
 	/* grab default font-face and size from gconf */
 	context = gconf_client_get_default ();
@@ -1785,4 +1786,55 @@ defaults_get_pixel_per_em (Defaults* self)
 	g_object_get (self, "pixels-per-em", &pixels_per_em, NULL);
 
 	return pixels_per_em;
+}
+
+void
+defaults_get_top_corner (Defaults *self, gint *x, gint *y)
+{
+	GdkRectangle rect;
+	GdkScreen *screen;
+	GdkWindow *active_window;
+	gint mx, my;
+	int monitor, aw_monitor;
+
+	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
+
+	gdk_display_get_pointer (gdk_display_get_default (),
+				 &screen, &mx, &my, NULL);
+	monitor = gdk_screen_get_monitor_at_point (screen, mx, my);
+	active_window = gdk_screen_get_active_window (screen);
+
+	if (active_window != NULL)
+	{
+		aw_monitor = gdk_screen_get_monitor_at_window (screen, active_window);
+		if (monitor != aw_monitor)
+			g_debug ("choosing the monitor with the active window, not the one with the mouse cursor");
+		monitor = aw_monitor;
+	}
+	g_object_unref (active_window);
+
+	gdk_screen_get_monitor_geometry (screen, monitor, &rect);
+	g_debug ("selecting monitor %d at %d,%d", monitor, rect.x, rect.y);
+
+	defaults_refresh_screen_dimension_properties (self);
+
+	/* Position the top left corner of the stack. */
+	g_object_get (self, "desktop-top", y, NULL);
+
+	*y  += rect.y; /* position the corner on the right monitor */
+	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
+	       - EM2PIXELS (defaults_get_bubble_shadow_size (self), self);
+
+	*x   = (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
+		(rect.x + rect.width /* position the corner on the right monitor */
+		 - EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+		 - EM2PIXELS (defaults_get_bubble_horz_gap (self), self)
+		 - EM2PIXELS (defaults_get_bubble_width (self), self))
+		:
+		(rect.x /* position the corner on the right monitor */
+		 - EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+		 + EM2PIXELS (defaults_get_bubble_horz_gap (self), self))
+		;
+
+	g_debug ("top corner at: %d, %d", *x, *y);
 }
