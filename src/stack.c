@@ -427,7 +427,7 @@ stack_notify_handler (Stack*                 self,
 		bubble_set_sender (bubble,
 				   dbus_g_method_get_sender (context));
 	}
-	
+
 	if (hints)
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
@@ -536,6 +536,10 @@ stack_notify_handler (Stack*                 self,
 	bubble_determine_layout (bubble);
 
 	bubble_recalc_size (bubble);
+
+	log_bubble_debug (bubble, app_name,
+			  (*icon == '\0' && data != NULL) ?
+			  "..." : icon);
 
 	if (bubble_is_synchronous (bubble))
 	{
