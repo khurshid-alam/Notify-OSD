@@ -33,7 +33,16 @@
 
 #include "bubble.h"
 
-static FILE *logfile;
+static FILE *logfile = NULL;
+
+static void
+log_logger_null(const char     *domain,
+		GLogLevelFlags  log_level,
+		const char     *message,
+		gpointer        user_data)
+{
+	return;
+}
 
 void
 log_init (void)
@@ -48,6 +57,16 @@ log_init (void)
 	logfile = fopen (filename, "w");
 
 	g_free (filename);
+
+	/* discard all debug messages unless DEBUG is set */
+	if (! g_getenv ("DEBUG"))
+		g_log_set_handler (NULL,
+				   G_LOG_LEVEL_MESSAGE
+				   | G_LOG_FLAG_FATAL
+				   | G_LOG_FLAG_RECURSION,
+				   log_logger_null, NULL);
+
+	g_message ("log facility initialized");
 }
 
 static
