@@ -46,3 +46,4 @@ tests/test-timeline-rewind
 tests/test-timeline-smoothness
 src/notify-osd
 notify-osd.anjuta
+.anjuta_sym_db.db
