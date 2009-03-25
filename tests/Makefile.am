@@ -11,7 +11,7 @@ TESTS = test-modules
 
 test_modules_SOURCES =		                   \
 	../src/bubble.c		                   \
-	../src/defaults.c	                   \ 
+	../src/defaults.c	                   \
 	../src/observer.c	                   \
 	../src/stack.c		                   \
 	../src/dbus.c		                   \
