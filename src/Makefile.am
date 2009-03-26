@@ -45,6 +45,7 @@ notify_osd_headers =		\
 	dnd.h			\
 	log.h			\
 	apport.h		\
+	util.h			\
 	bubble-window.h \
 	bubble-window-accessible.h \
 	bubble-window-accessible-factory.h \
