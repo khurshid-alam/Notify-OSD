@@ -553,7 +553,6 @@ defaults_dispose (GObject* gobject)
 	gconf_client_remove_dir (defaults->context, GCONF_FONT_TREE, NULL);
 	g_object_unref (defaults->context);
 
-	g_print ("defaults_dispose() called\n");
 	/* chain up to the parent class */
 	G_OBJECT_CLASS (defaults_parent_class)->dispose (gobject);
 }
