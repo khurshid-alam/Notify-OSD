@@ -72,7 +72,6 @@ notify_osd_LDADD =			\
 	$(NULL)
 
 notify_osd_CFLAGS = 		\
-	-Wall -Werror -std=c99	\
 	-DDATADIR=\""$(datadir)"\" \
 	$(GTK_CFLAGS) 		\
 	$(GCONF_CFLAGS)		\

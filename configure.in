@@ -59,7 +59,7 @@ AC_SUBST(NOTIFY_OSD_LIBS)
 # AM_CHECK_PYMOD(gobject)
 
 dnl CFLAGS
-CFLAGS="$CFLAGS -lm"
+CFLAGS="$CFLAGS -lm -Wall -Werror -std=c99"
 
 AC_OUTPUT([
 Makefile
