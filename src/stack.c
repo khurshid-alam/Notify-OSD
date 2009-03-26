@@ -208,6 +208,31 @@ stack_purge_old_bubbles (Stack* self)
 	}
 }
 
+static void
+_trigger_bubble_redraw (gpointer data,
+			gpointer user_data)
+{
+	Bubble* bubble;
+
+	if (!data)
+		return;
+
+	bubble = BUBBLE (data);
+	if (!IS_BUBBLE (bubble))
+		return;
+
+	bubble_recalc_size (bubble);
+	bubble_refresh (bubble);
+}
+
+static void
+value_changed_handler (Defaults* defaults,
+		       Stack*    stack)
+{
+	if (stack->list != NULL)
+		g_list_foreach (stack->list, _trigger_bubble_redraw, NULL);
+}
+
 /* fwd declaration */
 void close_handler (GObject* n, Stack*  stack);
 
@@ -234,6 +259,12 @@ stack_new (Defaults* defaults,
 	this->observer = observer;
 	this->list     = NULL;
 	this->next_id  = 1;
+
+	/* hook up handler to act on changes of defaults/settings */
+	g_signal_connect (G_OBJECT (defaults),
+			  "value-changed",
+			  G_CALLBACK (value_changed_handler),
+			  this);
 
 	return this;
 }
