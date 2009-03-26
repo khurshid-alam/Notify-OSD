@@ -30,6 +30,7 @@
 #define __DEFAULTS_H
 
 #include <glib-object.h>
+#include <gconf/gconf-client.h>
 
 G_BEGIN_DECLS
 
@@ -59,46 +60,53 @@ struct _Defaults
 	GObject parent;
 
 	/* private */
-	gint     desktop_width;
-	gint     desktop_height;
-	gint     desktop_top;
-	gint     desktop_bottom;
-	gint     desktop_left;
-	gint     desktop_right;
-	gdouble  desktop_bottom_gap;
-	gdouble  stack_height;
-	gdouble  bubble_vert_gap;
-	gdouble  bubble_horz_gap;
-	gdouble  bubble_width;
-	gdouble  bubble_min_height;
-	gdouble  bubble_max_height;
-	gdouble  bubble_shadow_size;
-	GString* bubble_shadow_color;
-	GString* bubble_bg_color;
-	GString* bubble_bg_opacity;
-	GString* bubble_hover_opacity;
-	gdouble  bubble_corner_radius;
-	gdouble  content_shadow_size;
-	GString* content_shadow_color;
-	gdouble  margin_size;
-	gdouble  icon_size;
-	gint     fade_in_timeout;
-	gint     fade_out_timeout;
-	gint     on_screen_timeout;
-	GString* text_font_face;
-	GString* text_title_color;
-	gint     text_title_weight;
-	gdouble  text_title_size;
-	GString* text_body_color;
-	gint     text_body_weight;
-	gdouble  text_body_size;
-	gint     pixels_per_em;
+	GConfClient* context;
+	guint        notifier[5];
+	gint         desktop_width;
+	gint         desktop_height;
+	gint         desktop_top;
+	gint         desktop_bottom;
+	gint         desktop_left;
+	gint         desktop_right;
+	gdouble      desktop_bottom_gap;
+	gdouble      stack_height;
+	gdouble      bubble_vert_gap;
+	gdouble      bubble_horz_gap;
+	gdouble      bubble_width;
+	gdouble      bubble_min_height;
+	gdouble      bubble_max_height;
+	gdouble      bubble_shadow_size;
+	GString*     bubble_shadow_color;
+	GString*     bubble_bg_color;
+	GString*     bubble_bg_opacity;
+	GString*     bubble_hover_opacity;
+	gdouble      bubble_corner_radius;
+	gdouble      content_shadow_size;
+	GString*     content_shadow_color;
+	gdouble      margin_size;
+	gdouble      icon_size;
+	gint         fade_in_timeout;
+	gint         fade_out_timeout;
+	gint         on_screen_timeout;
+	GString*     text_font_face;
+	GString*     text_title_color;
+	gint         text_title_weight;
+	gdouble      text_title_size;
+	GString*     text_body_color;
+	gint         text_body_weight;
+	gdouble      text_body_size;
+	gint         pixels_per_em;
 };
 
 /* class structure */
 struct _DefaultsClass
 {
 	GObjectClass parent;
+
+	/*< signals >*/
+	void (*value_changed) (Defaults* defaults); /* used to "inform" bubble
+						    ** about any changes in
+						    ** rendering and position */
 };
 
 GType defaults_get_type (void);
