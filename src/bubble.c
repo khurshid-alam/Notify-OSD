@@ -89,7 +89,7 @@ struct _BubblePrivate {
 enum
 {
 	TIMED_OUT,
-    VALUE_CHANGED,
+	VALUE_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -2210,7 +2210,7 @@ bubble_set_value (Bubble* self,
 
 	GET_PRIVATE (self)->value = value;
     
-    g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);	
+	g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);
 }
 
 gint
@@ -2417,6 +2417,9 @@ bubble_show (Bubble* self)
 void
 bubble_refresh (Bubble* self)
 {
+	if (!self || !IS_BUBBLE (self))
+		return;
+
 	/* force a redraw */
 	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
 }
