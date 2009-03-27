@@ -2951,6 +2951,15 @@ bubble_recalc_size (Bubble *self)
 	d    = self->defaults;
 	priv = GET_PRIVATE (self);
 
+	/* FIXME: a quick fix to rescale an icon (e.g. user changed font-size or
+	** DPI while a bubble is displayed, thus bubble is re-rendered and the
+	** icon needs to adapt to the new size) */
+	priv->icon_pixbuf = gdk_pixbuf_scale_simple (
+				priv->icon_pixbuf,
+                                EM2PIXELS (defaults_get_icon_size (d), d),
+                                EM2PIXELS (defaults_get_icon_size (d), d),
+				GDK_INTERP_HYPER);
+
 	bubble_determine_layout (self);
 
 	new_bubble_width =
