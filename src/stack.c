@@ -211,6 +211,9 @@ stack_purge_old_bubbles (Stack* self)
 /* fwd declaration */
 void close_handler (GObject* n, Stack*  stack);
 
+/* this is in dialog.c */
+gboolean dialog_check_actions_and_timeout (gchar **actions, gint timeout);
+
 static Bubble *sync_bubble = NULL;
 
 #include "display.c"
@@ -515,8 +518,13 @@ stack_notify_handler (Stack*                 self,
 			bubble_set_icon (bubble, icon);
 	}
 
-	if ((timeout == 0)
-	    || actions[0] != NULL)
+	log_bubble_debug (bubble, app_name,
+			  (*icon == '\0' && data != NULL) ?
+			  "..." : icon);
+
+	gboolean turn_into_dialog = dialog_check_actions_and_timeout (actions, timeout);
+
+	if (turn_into_dialog)
 		/* || bubble_is_urgent (bubble)) */
 	{
 		/* TODO: apport_report (app_name, summary, actions, timeout); */
@@ -536,10 +544,6 @@ stack_notify_handler (Stack*                 self,
 	bubble_determine_layout (bubble);
 
 	bubble_recalc_size (bubble);
-
-	log_bubble_debug (bubble, app_name,
-			  (*icon == '\0' && data != NULL) ?
-			  "..." : icon);
 
 	if (bubble_is_synchronous (bubble))
 	{

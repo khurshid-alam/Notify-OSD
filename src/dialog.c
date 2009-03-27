@@ -109,6 +109,47 @@ add_pathological_action_buttons (GtkWidget *dialog,
 	}
 }
 
+/* control if there are non-default actions requested with this
+   notification
+*/
+gboolean
+dialog_check_actions_and_timeout (gchar **actions, gint timeout)
+{
+	int i = 0;
+	gboolean turn_into_dialog = FALSE;
+
+	if (actions != NULL)
+	{
+		for (i = 0; actions[i] != NULL; i += 2)
+		{
+			if (actions[i+1] == NULL)
+			{
+				g_debug ("incorrect action callback with no label");
+				break;
+			}
+
+/*			if (! g_strcmp0 (actions[i], "default"))
+				break;
+*/
+			turn_into_dialog = TRUE;	
+			g_debug ("notification request turned into a dialog "
+				 "box, because it contains at least one action "
+				 "callback (%s: \"%s\")",
+				 actions[i], actions[i+1]);
+		}
+
+		if (timeout == 0)
+		{
+			turn_into_dialog = TRUE;
+			g_debug ("notification request turned into a dialog "
+				 "box, because of its infinite timeout");
+		}	
+	}
+
+	return turn_into_dialog;
+}
+
+
 GObject*
 bubble_show_dialog (Bubble *bubble,
 		    const char *app_name,
