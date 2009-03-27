@@ -207,15 +207,16 @@ _get_font_size_dpi (Defaults* self)
 		g_scanner_destroy (scanner);
 	}
 
-	/* update stored font-face name */
-	g_object_set (self, "text-font-face", font_face->str, NULL);
-
 	/* clean up */
 	if (string != NULL)
 		g_string_free (string, TRUE);
 
+	/* update stored font-face name and clean up */
 	if (font_face != NULL)
+	{
+		g_object_set (self, "text-font-face", font_face->str, NULL);
 		g_string_free (font_face, TRUE);
+	}
 
 	/* determine current system DPI-setting */
 	dpi = gconf_client_get_float (self->context, GCONF_FONT_DPI, &error);
