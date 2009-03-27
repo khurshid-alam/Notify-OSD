@@ -769,6 +769,7 @@ _render_icon_indicator (Bubble*  self,
 						  EM2PIXELS (defaults_get_margin_size (d), d) -
 						  blur_radius);
 			cairo_paint_with_alpha (cr, dim_glow_opacity);
+			cairo_surface_destroy (tmp);
 		break;
 
 		/* "overshoot" effect */
@@ -806,6 +807,7 @@ _render_icon_indicator (Bubble*  self,
 						  EM2PIXELS (defaults_get_margin_size (d), d) -
 						  blur_radius);
 			cairo_paint_with_alpha (cr, dim_glow_opacity);
+			cairo_surface_destroy (tmp);
 		break;
 
 		/* normal effect-less rendering */
@@ -817,7 +819,6 @@ _render_icon_indicator (Bubble*  self,
 	/* clean up */
 	cairo_destroy (glow_cr);
 	cairo_surface_destroy (glow_surface);
-	cairo_surface_destroy (tmp);
 }
 
 static void
