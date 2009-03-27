@@ -106,6 +106,10 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 
 	defaults_get_top_corner (self->defaults, &x, &y);
 
+	/* TODO: with multi-head, in focus follow mode, there may be enough
+	         space left on the top monitor
+	*/
+	   
 	Bubble *async = stack_find_bubble_on_display (self);
 	if (async != NULL)
 	{

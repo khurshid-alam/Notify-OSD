@@ -144,6 +144,9 @@ enum
 #define GCONF_UI_TREE             "/desktop/gnome/interface"
 #define GCONF_FONT_TREE           "/desktop/gnome/font_rendering"
 
+/* notify-osd settings */
+#define GCONF_MULTIHEAD_MODE "/apps/notify-osd/multihead_mode"
+
 static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 
 /*-- internal API ------------------------------------------------------------*/
@@ -2054,53 +2057,173 @@ defaults_get_pixel_per_em (Defaults* self)
 	return pixels_per_em;
 }
 
+static gboolean
+defaults_multihead_does_focus_follow (Defaults *self)
+{
+	GError *error = NULL;
+	gboolean mode = FALSE;
+
+	g_return_val_if_fail (self != NULL && IS_DEFAULTS (self), FALSE);
+
+	gchar *mode_str = gconf_client_get_string (self->context,
+						   GCONF_MULTIHEAD_MODE,
+						   &error);
+	if (mode_str != NULL)
+	{
+		if (g_strcmp0 (mode_str, "focus-follow"))
+			mode = TRUE;
+	} else if (error != NULL)
+		g_warning ("error getting multihead mode: %s\n",
+			   error->message);
+	
+	return mode;
+}
+
+static gboolean
+_window_look_for_top_panel_attributes (GdkWindow *win)
+{
+	XClassHint class_hints;
+	gboolean is_panel = FALSE;
+	GdkRectangle frame;
+	int result;
+
+	gdk_error_trap_push ();
+
+	result = XGetClassHint (GDK_DISPLAY (),
+				GDK_WINDOW_XWINDOW (win),
+				&class_hints);
+
+	if (! result || class_hints.res_class == NULL)
+		goto failed;
+
+	if (g_strcmp0 (class_hints.res_name, "gnome-panel"))
+		goto failed;
+
+	/* discard dialog windows like panel properties or the applet directory... */
+	if (gdk_window_get_type_hint (win)
+	    != GDK_WINDOW_TYPE_HINT_DOCK)
+		goto failed;
+
+	/* select only the top panel */
+	gdk_window_get_frame_extents (win, &frame);
+	if (frame.x != 0 || frame.y != 0)
+		goto failed;
+
+	if (frame.width < frame.height)
+		goto failed;
+			
+	is_panel = TRUE;
+
+failed:
+	if (class_hints.res_class)
+		XFree (class_hints.res_class);
+	if (class_hints.res_name)
+		XFree (class_hints.res_name);
+
+	gdk_error_trap_pop ();
+
+	return is_panel;
+}
+
+static GdkWindow*
+get_panel_window (void)
+{
+	GdkWindow *panel_window = NULL;
+	GList     *window;
+	GList     *iter;
+	
+	window = gdk_screen_get_window_stack (gdk_screen_get_default ());
+
+	for (iter = g_list_first (window);
+	     iter != NULL;
+	     iter = g_list_next (iter))
+	{
+		if (_window_look_for_top_panel_attributes (iter->data))
+		{
+			panel_window = iter->data;
+			break;
+		}
+	}
+	
+	g_list_free (window);
+
+	return panel_window;
+}
+
 void
 defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 {
 	GdkRectangle rect;
-	GdkScreen *screen;
-	GdkWindow *active_window;
+	GdkRectangle panel_rect = {0, 0, 0, 0};
+	GdkScreen *screen = NULL;
+	GdkWindow *active_window = NULL;
+	GdkWindow *panel_window = NULL;
 	gint mx, my;
-	int monitor, aw_monitor;
+	int monitor = 0, panel_monitor = 0, aw_monitor;
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
 	gdk_display_get_pointer (gdk_display_get_default (),
 				 &screen, &mx, &my, NULL);
-	monitor = gdk_screen_get_monitor_at_point (screen, mx, my);
-	active_window = gdk_screen_get_active_window (screen);
 
-	if (active_window != NULL)
+	panel_window = get_panel_window ();
+
+	if (panel_window != NULL)
 	{
-		aw_monitor = gdk_screen_get_monitor_at_window (screen, active_window);
-		if (monitor != aw_monitor)
-			g_debug ("choosing the monitor with the active window, not the one with the mouse cursor");
-		monitor = aw_monitor;
+		gdk_window_get_frame_extents (panel_window, &panel_rect);
+		panel_monitor = gdk_screen_get_monitor_at_window (screen, panel_window);
+		monitor = panel_monitor;
+		g_debug ("found panel (%d,%d) - %dx%d on monitor %d",
+			 panel_rect.x, panel_rect.y,
+			 panel_rect.width, panel_rect.height, monitor);
 	}
-	g_object_unref (active_window);
+
+	if (defaults_multihead_does_focus_follow (self))
+	{
+		g_debug ("multi_head_focus_follow mode");
+		monitor = gdk_screen_get_monitor_at_point (screen, mx, my);
+		active_window = gdk_screen_get_active_window (screen);
+		if (active_window != NULL)
+		{
+			aw_monitor = gdk_screen_get_monitor_at_window (screen, active_window);
+			if (monitor != aw_monitor)
+				g_debug ("choosing the monitor with the active window, not the one with the mouse cursor");
+			monitor = aw_monitor;
+
+			g_object_unref (active_window);
+		}
+	}
 
 	gdk_screen_get_monitor_geometry (screen, monitor, &rect);
-	g_debug ("selecting monitor %d at %d,%d", monitor, rect.x, rect.y);
-
-	defaults_refresh_screen_dimension_properties (self);
+	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
+		 monitor, rect.x, rect.y, rect.width, rect.height);
+	
+	/* not used anymore,
+	   defaults_refresh_screen_dimension_properties (self);
+	*/
 
 	/* Position the top left corner of the stack. */
-	g_object_get (self, "desktop-top", y, NULL);
-
-	*y  += rect.y; /* position the corner on the right monitor */
+	if (panel_window != NULL
+	    && panel_monitor == monitor)
+	{
+		/* position the corner on the selected monitor */
+		rect.y += panel_rect.y + panel_rect.height;
+	}
+	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
 	       - EM2PIXELS (defaults_get_bubble_shadow_size (self), self);
 
-	*x   = (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR) ?
-		(rect.x + rect.width /* position the corner on the right monitor */
-		 - EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
-		 - EM2PIXELS (defaults_get_bubble_horz_gap (self), self)
-		 - EM2PIXELS (defaults_get_bubble_width (self), self))
-		:
-		(rect.x /* position the corner on the right monitor */
-		 - EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
-		 + EM2PIXELS (defaults_get_bubble_horz_gap (self), self))
-		;
+	if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
+	{
+		*x = rect.x + rect.width;
+		*x -= EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+			+ EM2PIXELS (defaults_get_bubble_horz_gap (self), self)
+			+ EM2PIXELS (defaults_get_bubble_width (self), self);
+	} else {
+		*x = rect.x
+			- EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+			+ EM2PIXELS (defaults_get_bubble_horz_gap (self), self);
+	}
 
 	g_debug ("top corner at: %d, %d", *x, *y);
 }
