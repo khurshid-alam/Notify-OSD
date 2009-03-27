@@ -1639,6 +1639,7 @@ load_icon (const gchar* filename,
 						   filename,
                                                    icon_size,
 						   GTK_ICON_LOOKUP_FORCE_SVG |
+						   GTK_ICON_LOOKUP_GENERIC_FALLBACK |
 						   GTK_ICON_LOOKUP_FORCE_SIZE,
 						   &error);
 		if (error)
