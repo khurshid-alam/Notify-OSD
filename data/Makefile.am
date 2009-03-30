@@ -2,9 +2,9 @@
 SUBDIRS = icons
 
 servicedir=/usr/share/dbus-1/services
-service_DATA=org.freedesktop.Notifications.service.in
+service_DATA=org.freedesktop.Notifications.service
 
-EXTRA_DIST= $(service_DATA)
+EXTRA_DIST=org.freedesktop.Notifications.service.in
 
 org.freedesktop.Notifications.service: org.freedesktop.Notifications.service.in
 	sed "s_@LIBEXECDIR@_$(libexecdir)_" $< > $@
