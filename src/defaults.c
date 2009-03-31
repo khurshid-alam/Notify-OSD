@@ -2084,10 +2084,12 @@ defaults_multihead_does_focus_follow (Defaults *self)
 static gboolean
 _window_look_for_top_panel_attributes (GdkWindow *win)
 {
-	XClassHint class_hints;
+	XClassHint class_hints = {0, 0};
 	gboolean is_panel = FALSE;
 	GdkRectangle frame;
 	int result;
+
+	if (win == NULL) return FALSE;
 
 	gdk_error_trap_push ();
 
