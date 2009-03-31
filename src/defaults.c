@@ -167,6 +167,7 @@ _get_font_size_dpi (Defaults* self)
 		return;
 
 	/* determine current system font-name/size */
+	error = NULL;
 	string = g_string_new (gconf_client_get_string (self->context,
 							GCONF_UI_FONT_NAME,
 							&error));
@@ -222,6 +223,7 @@ _get_font_size_dpi (Defaults* self)
 	}
 
 	/* determine current system DPI-setting */
+	error = NULL;
 	dpi = gconf_client_get_float (self->context, GCONF_FONT_DPI, &error);
 	if (error)
 	{
