@@ -55,6 +55,9 @@ log_init (void)
 		g_strdup_printf ("%s/.cache/notify-osd.log", homedir);
 
 	logfile = fopen (filename, "w");
+	if (logfile == NULL)
+		g_warning ("could not open/append to %s; logging disabled",
+			   filename);
 
 	g_free (filename);
 
@@ -90,6 +93,8 @@ void
 log_bubble (Bubble *bubble, const char *app_name, const char *option)
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
+
+	if (logfile == NULL) return;
 
 	char *ts = log_create_timestamp ();
 
