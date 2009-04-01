@@ -162,7 +162,6 @@ bubble_show_dialog (Bubble *bubble,
 	GtkWidget*     body;
 	GtkWidget*     image;
 	Defaults*      d = bubble->defaults;
-	gchar*         title_text;
 	gchar*         new_title_text;
 	gchar*         body_message;
 	gchar*         new_body_message;
@@ -193,8 +192,7 @@ bubble_show_dialog (Bubble *bubble,
 			     NULL);
 
 	title = gtk_label_new (NULL);
-	title_text = filter_text (priv->title->str);
-	success = pango_parse_markup (title_text,
+	success = pango_parse_markup (priv->title->str,
 				      -1,
 				      0,
 				      NULL,
@@ -202,7 +200,6 @@ bubble_show_dialog (Bubble *bubble,
 				      NULL,
 				      &error);
 	gtk_label_set_text (GTK_LABEL (title), new_title_text);
-	g_free (title_text);
 	g_free (new_title_text);
 
 	gtk_label_set_line_wrap (GTK_LABEL (title), TRUE);
