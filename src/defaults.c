@@ -2158,28 +2158,57 @@ void
 defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 {
 	GdkRectangle rect;
-	GdkRectangle panel_rect = {0, 0, 0, 0};
-	GdkScreen *screen = NULL;
-	GdkWindow *active_window = NULL;
-	GdkWindow *panel_window = NULL;
-	gint mx, my;
-	int monitor = 0, panel_monitor = 0, aw_monitor;
+	GdkRectangle panel_rect       = {0, 0, 0, 0};
+	GdkScreen*   screen           = NULL;
+	GdkWindow*   active_window    = NULL;
+	GdkWindow*   panel_window     = NULL;
+	gint         mx;
+	gint         my;
+	gint         monitor          = 0;
+	gint         panel_monitor    = 0;
+	gint         aw_monitor;
+	gboolean     has_panel_window = FALSE;
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
 	gdk_display_get_pointer (gdk_display_get_default (),
-				 &screen, &mx, &my, NULL);
+				 &screen,
+	                         &mx,
+	                         &my,
+	                         NULL);
 
 	panel_window = get_panel_window ();
 
 	if (panel_window != NULL)
 	{
 		gdk_window_get_frame_extents (panel_window, &panel_rect);
-		panel_monitor = gdk_screen_get_monitor_at_window (screen, panel_window);
+		panel_monitor = gdk_screen_get_monitor_at_window (screen,
+		                                                  panel_window);
 		monitor = panel_monitor;
 		g_debug ("found panel (%d,%d) - %dx%d on monitor %d",
-			 panel_rect.x, panel_rect.y,
-			 panel_rect.width, panel_rect.height, monitor);
+			 panel_rect.x,
+		         panel_rect.y,
+			 panel_rect.width,
+		         panel_rect.height,
+		         monitor);
+
+		has_panel_window  = TRUE;
+	}
+	else
+	{
+		g_debug ("no panel detetected; using workarea fallback");
+
+		defaults_refresh_screen_dimension_properties (self);
+
+		/* here zero out everything since there is no panel */
+		panel_rect.x      = 0;
+		panel_rect.y      = 0;
+		panel_rect.width  = 0;
+		panel_rect.height = 0;
+		panel_monitor     = 0;
+
+		/* faking the existence of the panel */
+		has_panel_window  = TRUE;
 	}
 
 	if (defaults_multihead_does_focus_follow (self))
@@ -2189,9 +2218,17 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 		active_window = gdk_screen_get_active_window (screen);
 		if (active_window != NULL)
 		{
-			aw_monitor = gdk_screen_get_monitor_at_window (screen, active_window);
+			aw_monitor = gdk_screen_get_monitor_at_window (
+					screen,
+			                active_window);
+
 			if (monitor != aw_monitor)
-				g_debug ("choosing the monitor with the active window, not the one with the mouse cursor");
+			{
+				g_debug ("choosing the monitor with the active"
+				         " window, not the one with the mouse"
+				         " cursor");
+			}
+
 			monitor = aw_monitor;
 
 			g_object_unref (active_window);
@@ -2200,15 +2237,15 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 
 	gdk_screen_get_monitor_geometry (screen, monitor, &rect);
 	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
-		 monitor, rect.x, rect.y, rect.width, rect.height);
-	
-	/* not used anymore,
-	   defaults_refresh_screen_dimension_properties (self);
-	*/
+		 monitor,
+	         rect.x,
+	         rect.y,
+	         rect.width,
+	         rect.height);
 
 	/* Position the top left corner of the stack. */
-	if (panel_window != NULL
-	    && panel_monitor == monitor)
+	if (has_panel_window &&
+	    panel_monitor == monitor)
 	{
 		/* position the corner on the selected monitor */
 		rect.y += panel_rect.y + panel_rect.height;
