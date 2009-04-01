@@ -2061,10 +2061,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
-	gchar*         new_title;
-	gboolean       success;
 	BubblePrivate* priv;
-	GError*        error = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
@@ -2074,20 +2071,7 @@ bubble_set_title (Bubble*      self,
 	if (priv->title->len != 0)
 		g_string_free (priv->title, TRUE);
 
-	/* filter out only markup if possible */
-	success = pango_parse_markup (title,
-				      -1,
-				      0,            /* no accel-marker needed */
-				      NULL,         /* No PangoAttr needed */
-				      &new_title,
-				      NULL,         /* No accel-marker-return needed */
-				      &error);
-	if (success)
-		priv->title = g_string_new (new_title);
-	else
-		priv->title = g_string_new (title);
-
-	g_free (new_title);
+	priv->title = g_string_new (title);
 }
 
 const gchar*

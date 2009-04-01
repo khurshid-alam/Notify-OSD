@@ -162,7 +162,6 @@ bubble_show_dialog (Bubble *bubble,
 	GtkWidget*     body;
 	GtkWidget*     image;
 	Defaults*      d = bubble->defaults;
-	gchar*         new_title_text;
 	gchar*         body_message;
 	gchar*         new_body_message;
 	guint          gap = EM2PIXELS (defaults_get_margin_size (d), d);
@@ -192,15 +191,7 @@ bubble_show_dialog (Bubble *bubble,
 			     NULL);
 
 	title = gtk_label_new (NULL);
-	success = pango_parse_markup (priv->title->str,
-				      -1,
-				      0,
-				      NULL,
-				      &new_title_text,
-				      NULL,
-				      &error);
-	gtk_label_set_text (GTK_LABEL (title), new_title_text);
-	g_free (new_title_text);
+	gtk_label_set_text (GTK_LABEL (title), priv->title->str);
 
 	gtk_label_set_line_wrap (GTK_LABEL (title), TRUE);
 
