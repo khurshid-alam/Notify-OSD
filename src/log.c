@@ -50,8 +50,13 @@ log_init (void)
 	const char *homedir = g_getenv ("HOME");
 	if (!homedir)
 		homedir = g_get_home_dir ();
+	g_return_if_fail (homedir != NULL);
 
-	char *filename =
+	// Make sure the cache directory is there, if at all possible
+	char *dirname = g_strdup_printf ("%s/.cache", homedir);
+	g_mkdir_with_parents (dirname, 0700);
+
+	char *filename = 
 		g_strdup_printf ("%s/.cache/notify-osd.log", homedir);
 
 	logfile = fopen (filename, "w");
@@ -60,6 +65,7 @@ log_init (void)
 			   filename);
 
 	g_free (filename);
+	g_free (dirname);
 
 	/* discard all debug messages unless DEBUG is set */
 	if (! g_getenv ("DEBUG"))
@@ -94,7 +100,8 @@ log_bubble (Bubble *bubble, const char *app_name, const char *option)
 {
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	if (logfile == NULL) return;
+	if (logfile == NULL)
+		return;
 
 	char *ts = log_create_timestamp ();
 
