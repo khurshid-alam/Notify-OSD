@@ -2500,6 +2500,15 @@ bubble_slide_to (Bubble* self,
 				  self);
 }
 
+
+static inline gboolean
+bubble_is_composited (Bubble *bubble)
+{
+	/* no g_return_if_fail(), the caller should have already
+	   checked that */
+	return gtk_widget_is_composited (GET_PRIVATE (bubble)->widget);
+}
+
 static inline GtkWindow*
 bubble_get_window (Bubble *bubble)
 {
@@ -2582,7 +2591,7 @@ bubble_fade_in (Bubble* self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->composited
+	if (!bubble_is_composited (self)
 	    || msecs == 0)
 	{
 		bubble_show (self);
