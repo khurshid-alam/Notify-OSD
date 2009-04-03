@@ -1938,19 +1938,10 @@ bubble_new (Defaults* defaults)
 			  "screen-changed",
 			  G_CALLBACK (screen_changed_handler),
 			  NULL);
-
 	g_signal_connect (G_OBJECT (window),
 			  "composited-changed",
 			  G_CALLBACK (composited_changed_handler),
 			  this);
-
-	/* disconnect the signal if we don't want to use compositing
-	   (for UNR) */
-	if (g_getenv ("NOTIFY_OSD_MUST_NOT_USE_COMPOSITING"))
-		g_signal_handlers_disconnect_by_func (
-			G_OBJECT (window),
-			G_CALLBACK (composited_changed_handler),
-			this);
 
 	gtk_window_move (GTK_WINDOW (window), 0, 0);
 
@@ -1989,11 +1980,8 @@ bubble_new (Defaults* defaults)
 	this->priv->end_y           = 0;
 	this->priv->inc_factor      = 0.0f;
 	this->priv->delta_y         = 0;
-	if (g_getenv ("NOTIFY_OSD_MUST_NOT_USE_COMPOSITING"))
-		this->priv->composited = FALSE;
-	else
-		this->priv->composited = gdk_screen_is_composited (
-			gtk_widget_get_screen (window));
+	this->priv->composited      = gdk_screen_is_composited (
+						gtk_widget_get_screen (window));
 	this->priv->alpha           = NULL;
 	this->priv->timeline        = NULL;
 	this->priv->blurred_content = NULL;
