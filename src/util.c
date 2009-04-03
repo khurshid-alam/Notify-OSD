@@ -31,11 +31,18 @@ gchar*
 filter_text (const gchar *text)
 {
 	gchar *ret;
+	gchar *text1;
 	GRegex *regex;
 
-	regex = g_regex_new ("<(.|\n)*?>", 0, 0, NULL);
+	regex = g_regex_new ("&(?!(amp;|lt;|gt;|quot;|apos;))", 0, 0, NULL);
+	text1 = g_regex_replace (regex, text, -1, 0, "&amp;", 0, NULL);
+	g_regex_unref (regex);
 
-	ret = g_regex_replace (regex, text, -1, 0, "", 0, NULL);
+	regex = g_regex_new ("<(.|\n)*?>", 0, 0, NULL);
+	ret = g_regex_replace (regex, text1, -1, 0, "", 0, NULL);
+	g_regex_unref (regex);
+
+	g_free (text1);
 
 	return ret;
 }

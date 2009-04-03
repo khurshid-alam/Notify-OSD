@@ -22,7 +22,7 @@ test_modules_SOURCES =		                   \
 	../src/bubble-window-accessible.c          \
 	../src/bubble-window-accessible-factory.c  \
 	../src/log.c		\
-	$(EGG_MODULES)	\
+	$(EGG_MODULES)		\
 	test-modules-main.c     \
 	test-apport.c		\
 	test-dbus.c		\
@@ -32,8 +32,9 @@ test_modules_SOURCES =		                   \
 	test-observer.c		\
 	test-i18n.c		\
 	test-synchronous.c	\
-	test-dnd.c	\
-	test-stack.c
+	test-dnd.c		\
+	test-stack.c		\
+	test-text-filtering.c
 
 test_modules_CFLAGS =		\
 	-Wall -Werror -std=c99  \

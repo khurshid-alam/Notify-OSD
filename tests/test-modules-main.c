@@ -42,7 +42,7 @@ GTestSuite *test_i18n_create_test_suite (void);
 GTestSuite *test_withlib_create_test_suite (void);
 GTestSuite *test_synchronous_create_test_suite (void);
 GTestSuite *test_dnd_create_test_suite (void);
-
+GTestSuite *test_filtering_create_test_suite (void);
 
 int
 main (int    argc,
@@ -61,6 +61,7 @@ main (int    argc,
 	g_test_suite_add_suite (suite, test_defaults_create_test_suite ());
 	g_test_suite_add_suite (suite, test_observer_create_test_suite ());
 	g_test_suite_add_suite (suite, test_stack_create_test_suite ());
+	g_test_suite_add_suite (suite, test_filtering_create_test_suite ());
 	g_test_suite_add_suite (suite, test_dbus_create_test_suite ());
 	g_test_suite_add_suite (suite, test_apport_create_test_suite ());
 	g_test_suite_add_suite (suite, test_i18n_create_test_suite ());
