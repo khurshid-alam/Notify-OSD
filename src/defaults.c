@@ -2194,22 +2194,6 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 
 		has_panel_window  = TRUE;
 	}
-	else
-	{
-		g_debug ("no panel detetected; using workarea fallback");
-
-		defaults_refresh_screen_dimension_properties (self);
-
-		/* here zero out everything since there is no panel */
-		panel_rect.x      = 0;
-		panel_rect.y      = 0;
-		panel_rect.width  = 0;
-		panel_rect.height = 0;
-		panel_monitor     = 0;
-
-		/* faking the existence of the panel */
-		has_panel_window  = TRUE;
-	}
 
 	if (defaults_multihead_does_focus_follow (self))
 	{
@@ -2249,7 +2233,19 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	{
 		/* position the corner on the selected monitor */
 		rect.y += panel_rect.y + panel_rect.height;
-	}
+	} else if (! has_panel_window)
+	{
+		g_debug ("no panel detetected; using workarea fallback");
+
+		defaults_refresh_screen_dimension_properties (self);
+
+		/* workarea rectangle */
+		g_object_get (self, "desktop-left", &rect.x, NULL);
+		g_object_get (self, "desktop-top", &rect.y, NULL);
+		g_object_get (self, "desktop-width", &rect.width, NULL);
+		g_object_get (self, "desktop-height", &rect.height, NULL);
+ 	}
+
 	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
 	       - EM2PIXELS (defaults_get_bubble_shadow_size (self), self);
