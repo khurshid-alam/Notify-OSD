@@ -12,6 +12,9 @@
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
 **    David Barth <david.barth@canonical.com>
 **
+** Contributor(s):
+**    Abhishek Mukherjee <abhishek.mukher.g@gmail.com> (append fixes, rev. 280)
+**
 ** This program is free software: you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License version 3, as published
 ** by the Free Software Foundation.
