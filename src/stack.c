@@ -141,6 +141,41 @@ compare_id (gconstpointer a,
 	return result;
 }
 
+static gint
+compare_append (gconstpointer a,
+	        gconstpointer b)
+{
+	const gchar* str_1;
+	const gchar* str_2;
+	gint cmp;
+
+	if (!a || !b)
+		return -1;
+
+	if (!IS_BUBBLE (a))
+		return -1;
+	if (!IS_BUBBLE (b))
+		return 1;
+
+	if (!bubble_is_append_allowed((Bubble*) a))
+		return -1;
+	if (!bubble_is_append_allowed((Bubble*) b))
+		return 1;
+
+	str_1 = bubble_get_title ((Bubble*) a);
+	str_2 = bubble_get_title ((Bubble*) b);
+
+	cmp = g_strcmp0(str_1, str_2);
+	if (cmp < 0)
+		return -1;
+	if (cmp > 0)
+		return 1;
+
+	str_1 = bubble_get_sender ((Bubble*) a);
+	str_2 = bubble_get_sender ((Bubble*) b);
+	return g_strcmp0(str_1, str_2);
+}
+
 GList*
 find_entry_by_id (Stack* self,
 		  guint  id)
@@ -178,6 +213,27 @@ find_bubble_by_id (Stack* self,
 
 	return (Bubble*) entry->data;
 }
+
+static Bubble*
+find_bubble_for_append(Stack* self,
+		       Bubble *bubble)
+{
+	GList* entry;
+
+	/* sanity check */
+	if (!self)
+		return NULL;
+
+	entry = g_list_find_custom(self->list,
+				   (gconstpointer) bubble,
+				   compare_append);
+
+	if (!entry)
+		return NULL;
+
+	return (Bubble*) entry->data;
+}
+
 
 static void
 stack_purge_old_bubbles (Stack* self)
@@ -329,7 +385,7 @@ stack_push_bubble (Stack*  self,
 		return -1;
 
 	/* check if this is just an update */
-	if (find_bubble_by_id (self, bubble_get_id (bubble)))		
+	if (find_bubble_by_id (self, bubble_get_id (bubble)))
 	{
 		bubble_start_timer (bubble);
 		bubble_refresh (bubble);
@@ -447,6 +503,7 @@ stack_notify_handler (Stack*                 self,
 		      DBusGMethodInvocation* context)
 {
 	Bubble*    bubble     = NULL;
+	Bubble*    app_bubble = NULL;
 	GValue*      data     = NULL;
 	GValue*    compat     = NULL;
 	GdkPixbuf* pixbuf     = NULL;
@@ -460,6 +517,36 @@ stack_notify_handler (Stack*                 self,
 		bubble = bubble_new (self->defaults);
 		bubble_set_sender (bubble,
 				   dbus_g_method_get_sender (context));
+	}
+
+	if (new_bubble && hints)
+	{
+		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
+		compat = (GValue*) g_hash_table_lookup (hints, "append");
+		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+			bubble_set_append (bubble, TRUE);
+		else
+			bubble_set_append (bubble, FALSE);
+	}
+
+	if (summary)
+		bubble_set_title (bubble, summary);
+	if (body)
+		bubble_set_message_body (bubble, body);
+
+
+	if (new_bubble && bubble_is_append_allowed(bubble)) {
+		app_bubble = find_bubble_for_append(self, bubble);
+
+		/* Appending to an old bubble */
+		if (app_bubble != NULL) {
+			g_object_unref(bubble);
+			bubble = app_bubble;
+			if (body) {
+				bubble_append_message_body (bubble, "\n");
+				bubble_append_message_body (bubble, body);
+			}
+		}
 	}
 
 	if (hints)
@@ -503,16 +590,6 @@ stack_notify_handler (Stack*                 self,
 
 	if (hints)
 	{
-		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
-		compat = (GValue*) g_hash_table_lookup (hints, "append");
-		if ((G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat)) && !new_bubble)
-			bubble_set_append (bubble, TRUE);
-		else
-			bubble_set_append (bubble, FALSE);
-	}
-
-	if (hints)
-	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		compat = (GValue*) g_hash_table_lookup (hints, "icon-only");
 		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
@@ -521,24 +598,7 @@ stack_notify_handler (Stack*                 self,
 			bubble_set_icon_only (bubble, FALSE);
 	}
 
-
-	if (!new_bubble && bubble_is_append_allowed (bubble))
-	{
-		if (body)
-		{
-			bubble_append_message_body (bubble, "\n");
-			bubble_append_message_body (bubble, body);
-		}
-	}
-	else
-	{
-		if (summary)
-			bubble_set_title (bubble, summary);
-		if (body)
-			bubble_set_message_body (bubble, body);
-	}
-
-	if (hints && !bubble_is_append_allowed (bubble))
+	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "icon_data");
 		if (*icon == '\0' && data != NULL)
