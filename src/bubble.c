@@ -2864,7 +2864,6 @@ _calc_body_height (Bubble* self,
 		   gint    body_width /* requested text-width in pixels */)
 {
 	Defaults*             d;
-	cairo_surface_t*      surface;
 	cairo_t*              cr;
 	PangoFontDescription* desc    = NULL;
 	PangoLayout*          layout  = NULL;
@@ -2882,9 +2881,7 @@ _calc_body_height (Bubble* self,
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
-	/*cr = cairo_create (surface);*/
 	cr = gdk_cairo_create (priv->widget->window);
-	cairo_surface_destroy (surface);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 		return 0;
 
