@@ -170,9 +170,11 @@ bubble_show_dialog (Bubble *bubble,
 	GError*        error = NULL;
 
 	dialog = gtk_dialog_new ();
+	gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
 
 	hbox = g_object_new (GTK_TYPE_HBOX,
 			     "spacing", gap,
+			     "border-width", 12,
 			     NULL);
 
 	priv = GET_PRIVATE (bubble);
