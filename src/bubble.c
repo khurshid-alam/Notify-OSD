@@ -2910,6 +2910,45 @@ _calc_body_height (Bubble* self,
 			       priv->message_body->str,
 			       priv->message_body->len);
 
+	/* enforce the 10 line-limit, usually only triggered by appended
+	** body-message text due to the newline-characters added with each
+	** append */
+	if (pango_layout_get_line_count (layout) > 10)
+	{
+		/* get it down to 9 lines, because we add our own ...-line */
+		while (pango_layout_get_line_count (layout) > 9)
+		{
+			GString* string = NULL;
+
+			/* cut leading chunk of text up to the first newline */
+			string = g_string_new (g_strstr_len (priv->message_body->str,
+							     priv->message_body->len,
+							     "\n"));
+
+			/* also cut the first newline itself */
+			string = g_string_erase (string, 0, 1);
+
+			/* copy that stripped text back to the body-message */
+			g_string_assign (priv->message_body, string->str);
+
+			/* set the new body-message text to the pango-layout */
+			pango_layout_set_text (layout,
+					       priv->message_body->str,
+					       priv->message_body->len);
+
+			/* clean up */
+			g_string_free (string, TRUE);
+		}
+
+		/* add our own ellipsize-line */
+		g_string_prepend (priv->message_body, "...\n");
+
+		/* set final body-message text to the pango-layout again */
+		pango_layout_set_text (layout,
+				       priv->message_body->str,
+				       priv->message_body->len);
+	}
+
 	pango_layout_get_extents (layout, NULL, &log_rect);
 	body_height = PANGO_PIXELS (log_rect.height);
 
