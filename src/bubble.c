@@ -1342,10 +1342,11 @@ draw_shadow (cairo_t* cr,
 	     gint     shadow_radius,
 	     gint     corner_radius)
 {
-	cairo_surface_t* tmp_surface = NULL;
-	cairo_surface_t* new_surface = NULL;
-	cairo_pattern_t* pattern     = NULL;
-	cairo_t*         cr_surf     = NULL;
+	cairo_surface_t* tmp_surface     = NULL;
+	cairo_surface_t* new_surface     = NULL;
+	cairo_surface_t* blurred_surface = NULL;	
+	cairo_pattern_t* pattern         = NULL;
+	cairo_t*         cr_surf         = NULL;
 	cairo_matrix_t   matrix;
 
 	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
@@ -1374,17 +1375,18 @@ draw_shadow (cairo_t* cr,
 		   360.0f * (G_PI / 180.f));
 	cairo_fill (cr_surf);
 	cairo_destroy (cr_surf);
-	tmp_surface = blur_image_surface (tmp_surface, shadow_radius, 4.0f);
+	blurred_surface = blur_image_surface (tmp_surface, shadow_radius, 4.0f);
+	cairo_surface_destroy (tmp_surface);
 	new_surface = cairo_image_surface_create_for_data (
-			cairo_image_surface_get_data (tmp_surface),
-			cairo_image_surface_get_format (tmp_surface),
-			cairo_image_surface_get_width (tmp_surface) / 2,
-			cairo_image_surface_get_height (tmp_surface) / 2,
-			cairo_image_surface_get_stride (tmp_surface));
+			cairo_image_surface_get_data (blurred_surface),
+			cairo_image_surface_get_format (blurred_surface),
+			cairo_image_surface_get_width (blurred_surface) / 2,
+			cairo_image_surface_get_height (blurred_surface) / 2,
+			cairo_image_surface_get_stride (blurred_surface));
 	pattern = cairo_pattern_create_for_surface (new_surface);
 	if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
 	{
-		cairo_surface_destroy (tmp_surface);
+		cairo_surface_destroy (blurred_surface);
 		cairo_surface_destroy (new_surface);
 		return;
 	}
@@ -1434,7 +1436,7 @@ draw_shadow (cairo_t* cr,
 
 	/* clean up */
 	cairo_pattern_destroy (pattern);
-	cairo_surface_destroy (tmp_surface);
+	cairo_surface_destroy (blurred_surface);
 	cairo_surface_destroy (new_surface);
 }
 
