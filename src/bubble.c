@@ -2877,10 +2877,6 @@ _calc_body_height (Bubble* self,
 	d    = self->defaults;
 	priv = GET_PRIVATE (self);
 
-	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
-	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
-		return 0;
-
 	cr = gdk_cairo_create (priv->widget->window);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 		return 0;
