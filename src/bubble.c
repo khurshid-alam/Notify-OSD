@@ -2937,11 +2937,14 @@ bubble_recalc_size (Bubble *self)
 	** icon needs to adapt to the new size) */
 	if (priv->icon_pixbuf)
 	{
-		priv->icon_pixbuf = gdk_pixbuf_scale_simple (
+		GdkPixbuf *pixbuf;
+		pixbuf = gdk_pixbuf_scale_simple (
 					priv->icon_pixbuf,
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
 					GDK_INTERP_HYPER);
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = pixbuf;
 	}
 
 	bubble_determine_layout (self);
