@@ -516,10 +516,12 @@ stack_notify_handler (Stack*                 self,
 	bubble = find_bubble_by_id (self, id);
 	if (bubble == NULL)
 	{
+		gchar *sender;
 		new_bubble = TRUE;
 		bubble = bubble_new (self->defaults);
-		bubble_set_sender (bubble,
-				   dbus_g_method_get_sender (context));
+		sender = dbus_g_method_get_sender (context);
+		bubble_set_sender (bubble, sender);
+		g_free (sender);
 	}
 
 	if (new_bubble && hints)
