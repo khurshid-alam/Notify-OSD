@@ -125,7 +125,7 @@ log_bubble (Bubble *bubble, const char *app_name, const char *option)
 void
 log_bubble_debug (Bubble *bubble, const char *app_name, const char *icon)
 {
-	g_return_if_fail (IS_BUBBLE (bubble));
+	g_return_if_fail (bubble != NULL && IS_BUBBLE (bubble));
 
 	char *ts = log_create_timestamp ();
 
