@@ -87,6 +87,7 @@ struct _BubblePrivate {
 	gint             body_height;
 	gboolean         append;
 	gboolean         icon_only;
+	gint		 future_height;
 };
 
 enum
@@ -2800,6 +2801,15 @@ bubble_get_height (Bubble *self)
 }
 
 gint
+bubble_get_future_height (Bubble *self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return 0;
+
+	return GET_PRIVATE (self)->future_height;
+}
+
+gint
 _calc_title_height (Bubble* self,
 		    gint    title_width /* requested text-width in pixels */)
 {
@@ -3139,6 +3149,7 @@ bubble_recalc_size (Bubble *self)
 			g_warning ("bubble_recalc_size(): WARNING, no layout!!!\n");
 		break;
 	}
+	priv->future_height = new_bubble_height;
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
 
 	update_shape (self);

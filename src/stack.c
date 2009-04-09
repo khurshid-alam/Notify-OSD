@@ -655,6 +655,13 @@ stack_notify_handler (Stack*                 self,
 		else
 			log_bubble (bubble, app_name, "");
 
+		/* make sure the sync. bubble is positioned correctly
+		   even for the append case
+		*/
+		if (sync_bubble != NULL
+		    && bubble_is_visible (sync_bubble))
+			stack_display_position_sync_bubble (self, sync_bubble);
+
 		/* update the layout of the stack;
 		 * this will also open the new bubble */
 		stack_layout (self);

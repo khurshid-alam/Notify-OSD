@@ -71,13 +71,35 @@ stack_is_at_top_corner (Stack *self, Bubble *bubble)
 	return y1 == y2;
 }
 
+
 static void
-stack_display_sync_bubble (Stack *self, Bubble *bubble)
+stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 {
 	Defaults* d;
 	gint      y      = 0;
 	gint      x      = 0;
 
+	defaults_get_top_corner (self->defaults, &x, &y);
+
+	/* TODO: with multi-head, in focus follow mode, there may be enough
+	         space left on the top monitor
+	*/
+	   
+	Bubble *async = stack_find_bubble_on_display (self);
+	if (async != NULL)
+	{
+		d = self->defaults;
+		y += bubble_get_future_height (async);
+		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
+		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	}
+
+	bubble_move (bubble, x, y);
+}
+
+static void
+stack_display_sync_bubble (Stack *self, Bubble *bubble)
+{
 	g_return_if_fail (IS_STACK (self));
 	g_return_if_fail (IS_BUBBLE (bubble));
 
@@ -104,22 +126,7 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 		return;
 	}
 
-	defaults_get_top_corner (self->defaults, &x, &y);
-
-	/* TODO: with multi-head, in focus follow mode, there may be enough
-	         space left on the top monitor
-	*/
-	   
-	Bubble *async = stack_find_bubble_on_display (self);
-	if (async != NULL)
-	{
-		d = self->defaults;
-		y += bubble_get_height (async);
-		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
-		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	}
-
-	bubble_move (bubble, x, y);
+	stack_display_position_sync_bubble (self, bubble);
 
 	bubble_fade_in (bubble, 100);
 

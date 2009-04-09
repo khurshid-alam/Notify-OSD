@@ -188,6 +188,9 @@ bubble_get_position (Bubble* self,
 gint
 bubble_get_height (Bubble *self);
 
+gint
+bubble_get_future_height (Bubble *self);
+
 void
 bubble_recalc_size (Bubble *self);
 
