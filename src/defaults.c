@@ -2072,7 +2072,7 @@ defaults_multihead_does_focus_follow (Defaults *self)
 						   &error);
 	if (mode_str != NULL)
 	{
-		if (g_strcmp0 (mode_str, "focus-follow"))
+		if (! g_strcmp0 (mode_str, "focus-follow"))
 			mode = TRUE;
 	} else if (error != NULL)
 		g_warning ("error getting multihead mode: %s\n",
