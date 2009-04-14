@@ -29,5 +29,35 @@ sleep 2
 notify-send "Very russian" "Съешь ещё этих мягких французских булок, да выпей чаю." -i dialog-info
 sleep 2
 notify-send "More from Germany" "Oje, Qualm verwölkt Dix zig Farbtriptychons." -i gnome-globe
-
-
+sleep 2
+notify-send "Filter the world 1/3" "<a href=\"http://www.ubuntu.com/\">Ubuntu</a>
+Don't rock the boat
+Kick him while he&apos;s down
+\"Film spectators are quiet vampires.\"
+Peace &amp; Love
+War & Peace
+Law &#38; Order
+Love &#x26; War
+7 > 3
+7 &gt; 3"
+sleep 2
+notify-send "Filter the world 2/3" "7 &#62; 3
+7 &#x3e; 3
+14 < 42
+14 &lt; 42
+14 &#60; 42
+14 &#x3c; 42
+><
+<>
+< this is not a tag >
+<i>Not italic</i>"
+sleep 2
+notify-send "Filter the world 3/3" "<b>So broken</i>
+<img src=\"foobar.png\" />Nothing to see
+<u>Test</u>
+<b>Bold</b>
+<span>Span</span>
+<s>E-flat</s>
+<sub>Sandwich</sub>
+<small>Fry</small>
+<tt>Testing tag</tt>"

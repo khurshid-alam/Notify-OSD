@@ -2081,10 +2081,7 @@ void
 bubble_set_message_body (Bubble*      self,
 			 const gchar* body)
 {
-	gboolean       success;
-	gchar*         new_body;
 	gchar*         text;
-	GError*        error = NULL;
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
@@ -2097,17 +2094,9 @@ bubble_set_message_body (Bubble*      self,
 
 	/* filter out any HTML/markup if possible */
 	text = filter_text (body);
-    	success = pango_parse_markup (text,
-				      -1,
-				      0,    /* no accel-marker needed */
-				      NULL, /* no PangoAttr needed */
-				      &new_body,
-				      NULL, /* no accel-marker-return needed */
-				      &error);
 
-	priv->message_body = g_string_new (new_body);
+	priv->message_body = g_string_new (text);
 	g_free (text);
-	g_free (new_body);
 }
 
 const gchar*
