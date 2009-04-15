@@ -16,7 +16,7 @@ icons_DATA =  \
 	notification-display-brightness.svg \
 	notification-keyboard-brightness.svg \
 	notification-message-email.svg \
-	notification-message-IM.svg \
+	notification-message-im.svg \
 	notification-network-ethernet-connected.svg \
 	notification-network-ethernet-diconnected.svg \
 	notification-network-wireless.svg \
