@@ -26,24 +26,81 @@
  *******************************************************************************/
 
 #include <glib.h>
+#include <pango/pango.h>
+
+#define CHARACTER_LT_REGEX            "&(lt;|#60;|#x3c;)"
+#define CHARACTER_GT_REGEX            "&(gt;|#62;|#x3e;)"
+#define CHARACTER_AMP_REGEX           "&(amp;|#38;|#x26;)"
+#define CHARACTER_APOS_REGEX          "&apos;"
+#define CHARACTER_QUOT_REGEX          "&quot;"
+
+#define TAG_MATCH_REGEX     "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>(.*?)</\\1>|<(img|span|a)[^>]/>|<(img)[^>]*>"
+#define TAG_REPLACE_REGEX   "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>|</(b|i|u|big|a|img|span|s|sub|small|tt)>"
+
+
+static gchar*
+strip_html (const gchar *text, const gchar *match_regex, const gchar* replace_regex)
+{
+	GRegex   *regex;
+	gchar    *ret;
+	gboolean  match = FALSE;
+	GMatchInfo *info = NULL;
+
+	regex = g_regex_new (match_regex, G_REGEX_DOTALL | G_REGEX_OPTIMIZE, 0, NULL);
+	match = g_regex_match (regex, text, 0, &info);
+	g_regex_unref (regex);
+
+	if (match) {
+		regex = g_regex_new (replace_regex, G_REGEX_DOTALL | G_REGEX_OPTIMIZE, 0, NULL);
+		ret = g_regex_replace (regex, text, -1, 0, "", 0, NULL);
+		g_regex_unref (regex);
+	} else {
+		ret = g_strdup (text);
+	}
+
+	return ret;
+}
+
+static gchar*
+replace_markup (const gchar *text, const gchar *match_regex, const gchar *replace_text)
+{
+	GRegex *regex;
+	gchar  *ret;
+
+	regex = g_regex_new (match_regex, G_REGEX_DOTALL | G_REGEX_OPTIMIZE, 0, NULL);
+	ret = g_regex_replace (regex, text, -1, 0, replace_text, 0, NULL);
+	g_regex_unref (regex);
+
+	return ret;
+}
 
 gchar*
 filter_text (const gchar *text)
 {
-	gchar *ret;
 	gchar *text1;
-	GRegex *regex;
+	gchar *text2;
+	gchar *text3;
+	gchar *text4;
+	gchar *text5;
+	gchar *text6;
 
-	regex = g_regex_new ("&(?!(amp;|lt;|gt;|quot;|apos;))", 0, 0, NULL);
-	text1 = g_regex_replace (regex, text, -1, 0, "&amp;", 0, NULL);
-	g_regex_unref (regex);
+	text1 = strip_html (text, TAG_MATCH_REGEX, TAG_REPLACE_REGEX);
 
-	regex = g_regex_new ("<(.|\n)*?>", 0, 0, NULL);
-	ret = g_regex_replace (regex, text1, -1, 0, "", 0, NULL);
-	g_regex_unref (regex);
-
+	text2 = replace_markup (text1, CHARACTER_AMP_REGEX, "&");
 	g_free (text1);
 
-	return ret;
+	text3 = replace_markup (text2, CHARACTER_LT_REGEX, "<");
+	g_free (text2);
+
+	text4 = replace_markup (text3, CHARACTER_GT_REGEX, ">");
+	g_free (text3);
+
+	text5 = replace_markup (text4, CHARACTER_APOS_REGEX, "'");
+	g_free (text4);
+
+	text6 = replace_markup (text5, CHARACTER_QUOT_REGEX, "\"");
+	g_free (text5);
+
+	return text6;
 }
 
