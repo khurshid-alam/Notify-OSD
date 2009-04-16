@@ -2132,6 +2132,59 @@ bubble_set_icon (Bubble*      self,
 						  d));
 }
 
+static GdkPixbuf *
+scale_pixbuf (const GdkPixbuf *pixbuf, gint size)
+{
+	GdkPixbuf *scaled_icon;
+	GdkPixbuf *new_icon;
+	gint w, h, dest_x, dest_y, new_width, new_height, max_edge;
+
+	dest_x = dest_y = 0;
+
+	w = gdk_pixbuf_get_width (pixbuf);
+	h = gdk_pixbuf_get_height (pixbuf);
+
+	max_edge = MAX (w, h);
+
+	new_width = size * (w / max_edge);
+	new_height = size * (h / max_edge);
+
+	/* Scale the pixbuf down, preserving the aspect ratio */
+	scaled_icon = gdk_pixbuf_scale_simple (pixbuf,
+					       new_width,
+					       new_height,
+					       GDK_INTERP_HYPER);
+
+	if (w == h)
+		return scaled_icon;
+
+	/* Create a square pixbuf with an alpha channel */
+	new_icon = gdk_pixbuf_new (gdk_pixbuf_get_colorspace (scaled_icon),
+				   TRUE,
+				   gdk_pixbuf_get_bits_per_sample (scaled_icon),
+				   size, size);
+
+	/* Clear the pixbuf so it is transparent */
+	gdk_pixbuf_fill (new_icon, 0x00000000);
+
+	/* Center the rectangular pixbuf inside the transparent square */
+	if (new_width > new_height)
+		dest_y = (new_width - new_height) / 2;
+	else
+		dest_x = (new_height - new_width) / 2;
+
+	/* Copy the rectangular pixbuf into the new pixbuf at a centered position */
+	gdk_pixbuf_copy_area (scaled_icon,
+			      0, 0,
+			      gdk_pixbuf_get_width (scaled_icon),
+			      gdk_pixbuf_get_height (scaled_icon),
+			      new_icon,
+			      dest_x, dest_y);
+	g_object_unref (scaled_icon);
+
+	return new_icon;
+}
+
 void
 bubble_set_icon_from_pixbuf (Bubble*    self,
 			     GdkPixbuf* pixbuf)
@@ -2158,16 +2211,12 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 
 	d = self->defaults;
 
-	if (width != defaults_get_icon_size (d))
+	if (width != defaults_get_icon_size (d) ||
+            height != defaults_get_icon_size (d))
 	{
-		if (width != height)
-			g_warning ("non-square pixmap");
-		/* TODO: improve scaling for non-square pixmaps */
+		scaled = scale_pixbuf (pixbuf, EM2PIXELS (defaults_get_icon_size (d), d));
+		g_object_unref (pixbuf);
 
-		scaled = gdk_pixbuf_scale_simple (pixbuf,
-						  EM2PIXELS (defaults_get_icon_size (d), d),
-						  EM2PIXELS (defaults_get_icon_size (d), d),
-						  GDK_INTERP_HYPER);
 		pixbuf = scaled;
 	}
 
