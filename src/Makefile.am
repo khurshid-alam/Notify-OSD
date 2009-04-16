@@ -75,6 +75,7 @@ notify_osd_LDADD =			\
 notify_osd_CFLAGS = 		\
 	-DDATADIR=\""$(datadir)"\" \
 	$(GTK_CFLAGS) 		\
+	$(GLIB_CFLAGS) 		\
 	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	$(WNCK_CFLAGS)		\
