@@ -3266,11 +3266,9 @@ bubble_determine_layout (Bubble* self)
 	priv->layout = LAYOUT_NONE;
 
 	/* icon-only layout-case, e.g. eject */
-	if (priv->icon_only)
+	if (priv->icon_only && priv->icon_pixbuf != NULL)
 	{
 		priv->layout = LAYOUT_ICON_ONLY;
-		if (priv->icon_pixbuf == NULL)
-			priv->layout = LAYOUT_NONE;
 		return;
 	}
 
@@ -3278,8 +3276,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             >= 0) &&
-	    !(priv->icon_only))
+	    (priv->value             >= 0))
 	{
 		priv->layout = LAYOUT_ICON_INDICATOR;
 		return;
@@ -3289,8 +3286,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1) &&
-	    !(priv->icon_only))
+	    (priv->value             == -1))
 	{
 		priv->layout = LAYOUT_ICON_TITLE;
 		return;
@@ -3300,8 +3296,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1) &&
-	    !(priv->icon_only))
+	    (priv->value             == -1))
 	{
 		priv->layout = LAYOUT_ICON_TITLE_BODY;
 		return;
@@ -3311,8 +3306,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1) &&
-	    !(priv->icon_only))
+	    (priv->value             == -1))
 	{
 		priv->layout = LAYOUT_TITLE_BODY;
 		return;
@@ -3322,8 +3316,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1) &&
-	    !(priv->icon_only))
+	    (priv->value             == -1))
 	{
 		priv->layout = LAYOUT_TITLE_ONLY;
 		return;
