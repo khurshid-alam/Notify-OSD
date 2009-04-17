@@ -52,7 +52,7 @@ AM_PATH_GTK_2_0
 
 
 PKG_CHECK_MODULES(notify_osd, 
-		  gtk+-2.0 >= 2.6)
+		  gtk+-2.0 >= 2.14)
 AC_SUBST(NOTIFY_OSD_CFLAGS)
 AC_SUBST(NOTIFY_OSD_LIBS)
 # example python module
