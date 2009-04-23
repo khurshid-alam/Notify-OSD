@@ -37,6 +37,7 @@ static const char* bubble_window_accessible_get_description (AtkObject*         
 static void        bubble_window_real_initialize            (AtkObject*                   obj,
                                                              gpointer                     data);
 static void        atk_value_interface_init                 (AtkValueIface*               iface);
+static void        atk_text_interface_init                  (AtkTextIface*                iface);
 static void        bubble_window_get_current_value          (AtkValue*                    obj,
                                                              GValue*                      value);
 static void        bubble_window_get_maximum_value          (AtkValue*                    obj,
@@ -47,6 +48,9 @@ static void        bubble_value_changed_event               (Bubble*            
                                                              gint                         value,
                                                              AtkObject                   *obj);
 
+static gchar*      bubble_window_get_text                    (AtkText                    *obj,
+															  gint                        start_offset,
+															  gint                        end_offset);
 static void* bubble_window_accessible_parent_class;
 
 GType
@@ -76,6 +80,13 @@ bubble_window_accessible_get_type (void)
             (GInterfaceFinalizeFunc) NULL,
             NULL
         };
+
+        const GInterfaceInfo atk_text_info = 
+        {
+            (GInterfaceInitFunc) atk_text_interface_init,
+            (GInterfaceFinalizeFunc) NULL,
+            NULL
+        };
         
         /*
          * Figure out the size of the class and instance
@@ -100,6 +111,8 @@ bubble_window_accessible_get_type (void)
                                        "BubbleWindowAccessible", &tinfo, 0);
 
         g_type_add_interface_static (type, ATK_TYPE_VALUE, &atk_value_info);
+
+        g_type_add_interface_static (type, ATK_TYPE_TEXT, &atk_text_info);
     }
     
     return type;
@@ -113,6 +126,14 @@ atk_value_interface_init (AtkValueIface* iface)
     iface->get_current_value = bubble_window_get_current_value;
     iface->get_maximum_value = bubble_window_get_maximum_value;
     iface->get_minimum_value = bubble_window_get_minimum_value;
+}
+
+static void
+atk_text_interface_init (AtkTextIface* iface)
+{
+    g_return_if_fail (iface != NULL);
+
+	iface->get_text = bubble_window_get_text;
 }
 
 static void
@@ -285,4 +306,35 @@ bubble_value_changed_event (Bubble*    bubble,
                             AtkObject* obj)
 {
     g_object_notify (G_OBJECT (obj), "accessible-value");
+}
+
+static gchar*
+bubble_window_get_text (AtkText *obj,
+						gint    start_offset,
+						gint    end_offset)
+{
+    GtkAccessible* accessible;
+ 	Bubble*        bubble;
+	const gchar*   body_text;
+
+ 	if (!BUBBLE_WINDOW_IS_ACCESSIBLE (obj))
+		return "";
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return "";
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	body_text = bubble_get_message_body (bubble);
+
+	if (start_offset > strlen(body_text))
+		start_offset = strlen(body_text);
+
+	if (end_offset > strlen(body_text) || end_offset == -1)
+		end_offset = strlen(body_text);
+
+	return g_strndup (body_text + start_offset, end_offset - start_offset);
+	
 }

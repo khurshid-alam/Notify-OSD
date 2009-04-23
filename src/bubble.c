@@ -94,6 +94,8 @@ enum
 {
 	TIMED_OUT,
 	VALUE_CHANGED,
+	MESSAGE_BODY_REPLACED,
+	MESSAGE_BODY_CONCAT,
 	LAST_SIGNAL
 };
 
@@ -1903,6 +1905,30 @@ bubble_class_init (BubbleClass* klass)
 		G_TYPE_NONE,
 		1,
         G_TYPE_INT);
+
+    g_bubble_signals[MESSAGE_BODY_REPLACED] = g_signal_new (
+		"message-body-replaced",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, message_body_replaced),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__STRING,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_STRING);
+
+    g_bubble_signals[MESSAGE_BODY_CONCAT] = g_signal_new (
+		"message-body-concat",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, message_body_concat),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__STRING,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_STRING);
 }
 
 /*-- public API --------------------------------------------------------------*/
