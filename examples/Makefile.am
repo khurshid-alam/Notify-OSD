@@ -1,136 +1,85 @@
-noinst_PROGRAMS = icon-only		\
-		  sync-icon-only	\
-		  icon-summary-body	\
-		  icon-summary		\
-		  icon-value		\
-		  summary-body		\
-		  summary-only		\
-		  append-hint-example	\
-		  update-notifications
+noinst_PROGRAMS = icon-only		  \
+		  sync-icon-only	  \
+		  icon-summary-body	  \
+		  icon-summary		  \
+		  icon-value		  \
+		  summary-body		  \
+		  summary-only		  \
+		  append-hint-example	  \
+		  update-notifications	  \
+		  icon-only.exe		  \
+		  sync-icon-only.exe	  \
+		  icon-summary-body.exe	  \
+		  icon-summary.exe	  \
+		  icon-value.exe	  \
+		  summary-body.exe	  \
+		  summary-only.exe	  \
+		  append-hint-example.exe \
+		  update-notifications.exe
 
-example_SOURCES = example-util.c	\
-		  icon-only.c		\
-		  sync-icon-only.c	\
-		  icon-summary-body.c	\
-		  icon-summary.c	\
-		  icon-value.c		\
-		  summary-body.c	\
-		  summary-only.c	\
-		  append-hint-example.c	\
-		  update-notifications.c
+icon_only_SOURCES		 = example-util.c icon-only.c
+sync_icon_only_SOURCES		 = sync-icon-only.c example-util.c
+icon_summary_body_SOURCES	 = icon-summary-body.c example-util.c
+icon_summary_SOURCES		 = icon-summary.c example-util.c
+icon_value_SOURCES		 = icon-value.c example-util.c
+summary_body_SOURCES		 = summary-body.c example-util.c
+summary_only_SOURCES		 = summary-only.c example-util.c
+append_hint_example_SOURCES	 = append-hint-example.c example-util.c
+update_notifications_SOURCES	 = update-notifications.c example-util.c
+icon_only_exe_SOURCES		 = example-util.cs icon-only.cs
+sync_icon_only_exe_SOURCES	 = sync-icon-only.cs example-util.cs
+icon_summary_body_exe_SOURCES	 = icon-summary-body.cs example-util.cs
+icon_summary_exe_SOURCES	 = icon-summary.cs example-util.cs
+icon_value_exe_SOURCES		 = icon-value.cs example-util.cs
+summary_body_exe_SOURCES	 = summary-body.cs example-util.cs
+summary_only_exe_SOURCES	 = summary-only.cs example-util.cs
+append_hint_example_exe_SOURCES	 = append-hint-example.cs example-util.cs
+update_notifications_exe_SOURCES = update-notifications.cs example-util.cs
 
-example_CFLAGS = -O0		\
-		 -ggdb		\
-		 -Wall		\
-		 -Werror	\
-		 `pkg-config --cflags libnotify glib-2.0`
+icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+sync_icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+icon_summary_body_CFLAGS    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+icon_summary_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+icon_value_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+summary_body_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+summary_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+append_hint_example_CFLAGS  = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+update_notifications_CFLAGS = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c icon-only.c -o icon-only
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c sync-icon-only.c -o sync-icon-only
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c icon-summary-body.c -o icon-summary-body
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c icon-summary.c -o icon-summary
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c icon-value.c -o icon-value
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c summary-body.c -o summary-body
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c summary-only.c -o summary-only
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c append-hint-example.c -o append-hint-example
-gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c update-notifications.c -o update-notifications
+icon_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+sync_icon_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+icon_summary_body_LDFLAGS    = `pkg-config --libs libnotify glib-2.0`
+icon_summary_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+icon_value_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+summary_body_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+summary_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
+append_hint_example_LDFLAGS  = `pkg-config --libs libnotify glib-2.0`
+update_notifications_LDFLAGS = `pkg-config --libs libnotify glib-2.0`
 
-notify_osddir = $(libexecdir)
+icon-only.exe: $(icon_only_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(icon_only_exe_SOURCES) -out:icon-only.exe
 
-notify_osd_PROGRAMS = \
-	notify-osd		\
-	$(NULL)
+sync-icon-only.exe: $(sync_icon_only_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(sync_icon_only_exe_SOURCES) -out:sync-icon-only.exe
 
-notify_osd_sources =		\
-	bubble.c		\
-	defaults.c		\
-	main.c			\
-	observer.c		\
-	stack.c			\
-	dbus.c			\
-	dnd.c			\
-	apport.c		\
-	log.c			\
-	util.c			\
-	bubble-window.c		\
-	bubble-window-accessible.c \
-	bubble-window-accessible-factory.c \
-	../egg/egg-fixed.c		\
-	../egg/egg-units.c		\
-	../egg/egg-timeline.c		\
-	../egg/egg-timeout-pool.c	\
-	../egg/egg-alpha.c		\
-	../egg/egg-hack.c		\
-	$(NULL)
+icon-summary-body.exe: $(icon_summary_body_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(icon_summary_body_exe_SOURCES) -out:icon-summary-body.exe
 
-notify_osd_headers =		\
-	bubble.h		\
-	defaults.h		\
-	observer.h		\
-	stack.h			\
-	stack-glue.h		\
-	dbus.h			\
-	dnd.h			\
-	log.h			\
-	apport.h		\
-	util.h			\
-	bubble-window.h \
-	bubble-window-accessible.h \
-	bubble-window-accessible-factory.h \
-	../egg/egg-fixed.h		\
-	../egg/egg-units.h		\
-	../egg/egg-timeline.h		\
-	../egg/egg-timeout-pool.h	\
-	../egg/egg-alpha.h		\
-	../egg/egg-debug.h		\
-	../egg/egg-hack.h		\
-	$(NULL)
+icon-summary.exe: $(icon_summary_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(icon_summary_exe_SOURCES) -out:icon-summary.exe
 
-notify_osd_SOURCES =		\
-	$(notify_osd_sources)	\
-	$(notify_osd_headers)	\
-	$(NULL)
+icon-value.exe: $(icon_value_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(icon_value_exe_SOURCES) -out:icon-value.exe
 
-notify_osd_LDADD =			\
-	$(X_LIBS)		\
-	$(GLIB_LIBS) 		\
-	$(GCONF_LIBS) 		\
-	$(GTK_LIBS) 		\
-	$(NOTIFY_OSD_LIBS)	\
-	$(DBUS_LIBS)     	\
-	$(WNCK_LIBS)     	\
-	$(NULL)
+summary-body.exe: $(summary_body_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(summary_body_exe_SOURCES) -out:summary-body.exe
 
-notify_osd_CFLAGS = 		\
-	-DDATADIR=\""$(datadir)"\" \
-	$(GTK_CFLAGS) 		\
-	$(NOTIFY_OSD_CFLAGS)	\
-	$(GLIB_CFLAGS) 		\
-	$(GCONF_CFLAGS)		\
-	$(DBUS_CFLAGS)		\
-	$(WNCK_CFLAGS)		\
-	$(NULL)
+summary-only.exe: $(summary_only_exe_SOURCES)
+	gmcs -pkg:notify-sharp $(summary_only_exe_SOURCES) -out:summary-only.exe
 
-notify_osd_LDFLAGS = 		\
-	-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions \
-	$(NULL)
+append-hint-example.exe: $(append_hint_example_exe_SOURCES)
+	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(append_hint_example_exe_SOURCES) -out:append-hint-example.exe
 
-# this comes from distutils.sysconfig.get_config_var('LINKFORSHARED')
+update-notifications.exe: $(update_notifications_exe_SOURCES)
+	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(update_notifications_exe_SOURCES) -out:update-notifications.exe
 
-stack-glue.h: notify-osd.xml Makefile
-	$(LIBTOOL) --mode=execute $(DBUS_GLIB_BIN)/dbus-binding-tool --prefix=stack --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES =			\
-	stack-glue.h
-
-EXTRA_DIST =			\
-	notify-osd.xml		\
-	dialog.c		\
-	display.c		\
-	$(NULL)
-
-CLEANFILES = 			\
-	$(NULL)
-
-dist-hook:
-	cd $(distdir) ; rm -f $(CLEANFILES)

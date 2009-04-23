@@ -1,5 +1,5 @@
 
-SUBDIRS = src tests data
+SUBDIRS = src tests data examples
 
 test:		check
 tests:		check
