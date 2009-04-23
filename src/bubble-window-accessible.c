@@ -48,10 +48,24 @@ static void        bubble_value_changed_event               (Bubble*            
                                                              gint                         value,
                                                              AtkObject                   *obj);
 
-static gchar*      bubble_window_get_text                    (AtkText                    *obj,
-															  gint                        start_offset,
-															  gint                        end_offset);
-static gint        bubble_window_get_character_count         (AtkText                    *obj);
+static gchar*      bubble_window_get_text                   (AtkText                     *obj,
+															 gint                         start_offset,
+															 gint                         end_offset);
+static gint        bubble_window_get_character_count        (AtkText                     *obj);
+static gint        bubble_window_get_n_selections           (AtkText                     *obj);
+static gchar*      bubble_window_get_selection              (AtkText                     *obj,
+															 gint                         selection_num,
+															 gint                        *start_pos,
+															 gint                        *end_pos);
+static gboolean    bubble_window_add_selection              (AtkText                     *obj,
+															 gint                         start_pos,
+															 gint                         end_pos);
+static gboolean    bubble_window_remove_selection           (AtkText                     *obj,
+															 gint                         selection_num);
+static gboolean    bubble_window_set_selection              (AtkText                     *obj,
+															 gint                         selection_num,
+															 gint                         start_pos,
+															 gint                         end_pos);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -128,6 +142,7 @@ atk_value_interface_init (AtkValueIface* iface)
     iface->get_current_value = bubble_window_get_current_value;
     iface->get_maximum_value = bubble_window_get_maximum_value;
     iface->get_minimum_value = bubble_window_get_minimum_value;
+
 }
 
 static void
@@ -138,6 +153,11 @@ atk_text_interface_init (AtkTextIface* iface)
 	iface->get_text = bubble_window_get_text;
 	iface->get_character_count = bubble_window_get_character_count;
 
+	iface->get_n_selections = bubble_window_get_n_selections;
+	iface->get_selection = bubble_window_get_selection;
+	iface->add_selection = bubble_window_add_selection;
+	iface->remove_selection = bubble_window_remove_selection;
+	iface->set_selection = bubble_window_set_selection;
 }
 
 static void
@@ -321,13 +341,12 @@ bubble_window_get_text (AtkText *obj,
  	Bubble*        bubble;
 	const gchar*   body_text;
 
- 	if (!BUBBLE_WINDOW_IS_ACCESSIBLE (obj))
-		return "";
+    g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), NULL);
  	
  	accessible = GTK_ACCESSIBLE (obj);
     
     if (accessible->widget == NULL)
-        return "";
+        return NULL;
  	
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
@@ -359,4 +378,44 @@ bubble_window_get_character_count (AtkText *obj)
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
 	return strlen(bubble_get_message_body (bubble));
+}
+
+static gint
+bubble_window_get_n_selections (AtkText *obj)
+{
+	return 0;
+}
+
+static gchar*
+bubble_window_get_selection (AtkText *obj,
+                             gint    selection_num,
+                             gint    *start_pos,
+                             gint    *end_pos)
+{
+	*start_pos = *end_pos = 0;
+	return NULL;
+}
+
+static gboolean
+bubble_window_add_selection (AtkText *obj,
+							 gint    start_pos,
+							 gint    end_pos)
+{
+	return FALSE;
+}
+
+static gboolean
+bubble_window_remove_selection (AtkText *obj,
+								gint    selection_num)
+{
+	return FALSE;
+}
+
+static gboolean
+bubble_window_set_selection (AtkText *obj,
+							 gint    selection_num,
+							 gint    start_pos,
+							 gint    end_pos)
+{
+	return FALSE;
 }
