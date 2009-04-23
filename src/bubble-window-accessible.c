@@ -47,6 +47,12 @@ static void        bubble_window_get_minimum_value          (AtkValue*          
 static void        bubble_value_changed_event               (Bubble*                      bubble,
                                                              gint                         value,
                                                              AtkObject                   *obj);
+static void        bubble_message_body_deleted_event        (Bubble*                      bubble,
+                                                             const gchar*                 text,
+                                                             AtkObject*                   obj);
+static void        bubble_message_body_inserted_event       (Bubble*                      bubble,
+                                                             const gchar*                 text,
+                                                             AtkObject*                   obj);
 
 static gchar*      bubble_window_get_text                   (AtkText                     *obj,
 															 gint                         start_offset,
@@ -208,6 +214,16 @@ bubble_window_real_initialize (AtkObject* obj,
                       G_CALLBACK (bubble_value_changed_event),
                       obj);
 
+    g_signal_connect (bubble,
+                      "message-body-deleted",
+                      G_CALLBACK (bubble_message_body_deleted_event),
+                      obj);
+
+    g_signal_connect (bubble,
+                      "message-body-inserted",
+                      G_CALLBACK (bubble_message_body_inserted_event),
+                      obj);
+
 }
 
 AtkObject*
@@ -335,6 +351,31 @@ bubble_value_changed_event (Bubble*    bubble,
     g_object_notify (G_OBJECT (obj), "accessible-value");
 }
 
+static void
+bubble_message_body_deleted_event (Bubble*      bubble,
+                                   const gchar* text,
+                                   AtkObject*   obj)
+{
+    /* Not getting very fancy here, delete is always complete */
+    g_signal_emit_by_name (
+        obj, "text_changed::delete", 0, g_utf8_strlen (text, -1));    
+}
+
+static void
+bubble_message_body_inserted_event (Bubble*      bubble,
+                                  const gchar* text,
+                                  AtkObject*   obj)
+{
+    const gchar* message_body;
+
+    message_body = bubble_get_message_body (bubble);
+
+    g_signal_emit_by_name (
+        obj, "text_changed::insert",
+        g_utf8_strlen (message_body, -1) - g_utf8_strlen (text, -1),
+        g_utf8_strlen (message_body, -1));    
+}
+
 static gchar*
 bubble_window_get_text (AtkText *obj,
 						gint    start_offset,
@@ -363,8 +404,8 @@ bubble_window_get_text (AtkText *obj,
 		end_offset = strlen(body_text);
 
     char_length = g_utf8_offset_to_pointer (body_text, end_offset) - 
-        g_utf8_offset_to_pointer (body_text, start_offset)
-
+        g_utf8_offset_to_pointer (body_text, start_offset);
+    
     return g_strndup (g_utf8_offset_to_pointer(body_text, start_offset), 
                       char_length);
 }
