@@ -2116,14 +2116,17 @@ bubble_set_message_body (Bubble*      self,
 	priv = GET_PRIVATE (self);
 
 	if (priv->message_body->len != 0) {
-		g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_DELETED], 
-					   0, priv->message_body->str);
-		g_string_free (priv->message_body, TRUE);
+		gchar *deleted_string = g_strdup (priv->message_body->str);
+		g_string_truncate (priv->message_body, 0);
+		g_signal_emit (
+			self, g_bubble_signals[MESSAGE_BODY_DELETED], 0, deleted_string);
+		g_free (deleted_string);
     }
 	/* filter out any HTML/markup if possible */
 	text = filter_text (body);
 
-	priv->message_body = g_string_new (text);
+	g_string_append (priv->message_body, text);
+
 	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
 
 	g_free (text);
