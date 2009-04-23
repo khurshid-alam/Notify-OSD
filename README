@@ -3,3 +3,7 @@ pop-up notifications on the Linux desktop. These are designed to notify the
 user of something without interrupting their work with a dialog box that they
 must close. Passive popups can automatically disappear after a short period of
 time.
+
+The project homepage is located here:
+
+    https://edge.launchpad.net/notify-osd

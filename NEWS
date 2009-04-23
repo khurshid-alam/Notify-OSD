@@ -2,3 +2,9 @@ This is the inital version of the new notification daemon "notify osd" developed
 by Canonical's dx- and design-teams. It follows the freedesktop notification
 specification and introduces some new policies for streamlining the user-
 experience by discouraging the use of actions and timeouts. 
+
+C-, Python- and C#-examples demonstrating correct usage of notifications have
+been added. Have a look at the examples-directory. This accompanies the devel-
+oper guidelines availabled under:
+
+    https://wiki.ubuntu.com/NotificationDevelopmentGuidelines
