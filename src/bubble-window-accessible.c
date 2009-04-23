@@ -51,6 +51,8 @@ static void        bubble_value_changed_event               (Bubble*            
 static gchar*      bubble_window_get_text                    (AtkText                    *obj,
 															  gint                        start_offset,
 															  gint                        end_offset);
+static gint        bubble_window_get_character_count         (AtkText                    *obj);
+
 static void* bubble_window_accessible_parent_class;
 
 GType
@@ -134,6 +136,8 @@ atk_text_interface_init (AtkTextIface* iface)
     g_return_if_fail (iface != NULL);
 
 	iface->get_text = bubble_window_get_text;
+	iface->get_character_count = bubble_window_get_character_count;
+
 }
 
 static void
@@ -337,4 +341,22 @@ bubble_window_get_text (AtkText *obj,
 
 	return g_strndup (body_text + start_offset, end_offset - start_offset);
 	
+}
+
+static gint
+bubble_window_get_character_count (AtkText *obj)
+{
+	GtkAccessible* accessible;
+ 	Bubble*        bubble;
+
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return 0;
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	return strlen(bubble_get_message_body (bubble));
 }
