@@ -52,6 +52,8 @@ static gchar*      bubble_window_get_text                   (AtkText            
 															 gint                         start_offset,
 															 gint                         end_offset);
 static gint        bubble_window_get_character_count        (AtkText                     *obj);
+static gunichar    bubble_window_get_character_at_offset    (AtkText                     *obj,
+                                                             gint                         offset);
 static gint        bubble_window_get_n_selections           (AtkText                     *obj);
 static gchar*      bubble_window_get_selection              (AtkText                     *obj,
 															 gint                         selection_num,
@@ -152,6 +154,7 @@ atk_text_interface_init (AtkTextIface* iface)
 
 	iface->get_text = bubble_window_get_text;
 	iface->get_character_count = bubble_window_get_character_count;
+    iface->get_character_at_offset = bubble_window_get_character_at_offset;
 
 	iface->get_n_selections = bubble_window_get_n_selections;
 	iface->get_selection = bubble_window_get_selection;
@@ -340,6 +343,7 @@ bubble_window_get_text (AtkText *obj,
     GtkAccessible* accessible;
  	Bubble*        bubble;
 	const gchar*   body_text;
+    gsize          char_length;
 
     g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), NULL);
  	
@@ -358,8 +362,11 @@ bubble_window_get_text (AtkText *obj,
 	if (end_offset > strlen(body_text) || end_offset == -1)
 		end_offset = strlen(body_text);
 
-	return g_strndup (body_text + start_offset, end_offset - start_offset);
-	
+    char_length = g_utf8_offset_to_pointer (body_text, end_offset) - 
+        g_utf8_offset_to_pointer (body_text, start_offset)
+
+    return g_strndup (g_utf8_offset_to_pointer(body_text, start_offset), 
+                      char_length);
 }
 
 static gint
@@ -378,6 +385,28 @@ bubble_window_get_character_count (AtkText *obj)
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
 	return strlen(bubble_get_message_body (bubble));
+}
+
+static gunichar
+bubble_window_get_character_at_offset (AtkText *obj,
+                                       gint    offset)
+{
+	GtkAccessible* accessible;
+ 	Bubble*        bubble;
+    const gchar*   body_text;
+
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return 0;
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	body_text = bubble_get_message_body (bubble);
+
+    return g_utf8_get_char (g_utf8_offset_to_pointer (body_text, offset));
 }
 
 static gint
