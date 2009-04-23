@@ -10,13 +10,13 @@ gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` exam
 gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c append-hint-example.c -o append-hint-example
 gcc -O0 -ggdb -Wall -Werror `pkg-config --cflags --libs libnotify glib-2.0` example-util.c update-notifications.c -o update-notifications
 
-gmcs -pkg:notify-sharp icon-only.cs -out:icon-only.exe
-gmcs -pkg:notify-sharp sync-icon-only.cs -out:sync-icon-only.exe
-gmcs -pkg:notify-sharp icon-summary-body.cs -out:icon-summary-body.exe
-gmcs -pkg:notify-sharp icon-summary.cs -out:icon-summary.exe
-gmcs -pkg:notify-sharp icon-value.cs -out:icon-value.exe
-gmcs -pkg:notify-sharp summary-body.cs -out:summary-body.exe
-gmcs -pkg:notify-sharp summary-only.cs -out:summary-only.exe
-gmcs -pkg:notify-sharp -r:Mono.Posix.dll append-hint-example.cs -out:append-hint-example.exe
-gmcs -pkg:notify-sharp -r:Mono.Posix.dll update-notifications.cs -out:update-notifications.exe
+gmcs -pkg:notify-sharp example-util.cs icon-only.cs -out:icon-only.exe
+gmcs -pkg:notify-sharp example-util.cs sync-icon-only.cs -out:sync-icon-only.exe
+gmcs -pkg:notify-sharp example-util.cs icon-summary-body.cs -out:icon-summary-body.exe
+gmcs -pkg:notify-sharp example-util.cs icon-summary.cs -out:icon-summary.exe
+gmcs -pkg:notify-sharp example-util.cs icon-value.cs -out:icon-value.exe
+gmcs -pkg:notify-sharp example-util.cs summary-body.cs -out:summary-body.exe
+gmcs -pkg:notify-sharp example-util.cs summary-only.cs -out:summary-only.exe
+gmcs -pkg:notify-sharp -r:Mono.Posix.dll example-util.cs append-hint-example.cs -out:append-hint-example.exe
+gmcs -pkg:notify-sharp -r:Mono.Posix.dll example-util.cs update-notifications.cs -out:update-notifications.exe
 
