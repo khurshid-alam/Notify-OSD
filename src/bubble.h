@@ -76,8 +76,8 @@ struct _BubbleClass
 	/*< signals >*/
 	void (*timed_out) (Bubble* bubble);
 	void (*value_changed) (Bubble* bubble);
-	void (*message_body_replaced) (Bubble* bubble);
-	void (*message_body_concat) (Bubble* bubble);
+	void (*message_body_deleted) (Bubble* bubble);
+	void (*message_body_inserted) (Bubble* bubble);
 };
 
 GType bubble_get_type (void);

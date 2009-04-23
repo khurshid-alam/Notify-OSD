@@ -94,8 +94,8 @@ enum
 {
 	TIMED_OUT,
 	VALUE_CHANGED,
-	MESSAGE_BODY_REPLACED,
-	MESSAGE_BODY_CONCAT,
+	MESSAGE_BODY_DELETED,
+	MESSAGE_BODY_INSERTED,
 	LAST_SIGNAL
 };
 
@@ -1906,11 +1906,11 @@ bubble_class_init (BubbleClass* klass)
 		1,
         G_TYPE_INT);
 
-    g_bubble_signals[MESSAGE_BODY_REPLACED] = g_signal_new (
-		"message-body-replaced",
+    g_bubble_signals[MESSAGE_BODY_DELETED] = g_signal_new (
+		"message-body-deleted",
 		G_OBJECT_CLASS_TYPE (gobject_class),
 		G_SIGNAL_RUN_LAST,
-		G_STRUCT_OFFSET (BubbleClass, message_body_replaced),
+		G_STRUCT_OFFSET (BubbleClass, message_body_deleted),
 		NULL,
 		NULL,
 		g_cclosure_marshal_VOID__STRING,
@@ -1918,11 +1918,11 @@ bubble_class_init (BubbleClass* klass)
 		1,
         G_TYPE_STRING);
 
-    g_bubble_signals[MESSAGE_BODY_CONCAT] = g_signal_new (
-		"message-body-concat",
+    g_bubble_signals[MESSAGE_BODY_INSERTED] = g_signal_new (
+		"message-body-inserted",
 		G_OBJECT_CLASS_TYPE (gobject_class),
 		G_SIGNAL_RUN_LAST,
-		G_STRUCT_OFFSET (BubbleClass, message_body_concat),
+		G_STRUCT_OFFSET (BubbleClass, message_body_inserted),
 		NULL,
 		NULL,
 		g_cclosure_marshal_VOID__STRING,
@@ -2115,13 +2115,17 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->message_body->len != 0)
+	if (priv->message_body->len != 0) {
+		g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_DELETED], 
+					   0, priv->message_body->str);
 		g_string_free (priv->message_body, TRUE);
-
+    }
 	/* filter out any HTML/markup if possible */
 	text = filter_text (body);
 
 	priv->message_body = g_string_new (text);
+	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+
 	g_free (text);
 }
 
@@ -3412,6 +3416,8 @@ bubble_append_message_body (Bubble*      self,
 
 	/* append text to current message-body */
 	g_string_append (GET_PRIVATE (self)->message_body, text);
+
+	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
 
 	g_free ((gpointer) text);
 }
