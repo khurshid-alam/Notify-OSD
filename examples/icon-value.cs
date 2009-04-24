@@ -34,6 +34,18 @@ using Notifications;
 
 public class IconValue
 {
+	public static void pushNotification (String icon,
+					     int    val)
+	{
+		Notification n = new Notification ("Brightness", // for a11y-reasons supply something meaning full
+						   "",           // this needs to be empty!
+						   icon);
+		n.AddHint ("value", val);
+		n.AddHint ("x-canonical-private-synchronous", "");
+		n.Show ();
+		Mono.Unix.Native.Syscall.sleep (1);
+	}
+
 	public static void Main ()
 	{
 		// call this so we can savely use the m_capabilities array later
@@ -45,12 +57,37 @@ public class IconValue
 		// try the icon-value case, usually used for synchronous bubbles
 		if (ExampleUtil.HasCap (ExampleUtil.Capability.CAP_SYNCHRONOUS))
 		{
-			Notification n = new Notification ("Brightness", // for a11y-reasons supply something meaning full
-							   "",           // this needs to be empty!
-							   "notification-keyboard-brightness-high");
-			n.AddHint ("value", 95);
-			n.AddHint ("x-canonical-private-synchronous", "");
-			n.Show ();
+			pushNotification ("notification-keyboard-brightness-low",
+					  25);
+
+			pushNotification ("notification-keyboard-brightness-medium",
+					  50);
+
+			pushNotification ("notification-keyboard-brightness-high",
+					  75);
+
+			pushNotification ("notification-keyboard-brightness-full",
+					  100);
+
+			// trigger "overshoot"-effect
+			pushNotification ("notification-keyboard-brightness-full",
+					  101);
+
+			pushNotification ("notification-keyboard-brightness-high",
+					  75);
+
+			pushNotification ("notification-keyboard-brightness-medium",
+					  50);
+
+			pushNotification ("notification-keyboard-brightness-low",
+					  25);
+
+			pushNotification ("notification-keyboard-brightness-off",
+					  0);
+
+			// trigger "undershoot"-effect
+			pushNotification ("notification-keyboard-brightness-off",
+					  -1);
 		}
 		else
 			Console.WriteLine ("The daemon does not support the x-canonical-private-synchronous hint!");

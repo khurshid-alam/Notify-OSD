@@ -31,13 +31,44 @@
 
 #include "example-util.h"
 
-int 
-main (int    argc,
-      char** argv)
+void
+push_notification (gchar* icon,
+		   gint   value)
 {
 	NotifyNotification* notification;
 	gboolean            success;
 	GError*             error = NULL;
+
+	notification = notify_notification_new (
+				"Brightness",  /* for a11y-reasons put something meaningfull here */
+				NULL,
+				icon,
+				NULL);
+	notify_notification_set_hint_int32 (notification,
+					    "value",
+					    value);
+	notify_notification_set_hint_string (notification,
+					     "x-canonical-private-synchronous",
+					     "");
+	error = NULL;
+	success = notify_notification_show (notification, &error);
+	if (!success)
+	{
+		g_print ("That did not work ... \"%s\".\n",
+			 error->message);
+	}
+	g_signal_connect (G_OBJECT (notification),
+			  "closed",
+			  G_CALLBACK (closed_handler),
+			  NULL);
+	g_object_unref (G_OBJECT (notification));
+	sleep (1);
+}
+
+int
+main (int    argc,
+      char** argv)
+{
 
 	if (!notify_init ("icon-value"))
 		return 1;
@@ -51,28 +82,37 @@ main (int    argc,
 	/* try the value-icon case, usually used for synchronous bubbles */
 	if (has_cap (CAP_SYNCHRONOUS))
 	{
-		notification = notify_notification_new (
-					"Brightness",  /* for a11y-reasons put something meaningfull here */
-					NULL,
-					"notification-keyboard-brightness-high",
-					NULL);
-		notify_notification_set_hint_int32 (notification,
-						    "value",
-						    95);
-		notify_notification_set_hint_string (notification,
-						     "x-canonical-private-synchronous",
-						     "");
-		error = NULL;
-		success = notify_notification_show (notification, &error);
-		if (!success)
-		{
-			g_print ("That did not work ... \"%s\".\n",
-				 error->message);
-		}
-		g_signal_connect (G_OBJECT (notification),
-				  "closed",
-				  G_CALLBACK (closed_handler),
-				  NULL);
+		push_notification ("notification-keyboard-brightness-low",
+				   25);
+
+		push_notification ("notification-keyboard-brightness-medium",
+				   50);
+
+		push_notification ("notification-keyboard-brightness-high",
+				   75);
+
+		push_notification ("notification-keyboard-brightness-full",
+				   100);
+
+		/* trigger "overshoot"-effect */
+		push_notification ("notification-keyboard-brightness-full",
+				   101);
+
+		push_notification ("notification-keyboard-brightness-high",
+				   75);
+
+		push_notification ("notification-keyboard-brightness-medium",
+				   50);
+
+		push_notification ("notification-keyboard-brightness-low",
+				   25);
+
+		push_notification ("notification-keyboard-brightness-off",
+				   0);
+
+		/* trigger "undershoot"-effect */
+		push_notification ("notification-keyboard-brightness-off",
+				   -1);
 	}
 	else
 		g_print ("The daemon does not support the x-canonical-private-synchronous hint!\n");

@@ -68,7 +68,7 @@ struct _BubblePrivate {
 	gint         end_y;
 	gint         delta_y;
 	gdouble      inc_factor;
-	gint         value; /* "empty": -1, valid range: 0 - 100 */
+	gint         value; /* "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect */
 	gchar*       synchronous;
 	gchar*       sender;
 	gboolean     urgent;
@@ -741,7 +741,7 @@ _render_icon_indicator (Bubble*  self,
 	switch (priv->value)
 	{
 		/* "undershoot" effect */
-		case 0:
+		case -1:
 			/* abuse blur to create a mask of scratch-pad surface */
 			tmp = blur_image_surface (glow_surface,
 						  0.0f,
@@ -777,7 +777,7 @@ _render_icon_indicator (Bubble*  self,
 		break;
 
 		/* "overshoot" effect */
-		case 100:
+		case 101:
 			/* blur the scratch-pad surface */
 			tmp = blur_image_surface (glow_surface,
 						  blur_radius,
@@ -1845,7 +1845,7 @@ bubble_init (Bubble* self)
 	priv->message_body      = NULL;
 	priv->visible           = FALSE;
 	priv->icon_pixbuf       = NULL;
-	priv->value             = -1;
+	priv->value             = -2;
 	priv->synchronous       = NULL;
 	priv->sender            = NULL;
 	priv->draw_handler_id   = 0;
@@ -1978,7 +1978,7 @@ bubble_new (Defaults* defaults)
 	this->priv->title           = g_string_new ("");
 	this->priv->message_body    = g_string_new ("");
 	this->priv->icon_pixbuf     = NULL;
-	this->priv->value           = -1;
+	this->priv->value           = -2;
 	this->priv->visible         = FALSE;
 	this->priv->timeout         = 5000;
 	this->priv->mouse_over      = FALSE;
@@ -2239,7 +2239,7 @@ bubble_set_value (Bubble* self,
 		return;
 
 	GET_PRIVATE (self)->value = value;
-    
+
 	g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);
 }
 
@@ -2247,7 +2247,7 @@ gint
 bubble_get_value (Bubble* self)
 {
 	if (!self || !IS_BUBBLE (self))
-		return -1;
+		return -2;
 
 	return GET_PRIVATE (self)->value;
 }
@@ -2806,7 +2806,7 @@ bubble_start_timer (Bubble* self)
 
 	/* if the bubble is displaying a value that is out of bounds
 	   trigger a dim/glow animation */
-	if (priv->value == 0 || priv->value == 100)
+	if (priv->value == -1 || priv->value == 101)
 		bubble_start_glow_effect (self, 500);
 }
 
@@ -3276,7 +3276,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             >= 0))
+	    (priv->value             >= -1))
 	{
 		priv->layout = LAYOUT_ICON_INDICATOR;
 		return;
@@ -3286,7 +3286,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -2))
 	{
 		priv->layout = LAYOUT_ICON_TITLE;
 		return;
@@ -3296,7 +3296,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -2))
 	{
 		priv->layout = LAYOUT_ICON_TITLE_BODY;
 		return;
@@ -3306,7 +3306,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len != 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -2))
 	{
 		priv->layout = LAYOUT_TITLE_BODY;
 		return;
@@ -3316,7 +3316,7 @@ bubble_determine_layout (Bubble* self)
 	if ((priv->icon_pixbuf       == NULL) &&
 	    (priv->title->len        != 0) &&
 	    (priv->message_body->len == 0) &&
-	    (priv->value             == -1))
+	    (priv->value             == -2))
 	{
 		priv->layout = LAYOUT_TITLE_ONLY;
 		return;

@@ -32,6 +32,7 @@
 ################################################################################
 
 import sys
+import time
 import pynotify
 
 # even in Python this is globally nasty :), do something nicer in your own code
@@ -106,6 +107,15 @@ def printCaps ():
 	else:
 		print "\tnone"
 
+def pushNotification (icon, value):
+	n = pynotify.Notification ("Brightness", # for a11y-reasons supply something meaning full
+				   "",           # this needs to be empty!
+				   icon);
+	n.set_hint_int32 ("value", value);
+	n.set_hint_string ("x-canonical-private-synchronous", "");
+	n.show ()
+	time.sleep (1)
+
 if __name__ == '__main__':
 	if not pynotify.init ("icon-value"):
 		sys.exit (1)
@@ -118,12 +128,27 @@ if __name__ == '__main__':
 
 	# try the icon-value case
 	if capabilities['x-canonical-private-icon-only']:
-		n = pynotify.Notification ("Brightness", # for a11y-reasons put something meaningfull here
-					   "", # keep that empty
-					   "notification-keyboard-brightness-high")
-		n.set_hint_int32 ("value", 95)
-		n.set_hint_string ("x-canonical-private-synchronous", "")
-		n.show ()
+		pushNotification ("notification-keyboard-brightness-low", 25);
+
+		pushNotification ("notification-keyboard-brightness-medium", 50);
+
+		pushNotification ("notification-keyboard-brightness-high", 75);
+
+		pushNotification ("notification-keyboard-brightness-full", 100);
+
+		# trigger "overshoot"-effect
+		pushNotification ("notification-keyboard-brightness-full", 101);
+
+		pushNotification ("notification-keyboard-brightness-high", 75);
+
+		pushNotification ("notification-keyboard-brightness-medium", 50);
+
+		pushNotification ("notification-keyboard-brightness-low", 25);
+
+		pushNotification ("notification-keyboard-brightness-off", 0);
+
+		# trigger "undershoot"-effect
+		pushNotification ("notification-keyboard-brightness-off", -1);
 	else:
 		print "The daemon does not support the x-canonical-private-icon-only hint!"
 
