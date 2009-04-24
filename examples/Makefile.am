@@ -69,7 +69,7 @@ icon-summary.exe: $(icon_summary_exe_SOURCES)
 	gmcs -pkg:notify-sharp $(icon_summary_exe_SOURCES) -out:icon-summary.exe
 
 icon-value.exe: $(icon_value_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(icon_value_exe_SOURCES) -out:icon-value.exe
+	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(icon_value_exe_SOURCES) -out:icon-value.exe
 
 summary-body.exe: $(summary_body_exe_SOURCES)
 	gmcs -pkg:notify-sharp $(summary_body_exe_SOURCES) -out:summary-body.exe
