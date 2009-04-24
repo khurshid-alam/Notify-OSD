@@ -65,3 +65,5 @@ examples/sync-icon-only
 examples/sync-icon-only.exe
 examples/update-notifications
 examples/update-notifications.exe
+examples/.deps
+examples/.libs
