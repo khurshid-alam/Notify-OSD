@@ -365,30 +365,35 @@ bubble_window_get_text (AtkText *obj,
  	Bubble*        bubble;
 	const gchar*   body_text;
     gsize          char_length;
+	glong          body_strlen;
 
- 	if (!BUBBLE_WINDOW_IS_ACCESSIBLE (obj))
-		return "";
- 	
+	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), g_strdup(""));
+
  	accessible = GTK_ACCESSIBLE (obj);
-    
-    if (accessible->widget == NULL)
-        return "";
+
+	g_return_val_if_fail (accessible->widget == NULL, g_strdup(""));
  	
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
+	if (end_offset <= start_offset)
+		return g_strdup("");
+
 	body_text = bubble_get_message_body (bubble);
 
-	if (start_offset > strlen(body_text))
-		start_offset = strlen(body_text);
+	body_strlen = g_utf8_strlen(body_text, -1);
 
-	if (end_offset > strlen(body_text) || end_offset == -1)
-		end_offset = strlen(body_text);
+	if (start_offset > body_strlen)
+		start_offset = body_strlen;
+
+	if (end_offset > body_strlen || end_offset == -1)
+		end_offset = body_strlen;
+
 
     char_length = g_utf8_offset_to_pointer (body_text, end_offset) - 
         g_utf8_offset_to_pointer (body_text, start_offset);
     
-    return g_strndup (g_utf8_offset_to_pointer(body_text, start_offset), 
-                      char_length);
+	return g_strndup (g_utf8_offset_to_pointer(body_text, start_offset), 
+					  char_length);
 }
 
 static gint
@@ -406,7 +411,7 @@ bubble_window_get_character_count (AtkText *obj)
  	
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
-	return strlen(bubble_get_message_body (bubble));
+	return g_utf8_strlen(bubble_get_message_body (bubble), -1);
 }
 
 static gunichar
