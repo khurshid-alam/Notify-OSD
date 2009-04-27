@@ -2092,6 +2092,10 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	priv->title = g_string_new (title);
+
+	g_object_notify (
+		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+		"accessible-name");
 }
 
 const gchar*
@@ -2124,7 +2128,10 @@ bubble_set_message_body (Bubble*      self,
 	text = filter_text (body);
 
 	priv->message_body = g_string_new (text);
+
 	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+	g_object_notify (G_OBJECT (gtk_widget_get_accessible (priv->widget)), 
+					 "accessible-description");
 
 	g_free (text);
 }
@@ -3418,6 +3425,10 @@ bubble_append_message_body (Bubble*      self,
 	g_string_append (GET_PRIVATE (self)->message_body, text);
 
 	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+
+	g_object_notify (
+		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+		"accessible-description");
 
 	g_free ((gpointer) text);
 }
