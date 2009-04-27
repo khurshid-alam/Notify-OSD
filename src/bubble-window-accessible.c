@@ -60,20 +60,6 @@ static gchar*      bubble_window_get_text                   (AtkText            
 static gint        bubble_window_get_character_count        (AtkText                     *obj);
 static gunichar    bubble_window_get_character_at_offset    (AtkText                     *obj,
                                                              gint                         offset);
-static gint        bubble_window_get_n_selections           (AtkText                     *obj);
-static gchar*      bubble_window_get_selection              (AtkText                     *obj,
-															 gint                         selection_num,
-															 gint                        *start_pos,
-															 gint                        *end_pos);
-static gboolean    bubble_window_add_selection              (AtkText                     *obj,
-															 gint                         start_pos,
-															 gint                         end_pos);
-static gboolean    bubble_window_remove_selection           (AtkText                     *obj,
-															 gint                         selection_num);
-static gboolean    bubble_window_set_selection              (AtkText                     *obj,
-															 gint                         selection_num,
-															 gint                         start_pos,
-															 gint                         end_pos);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -150,7 +136,6 @@ atk_value_interface_init (AtkValueIface* iface)
     iface->get_current_value = bubble_window_get_current_value;
     iface->get_maximum_value = bubble_window_get_maximum_value;
     iface->get_minimum_value = bubble_window_get_minimum_value;
-
 }
 
 static void
@@ -162,11 +147,6 @@ atk_text_interface_init (AtkTextIface* iface)
 	iface->get_character_count = bubble_window_get_character_count;
     iface->get_character_at_offset = bubble_window_get_character_at_offset;
 
-	iface->get_n_selections = bubble_window_get_n_selections;
-	iface->get_selection = bubble_window_get_selection;
-	iface->add_selection = bubble_window_add_selection;
-	iface->remove_selection = bubble_window_remove_selection;
-	iface->set_selection = bubble_window_set_selection;
 }
 
 static void
@@ -386,12 +366,13 @@ bubble_window_get_text (AtkText *obj,
 	const gchar*   body_text;
     gsize          char_length;
 
-    g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), NULL);
+ 	if (!BUBBLE_WINDOW_IS_ACCESSIBLE (obj))
+		return "";
  	
  	accessible = GTK_ACCESSIBLE (obj);
     
     if (accessible->widget == NULL)
-        return NULL;
+        return "";
  	
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
@@ -448,44 +429,4 @@ bubble_window_get_character_at_offset (AtkText *obj,
 	body_text = bubble_get_message_body (bubble);
 
     return g_utf8_get_char (g_utf8_offset_to_pointer (body_text, offset));
-}
-
-static gint
-bubble_window_get_n_selections (AtkText *obj)
-{
-	return 0;
-}
-
-static gchar*
-bubble_window_get_selection (AtkText *obj,
-                             gint    selection_num,
-                             gint    *start_pos,
-                             gint    *end_pos)
-{
-	*start_pos = *end_pos = 0;
-	return NULL;
-}
-
-static gboolean
-bubble_window_add_selection (AtkText *obj,
-							 gint    start_pos,
-							 gint    end_pos)
-{
-	return FALSE;
-}
-
-static gboolean
-bubble_window_remove_selection (AtkText *obj,
-								gint    selection_num)
-{
-	return FALSE;
-}
-
-static gboolean
-bubble_window_set_selection (AtkText *obj,
-							 gint    selection_num,
-							 gint    start_pos,
-							 gint    end_pos)
-{
-	return FALSE;
 }
