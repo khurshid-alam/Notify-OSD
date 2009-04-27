@@ -605,28 +605,23 @@ draw_value_indicator (cairo_t* cr,
 							0.5f);
 		cairo_pattern_add_color_stop_rgba (gradient,
 						   0.0f,
-						   1.0f,
-						   1.0f,
-						   1.0f,
+						   0.42109375f,
+						   0.42109375f,
+						   0.42109375f,
 						   1.0f);
 		cairo_pattern_add_color_stop_rgba (gradient,
-						   0.2f,
-						   0.95f,
-						   0.95f,
-						   0.95f,
-						   1.0f);
-		cairo_pattern_add_color_stop_rgba (gradient,
-						   0.3f,
-						   0.8f,
-						   0.8f,
-						   0.8f,
+						   0.9f,
+						   0.52109375f,
+						   0.52109375f,
+						   0.52109375f,
 						   1.0f);
 		cairo_pattern_add_color_stop_rgba (gradient,
 						   1.0f,
-						   0.623f,
-						   0.623f,
-						   0.623f,
+						   0.796875f,
+						   0.796875f,
+						   0.796875f,
 						   1.0f);
+
 		cairo_set_source (cr, gradient);
 		cairo_fill (cr);
 		cairo_pattern_destroy (gradient);
