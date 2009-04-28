@@ -594,32 +594,29 @@ draw_value_indicator (cairo_t* cr,
 				 bar_width / 100.0f * (gdouble) value,
 				 bar_height);
 		gradient = cairo_pattern_create_linear (0.0f,
+
 							(gdouble) start_x +
 							outline_thickness +
 							0.5f,
-							0.0f,
+
+		                                        0.0f,
+
 							(gdouble) start_y +
 							height / 2.0f -
 							outline_height / 2.0f +
 							outline_thickness / 2.0f +
 							0.5f);
 		cairo_pattern_add_color_stop_rgba (gradient,
-						   0.0f,
-						   0.42109375f,
-						   0.42109375f,
-						   0.42109375f,
-						   1.0f);
-		cairo_pattern_add_color_stop_rgba (gradient,
-						   0.9f,
-						   0.52109375f,
-						   0.52109375f,
-						   0.52109375f,
+						   0.75f,
+						   0.4f,
+						   0.4f,
+						   0.4f,
 						   1.0f);
 		cairo_pattern_add_color_stop_rgba (gradient,
 						   1.0f,
-						   0.796875f,
-						   0.796875f,
-						   0.796875f,
+						   0.9f,
+						   0.9f,
+						   0.9f,
 						   1.0f);
 
 		cairo_set_source (cr, gradient);
