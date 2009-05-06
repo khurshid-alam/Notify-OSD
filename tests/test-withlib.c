@@ -160,16 +160,18 @@ test_withlib_priority (void)
 	n2 = notify_notification_new ("Normal Notification",
 				      "You should see this *after* the urgent notification.",
 				      "", NULL);
+	notify_notification_set_urgency (n2, NOTIFY_URGENCY_LOW);
 	notify_notification_show (n2, NULL);
 	n3 = notify_notification_new ("Synchronous Notification",
 				      "You should immediately see this notification.",
 				      "", NULL);
 	notify_notification_set_hint_string (n3, "synchronous", "test");
+	notify_notification_set_urgency (n3, NOTIFY_URGENCY_NORMAL);
 	notify_notification_show (n3, NULL);
 	n4 = notify_notification_new ("Urgent Notification",
 				      "You should see a dialog box, and after, a normal notification.",
 				      "", NULL);
-	notify_notification_set_urgency(n4, NOTIFY_URGENCY_CRITICAL);
+	notify_notification_set_urgency (n4, NOTIFY_URGENCY_CRITICAL);
 	notify_notification_show (n4, NULL);
 	
 	loop = g_main_loop_new(NULL, FALSE);

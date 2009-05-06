@@ -208,9 +208,12 @@ bubble_set_sender (Bubble *self,
 gboolean
 bubble_is_urgent (Bubble *self);
 
+guint
+bubble_get_urgency (Bubble *self);
+
 void
-bubble_set_urgent (Bubble *self,
-		   gboolean urgent);
+bubble_set_urgency (Bubble *self,
+		    guint urgency);
 
 void
 bubble_fade_out (Bubble *self,

@@ -71,7 +71,7 @@ struct _BubblePrivate {
 	gint         value; /* "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect */
 	gchar*       synchronous;
 	gchar*       sender;
-	gboolean     urgent;
+	guint        urgency;
 	gboolean     composited;
 	EggAlpha *alpha;
 	EggTimeline *timeline;
@@ -1501,6 +1501,80 @@ _render_background (cairo_t*  cr,
 			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
 					   d));
 	cairo_fill (cr);
+
+	/* urgency-indication bar */
+	switch (bubble_get_urgency (bubble))
+	{
+		case 0:
+			cairo_set_source_rgb (cr, 0.25f, 0.5f, 1.0f);
+		break;
+
+		case 1:
+			cairo_set_source_rgb (cr, 0.0f, 1.0f, 0.0f);
+		break;
+
+		case 2:
+			cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
+		break;
+
+		default:
+		break;
+	}
+
+	draw_round_rect (cr,
+			 1.0f,
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+				    d) + 2.0f,
+			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
+				    d) + 2.0f,
+			 EM2PIXELS (defaults_get_bubble_corner_radius (d),
+				    d) - 2.0f,
+			 EM2PIXELS (defaults_get_bubble_width (d),
+				    d) - 4.0f,
+			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
+				    d) - 2.0f);
+	cairo_fill (cr);
+
+	switch (bubble_get_urgency (bubble))
+	{
+		case 0:
+			cairo_set_source_rgb (cr, 0.0f, 0.0f, 0.0f);
+		break;
+
+		case 1:
+			cairo_set_source_rgb (cr, 0.0f, 0.0f, 0.0f);
+		break;
+
+		case 2:
+			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+		break;
+
+		default:
+		break;
+	}
+
+	cairo_set_font_size (cr, EM2PIXELS (defaults_get_text_body_size  (d), d));
+	cairo_move_to (cr,
+		       EM2PIXELS (defaults_get_text_body_size  (d), d) + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
+		       EM2PIXELS (defaults_get_text_body_size  (d), d) + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f + ((2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f) - EM2PIXELS (defaults_get_text_body_size  (d), d)) / 2);
+
+	switch (bubble_get_urgency (bubble))
+	{
+		case 0:
+			cairo_show_text (cr, "low - report incorrect urgency?");
+		break;
+
+		case 1:
+			cairo_show_text (cr, "normal - report incorrect urgency?");
+		break;
+
+		case 2:
+			cairo_show_text (cr, "urgent - report incorrect urgency?");
+		break;
+
+		default:
+		break;
+	}
 }
 
 static
@@ -3231,16 +3305,24 @@ bubble_is_urgent (Bubble *self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
-	return GET_PRIVATE (self)->urgent;
+	return (GET_PRIVATE (self)->urgency == 2);
+}
+
+guint
+bubble_get_urgency (Bubble *self)
+{
+	g_return_val_if_fail (IS_BUBBLE (self), 0);
+
+	return GET_PRIVATE (self)->urgency;
 }
 
 void
-bubble_set_urgent (Bubble *self,
-		   gboolean urgent)
+bubble_set_urgency (Bubble *self,
+		   guint  urgency)
 {
 	g_return_if_fail (IS_BUBBLE (self));
 
-	GET_PRIVATE (self)->urgent = urgent;
+	GET_PRIVATE (self)->urgency = urgency;
 }
 
 void
