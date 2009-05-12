@@ -7,3 +7,7 @@ time.
 The project homepage is located here:
 
     https://edge.launchpad.net/notify-osd
+
+This version of Notify OSD implements the specification defined here:
+
+    https://wiki.ubuntu.com/NotifyOSD?rev=143
