@@ -2145,7 +2145,7 @@ scale_pixbuf (const GdkPixbuf *pixbuf, gint size)
 	scaled_icon = gdk_pixbuf_scale_simple (pixbuf,
 					       new_width,
 					       new_height,
-					       GDK_INTERP_HYPER);
+					       GDK_INTERP_BILINEAR);
 
 	if (w == h)
 		return scaled_icon;
@@ -3023,7 +3023,7 @@ bubble_recalc_size (Bubble *self)
 					priv->icon_pixbuf,
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
-					GDK_INTERP_HYPER);
+					GDK_INTERP_BILINEAR);
 		g_object_unref (priv->icon_pixbuf);
 		priv->icon_pixbuf = pixbuf;
 	}
