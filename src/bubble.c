@@ -2054,7 +2054,7 @@ bubble_set_title (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->title->len != 0)
+	if (priv->title)
 		g_string_free (priv->title, TRUE);
 
 	priv->title = g_string_new (title);
@@ -2081,7 +2081,7 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->message_body->len != 0)
+	if (priv->message_body)
 		g_string_free (priv->message_body, TRUE);
 
 	/* filter out any HTML/markup if possible */
