@@ -58,6 +58,9 @@ strip_html (const gchar *text, const gchar *match_regex, const gchar* replace_re
 		ret = g_strdup (text);
 	}
 
+	if (info)
+		g_match_info_free (info);
+
 	return ret;
 }
 
