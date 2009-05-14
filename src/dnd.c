@@ -62,7 +62,7 @@ dnd_is_xscreensaver_active ()
 	int format;
 	int status;
 	unsigned long nitems, bytesafter;
-	CARD32 *data = 0;
+	unsigned char* data = NULL;
 
 	Display *dpy = gdk_x11_get_default_xdisplay ();
 	Window   win = gdk_x11_get_default_root_xwindow ();
@@ -81,8 +81,10 @@ dnd_is_xscreensaver_active ()
 	    && nitems >= 3
 	    && data != NULL)
 	{
-		active = (data[0] == XA_BLANK || data[0] == XA_LOCK)
-			&& ((time_t)data[1] > (time_t)666000000L);
+		CARD32* tmp_data = (CARD32*) data;
+
+		active = (tmp_data[0] == XA_BLANK || tmp_data[0] == XA_LOCK)
+			&& ((time_t)tmp_data[1] > (time_t)666000000L);
 
 		g_debug ("Screensaver is currently active");
 	}
