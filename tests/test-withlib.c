@@ -334,94 +334,20 @@ test_withlib_create_test_suite (void)
 
 	ts = g_test_create_suite ("libnotify");
 
-	g_test_suite_add(ts,
-			 g_test_create_case ("can get server info",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_get_server_information,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("can get private server cap",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_get_server_caps,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("can show normal notification",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_show_notification,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("can update notification",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_update_notification,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("can pass icon data on the wire",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_pass_icon_data,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("can close a notification",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_close_notification,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("honors priority level",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_priority,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("supports append-hint",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_append_hint,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("supports icon-only-hint",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_icon_only_hint,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("swallows markup",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_swallow_markup,
-					     NULL)
-		);
-	g_test_suite_add(ts,
-			 g_test_create_case ("interprets actions",
-					     0,
-					     NULL,
-					     NULL,
-					     test_withlib_actions,
-					     NULL)
-		);
+	#define ADD_TEST(x) g_test_suite_add(ts, \
+		g_test_create_case(#x, 0, NULL, NULL, x, NULL) \
+		)
+	ADD_TEST(test_withlib_get_server_information);
+	ADD_TEST(test_withlib_get_server_caps);
+	ADD_TEST(test_withlib_show_notification);
+	ADD_TEST(test_withlib_update_notification);
+	ADD_TEST(test_withlib_pass_icon_data);
+	ADD_TEST(test_withlib_close_notification);
+	ADD_TEST(test_withlib_priority);
+	ADD_TEST(test_withlib_append_hint);
+	ADD_TEST(test_withlib_icon_only_hint);
+	ADD_TEST(test_withlib_swallow_markup);
+	ADD_TEST(test_withlib_actions);
 
 	return ts;
 }
