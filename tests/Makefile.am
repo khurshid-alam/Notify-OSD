@@ -9,6 +9,8 @@ noinst_PROGRAMS = test-modules \
 check_PROGRAMS = test-modules
 TESTS = test-modules
 
+GCOV_CFLAGS = -fprofile-arcs -ftest-coverage
+
 test_modules_SOURCES =		                   \
 	../src/bubble.c		                   \
 	../src/defaults.c	                   \
@@ -37,6 +39,7 @@ test_modules_SOURCES =		                   \
 	test-text-filtering.c
 
 test_modules_CFLAGS =		\
+	$(GCOV_CFLAGS) \
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
 	$(GTK_CFLAGS)		\
@@ -60,6 +63,7 @@ EGG_MODULES = \
 	../egg/egg-hack.c
 
 AM_CFLAGS = \
+	$(GCOV_CFLAGS) \
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
 	-I$(top_srcdir)/src -I$(top_srcdir)/egg
