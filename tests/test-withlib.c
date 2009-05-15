@@ -186,28 +186,31 @@ test_withlib_priority (void)
 
 static GMainLoop* loop;
 
+static char* test_action_callback_data = "Some string to pass to the action callback";
+
 static void
 callback (NotifyNotification *n,
 	  const char *action,
 	  void *user_data)
 {
-	g_assert (g_strcmp0 (action, "default") == 0);
+	g_assert (g_strcmp0 (action, "action") == 0);
+	g_assert (user_data == test_action_callback_data);
 	g_main_loop_quit (loop);
 }
 
 static void
 test_withlib_actions (void)
 {
-        NotifyNotification *n1;
+	NotifyNotification *n1;
 
-	n1 = notify_notification_new ("Notification with a default action",
-				      "You should see that in a dialog box",
+	n1 = notify_notification_new ("Notification with an action",
+				      "You should see that in a dialog box. Click the 'Action' button for the test to succeed.",
 				      "", NULL);
 	notify_notification_add_action (n1,
-					"default",
-					"default",
+					"action",
+					"Action",
 					(NotifyActionCallback)callback,
-					NULL,
+					test_action_callback_data,
 					NULL);
 	notify_notification_show (n1, NULL);
 	
