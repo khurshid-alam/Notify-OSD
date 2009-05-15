@@ -139,3 +139,4 @@ tests/test_modules-test-synchronous.gcda
 tests/test_modules-test-text-filtering.gcda
 tests/test_modules-test-withlib.gcda
 tests/test_modules-util.gcda
+tests/*.gcov
