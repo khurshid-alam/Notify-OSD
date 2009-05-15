@@ -43,12 +43,17 @@ stop_main_loop (GMainLoop *loop)
 }
 
 static void
+test_withlib_setup (void)
+{
+	notify_init (__FILE__);
+}
+
+static void
 test_withlib_get_server_information (void)
 {
 	gchar *name = NULL, *vendor = NULL, *version = NULL, *specver = NULL;
 	gboolean ret = FALSE;
 
-        notify_init (__FILE__);
 	ret = notify_get_server_info (&name, &vendor, &version, &specver);
 	
 	g_assert (ret);
@@ -61,8 +66,6 @@ test_withlib_get_server_caps (void)
 {
 	GList *cap, *caps = NULL;
 	gboolean test = FALSE;
-
-        notify_init (__FILE__);
 
 	caps = notify_get_server_caps ();
 
@@ -87,8 +90,6 @@ test_withlib_show_notification (void)
 {
         NotifyNotification *n;
 
-        notify_init (__FILE__);
-
 	n = notify_notification_new ("Test",
 				     "You should see a normal notification",
 				     "", NULL);
@@ -103,8 +104,6 @@ test_withlib_update_notification (void)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
-
-        notify_init (__FILE__);
 
 	n = notify_notification_new ("Test",
 				     "New notification",
@@ -251,8 +250,6 @@ test_withlib_append_hint (void)
         NotifyNotification *n;
 	gboolean res = FALSE;
 
-        notify_init (__FILE__);
-
 	/* init notification, supply first line of body-text */
 	n = notify_notification_new ("Test (append-hint)",
 				     "The quick brown fox jumps over the lazy dog.",
@@ -293,8 +290,6 @@ test_withlib_icon_only_hint (void)
         NotifyNotification *n;
 	gboolean res = FALSE;
 
-        notify_init (__FILE__);
-
 	/* init notification, supply first line of body-text */
 	n = notify_notification_new (" ", /* needs this to be non-NULL */
 				     NULL,
@@ -313,8 +308,6 @@ test_withlib_swallow_markup (void)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
-
-        notify_init (__FILE__);
 
 	n = notify_notification_new ("Swallow markup test",
 				     "This text is hopefully neither <b>bold</b>, <i>italic</i> nor <u>underlined</u>.\n\nA little math-notation:\n\n\ta &gt; b &lt; c = 0",
@@ -335,7 +328,7 @@ test_withlib_create_test_suite (void)
 	ts = g_test_create_suite ("libnotify");
 
 	#define ADD_TEST(x) g_test_suite_add(ts, \
-		g_test_create_case(#x, 0, NULL, NULL, x, NULL) \
+		g_test_create_case(#x, 0, NULL, test_withlib_setup, x, NULL) \
 		)
 	ADD_TEST(test_withlib_get_server_information);
 	ADD_TEST(test_withlib_get_server_caps);
