@@ -113,7 +113,7 @@ get_screensaver_proxy (void)
 gboolean
 dnd_is_screensaver_inhibited ()
 {
-	GError  *error;
+	GError  *error = NULL;
 	gboolean inhibited = FALSE;
 	char **list;
 
@@ -141,7 +141,7 @@ dnd_is_screensaver_inhibited ()
 gboolean
 dnd_is_screensaver_active ()
 {
-	GError  *error;
+	GError  *error = NULL;
 	gboolean active = FALSE;;
 
 	if (! get_screensaver_proxy ())
