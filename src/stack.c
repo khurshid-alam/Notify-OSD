@@ -41,6 +41,9 @@
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
+/* fwd declaration */
+void close_handler (GObject* n, Stack*  stack);
+
 /*-- internal API ------------------------------------------------------------*/
 
 static void
@@ -52,9 +55,12 @@ stack_dispose (GObject* gobject)
 
 static
 void
-delete_entry (gpointer data,
+disconnect_bubble (gpointer data,
 	      gpointer user_data)
 {
+	Bubble* bubble = BUBBLE(data);
+	Stack* stack = STACK(user_data);
+	g_signal_handlers_disconnect_by_func (G_OBJECT(bubble), G_CALLBACK (close_handler), stack);
 }
 
 
@@ -62,7 +68,7 @@ static void
 stack_finalize (GObject* gobject)
 {
 	if (STACK(gobject)->list != NULL)
-		g_list_foreach (STACK(gobject)->list, delete_entry, NULL);
+		g_list_foreach (STACK(gobject)->list, disconnect_bubble, gobject);
 	if (STACK(gobject)->defaults != NULL)
 		g_object_unref (STACK(gobject)->defaults);
 	if (STACK(gobject)->observer != NULL)
@@ -291,9 +297,6 @@ value_changed_handler (Defaults* defaults,
 	if (stack->list != NULL)
 		g_list_foreach (stack->list, _trigger_bubble_redraw, NULL);
 }
-
-/* fwd declaration */
-void close_handler (GObject* n, Stack*  stack);
 
 /* this is in dialog.c */
 gboolean dialog_check_actions_and_timeout (gchar **actions, gint timeout);
