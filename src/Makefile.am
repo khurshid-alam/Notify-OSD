@@ -80,6 +80,7 @@ notify_osd_CFLAGS = 		\
 	$(GLIB_CFLAGS) 		\
 	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
+	-DWNCK_I_KNOW_THIS_IS_UNSTABLE \
 	$(WNCK_CFLAGS)		\
 	$(NULL)
 

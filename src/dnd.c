@@ -40,6 +40,8 @@
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
 
+#include <libwnck/libwnck.h>
+
 #include "dbus.h"
 
 static DBusGProxy *gsmgr = NULL;
@@ -167,6 +169,22 @@ dnd_is_online_presence_dnd ()
 	return FALSE;
 }
 
+static int
+is_fullscreen_cb (gconstpointer window, gconstpointer data)
+{
+	return wnck_window_is_fullscreen (WNCK_WINDOW(window)) ? 0 : 1;
+}
+
+gboolean
+dnd_has_one_fullscreen_window (void)
+{
+	WnckScreen *screen = wnck_screen_get_default ();
+	wnck_screen_force_update (screen);
+	GList *list = wnck_screen_get_windows (screen);
+	GList *item = g_list_find_custom (list, NULL, is_fullscreen_cb);
+	return item != NULL;
+}
+
 /* Tries to determine whether the user is in "do not disturb" mode */
 gboolean
 dnd_dont_disturb_user (void)
@@ -175,5 +193,6 @@ dnd_dont_disturb_user (void)
 		|| dnd_is_xscreensaver_active()
 		|| dnd_is_screensaver_active()
 		|| dnd_is_screensaver_inhibited()
+		|| dnd_has_one_fullscreen_window()
 		);
 }

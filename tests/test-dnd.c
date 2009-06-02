@@ -49,20 +49,52 @@ test_dnd_screensaver (void)
 		g_debug ("screensaver is active");
 }
 
+static
+gboolean
+check_fullscreen (GMainLoop *loop)
+{
+	g_assert (dnd_has_one_fullscreen_window());
+	g_main_loop_quit (loop);
+	return FALSE;
+}
+
+static
+gboolean
+check_no_fullscreen (GMainLoop *loop)
+{
+	g_assert (!dnd_has_one_fullscreen_window());
+	g_main_loop_quit (loop);
+	return FALSE;
+}
+
+static
+void
+test_dnd_fullscreen (void)
+{
+	g_assert (!dnd_has_one_fullscreen_window());
+
+	GtkWidget *window = gtk_window_new (GTK_WINDOW_TOPLEVEL);
+	gtk_window_fullscreen (GTK_WINDOW (window));
+	gtk_widget_show_now (window);
+
+	GMainLoop* loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (2000, (GSourceFunc) check_fullscreen, loop);
+	g_main_loop_run (loop);
+
+	gtk_widget_destroy (window);
+	g_timeout_add (2000, (GSourceFunc) check_no_fullscreen, loop);
+	g_main_loop_run (loop);
+}
+
 GTestSuite *
 test_dnd_create_test_suite (void)
 {
 	GTestSuite *ts = NULL;
-	GTestCase  *tc = NULL;
 
 	ts = g_test_create_suite ("dnd");
-	tc = g_test_create_case ("detect screensaver",
-				 0,
-				 NULL,
-				 NULL,
-				 test_dnd_screensaver,
-				 NULL);
-	g_test_suite_add (ts, tc);
+#define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
+	g_test_suite_add (ts, TC(test_dnd_screensaver));
+	g_test_suite_add (ts, TC(test_dnd_fullscreen));
 
 	return ts;
 }
