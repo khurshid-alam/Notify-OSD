@@ -131,7 +131,7 @@ enum
  * the visual guide for jaunty-notifications */
 #define DEFAULT_FADE_IN_TIMEOUT      250
 #define DEFAULT_FADE_OUT_TIMEOUT     1000
-#define DEFAULT_ON_SCREEN_TIMEOUT    5000
+#define DEFAULT_ON_SCREEN_TIMEOUT    10000
 
 /* GConf-keys to watch */
 #define GCONF_UI_FONT_NAME        "/desktop/gnome/interface/font_name"

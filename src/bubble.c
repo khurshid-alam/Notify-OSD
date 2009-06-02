@@ -64,6 +64,7 @@ struct _BubblePrivate {
 	guint        timer_id;
 	guint        timeout;
 	gboolean     mouse_over;
+	gfloat       distance;
 	gint         start_y;
 	gint         end_y;
 	gint         delta_y;
@@ -1657,10 +1658,18 @@ redraw_handler (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	if (bubble_is_mouse_over (bubble))
+	if (priv->alpha == NULL)
+	{
+		if (priv->distance < 1.0f)
+			gtk_window_set_opacity (window, 0.1f + priv->distance * 0.85f);
+		else
+			gtk_window_set_opacity (window, 0.95f);
+	}
+
+	/*if (bubble_is_mouse_over (bubble))
 		gtk_window_set_opacity (window, 0.1f);
 	else if (priv->alpha == NULL)
-		gtk_window_set_opacity (window, 0.95f);
+		gtk_window_set_opacity (window, 0.95f);*/
 
 	return TRUE;
 }
@@ -1756,6 +1765,9 @@ pointer_update (Bubble* bubble)
 
 	if (GTK_WIDGET_REALIZED (window))
 	{
+		gint distance_x;
+		gint distance_y;
+
 		gtk_widget_get_pointer (window, &pointer_rel_x, &pointer_rel_y);
 		gtk_window_get_position (GTK_WINDOW (window), &win_x, &win_y);
 		pointer_abs_x = win_x + pointer_rel_x;
@@ -1772,6 +1784,35 @@ pointer_update (Bubble* bubble)
 		{
 			bubble_set_mouse_over (bubble, FALSE);
 		}
+
+		if (pointer_abs_x >= win_x &&
+		    pointer_abs_x <= win_x + width)
+			distance_x = 0;
+		else
+		{
+			if (pointer_abs_x < win_x)
+				distance_x = abs (pointer_rel_x);
+
+			if (pointer_abs_x > win_x + width)
+				distance_x = abs (pointer_rel_x - width);
+		}
+
+		if (pointer_abs_y >= win_y &&
+		    pointer_abs_y <= win_y + height)
+			distance_y = 0;
+		else
+		{
+			if (pointer_abs_y < win_y)
+				distance_y = abs (pointer_rel_y);
+
+			if (pointer_abs_y > win_y + height)
+				distance_y = abs (pointer_rel_y - height);
+		}
+
+		priv->distance = sqrt (distance_x * distance_x +
+				       distance_y * distance_y) /
+				       (double) 40;
+
 	}
 
 	return TRUE;
@@ -2037,6 +2078,7 @@ bubble_new (Defaults* defaults)
 	this->priv->visible         = FALSE;
 	this->priv->timeout         = 5000;
 	this->priv->mouse_over      = FALSE;
+	this->priv->distance        = 1.0f;
 	this->priv->start_y         = 0;
 	this->priv->end_y           = 0;
 	this->priv->inc_factor      = 0.0f;
