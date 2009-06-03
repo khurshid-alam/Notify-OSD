@@ -170,9 +170,15 @@ dnd_is_online_presence_dnd ()
 }
 
 static int
-is_fullscreen_cb (gconstpointer window, gconstpointer data)
+is_fullscreen_cb (WnckWindow *window, WnckWorkspace *workspace)
 {
-	return wnck_window_is_fullscreen (WNCK_WINDOW(window)) ? 0 : 1;
+	if (wnck_window_is_visible_on_workspace (window, workspace)
+		&& wnck_window_is_fullscreen (window))
+	{
+		return 0;
+	} else {
+		return 1;
+	}
 }
 
 gboolean
@@ -180,8 +186,9 @@ dnd_has_one_fullscreen_window (void)
 {
 	WnckScreen *screen = wnck_screen_get_default ();
 	wnck_screen_force_update (screen);
+	WnckWorkspace *workspace = wnck_screen_get_active_workspace (screen);
 	GList *list = wnck_screen_get_windows (screen);
-	GList *item = g_list_find_custom (list, NULL, is_fullscreen_cb);
+	GList *item = g_list_find_custom (list, workspace, (GCompareFunc) is_fullscreen_cb);
 	return item != NULL;
 }
 

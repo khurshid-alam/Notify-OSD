@@ -32,6 +32,8 @@
 
 #include "dnd.h"
 
+#include <libwnck/libwnck.h>
+
 #define TEST_DBUS_NAME "org.freedesktop.Notificationstest"
 
 static
@@ -68,6 +70,21 @@ check_no_fullscreen (GMainLoop *loop)
 }
 
 static
+WnckWorkspace *
+find_free_workspace (WnckScreen *screen)
+{
+	WnckWorkspace *active_workspace = wnck_screen_get_active_workspace (screen);
+	GList *lst = wnck_screen_get_workspaces (screen);
+
+	if (lst->data != active_workspace) {
+		return WNCK_WORKSPACE(lst->data);
+	}
+	lst = g_list_next (lst);
+	g_assert (lst);
+	return WNCK_WORKSPACE(lst->data);
+}
+
+static
 void
 test_dnd_fullscreen (void)
 {
@@ -81,9 +98,19 @@ test_dnd_fullscreen (void)
 	g_timeout_add (2000, (GSourceFunc) check_fullscreen, loop);
 	g_main_loop_run (loop);
 
-	gtk_widget_destroy (window);
+	// Move window to a free workspace, dnd_has_one_fullscreen_window should
+	// not find it anymore
+	WnckScreen *screen = wnck_screen_get_default ();
+	WnckWindow *wnck_window = wnck_screen_get_active_window (screen);
+	g_assert (wnck_window);
+	WnckWorkspace *free_workspace = find_free_workspace (screen);
+	g_assert (free_workspace);
+	wnck_window_move_to_workspace (wnck_window, free_workspace);
+
 	g_timeout_add (2000, (GSourceFunc) check_no_fullscreen, loop);
 	g_main_loop_run (loop);
+
+	gtk_widget_destroy (window);
 }
 
 GTestSuite *
