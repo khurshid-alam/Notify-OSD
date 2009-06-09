@@ -44,6 +44,8 @@ dnd_is_screensaver_inhibited (void);
 gboolean
 dnd_is_screensaver_active (void);
 
+gboolean
+dnd_has_one_fullscreen_window (void);
 
 G_END_DECLS
 

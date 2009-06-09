@@ -43,6 +43,7 @@ test_modules_CFLAGS =		\
 	-Wall -Werror -std=c99  \
 	$(GLIB_CFLAGS)		\
 	$(GTK_CFLAGS)		\
+	-DWNCK_I_KNOW_THIS_IS_UNSTABLE \
 	$(WNCK_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	-I$(top_srcdir)/src
