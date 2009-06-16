@@ -2064,6 +2064,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
+	gtk_window_set_focus_on_map (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
 
