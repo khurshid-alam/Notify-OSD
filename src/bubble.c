@@ -583,6 +583,11 @@ draw_value_indicator (cairo_t* cr,
 	/* draw value-bar */
 	if (value > 0)
 	{
+		gint corrected_value = value;
+
+		if (corrected_value > 100)
+			corrected_value = 100;
+
 		draw_round_rect (cr,
 				 1.0f,
 				 (gdouble) start_x + outline_thickness + 0.5f,
@@ -592,7 +597,7 @@ draw_value_indicator (cairo_t* cr,
 				 outline_thickness / 2.0f +
 				 0.5f,
 				 bar_radius,
-				 bar_width / 100.0f * (gdouble) value,
+				 bar_width / 100.0f * (gdouble) corrected_value,
 				 bar_height);
 		gradient = cairo_pattern_create_linear (0.0f,
 
