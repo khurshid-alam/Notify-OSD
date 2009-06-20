@@ -101,23 +101,27 @@ AC_ARG_WITH(examples, [  --with-examples=[[all/c/mono]]
                           there are Python-examples too, but they don't
                           need to be build])
 
-if test "$with_examples" == "c"
-then
-	AC_SUBST([BUILD_C_EXAMPLES], [1])
+c_examples=no
+csharp_examples=no
+if test "x$with_examples" = "xc"; then
+        c_examples=yes
         AC_MSG_NOTICE([Build with ANSI-C examples])
-elif test "$with_examples" == "mono"
-then
-	AC_SUBST([BUILD_MONO_EXAMPLES], [1])
+fi
+if test "x$with_examples" = "xmono"; then
         CHECK_FOR_MONO_STUFF
+        csharp_examples=yes
         AC_MSG_NOTICE([Build with C-sharp examples])
-elif test "$with_examples" == "all"
-then
-	AC_SUBST([BUILD_C_EXAMPLES], [1])
-	AC_SUBST([BUILD_MONO_EXAMPLES], [1])
+fi
+if test "x$with_examples" = "xall"; then
         CHECK_FOR_MONO_STUFF
+        c_examples=yes
+        csharp_examples=yes
         AC_MSG_NOTICE([Build with ANSI-C examples])
         AC_MSG_NOTICE([Build with C-sharp examples])
 fi
+
+AM_CONDITIONAL(BUILD_C_EXAMPLES, test "x$c_examples" != "xno")
+AM_CONDITIONAL(BUILD_MONO_EXAMPLES, test "x$csharp_examples" != "xno")
 
 dnl CFLAGS
 CFLAGS="$CFLAGS -lm -Wall -Werror -std=c99"
@@ -131,3 +135,14 @@ data/Makefile
 data/icons/Makefile
 data/icons/scalable/Makefile
 ])
+
+echo ""
+echo "                 Notify OSD $VERSION"
+echo "             ============================"
+echo ""
+echo "                   prefix:   ${prefix}"
+echo ""
+echo "         Build C Examples:   ${c_examples}"
+echo ""
+echo "        Build C# Examples:   ${csharp_examples}"
+echo ""
