@@ -1770,8 +1770,8 @@ pointer_update (Bubble* bubble)
 
 	if (GTK_WIDGET_REALIZED (window))
 	{
-		gint distance_x;
-		gint distance_y;
+		gint distance_x = 0;
+		gint distance_y = 0;
 
 		gtk_widget_get_pointer (window, &pointer_rel_x, &pointer_rel_y);
 		gtk_window_get_position (GTK_WINDOW (window), &win_x, &win_y);
