@@ -9,15 +9,15 @@ noinst_PROGRAMS = icon-only		  \
 		  append-hint-example	  \
 		  update-notifications
 
-icon_only_SOURCES		 = example-util.c icon-only.c
-sync_icon_only_SOURCES		 = sync-icon-only.c example-util.c
-icon_summary_body_SOURCES	 = icon-summary-body.c example-util.c
-icon_summary_SOURCES		 = icon-summary.c example-util.c
-icon_value_SOURCES		 = icon-value.c example-util.c
-summary_body_SOURCES		 = summary-body.c example-util.c
-summary_only_SOURCES		 = summary-only.c example-util.c
-append_hint_example_SOURCES	 = append-hint-example.c example-util.c
-update_notifications_SOURCES	 = update-notifications.c example-util.c
+icon_only_SOURCES		 = example-util.c example-util.h icon-only.c
+sync_icon_only_SOURCES		 = sync-icon-only.c example-util.h example-util.c
+icon_summary_body_SOURCES	 = icon-summary-body.c example-util.h example-util.c
+icon_summary_SOURCES		 = icon-summary.c example-util.c example-util.h
+icon_value_SOURCES		 = icon-value.c example-util.c example-util.h
+summary_body_SOURCES		 = summary-body.c example-util.c example-util.h
+summary_only_SOURCES		 = summary-only.c example-util.c example-util.h
+append_hint_example_SOURCES	 = append-hint-example.c example-util.c example-util.h
+update_notifications_SOURCES	 = update-notifications.c example-util.c example-util.h
 
 icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 sync_icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
