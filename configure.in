@@ -60,8 +60,64 @@ PKG_CHECK_MODULES(notify_osd,
 		  gtk+-2.0 >= 2.14)
 AC_SUBST(NOTIFY_OSD_CFLAGS)
 AC_SUBST(NOTIFY_OSD_LIBS)
-# example python module
-# AM_CHECK_PYMOD(gobject)
+
+#
+# checks for building C- or C#-examples
+#
+AC_DEFUN([CHECK_FOR_MONO_STUFF],
+[
+        NAME="gmcs"
+        AC_PATH_PROG(GMCS, $NAME, no)
+        AC_SUBST(GMCS)
+        if test "x$GMCS" = "xno"; then
+                AC_MSG_ERROR([You need to install '$NAME'])
+        fi
+
+        NAME="Mono.Posix"
+        AC_MSG_CHECKING([for Mono 2.0 GAC $NAME.dll])
+        if test -e "$(pkg-config --variable=libdir mono)/mono/2.0/$NAME.dll";
+        then
+                AC_MSG_RESULT([found])
+        else
+                AC_MSG_RESULT([not found])
+                AC_MSG_ERROR([missing reqired Mono 2.0 assembly $NAME.dll])
+        fi
+
+        NAME="notify-sharp"
+        AC_MSG_CHECKING([for Mono 2.0 CIL $NAME])
+        pkg-config --exists $NAME
+        if test "$?" == "0"
+        then
+                AC_MSG_RESULT([found])
+        else
+                AC_MSG_RESULT([not found])
+                AC_MSG_ERROR([missing reqired Mono 2.0 CIL $NAME])
+        fi
+])
+
+AC_ARG_WITH(examples, [  --with-examples=[[all/c/mono]]
+                          build C or C#-examples using libnotify
+                          demonstrating special features of notify-osd
+                          there are Python-examples too, but they don't
+                          need to be build])
+
+if test "$with_examples" == "c"
+then
+	AC_SUBST([BUILD_C_EXAMPLES], [1])
+        AC_MSG_NOTICE([Build with ANSI-C examples])
+elif test "$with_examples" == "mono"
+then
+	AC_SUBST([BUILD_MONO_EXAMPLES], [1])
+        CHECK_FOR_MONO_STUFF
+        AC_MSG_NOTICE([Build with C-sharp examples])
+elif test "$with_examples" == "all"
+then
+	AC_SUBST([BUILD_C_EXAMPLES], [1])
+	AC_SUBST([BUILD_MONO_EXAMPLES], [1])
+        CHECK_FOR_MONO_STUFF
+        AC_MSG_NOTICE([Build with ANSI-C examples])
+        AC_MSG_NOTICE([Build with C-sharp examples])
+fi
 
 dnl CFLAGS
 CFLAGS="$CFLAGS -lm -Wall -Werror -std=c99"

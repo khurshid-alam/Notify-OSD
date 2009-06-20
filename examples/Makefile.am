@@ -56,30 +56,31 @@ summary_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
 append_hint_example_LDFLAGS  = `pkg-config --libs libnotify glib-2.0`
 update_notifications_LDFLAGS = `pkg-config --libs libnotify glib-2.0`
 
-icon-only.exe: $(icon_only_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(icon_only_exe_SOURCES) -out:icon-only.exe
+if BUILD_MONO_EXAMPLES
+	icon-only.exe: $(icon_only_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(icon_only_exe_SOURCES) -out:icon-only.exe
 
-sync-icon-only.exe: $(sync_icon_only_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(sync_icon_only_exe_SOURCES) -out:sync-icon-only.exe
+	sync-icon-only.exe: $(sync_icon_only_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(sync_icon_only_exe_SOURCES) -out:sync-icon-only.exe
 
-icon-summary-body.exe: $(icon_summary_body_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(icon_summary_body_exe_SOURCES) -out:icon-summary-body.exe
+	icon-summary-body.exe: $(icon_summary_body_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(icon_summary_body_exe_SOURCES) -out:icon-summary-body.exe
 
-icon-summary.exe: $(icon_summary_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(icon_summary_exe_SOURCES) -out:icon-summary.exe
+	icon-summary.exe: $(icon_summary_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(icon_summary_exe_SOURCES) -out:icon-summary.exe
 
-icon-value.exe: $(icon_value_exe_SOURCES)
-	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(icon_value_exe_SOURCES) -out:icon-value.exe
+	icon-value.exe: $(icon_value_exe_SOURCES)
+		gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(icon_value_exe_SOURCES) -out:icon-value.exe
 
-summary-body.exe: $(summary_body_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(summary_body_exe_SOURCES) -out:summary-body.exe
+	summary-body.exe: $(summary_body_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(summary_body_exe_SOURCES) -out:summary-body.exe
 
-summary-only.exe: $(summary_only_exe_SOURCES)
-	gmcs -pkg:notify-sharp $(summary_only_exe_SOURCES) -out:summary-only.exe
+	summary-only.exe: $(summary_only_exe_SOURCES)
+		gmcs -pkg:notify-sharp $(summary_only_exe_SOURCES) -out:summary-only.exe
 
-append-hint-example.exe: $(append_hint_example_exe_SOURCES)
-	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(append_hint_example_exe_SOURCES) -out:append-hint-example.exe
+	append-hint-example.exe: $(append_hint_example_exe_SOURCES)
+		gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(append_hint_example_exe_SOURCES) -out:append-hint-example.exe
 
-update-notifications.exe: $(update_notifications_exe_SOURCES)
-	gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(update_notifications_exe_SOURCES) -out:update-notifications.exe
-
+	update-notifications.exe: $(update_notifications_exe_SOURCES)
+		gmcs -pkg:notify-sharp -r:Mono.Posix.dll $(update_notifications_exe_SOURCES) -out:update-notifications.exe
+endif
