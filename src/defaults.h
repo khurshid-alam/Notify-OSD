@@ -48,8 +48,8 @@ G_BEGIN_DECLS
  * example use:
  *   PIXEL2EM(42, defaults) - that will returns a gdouble
  *   EM2PIXEL(0.375, defaults) - that will return a gint */
-#define PIXELS2EM(pixel_value, d) ((gdouble) ((gdouble) pixel_value / (gdouble) defaults_get_pixel_per_em(d)))
-#define EM2PIXELS(em_value, d) ((gint) (em_value * (gdouble) defaults_get_pixel_per_em(d)))
+#define PIXELS2EM(pixel_value, d) ((gdouble) ((gdouble) pixel_value / defaults_get_pixel_per_em(d)))
+#define EM2PIXELS(em_value, d) ((gint) (em_value * defaults_get_pixel_per_em(d)))
 
 typedef struct _Defaults      Defaults;
 typedef struct _DefaultsClass DefaultsClass;
@@ -95,7 +95,7 @@ struct _Defaults
 	GString*     text_body_color;
 	gint         text_body_weight;
 	gdouble      text_body_size;
-	gint         pixels_per_em;
+	gdouble      pixels_per_em;
 };
 
 /* class structure */
@@ -216,7 +216,7 @@ defaults_get_text_body_weight (Defaults* self);
 gdouble
 defaults_get_text_body_size (Defaults* self);
 
-gint
+gdouble
 defaults_get_pixel_per_em (Defaults* self);
 
 void

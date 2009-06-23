@@ -103,7 +103,7 @@ enum
 /* these values are interpreted as em-measurements and do comply to the 
  * visual guide for jaunty-notifications */
 #define DEFAULT_DESKTOP_BOTTOM_GAP    6.0f
-#define DEFAULT_BUBBLE_WIDTH         23.0f
+#define DEFAULT_BUBBLE_WIDTH         24.0f
 #define DEFAULT_BUBBLE_MIN_HEIGHT     5.0f
 #define DEFAULT_BUBBLE_MAX_HEIGHT    12.2f
 #define DEFAULT_BUBBLE_VERT_GAP       0.5f
@@ -121,11 +121,11 @@ enum
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
-#define DEFAULT_TEXT_TITLE_SIZE      0.95f
+#define DEFAULT_TEXT_TITLE_SIZE      1.0f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
 #define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
 #define DEFAULT_TEXT_BODY_SIZE       0.8f
-#define DEFAULT_PIXELS_PER_EM        10
+#define DEFAULT_PIXELS_PER_EM        10.0f
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -161,7 +161,7 @@ _get_font_size_dpi (Defaults* self)
 	gint       points        = 0;
 	GString*   font_face     = NULL;
 	gdouble    dpi           = 0.0f;
-	gint       pixels_per_em = 0;
+	gdouble    pixels_per_em = 0;
 
 	if (!IS_DEFAULTS (self))
 		return;
@@ -232,8 +232,8 @@ _get_font_size_dpi (Defaults* self)
 	}
 
 	/* update stored DPI-value */
-	pixels_per_em = (gint) ((gdouble) points * 1.0f / 72.0f * dpi);
-	g_object_set (self, "pixels-per-em", (gint) pixels_per_em, NULL);
+	pixels_per_em = (gdouble) points * 1.0f / 72.0f * dpi;
+	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
 }
 
 static void
@@ -530,13 +530,13 @@ defaults_constructed (GObject* gobject)
 	new_bubble_width = 3.0f * margin_size +
 			   icon_size +
 			   20.0f * average_char_width;
-	if (new_bubble_width > bubble_width)
+	/*if (new_bubble_width > bubble_width)
 	{
 		g_object_set (self,
 			      "bubble-width",
 			      new_bubble_width,
 			      NULL);
-	}
+	}*/
 
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
@@ -859,7 +859,7 @@ defaults_get_property (GObject*    gobject,
 		break;
 
 		case PROP_PIXELS_PER_EM:
-			g_value_set_int (value, defaults->pixels_per_em);
+			g_value_set_double (value, defaults->pixels_per_em);
 		break;
 
 		default :
@@ -1059,7 +1059,7 @@ defaults_set_property (GObject*      gobject,
 		break;
 
 		case PROP_PIXELS_PER_EM:
-			defaults->pixels_per_em = g_value_get_int (value);
+			defaults->pixels_per_em = g_value_get_double (value);
 		break;
 
 		default :
@@ -1539,12 +1539,12 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_TEXT_BODY_SIZE,
 					 property_text_body_size);
 
-	property_pixels_per_em = g_param_spec_int (
+	property_pixels_per_em = g_param_spec_double (
 				"pixels-per-em",
 				"pixels-per-em",
 				"Number of pixels for one em-unit",
-				1,
-				100,
+				1.0f,
+				100.0f,
 				DEFAULT_PIXELS_PER_EM,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -2046,13 +2046,13 @@ defaults_get_text_body_size (Defaults* self)
 
 /* we use the normal font-height in pixels ("pixels-per-em") as the measurement
  * for 1 em, thus it should _not_ be called before defaults_constructed() */
-gint
+gdouble
 defaults_get_pixel_per_em (Defaults* self)
 {
 	if (!self || !IS_DEFAULTS (self))
-		return 0;
+		return 0.0f;
 
-	gint pixels_per_em;
+	gdouble pixels_per_em;
 
 	g_object_get (self, "pixels-per-em", &pixels_per_em, NULL);
 

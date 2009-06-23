@@ -854,7 +854,7 @@ _render_icon_title (Bubble*  self,
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_title_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
@@ -943,7 +943,7 @@ _render_icon_title_body (Bubble*  self,
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_title_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
@@ -984,7 +984,7 @@ _render_icon_title_body (Bubble*  self,
 	/* render body-message */
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_body_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc,
@@ -1043,7 +1043,7 @@ _render_title_body (Bubble*  self,
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_title_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
@@ -1083,7 +1083,7 @@ _render_title_body (Bubble*  self,
 	/* render body-message */
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_body_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc,
@@ -1142,7 +1142,7 @@ _render_title_only (Bubble*  self,
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
-	pango_font_description_set_size (desc,
+	pango_font_description_set_absolute_size (desc,
 					 EM2PIXELS (defaults_get_text_title_size (d), d) *
 					 PANGO_SCALE);
 	pango_font_description_set_family_static (desc, defaults_get_text_font_face (d));
@@ -2980,7 +2980,7 @@ _calc_title_height (Bubble* self,
 
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
-	pango_font_description_set_size (
+	pango_font_description_set_absolute_size (
 		desc,
 		EM2PIXELS (defaults_get_text_title_size (d), d) *
 		PANGO_SCALE);
@@ -3036,7 +3036,7 @@ _calc_body_height (Bubble* self,
 
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
-	pango_font_description_set_size (
+	pango_font_description_set_absolute_size (
 		desc,
 		EM2PIXELS (defaults_get_text_body_size (d), d) *
 		PANGO_SCALE);
