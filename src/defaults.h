@@ -96,6 +96,7 @@ struct _Defaults
 	gint         text_body_weight;
 	gdouble      text_body_size;
 	gdouble      pixels_per_em;
+	gdouble      system_font_size;
 };
 
 /* class structure */
@@ -218,6 +219,9 @@ defaults_get_text_body_size (Defaults* self);
 
 gdouble
 defaults_get_pixel_per_em (Defaults* self);
+
+gdouble
+defaults_get_system_font_size (Defaults* self);
 
 void
 defaults_refresh_screen_dimension_properties (Defaults *self);

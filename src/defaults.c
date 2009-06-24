@@ -76,7 +76,8 @@ enum
 	PROP_TEXT_BODY_COLOR,
 	PROP_TEXT_BODY_WEIGHT,
 	PROP_TEXT_BODY_SIZE,
-	PROP_PIXELS_PER_EM
+	PROP_PIXELS_PER_EM,
+	PROP_SYSTEM_FONT_SIZE
 };
 
 enum
@@ -103,7 +104,7 @@ enum
 /* these values are interpreted as em-measurements and do comply to the 
  * visual guide for jaunty-notifications */
 #define DEFAULT_DESKTOP_BOTTOM_GAP    6.0f
-#define DEFAULT_BUBBLE_WIDTH         24.0f
+#define DEFAULT_BUBBLE_WIDTH         28.0f
 #define DEFAULT_BUBBLE_MIN_HEIGHT     5.0f
 #define DEFAULT_BUBBLE_MAX_HEIGHT    12.2f
 #define DEFAULT_BUBBLE_VERT_GAP       0.5f
@@ -121,11 +122,12 @@ enum
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
-#define DEFAULT_TEXT_TITLE_SIZE      1.2f
+#define DEFAULT_TEXT_TITLE_SIZE      1.0f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
 #define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
-#define DEFAULT_TEXT_BODY_SIZE       1.0f
+#define DEFAULT_TEXT_BODY_SIZE       0.8f
 #define DEFAULT_PIXELS_PER_EM        10.0f
+#define DEFAULT_SYSTEM_FONT_SIZE     10.0f
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -222,6 +224,9 @@ _get_font_size_dpi (Defaults* self)
 		g_string_free (font_face, TRUE);
 	}
 
+	/* update stored system-font size (in pt!) */
+	g_object_set (self, "system-font-size", (gdouble) points, NULL);
+
 	/* determine current system DPI-setting */
 	error = NULL;
 	dpi = gconf_client_get_float (self->context, GCONF_FONT_DPI, &error);
@@ -232,11 +237,11 @@ _get_font_size_dpi (Defaults* self)
 	}
 
 	/* update stored DPI-value */
-	pixels_per_em = (gdouble) points * 1.0f / 72.0f * dpi;
+	pixels_per_em = (gdouble) points * dpi / 72.0f;
 	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
 
 	if (g_getenv ("DEBUG"))
-		g_print ("font-size: %d, dpi: %3.1f, pixels/EM: %2.2f, width: %d\n",
+		g_print ("font-size: %dpt; dpi: %3.1f; pixels/EM: %2.2f; width: %d px\n",
 			 points,
 			 dpi,
 			 pixels_per_em,
@@ -869,6 +874,10 @@ defaults_get_property (GObject*    gobject,
 			g_value_set_double (value, defaults->pixels_per_em);
 		break;
 
+		case PROP_SYSTEM_FONT_SIZE:
+			g_value_set_double (value, defaults->system_font_size);
+		break;
+
 		default :
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
 		break;
@@ -1069,6 +1078,10 @@ defaults_set_property (GObject*      gobject,
 			defaults->pixels_per_em = g_value_get_double (value);
 		break;
 
+		case PROP_SYSTEM_FONT_SIZE:
+			defaults->system_font_size = g_value_get_double (value);
+		break;
+
 		default :
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
 		break;
@@ -1115,6 +1128,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_text_body_weight;
 	GParamSpec*   property_text_body_size;
 	GParamSpec*   property_pixels_per_em;
+	GParamSpec*   property_system_font_size;
 
 	gobject_class->constructed  = defaults_constructed;
 	gobject_class->dispose      = defaults_dispose;
@@ -1558,6 +1572,19 @@ defaults_class_init (DefaultsClass* klass)
 	g_object_class_install_property (gobject_class,
 					 PROP_PIXELS_PER_EM,
 					 property_pixels_per_em);
+
+	property_system_font_size = g_param_spec_double (
+				"system-font-size",
+				"system-font-size",
+				"System font-size in pt",
+				1.0f,
+				100.0f,
+				DEFAULT_SYSTEM_FONT_SIZE,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_SYSTEM_FONT_SIZE,
+					 property_system_font_size);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -2064,6 +2091,19 @@ defaults_get_pixel_per_em (Defaults* self)
 	g_object_get (self, "pixels-per-em", &pixels_per_em, NULL);
 
 	return pixels_per_em;
+}
+
+gdouble
+defaults_get_system_font_size (Defaults* self)
+{
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
+
+	gdouble system_font_size;
+
+	g_object_get (self, "system-font-size", &system_font_size, NULL);
+
+	return system_font_size;
 }
 
 static gboolean
