@@ -65,10 +65,6 @@ struct _BubblePrivate {
 	guint        timeout;
 	gboolean     mouse_over;
 	gfloat       distance;
-	gint         start_y;
-	gint         end_y;
-	gint         delta_y;
-	gdouble      inc_factor;
 	gint         value; /* "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect */
 	gchar*       synchronous;
 	gchar*       sender;
@@ -2085,10 +2081,6 @@ bubble_new (Defaults* defaults)
 	this->priv->timeout         = 5000;
 	this->priv->mouse_over      = FALSE;
 	this->priv->distance        = 1.0f;
-	this->priv->start_y         = 0;
-	this->priv->end_y           = 0;
-	this->priv->inc_factor      = 0.0f;
-	this->priv->delta_y         = 0;
 	this->priv->composited      = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
 	this->priv->alpha           = NULL;
@@ -2556,85 +2548,6 @@ bubble_refresh (Bubble* self)
 	/* force a redraw */
 	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
 }
-
-static
-gboolean
-do_slide_bubble (Bubble* self)
-{
-	gint           x = 0;
-	gint           y = 0;
-	BubblePrivate* priv;
-
-	/* sanity check */
-	if (!self || !IS_BUBBLE (self))
-		return FALSE;
-
-	priv = GET_PRIVATE (self);
-
-	/* where is the bubble at the moment? */
-	gtk_window_get_position (GTK_WINDOW (priv->widget), &x, &y);
-
-	/* check if we arrived at the destination ... or overshot */
-	if (priv->delta_y > 0)
-	{
-		/* stop the callback/animation */
-		if (y >= priv->end_y)
-			return FALSE;
-	}
-	else
-	{
-		/* stop the callback/animation */
-		if (y <= priv->end_y)
-			return FALSE;
-	}
-
-	/* move the bubble to the new position */
-	bubble_move (self,
-		     x,
-		     priv->start_y +
-		     priv->delta_y *
-		     sin (priv->inc_factor) * G_PI / 2.0f);
-
-	/* "advance" the increase-factor */
-	priv->inc_factor += 1.0f / 30.0f;
-
-	/* keep going */
-	return TRUE;
-}
-
-void
-bubble_slide_to (Bubble* self,
-		 gint    end_x,
-		 gint    end_y)
-{
-	guint          timer_id = 0;
-	gint           start_x  = 0;
-	gint           start_y  = 0;
-	BubblePrivate* priv;
-
-	if (!self || !IS_BUBBLE (self))
-		return;
-
-	priv = GET_PRIVATE (self);
-
-	/* determine direction to take */
-	gtk_window_get_position (GTK_WINDOW (priv->widget), &start_x, &start_y);
-
-	/* don't do anything if we got the same target/end y-position */
-	if (end_y == start_y)
-		return;
-
-	priv->inc_factor = 0.0f;
-	priv->start_y    = start_y;
-	priv->end_y      = end_y;
-	priv->delta_y    = end_y - start_y;
-
-	/* and now let the timer tick... */
-	timer_id = g_timeout_add (1000/60,
-				  (GSourceFunc) do_slide_bubble,
-				  self);
-}
-
 
 static inline gboolean
 bubble_is_composited (Bubble *bubble)
