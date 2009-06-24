@@ -121,10 +121,10 @@ enum
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
-#define DEFAULT_TEXT_TITLE_SIZE      1.0f
+#define DEFAULT_TEXT_TITLE_SIZE      1.2f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
 #define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
-#define DEFAULT_TEXT_BODY_SIZE       0.8f
+#define DEFAULT_TEXT_BODY_SIZE       1.0f
 #define DEFAULT_PIXELS_PER_EM        10.0f
 
 /* these values are interpreted as milliseconds-measurements and do comply to
@@ -234,6 +234,13 @@ _get_font_size_dpi (Defaults* self)
 	/* update stored DPI-value */
 	pixels_per_em = (gdouble) points * 1.0f / 72.0f * dpi;
 	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
+
+	if (g_getenv ("DEBUG"))
+		g_print ("font-size: %d, dpi: %3.1f, pixels/EM: %2.2f, width: %d\n",
+			 points,
+			 dpi,
+			 pixels_per_em,
+			 (gint) (pixels_per_em * DEFAULT_BUBBLE_WIDTH));
 }
 
 static void
