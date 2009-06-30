@@ -241,11 +241,15 @@ _get_font_size_dpi (Defaults* self)
 	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
 
 	if (g_getenv ("DEBUG"))
-		g_print ("font-size: %dpt; dpi: %3.1f; pixels/EM: %2.2f; width: %d px\n",
+		g_print ("font-size: %dpt\ndpi: %3.1f\npixels/EM: %2.2f\nwidth: %d px\ntitle-height: %2.2f pt\nbody-height: %2.2f pt\n\n",
 			 points,
 			 dpi,
 			 pixels_per_em,
-			 (gint) (pixels_per_em * DEFAULT_BUBBLE_WIDTH));
+			 (gint) (pixels_per_em * DEFAULT_BUBBLE_WIDTH),
+			 defaults_get_system_font_size (self) *
+			 defaults_get_text_title_size (self),
+			 defaults_get_system_font_size (self) *
+			 defaults_get_text_body_size (self));
 }
 
 static void
