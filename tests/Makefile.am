@@ -4,7 +4,9 @@ noinst_PROGRAMS = test-modules \
 		  test-timeline-interpolate \
 		  test-timeline-rewind \
 		  test-timeline-smoothness \
-		  test-alpha-animation
+		  test-alpha-animation \
+		  test-raico \
+		  test-tile
 
 check_PROGRAMS = test-modules
 TESTS = test-modules
@@ -86,6 +88,40 @@ test_timeline_smoothness_SOURCES = ../egg/test-timeline-smoothness.c \
 
 test_alpha_animation_SOURCES = test-alpha-animation.c \
 	$(EGG_MODULES)
+
+RAICO_MODULES = \
+	../src/stack-blur.c \
+	../src/exponential-blur.c \
+	../src/gaussian-blur.c \
+	../src/raico-blur.c
+
+test_raico_SOURCES = \
+	$(RAICO_MODULES) \
+	test-raico.c
+
+test_raico_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_raico_LDADD = \
+	$(GTK_LIBS)
+
+TILE_MODULES = \
+	$(RAICO_MODULES) \
+	../src/tile.c
+
+test_tile_SOURCES = \
+	$(TILE_MODULES) \
+	test-tile.c
+
+test_tile_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_tile_LDADD = \
+	$(GTK_LIBS)
 
 test: test-modules
 	gtester -o=test-modules.xml -k ./test-modules
