@@ -146,3 +146,4 @@ tests/test-raico
 tests/test-tile
 tests/test-grow-bubble
 tests/test-scroll-text
+notify-osd - blur-cache.anjuta
