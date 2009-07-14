@@ -144,3 +144,5 @@ tests/raico-result.png
 tests/tile-result.png
 tests/test-raico
 tests/test-tile
+tests/test-grow-bubble
+tests/test-scroll-text
