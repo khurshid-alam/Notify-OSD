@@ -53,5 +53,15 @@ tile_paint (tile_t*  tile,
 	    gdouble  normal_alpha,
 	    gdouble  blurred_alpha);
 
+void
+tile_paint_with_padding (tile_t*  tile,
+			 cairo_t* cr,
+			 gdouble  x,
+			 gdouble  y,
+			 gdouble  width,
+			 gdouble  height,
+			 gdouble  normal_alpha,
+			 gdouble  blurred_alpha);
+
 #endif // _TILE_H
 
