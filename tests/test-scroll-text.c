@@ -417,8 +417,6 @@ expose_handler (GtkWidget*      window,
 	cairo_t*         cr      = NULL;
 	cairo_pattern_t* pattern = NULL;
 	cairo_pattern_t* mask    = NULL;
-	guint            width   = window->allocation.width;
-	guint            height  = window->allocation.height;
 
 	cr = gdk_cairo_create (window->window);
 
@@ -431,14 +429,6 @@ expose_handler (GtkWidget*      window,
 	if (g_distance < 1.0f)
 	{
 		tile_paint (g_tile, cr, 0.0f, 0.0f, g_distance, 1.0f - g_distance);
-		/*tile_paint_with_padding (g_tile,
-					 cr,
-					 0.0f,
-					 0.0f,
-					 width,
-					 height,
-					 g_distance,
-					 1.0f - g_distance);*/
 
 		cairo_push_group (cr);
 		tile_paint (g_text, cr, 2 * BUBBLE_SHADOW_SIZE, BUBBLE_SHADOW_SIZE - g_offset, g_distance, 1.0f - g_distance);
@@ -458,14 +448,6 @@ expose_handler (GtkWidget*      window,
 	else
 	{
 		tile_paint (g_tile, cr, 0.0f, 0.0f, g_distance, 0.0f);
-		/*tile_paint_with_padding (g_tile,
-					 cr,
-					 0.0f,
-					 0.0f,
-					 width,
-					 height,
-					 g_distance,
-					 0.0f);*/
 
 		cairo_push_group (cr);
 		tile_paint (g_text, cr, 2 * BUBBLE_SHADOW_SIZE, BUBBLE_SHADOW_SIZE - g_offset, g_distance, 0.0f);
@@ -532,6 +514,14 @@ set_bg_blur (GtkWidget* window,
 					      "_COMPIZ_WM_WINDOW_BLUR",
 					      FALSE));
 	}
+}
+
+gboolean
+quit (gpointer data)
+{
+	gtk_main_quit ();
+
+	return FALSE;
 }
 
 gboolean
@@ -938,6 +928,10 @@ main (int    argc,
 					   (GSourceFunc) pointer_update,
 					   (gpointer) window);
 
+    	g_timeout_add (10000,
+		       (GSourceFunc) quit,
+		       NULL);
+
 	/*  "clear" input-mask, set title/icon/attributes */
 	gtk_widget_set_app_paintable (window, TRUE);
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
@@ -965,6 +959,8 @@ main (int    argc,
 		    (gint) (BUBBLE_HEIGHT + 2.0f * BUBBLE_SHADOW_SIZE));
 	g_text = setup_text_tile ((gint) (BUBBLE_WIDTH - 2*BUBBLE_SHADOW_SIZE),
 				  (gint) (3.0f * BUBBLE_HEIGHT));
+
+	g_print ("This test will run for 10 seconds and then quit.\n");
 
 	gtk_main ();
 

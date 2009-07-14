@@ -6,7 +6,9 @@ noinst_PROGRAMS = test-modules \
 		  test-timeline-smoothness \
 		  test-alpha-animation \
 		  test-raico \
-		  test-tile
+		  test-tile \
+		  test-grow-bubble \
+		  test-scroll-text
 
 check_PROGRAMS = test-modules
 TESTS = test-modules
@@ -121,6 +123,38 @@ test_tile_CFLAGS = \
 	-I$(top_srcdir)/src
 
 test_tile_LDADD = \
+	$(GTK_LIBS)
+
+GROW_BUBBLE_MODULES = \
+	$(RAICO_MODULES) \
+	../src/tile.c
+
+test_grow_bubble_SOURCES = \
+	$(TILE_MODULES) \
+	test-grow-bubble.c
+
+test_grow_bubble_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_grow_bubble_LDADD = \
+	$(GTK_LIBS)
+
+SCROLL_TEXT_MODULES = \
+	$(RAICO_MODULES) \
+	../src/tile.c
+
+test_scroll_text_SOURCES = \
+	$(TILE_MODULES) \
+	test-scroll-text.c
+
+test_scroll_text_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_scroll_text_LDADD = \
 	$(GTK_LIBS)
 
 test: test-modules

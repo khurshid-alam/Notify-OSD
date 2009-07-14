@@ -47,9 +47,7 @@
 
 gboolean g_composited = FALSE;
 gboolean g_mouse_over = FALSE;
-tile_t*  g_start      = NULL;
-tile_t*  g_grow       = NULL;
-tile_t*  g_end        = NULL;
+tile_t*  g_tile       = NULL;
 gfloat   g_distance   = 1.0f;
 gfloat   g_step       = 5.0f;
 
@@ -369,7 +367,7 @@ expose_handler (GtkWidget*      window,
 
 	if (g_distance < 1.0f)
 	{
-		tile_paint_with_padding (g_end,
+		tile_paint_with_padding (g_tile,
 					 cr,
 					 0.0f,
 					 0.0f,
@@ -381,7 +379,7 @@ expose_handler (GtkWidget*      window,
 	}
 	else
 	{
-		tile_paint_with_padding (g_end,
+		tile_paint_with_padding (g_tile,
 					 cr,
 					 0.0f,
 					 0.0f,
@@ -524,7 +522,7 @@ pointer_update (GtkWidget* window)
 	gint       width;
 	gint       height;
 	gboolean   old_mouse_over;
-	gfloat     old_distance;
+	gfloat     old_distance = 0;
 
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
@@ -624,7 +622,7 @@ copy_surface (cairo_surface_t* orig)
 }
 
 void
-setup_tiles (gint w, gint h)
+setup_tile (gint w, gint h)
 {
 	cairo_status_t   status;
 	cairo_t*         cr          = NULL;
@@ -728,7 +726,7 @@ setup_tiles (gint w, gint h)
 	cairo_surface_destroy (tmp);
 	cairo_surface_destroy (dummy_surf);
 
-	g_end = tile_new_for_padding (norm_surf, blur_surf);
+	g_tile = tile_new_for_padding (norm_surf, blur_surf);
 	cairo_surface_destroy (norm_surf);
 	cairo_surface_destroy (blur_surf);
 
@@ -816,14 +814,14 @@ main (int    argc,
 
 	set_bg_blur (window, TRUE);
 
-	setup_tiles ((gint) (BUBBLE_WIDTH + 2.0f * BUBBLE_SHADOW_SIZE),
+	setup_tile ((gint) (BUBBLE_WIDTH + 2.0f * BUBBLE_SHADOW_SIZE),
 		    (gint) (BUBBLE_HEIGHT + 2.0f * BUBBLE_SHADOW_SIZE));
+
+	g_print ("This test will run for 10 seconds and then quit.\n");
 
 	gtk_main ();
 
-	tile_destroy (g_start);
-	tile_destroy (g_grow);
-	tile_destroy (g_end);
+	tile_destroy (g_tile);
 
 	return 0;
 }

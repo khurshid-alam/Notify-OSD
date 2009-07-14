@@ -42,6 +42,10 @@ tile_t*
 tile_new (cairo_surface_t* source,
 	  guint            blur_radius);
 
+tile_t*
+tile_new_for_padding (cairo_surface_t* normal,
+		      cairo_surface_t* blurred);
+
 void
 tile_destroy (tile_t* tile);
 

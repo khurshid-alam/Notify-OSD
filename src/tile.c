@@ -150,6 +150,8 @@ tile_new_for_padding (cairo_surface_t* normal,
 void
 tile_destroy (tile_t* tile)
 {
+	gpointer data;
+
 	if (!tile)
 		return;
 
