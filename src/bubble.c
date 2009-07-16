@@ -1,33 +1,33 @@
-/*******************************************************************************
-**3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
-**      10        20        30        40        50        60        70        80
-**
-** notify-osd
-**
-** bubble.c - implements all the rendering of a notification bubble
-**
-** Copyright 2009 Canonical Ltd.
-**
-** Authors:
-**    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
-**    David Barth <david.barth@canonical.com>
-**
-** Contributor(s):
-**    Frederic "fredp" Peters <fpeters@gnome.org> (icon-only fix, rev. 204)
-**
-** This program is free software: you can redistribute it and/or modify it
-** under the terms of the GNU General Public License version 3, as published
-** by the Free Software Foundation.
-**
-** This program is distributed in the hope that it will be useful, but
-** WITHOUT ANY WARRANTY; without even the implied warranties of
-** MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
-** PURPOSE.  See the GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License along
-** with this program.  If not, see <http://www.gnu.org/licenses/>.
-**
-*******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+//3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
+//      10        20        30        40        50        60        70        80
+//
+// notify-osd
+//
+// bubble.c - implements all the rendering of a notification bubble
+//
+// Copyright 2009 Canonical Ltd.
+//
+// Authors:
+//    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
+//    David Barth <david.barth@canonical.com>
+//
+// Contributor(s):
+//    Frederic "fredp" Peters <fpeters@gnome.org> (icon-only fix, rev. 204)
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3, as published
+// by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranties of
+// MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+// PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 #include <string.h>
 #include <stdlib.h>
@@ -47,6 +47,8 @@
 #include "dbus.h"
 #include "util.h"
 #include "bubble-window.h"
+#include "raico-blur.h"
+#include "tile.h"
 
 G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 
@@ -54,37 +56,39 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
   (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
 
 struct _BubblePrivate {
-	BubbleLayout layout;
-	GtkWidget*   widget;
-	GString*     title;
-	GString*     message_body;
-	guint        id;
-	GdkPixbuf*   icon_pixbuf;
-	gboolean     visible;
-	guint        timer_id;
-	guint        timeout;
-	gboolean     mouse_over;
-	gfloat       distance;
-	gint         value; /* "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect */
-	gchar*       synchronous;
-	gchar*       sender;
-	guint        urgency;
-	gboolean     composited;
-	EggAlpha *alpha;
-	EggTimeline *timeline;
-	guint        draw_handler_id;
-	guint        pointer_update_id;
-	cairo_surface_t* blurred_content;
-	cairo_surface_t* blurred_bubble;
-	cairo_surface_t* glow_surface;
-	cairo_surface_t* dim_surface;
+	BubbleLayout     layout;
+	GtkWidget*       widget;
+	GString*         title;
+	GString*         message_body;
+	guint            id;
+	GdkPixbuf*       icon_pixbuf;
+	gboolean         visible;
+	guint            timer_id;
+	guint            timeout;
+	gboolean         mouse_over;
+	gfloat           distance;
+	gint             value; // "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect
+	gchar*           synchronous;
+	gchar*           sender;
+	guint            urgency;
+	gboolean         composited;
+	EggAlpha*        alpha;
+	EggTimeline*     timeline;
+	guint            draw_handler_id;
+	guint            pointer_update_id;
+	tile_t*          tile_background_part;
+	tile_t*          tile_background;
+	tile_t*          tile_icon;
+	tile_t*          tile_title;
+	tile_t*          tile_body;
+	tile_t*          tile_indicator;
 	gint             title_width;
 	gint             title_height;
 	gint             body_width;
 	gint             body_height;
 	gboolean         append;
 	gboolean         icon_only;
-	gint		 future_height;
+	gint             future_height;
 };
 
 enum
@@ -102,9 +106,9 @@ enum
 	A
 };
 
-/* FIXME: this is in class Defaults already, but not yet hooked up so for the
- * moment we use the macros here, these values reflect the visual-guideline
- * for jaunty notifications */
+// FIXME: this is in class Defaults already, but not yet hooked up so for the
+// moment we use the macros here, these values reflect the visual-guideline
+// for jaunty notifications
 #define TEXT_TITLE_COLOR_R 1.0f
 #define TEXT_TITLE_COLOR_G 1.0f
 #define TEXT_TITLE_COLOR_B 1.0f
@@ -132,31 +136,31 @@ enum
 
 #define FPS                60
 
-/*-- private functions  --------------------------------------------------------------*/
+//-- private functions ---------------------------------------------------------
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
 
 static void
 draw_round_rect (cairo_t* cr,
-		 gdouble   aspect,         /* aspect-ratio            */
-		 gdouble   x,              /* top-left corner         */
-		 gdouble   y,              /* top-left corner         */
-		 gdouble   corner_radius,  /* "size" of the corners   */
-		 gdouble   width,          /* width of the rectangle  */
-		 gdouble   height          /* height of the rectangle */)
+		 gdouble  aspect,        // aspect-ratio
+		 gdouble  x,             // top-left corner
+		 gdouble  y,             // top-left corner
+		 gdouble  corner_radius, // "size" of the corners
+		 gdouble  width,         // width of the rectangle
+		 gdouble  height)        // height of the rectangle
 {
 	gdouble radius = corner_radius / aspect;
 
-	/* top-left, right of the corner */
+	// top-left, right of the corner
 	cairo_move_to (cr, x + radius, y);
 
-	/* top-right, left of the corner */
+	// top-right, left of the corner
 	cairo_line_to (cr,
 		       x + width - radius,
 		       y);
 
-	/* top-right, below the corner */
+	// top-right, below the corner
 	cairo_arc (cr,
                    x + width - radius,
                    y + radius,
@@ -164,12 +168,12 @@ draw_round_rect (cairo_t* cr,
                    -90.0f * G_PI / 180.0f,
                    0.0f * G_PI / 180.0f);
 
-	/* bottom-right, above the corner */
+	// bottom-right, above the corner
 	cairo_line_to (cr,
 		       x + width,
 		       y + height - radius);
 
-	/* bottom-right, left of the corner */
+	// bottom-right, left of the corner
 	cairo_arc (cr,
                    x + width - radius,
                    y + height - radius,
@@ -177,12 +181,12 @@ draw_round_rect (cairo_t* cr,
                    0.0f * G_PI / 180.0f,
                    90.0f * G_PI / 180.0f);
 
-	/* bottom-left, right of the corner */
+	// bottom-left, right of the corner
 	cairo_line_to (cr,
 		       x + radius,
 		       y + height);
 
-	/* bottom-left, above the corner */
+	// bottom-left, above the corner
 	cairo_arc (cr,
                    x + radius,
                    y + height - radius,
@@ -190,12 +194,12 @@ draw_round_rect (cairo_t* cr,
                    90.0f * G_PI / 180.0f,
                    180.0f * G_PI / 180.0f);
 
-	/* top-left, below the corner */
+	// top-left, below the corner
 	cairo_line_to (cr,
 		       x,
 		       y + radius);
 
-	/* top-left, right of the corner */
+	// top-left, right of the corner
 	cairo_arc (cr,
                    x + radius,
                    y + radius,
@@ -204,121 +208,675 @@ draw_round_rect (cairo_t* cr,
                    270.0f * G_PI / 180.0f);
 }
 
-static pixman_fixed_t*
-create_gaussian_blur_kernel (gint    radius,
-                             gdouble sigma,
-                             gint*   length)
+void
+_draw_shadow (cairo_t* cr,
+	      gdouble  width,
+	      gdouble  height,
+	      gint     shadow_radius,
+	      gint     corner_radius)
 {
-	const gdouble   scale2 = 2.0f * sigma * sigma;
-	const gdouble   scale1 = 1.0f / (G_PI * scale2);
-	const gint      size = 2 * radius + 1;
-	const gint      n_params = size * size;
-	pixman_fixed_t* params;
-	gdouble*        tmp;
-	gdouble         sum;
-	gint            x;
-	gint            y;
-	gint            i;
+	cairo_surface_t* tmp_surface     = NULL;
+	cairo_surface_t* new_surface     = NULL;
+	cairo_pattern_t* pattern         = NULL;
+	cairo_t*         cr_surf         = NULL;
+	cairo_matrix_t   matrix;
+	raico_blur_t*    blur            = NULL;
 
-        tmp = g_newa (double, n_params);
+	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+						  4 * shadow_radius,
+						  4 * shadow_radius);
+	if (cairo_surface_status (tmp_surface) != CAIRO_STATUS_SUCCESS)
+		return;
 
-        /* caluclate gaussian kernel in floating point format */
-        for (i = 0, sum = 0, x = -radius; x <= radius; ++x) {
-                for (y = -radius; y <= radius; ++y, ++i) {
-                        const gdouble u = x * x;
-                        const gdouble v = y * y;
+	cr_surf = cairo_create (tmp_surface);
+	if (cairo_status (cr_surf) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (tmp_surface);
+		return;
+	}
 
-                        tmp[i] = scale1 * exp (-(u+v)/scale2);
+	cairo_scale (cr_surf, 1.0f, 1.0f);
+	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr_surf);
+	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
+	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 1.0f);
+	cairo_arc (cr_surf,
+		   2 * shadow_radius,
+		   2 * shadow_radius,
+		   1.75f * corner_radius,
+		   0.0f,
+		   360.0f * (G_PI / 180.f));
+	cairo_fill (cr_surf);
+	cairo_destroy (cr_surf);
 
-                        sum += tmp[i];
-                }
-        }
+	// create and setup blur
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	raico_blur_set_radius (blur, shadow_radius);
 
-        /* normalize gaussian kernel and convert to fixed point format */
-        params = g_new (pixman_fixed_t, n_params + 2);
+	// now blur it
+	raico_blur_apply (blur, tmp_surface);
 
-        params[0] = pixman_int_to_fixed (size);
-        params[1] = pixman_int_to_fixed (size);
+	// blur no longer needed
+	raico_blur_destroy (blur);
 
-        for (i = 0; i < n_params; ++i)
-                params[2 + i] = pixman_double_to_fixed (tmp[i] / sum);
+	new_surface = cairo_image_surface_create_for_data (
+			cairo_image_surface_get_data (tmp_surface),
+			cairo_image_surface_get_format (tmp_surface),
+			cairo_image_surface_get_width (tmp_surface) / 2,
+			cairo_image_surface_get_height (tmp_surface) / 2,
+			cairo_image_surface_get_stride (tmp_surface));
+	pattern = cairo_pattern_create_for_surface (new_surface);
+	if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (tmp_surface);
+		cairo_surface_destroy (new_surface);
+		return;
+	}
 
-        if (length)
-                *length = n_params + 2;
+	// top left
+	cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
+	cairo_set_source (cr, pattern);
+	cairo_rectangle (cr,
+			 0.0f,
+			 0.0f,
+			 width - 2 * shadow_radius,
+			 2 * shadow_radius);
+	cairo_fill (cr);
 
-        return params;
+	// bottom left
+	cairo_matrix_init_scale (&matrix, 1.0f, -1.0f);
+	cairo_matrix_translate (&matrix, 0.0f, -height);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 0.0f,
+			 2 * shadow_radius,
+			 2 * shadow_radius,
+			 height - 2 * shadow_radius);
+	cairo_fill (cr);
+
+	// top right
+	cairo_matrix_init_scale (&matrix, -1.0f, 1.0f);
+	cairo_matrix_translate (&matrix, -width, 0.0f);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 width - 2 * shadow_radius,
+			 0.0f,
+			 2 * shadow_radius,
+			 height - 2 * shadow_radius);
+	cairo_fill (cr);
+
+	// bottom right
+	cairo_matrix_init_scale (&matrix, -1.0f, -1.0f);
+	cairo_matrix_translate (&matrix, -width, -height);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 2 * shadow_radius,
+			 height - 2 * shadow_radius,
+			 width - 2 * shadow_radius,
+			 2 * shadow_radius);
+	cairo_fill (cr);
+
+	// clean up
+	cairo_pattern_destroy (pattern);
+	cairo_surface_destroy (tmp_surface);
+	cairo_surface_destroy (new_surface);
 }
 
-static cairo_surface_t*
-blur_image_surface (cairo_surface_t* surface,
-                    gint             radius,
-                    gdouble          sigma /* pass 0.0f for auto-calculation */)
+cairo_surface_t*
+_copy_surface (cairo_surface_t* orig)
 {
-        static cairo_user_data_key_t data_key;
-        pixman_fixed_t*              params = NULL;
-        gint                         n_params;
-        pixman_image_t*              src;
-	pixman_image_t*              dst;
-        gint                         w;
-        gint                         h;
-        gint                         s;
-        gpointer                     p;
-	gdouble                      radiusf;
+	cairo_surface_t* copy       = NULL;
+	guchar*          pixels_src = NULL;
+	guchar*          pixels_cpy = NULL;
+	cairo_format_t   format;
+	gint             width;
+	gint             height;
+	gint             stride;
 
-        if (cairo_surface_get_type (surface) != CAIRO_SURFACE_TYPE_IMAGE)
+	pixels_src = cairo_image_surface_get_data (orig);
+	if (!pixels_src)
 		return NULL;
 
-	radiusf = fabs (radius) + 1.0f;
-	if (sigma == 0.0f)
-		sigma = sqrt (-(radiusf * radiusf) / (2.0f * log (1.0f / 255.0f)));
+	format = cairo_image_surface_get_format (orig);
+	width  = cairo_image_surface_get_width (orig);
+	height = cairo_image_surface_get_height (orig);
+	stride = cairo_image_surface_get_stride (orig);
 
-        w = cairo_image_surface_get_width (surface);
-        h = cairo_image_surface_get_height (surface);
-        s = cairo_image_surface_get_stride (surface);
+	pixels_cpy = g_malloc0 (stride * height);
+	if (!pixels_cpy)
+		return NULL;
 
-        /* create pixman image for cairo image surface */
-        p = cairo_image_surface_get_data (surface);
-        src = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
+	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
 
-        /* attach gaussian kernel to pixman image */
-        params = create_gaussian_blur_kernel (radius, sigma, &n_params);
-        pixman_image_set_filter (src,
-				 PIXMAN_FILTER_CONVOLUTION,
-				 params,
-				 n_params);
-        g_free (params);
+	copy = cairo_image_surface_create_for_data (pixels_cpy,
+						    format,
+						    width,
+						    height,
+						    stride);
 
-        /* render blured image to new pixman image */
-        p = g_malloc0 (s * h);
-        dst = pixman_image_create_bits (PIXMAN_a8r8g8b8, w, h, p, s);
-        pixman_image_composite (PIXMAN_OP_SRC,
-				src,
-				NULL,
-				dst,
-				0,
-				0,
-				0,
-				0,
-				0,
-				0,
-				w,
-				h);
-        pixman_image_unref (src);
-
-        /* create new cairo image for blured pixman image */
-        surface = cairo_image_surface_create_for_data (p,
-						       CAIRO_FORMAT_ARGB32,
-						       w,
-						       h,
-						       s);
-        cairo_surface_set_user_data (surface, &data_key, p, g_free);
-        pixman_image_unref (dst);
-
-        return surface;
+	return copy;
 }
 
-/* the behind-bubble blur only works with the enabled/working compiz-plugin blur
- * by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window */
+void
+_refresh_background (Bubble* self)
+{
+	BubblePrivate*   priv       = GET_PRIVATE (self);
+	Defaults*        d          = self->defaults;
+	cairo_t*         cr         = NULL;
+	cairo_surface_t* scratch    = NULL;
+	cairo_surface_t* dummy      = NULL;
+	cairo_surface_t* clone      = NULL;
+	cairo_surface_t* normal     = NULL;
+	cairo_surface_t* blurred    = NULL;
+	raico_blur_t*    blur       = NULL;
+	gint             width;
+	gint             height;
+
+	tile_destroy (priv->tile_background);
+
+	bubble_get_size (self, &width, &height);
+
+	// create temp. scratch surface for top-left shadow/background part
+	if (priv->composited)
+		scratch = cairo_image_surface_create (
+			CAIRO_FORMAT_ARGB32,
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+	else
+		scratch = cairo_image_surface_create (
+			CAIRO_FORMAT_RGB24,
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+
+	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS)
+		return;
+
+	// create drawing context for that temp. scratch surface
+	cr = cairo_create (scratch);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (scratch);
+		return;
+	}
+
+	// clear, render top-left part of shadow/background in scratch-surface
+    	cairo_scale (cr, 1.0f, 1.0f);
+	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr);
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+	if (priv->composited)
+	{
+		_draw_shadow (
+			cr,
+			width,
+			height,
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			EM2PIXELS (defaults_get_bubble_corner_radius (d), d));
+		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+		draw_round_rect (
+			cr,
+			1.0f,
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+			EM2PIXELS (defaults_get_bubble_width (d), d),
+			(gdouble) bubble_get_height (self) -
+			2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		cairo_fill (cr);
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		cairo_set_source_rgba (cr,
+				       BUBBLE_BG_COLOR_R,
+				       BUBBLE_BG_COLOR_G,
+				       BUBBLE_BG_COLOR_B,
+				       BUBBLE_BG_COLOR_A);
+	}
+	else
+		cairo_set_source_rgb (cr,
+				      BUBBLE_BG_COLOR_R,
+				      BUBBLE_BG_COLOR_G,
+				      BUBBLE_BG_COLOR_B);
+
+	draw_round_rect (
+		cr,
+		1.0f,
+		EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+		EM2PIXELS (defaults_get_bubble_width (d), d),
+		(gdouble) bubble_get_height (self) -
+		2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+	cairo_fill (cr);
+	cairo_destroy (cr);
+
+	// create temp. clone of scratch surface
+	dummy = cairo_image_surface_create_for_data (
+			cairo_image_surface_get_data (scratch),
+			cairo_image_surface_get_format (scratch),
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			cairo_image_surface_get_stride (scratch));
+	clone = copy_surface (dummy);
+	cairo_surface_destroy (dummy);
+
+	// create normal surface from that surface-clone
+	dummy = cairo_image_surface_create_for_data (
+			cairo_image_surface_get_data (clone),
+			cairo_image_surface_get_format (clone),
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			cairo_image_surface_get_stride (clone));
+	normal = copy_surface (dummy);
+	cairo_surface_destroy (dummy);
+
+	// now blur the surface-clone
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	raico_blur_set_radius (blur, 6);
+	raico_blur_apply (blur, clone);
+	raico_blur_destroy (blur);
+
+	// create blurred version from that blurred surface-clone 
+	dummy = cairo_image_surface_create_for_data (
+			cairo_image_surface_get_data (clone),
+			cairo_image_surface_get_format (clone),
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			cairo_image_surface_get_stride (clone));
+	blurred = copy_surface (dummy);
+	cairo_surface_destroy (dummy);
+	cairo_surface_destroy (clone);
+
+	// finally create tile with top-left shadow/background part
+	priv->tile_background_part = tile_new_for_padding (normal, blurred);
+	cairo_surface_destroy (normal);
+	cairo_surface_destroy (blurred);
+
+	// create surface(s) for full shadow/background tile
+	if (priv->composited)
+	{
+		// we need two RGBA-surfaces
+		normal = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+						     width,
+						     height);
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+			return;
+
+		blurred = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
+						      width,
+						      height);
+		if (cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (normal);
+			return;
+		}
+	}
+	else
+	{
+		// we need only one RGB-surface
+		normal = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
+						     width,
+						     height);
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+			return;
+	}
+
+	// use tile for top-left background-part to fill the full bg-surface
+	if (priv->composited)
+	{
+		// create context for blurred surface
+		cr = cairo_create (blurred);
+		if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (normal);
+			cairo_surface_destroy (blurred);
+			return;
+		}
+
+		// clear blurred surface
+	    	cairo_scale (cr, 1.0f, 1.0f);
+		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+		cairo_paint (cr);
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+		// fill with blurred state of background-part tile
+		tile_paint_with_padding (priv->tile_background_part,
+					 cr,
+					 0.0f,
+					 0.0f,
+					 width,
+					 height,
+					 0.0f,
+					 1.0f);
+
+		// get rid of context for blurred surface
+		cairo_destroy (cr);
+	}
+
+	// create context for normal surface
+	cr = cairo_create (normal);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (normal);
+
+		if (priv->composited)
+			cairo_surface_destroy (blurred);
+
+		return;
+	}
+
+	// clear normal surface
+    	cairo_scale (cr, 1.0f, 1.0f);
+	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr);
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+	// fill with normal state of background-part tile
+	tile_paint_with_padding (priv->tile_background_part,
+				 cr,
+				 0.0f,
+				 0.0f,
+				 width,
+				 height,
+				 1.0f,
+				 0.0f);
+
+	// get rid of context for normal surface
+	cairo_destroy (cr);
+
+	// finally create tile for full background
+	if (priv->composited)
+		priv->tile_background = tile_new_for_padding (normal, blurred);
+	else
+		priv->tile_background = tile_new_for_padding (normal, normal);
+
+	// clean up
+	if (priv->composited)
+		cairo_surface_destroy (blurred);
+
+	cairo_surface_destroy (normal);
+}
+
+void
+_refresh_icon (Bubble* self)
+{
+	BubblePrivate* priv = GET_PRIVATE (self);
+
+	tile_destroy (priv->tile_icon);
+}
+
+void
+_refresh_title (Bubble* self)
+{
+	BubblePrivate* priv = GET_PRIVATE (self);
+
+	tile_destroy (priv->tile_title);
+}
+
+void
+_refresh_body (Bubble* self)
+{
+	BubblePrivate* priv = GET_PRIVATE (self);
+
+	tile_destroy (priv->tile_body);
+}
+
+void
+_refresh_indicator (Bubble* self)
+{
+	BubblePrivate* priv = GET_PRIVATE (self);
+
+	tile_destroy (priv->tile_indicator);
+}
+
+void
+_render_background (Bubble*  self,
+                    cairo_t* cr,
+		    gdouble  alpha_normal,
+		    gdouble  alpha_blur)
+{
+	Defaults* d = self->defaults;
+
+	tile_paint (self->priv->tile_background,
+		    cr,
+		    0.0f,
+		    0.0f,
+		    alpha_normal,
+		    alpha_blur);
+
+	// urgency-indication bar
+	if (g_getenv ("DEBUG"))
+	{
+		switch (bubble_get_urgency (self))
+		{
+			// low urgency-bar is painted blue
+			case 0:
+				cairo_set_source_rgb (cr, 0.25f, 0.5f, 1.0f);
+			break;
+
+			// normal urgency-bar is painted green
+			case 1:
+				cairo_set_source_rgb (cr, 0.0f, 1.0f, 0.0f);
+			break;
+
+			// urgent urgency-bar is painted red
+			case 2:
+				cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
+			break;
+
+			default:
+			break;
+		}
+
+		draw_round_rect (
+			cr,
+			1.0f,
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
+			EM2PIXELS (defaults_get_bubble_corner_radius (d), d) - 2.0f,
+			EM2PIXELS (defaults_get_bubble_width (d), d) - 4.0f,
+			2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f);
+		cairo_fill (cr);
+
+		cairo_set_source_rgb (cr, 0.0f, 0.0f, 0.0f);
+		cairo_set_font_size (
+			cr,
+			EM2PIXELS (defaults_get_text_body_size  (d), d));
+		cairo_move_to (
+			cr,
+			EM2PIXELS (defaults_get_text_body_size  (d), d) +
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			2.0f,
+			EM2PIXELS (defaults_get_text_body_size  (d), d) +
+			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			2.0f +
+			((2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f) -
+			EM2PIXELS (defaults_get_text_body_size  (d), d)) / 2);
+
+		switch (bubble_get_urgency (self))
+		{
+			case 0:
+				cairo_show_text (
+					cr,
+					"low - report incorrect urgency?");
+			break;
+
+			case 1:
+				cairo_show_text (
+					cr,
+					"normal - report incorrect urgency?");
+			break;
+
+			case 2:
+				cairo_show_text (
+					cr,
+					"urgent - report incorrect urgency?");
+			break;
+
+			default:
+			break;
+		}
+	}
+}
+
+void
+_render_icon (Bubble*  self,
+	      cairo_t* cr,
+	      gint     x,
+	      gint     y,
+	      gdouble  alpha_normal,
+	      gdouble  alpha_blur)
+{
+	tile_paint (self->priv->tile_icon,
+		    cr,
+		    x,
+		    y,
+		    alpha_normal,
+		    alpha_blur);
+}
+
+void
+_render_title (Bubble*  self,
+	       cairo_t* cr,
+	       gint     x,
+	       gint     y,
+	       gdouble  alpha_normal,
+	       gdouble  alpha_blur)
+{
+	tile_paint (self->priv->tile_title,
+		    cr,
+		    x,
+		    y,
+		    alpha_normal,
+		    alpha_blur);
+}
+
+void
+_render_body (Bubble*  self,
+	      cairo_t* cr,
+	      gint     x,
+	      gint     y,
+	      gdouble  alpha_normal,
+	      gdouble  alpha_blur)
+{
+	tile_paint (self->priv->tile_body,
+		    cr,
+		    x,
+		    y,
+		    alpha_normal,
+		    alpha_blur);
+}
+
+void
+_render_indicator (Bubble*  self,
+		   cairo_t* cr,
+		   gint     x,
+		   gint     y,
+		   gdouble  alpha_normal,
+		   gdouble  alpha_blur)
+{
+	tile_paint (self->priv->tile_indicator,
+		    cr,
+		    x,
+		    y,
+		    alpha_normal,
+		    alpha_blur);
+}
+
+void
+_render_layout (Bubble*  self,
+		cairo_t* cr,
+		gdouble  alpha_normal,
+		gdouble  alpha_blur)
+{
+	switch (bubble_get_layout (self))
+	{
+		case LAYOUT_ICON_ONLY:
+			_render_icon (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+		break;
+
+		case LAYOUT_ICON_INDICATOR:
+			_render_icon (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+			_render_indicator (self,
+					   cr,
+					   0.0f,
+					   0.0f,
+					   alpha_normal,
+					   alpha_blur);
+		break;
+
+		case LAYOUT_ICON_TITLE:
+			_render_icon (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+			_render_title (self,
+				       cr,
+				       0.0f,
+				       0.0f,
+				       alpha_normal,
+				       alpha_blur);
+		break;
+
+		case LAYOUT_ICON_TITLE_BODY:
+			_render_icon (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+			_render_title (self,
+				       cr,
+				       0.0f,
+				       0.0f,
+				       alpha_normal,
+				       alpha_blur);
+			_render_body (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+		break;
+
+		case LAYOUT_TITLE_BODY:
+			_render_body (self,
+				      cr,
+				      0.0f,
+				      0.0f,
+				      alpha_normal,
+				      alpha_blur);
+		break;
+
+		case LAYOUT_TITLE_ONLY:
+			_render_title (self,
+				       cr,
+				       0.0f,
+				       0.0f,
+				       alpha_normal,
+				       alpha_blur);
+		break;
+
+		case LAYOUT_NONE:
+			// should be intercepted by stack_notify_handler()
+			g_warning ("WARNING: No layout defined!!!\n");
+		break;
+	}
+}
+
+// the behind-bubble blur only works with the enabled/working compiz-plugin blur
+// by setting the hint _COMPIZ_WM_WINDOW_BLUR on the bubble-window
 void
 _set_bg_blur (GtkWidget* window,
 	      gboolean   set_blur,
@@ -328,23 +886,23 @@ _set_bg_blur (GtkWidget* window,
 	gint  width;
 	gint  height;
 
-	/* sanity check */
+	// sanity check
 	if (!window)
 		return;
 
 	width  = window->allocation.width;
 	height = window->allocation.height;
 
-	/* this is meant to tell the blur-plugin what and how to blur, somehow
-	 * the y-coords are interpreted as being CenterGravity, I wonder why */
-	data[0] = 2;                           /* threshold               */
-	data[1] = 0;                           /* filter                  */
-	data[2] = NorthWestGravity;            /* gravity of top-left     */
-	data[3] = shadow_size;                 /* x-coord of top-left     */
-	data[4] = (-height / 2) + shadow_size; /* y-coord of top-left     */
-	data[5] = NorthWestGravity;            /* gravity of bottom-right */
-	data[6] = width - shadow_size;         /* bottom-right x-coord    */
-	data[7] = (height / 2) - shadow_size;  /* bottom-right y-coord    */
+	// this is meant to tell the blur-plugin what and how to blur, somehow
+	// the y-coords are interpreted as being CenterGravity, I wonder why
+	data[0] = 2;                           // threshold
+	data[1] = 0;                           // filter
+	data[2] = NorthWestGravity;            // gravity of top-left
+	data[3] = shadow_size;                 // x-coord of top-left
+	data[4] = (-height / 2) + shadow_size; // y-coord of top-left
+	data[5] = NorthWestGravity;            // gravity of bottom-right
+	data[6] = width - shadow_size;         // bottom-right x-coord
+	data[7] = (height / 2) - shadow_size;  // bottom-right y-coord
 
 	if (set_blur)
 	{
@@ -382,7 +940,7 @@ draw_layout_grid (cairo_t* cr,
 	cairo_set_line_width (cr, 1.0f);
 	cairo_set_source_rgba (cr, 0.0f, 1.0f, 0.0f, 0.5f);
 
-	/* all vertical grid lines */
+	// all vertical grid lines
 	cairo_move_to (cr,
 		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
@@ -442,7 +1000,7 @@ draw_layout_grid (cairo_t* cr,
 		       (gdouble) bubble_get_height (bubble) -
 		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 
-	/* all horizontal grid lines */
+	// all horizontal grid lines
 	cairo_move_to (cr,
 		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
@@ -495,15 +1053,15 @@ draw_layout_grid (cairo_t* cr,
 }
 #endif
 
-/* color-, alpha-, radius-, width-, height- and gradient-values were determined
- * by very close obvervation of a SVG-mockup from the design-team */
-static void
+// color-, alpha-, radius-, width-, height- and gradient-values were determined
+// by very close obvervation of a SVG-mockup from the design-team
+/*static void
 draw_value_indicator (cairo_t* cr,
-		      gint     value,   /* value to render: 0 - 100   */
-		      gint     start_x, /* top of surrounding rect    */
-		      gint     start_y, /* left of surrounding rect   */
-		      gint     width,   /* width of surrounding rect  */
-		      gint     height   /* height of surrounding rect */)
+		      gint     value,   // value to render: 0 - 100
+		      gint     start_x, // top of surrounding rect
+		      gint     start_y, // left of surrounding rect
+		      gint     width,   // width of surrounding rect
+		      gint     height)  // height of surrounding rect
 {
 	gdouble          outline_radius;
 	gdouble          outline_thickness;
@@ -519,7 +1077,7 @@ draw_value_indicator (cairo_t* cr,
 	outline_width     = width - 2 * outline_radius;
 	outline_height    = height / 5.0f;
 
-	/* draw bar-background */
+	// draw bar-background
 	cairo_set_line_width (cr, outline_thickness);
 	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.3f);
 	draw_round_rect (cr,
@@ -576,7 +1134,7 @@ draw_value_indicator (cairo_t* cr,
 	bar_width  = outline_width - outline_radius;
 	bar_height = outline_height - outline_radius;
 
-	/* draw value-bar */
+	// draw value-bar
 	if (value > 0)
 	{
 		gint corrected_value = value;
@@ -625,9 +1183,9 @@ draw_value_indicator (cairo_t* cr,
 		cairo_fill (cr);
 		cairo_pattern_destroy (gradient);
 	}
-}
+}*/
 
-static void
+/*static void
 _render_icon_only (Bubble*  self,
 		   cairo_t* cr)
 {
@@ -642,15 +1200,15 @@ _render_icon_only (Bubble*  self,
 	width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
 	height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
 
-	/* render icon */
+	// render icon
 	gdk_cairo_set_source_pixbuf (cr,
 				     GET_PRIVATE (self)->icon_pixbuf,
 				     shadow + width_half - icon_half,
 				     shadow + height_half - icon_half);
 	cairo_paint (cr);
-}
+}*/
 
-static void
+/*static void
 _render_icon_indicator (Bubble*  self,
 			cairo_t* cr)
 {
@@ -664,7 +1222,7 @@ _render_icon_indicator (Bubble*  self,
 	gdouble          dim_glow_opacity;
 	BubblePrivate*   priv = GET_PRIVATE (self);
 
-	/* create "scratch-pad" surface */
+	// create "scratch-pad" surface
 	glow_surface = cairo_image_surface_create (
 			CAIRO_FORMAT_ARGB32,
 			EM2PIXELS (defaults_get_bubble_width (d), d) -
@@ -676,7 +1234,7 @@ _render_icon_indicator (Bubble*  self,
 	if (status != CAIRO_STATUS_SUCCESS)
 		return;
 
-	/* create context for scratch-pad surface */
+	// create context for scratch-pad surface
 	glow_cr = cairo_create (glow_surface);
 	status = cairo_status (glow_cr);
 	if (status != CAIRO_STATUS_SUCCESS)
@@ -685,21 +1243,21 @@ _render_icon_indicator (Bubble*  self,
 		return;
 	}
 
-	/* clear context of scratch-pad surface */
+	// clear context of scratch-pad surface
 	cairo_scale (glow_cr, 1.0f, 1.0f);
 	cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (glow_cr);
 
 	cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
 
-	/* render icon to scratch-pad context */
+	// render icon to scratch-pad context
 	gdk_cairo_set_source_pixbuf (glow_cr,
 				     priv->icon_pixbuf,
 				     blur_radius,
 				     blur_radius);
 	cairo_paint (glow_cr);
 
-	/* render value-bar(s) to scratch-pad context */
+	// render value-bar(s) to scratch-pad context
 	draw_value_indicator (
 		glow_cr,
 		priv->value,
@@ -712,7 +1270,7 @@ _render_icon_indicator (Bubble*  self,
 		EM2PIXELS (defaults_get_icon_size (d), d),
 		EM2PIXELS (defaults_get_icon_size (d), d));
 
-	/* "blit" scratch-pad context to context of bubble */
+	// "blit" scratch-pad context to context of bubble
 	cairo_set_source_surface (cr,
 				  glow_surface,
 				  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -734,30 +1292,30 @@ _render_icon_indicator (Bubble*  self,
 
 	switch (priv->value)
 	{
-		/* "undershoot" effect */
+		// "undershoot" effect
 		case -1:
-			/* abuse blur to create a mask of scratch-pad surface */
-			tmp = blur_image_surface (glow_surface,
-						  0.0f,
-						  0.0f);
+			// abuse blur to create a mask of scratch-pad surface
+			//tmp = blur_image_surface (glow_surface,
+			//			  0.0f,
+			//			  0.0f);
 
-			/* clear scratch-pad context */
+			// clear scratch-pad context
 			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (glow_cr);
 
-			/* create mask-pattern from scratch-pad surface */
+			// create mask-pattern from scratch-pad surface
 			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
 			cairo_push_group (glow_cr);
 			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
 			cairo_paint (glow_cr);
 			pattern = cairo_pop_group (glow_cr);
 
-			/* paint semi transparent black through mask-pattern */
+			// paint semi transparent black through mask-pattern
 			cairo_set_source_rgba (glow_cr, 0.0f, 0.0f, 0.0f, 0.65f);
 			cairo_mask (glow_cr, pattern);
 			cairo_pattern_destroy (pattern);
 
-			/* finally "blit" scratch-pad onto context of bubble */
+			// finally "blit" scratch-pad onto context of bubble
 			cairo_set_source_surface (cr,
 						  glow_surface,
 						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -770,32 +1328,32 @@ _render_icon_indicator (Bubble*  self,
 			cairo_surface_destroy (tmp);
 		break;
 
-		/* "overshoot" effect */
+		// "overshoot" effect
 		case 101:
-			/* blur the scratch-pad surface */
-			tmp = blur_image_surface (glow_surface,
-						  blur_radius,
-						  0.0f);
+			// blur the scratch-pad surface
+			//tmp = blur_image_surface (glow_surface,
+			//			  blur_radius,
+			//			  0.0f);
 
-			/* clear scratch-pad context */
+			// clear scratch-pad context
 			cairo_set_operator (glow_cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (glow_cr);
 
-			/* create mask-pattern from blurred scratch-pad
-			 * surface */
+			// create mask-pattern from blurred scratch-pad
+			// surface
 			cairo_set_operator (glow_cr, CAIRO_OPERATOR_OVER);
 			cairo_push_group (glow_cr);
 			cairo_set_source_surface (glow_cr, tmp, 0.0f, 0.0f);
 			cairo_paint (glow_cr);
 			pattern = cairo_pop_group (glow_cr);
 
-			/* paint fully opaque white "through" blurred
-			 * mask-pattern */
+			// paint fully opaque white "through" blurred
+			// mask-pattern
 			cairo_set_source_rgba (glow_cr, 1.0f, 1.0f, 1.0f, 1.0f);
 			cairo_mask (glow_cr, pattern);
 			cairo_pattern_destroy (pattern);
 
-			/* finally "blit" scratch-pad onto context of bubble */
+			// finally "blit" scratch-pad onto context of bubble
 			cairo_set_source_surface (cr,
 						  glow_surface,
 						  EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -808,18 +1366,18 @@ _render_icon_indicator (Bubble*  self,
 			cairo_surface_destroy (tmp);
 		break;
 
-		/* normal effect-less rendering */
+		// normal effect-less rendering
 		default:
-			/* do nothing */
+			// do nothing
 		break;
 	}
 
-	/* clean up */
+	// clean up
 	cairo_destroy (glow_cr);
 	cairo_surface_destroy (glow_surface);
-}
+}*/
 
-static void
+/*static void
 _render_icon_title (Bubble*  self,
 		    cairo_t* cr)
 {
@@ -836,7 +1394,7 @@ _render_icon_title (Bubble*  self,
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		      EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render icon */
+	// render icon
 	gdk_cairo_set_source_pixbuf (cr,
 				     priv->icon_pixbuf,
 				     left_margin,
@@ -846,7 +1404,7 @@ _render_icon_title (Bubble*  self,
 	left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
 	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render title */
+	// render title
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -866,7 +1424,7 @@ _render_icon_title (Bubble*  self,
 	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 	switch (pango_layout_get_line_count (layout))
 	{
@@ -889,7 +1447,7 @@ _render_icon_title (Bubble*  self,
 		break;
 
 		default:
-			/* that should never ever happen */
+			// that should never ever happen
 		break;
 	}
 
@@ -902,13 +1460,13 @@ _render_icon_title (Bubble*  self,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
-}
+}*/
 
-static void
+/*static void
 _render_icon_title_body (Bubble*  self,
 			 cairo_t* cr)
 {
@@ -927,7 +1485,7 @@ _render_icon_title_body (Bubble*  self,
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		      EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render icon */
+	// render icon
 	gdk_cairo_set_source_pixbuf (cr,
 				     priv->icon_pixbuf,
 				     left_margin,
@@ -937,7 +1495,7 @@ _render_icon_title_body (Bubble*  self,
 	left_margin += EM2PIXELS (defaults_get_icon_size (d), d);
 	left_margin += EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render title */
+	// render title
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -957,7 +1515,7 @@ _render_icon_title_body (Bubble*  self,
 	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
@@ -973,15 +1531,15 @@ _render_icon_title_body (Bubble*  self,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
 
 	top_margin += log_rect.height / PANGO_SCALE;
-	/*top_margin += priv->title_height;*/
+	//top_margin += priv->title_height;
 
-	/* render body-message */
+	// render body-message
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -1003,7 +1561,7 @@ _render_icon_title_body (Bubble*  self,
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->body_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout,
 			       priv->message_body->str,
 			       priv->message_body->len);
@@ -1017,13 +1575,13 @@ _render_icon_title_body (Bubble*  self,
 			       TEXT_BODY_COLOR_B,
 			       TEXT_BODY_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
-}
+}*/
 
-static void
+/*static void
 _render_title_body (Bubble*  self,
 		    cairo_t* cr)
 {
@@ -1042,7 +1600,7 @@ _render_title_body (Bubble*  self,
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		      EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render title */
+	// render title
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -1062,7 +1620,7 @@ _render_title_body (Bubble*  self,
 	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
@@ -1078,14 +1636,14 @@ _render_title_body (Bubble*  self,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
 
 	top_margin += (gdouble) log_rect.height / PANGO_SCALE;
 
-	/* render body-message */
+	// render body-message
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -1107,7 +1665,7 @@ _render_title_body (Bubble*  self,
 	pango_layout_set_width (layout, priv->body_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->body_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout,
 			       priv->message_body->str,
 			       priv->message_body->len);
@@ -1123,13 +1681,13 @@ _render_title_body (Bubble*  self,
 			       TEXT_BODY_COLOR_B,
 			       TEXT_BODY_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
-}
+}*/
 
-static void
+/*static void
 _render_title_only (Bubble*  self,
 		    cairo_t* cr)
 {
@@ -1146,7 +1704,7 @@ _render_title_only (Bubble*  self,
 	left_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
 		      EM2PIXELS (defaults_get_margin_size (d), d);
 
-	/* render title */
+	// render title
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -1166,7 +1724,7 @@ _render_title_only (Bubble*  self,
 	pango_layout_set_width (layout, priv->title_width * PANGO_SCALE);
 	pango_layout_set_height (layout, priv->title_height * PANGO_SCALE);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, priv->title->str, priv->title->len);
 
 	top_margin = EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
@@ -1181,11 +1739,11 @@ _render_title_only (Bubble*  self,
 			       TEXT_TITLE_COLOR_B,
 			       TEXT_TITLE_COLOR_A);
 
-	/* draw pango-text using hinting-, subpixel-order and antialiasing */
+	// draw pango-text using hinting-, subpixel-order and antialiasing
 	pango_cairo_show_layout (cr, layout);
 
 	g_object_unref (layout);
-}
+}*/
 
 static
 void
@@ -1223,7 +1781,7 @@ update_input_shape (GtkWidget* window,
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 
-			/* just draw something */
+			// just draw something
 			draw_round_rect (cr,
 					 1.0f,
 					 0.0f, 0.0f,
@@ -1258,30 +1816,30 @@ update_shape (Bubble* self)
 	Defaults*      d;
 	BubblePrivate* priv;
 
-	/* sanity test */
+	// sanity test
 	if (!self || !IS_BUBBLE (self))
 		return;
 
 	d = self->defaults;
 	priv = GET_PRIVATE (self);
 
-	/* do we actually need a shape-mask at all? */
+	// do we actually need a shape-mask at all?
 	if (priv->composited)
 	{
 		gtk_widget_shape_combine_mask (priv->widget, NULL, 0, 0);
 		return;
 	}
 
-	/* guess we need one */
+	// guess we need one
 	gtk_widget_get_size_request (priv->widget, &width, &height);
 	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 	if (mask)
 	{
-		/* create context from mask/pixmap */
+		// create context from mask/pixmap
 		cr = gdk_cairo_create (mask);
 		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
 		{
-			/* clear mask/context */
+			// clear mask/context
 			cairo_scale (cr, 1.0f, 1.0f);
 			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (cr);
@@ -1289,7 +1847,7 @@ update_shape (Bubble* self)
 			width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
-			/* draw rounded rectangle shape/mask */
+			// draw rounded rectangle shape/mask
 			if (bubble_is_mouse_over (self))
 				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 			else
@@ -1319,10 +1877,10 @@ update_shape (Bubble* self)
 
 			cairo_destroy (cr);
 
-			/* remove any current shape-mask */
+			// remove any current shape-mask
 			gtk_widget_shape_combine_mask (priv->widget,NULL, 0, 0);
 
-			/* set new shape-mask */
+			// set new shape-mask
 			gtk_widget_shape_combine_mask (priv->widget,mask, 0, 0);
 		}
 
@@ -1344,303 +1902,37 @@ composited_changed_handler (GtkWidget* window,
 	update_shape (bubble);
 }
 
-void
-draw_shadow (cairo_t* cr,
-	     gdouble  width,
-	     gdouble  height,
-	     gint     shadow_radius,
-	     gint     corner_radius)
-{
-	cairo_surface_t* tmp_surface     = NULL;
-	cairo_surface_t* new_surface     = NULL;
-	cairo_surface_t* blurred_surface = NULL;	
-	cairo_pattern_t* pattern         = NULL;
-	cairo_t*         cr_surf         = NULL;
-	cairo_matrix_t   matrix;
-
-	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-						  4 * shadow_radius,
-						  4 * shadow_radius);
-	if (cairo_surface_status (tmp_surface) != CAIRO_STATUS_SUCCESS)
-		return;
-
-	cr_surf = cairo_create (tmp_surface);
-	if (cairo_status (cr_surf) != CAIRO_STATUS_SUCCESS)
-	{
-		cairo_surface_destroy (tmp_surface);
-		return;
-	}
-
-	cairo_scale (cr_surf, 1.0f, 1.0f);
-	cairo_set_operator (cr_surf, CAIRO_OPERATOR_CLEAR);
-	cairo_paint (cr_surf);
-	cairo_set_operator (cr_surf, CAIRO_OPERATOR_OVER);
-	cairo_set_source_rgba (cr_surf, 0.0f, 0.0f, 0.0f, 1.0f);
-	cairo_arc (cr_surf,
-		   2 * shadow_radius,
-		   2 * shadow_radius,
-		   1.75f * corner_radius,
-		   0.0f,
-		   360.0f * (G_PI / 180.f));
-	cairo_fill (cr_surf);
-	cairo_destroy (cr_surf);
-	blurred_surface = blur_image_surface (tmp_surface, shadow_radius, 4.0f);
-	cairo_surface_destroy (tmp_surface);
-	new_surface = cairo_image_surface_create_for_data (
-			cairo_image_surface_get_data (blurred_surface),
-			cairo_image_surface_get_format (blurred_surface),
-			cairo_image_surface_get_width (blurred_surface) / 2,
-			cairo_image_surface_get_height (blurred_surface) / 2,
-			cairo_image_surface_get_stride (blurred_surface));
-	pattern = cairo_pattern_create_for_surface (new_surface);
-	if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
-	{
-		cairo_surface_destroy (blurred_surface);
-		cairo_surface_destroy (new_surface);
-		return;
-	}
-
-	/* top left */
-	cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
-	cairo_set_source (cr, pattern);
-	cairo_rectangle (cr,
-			 0.0f,
-			 0.0f,
-			 width - 2 * shadow_radius,
-			 2 * shadow_radius);
-	cairo_fill (cr);
-
-	/* bottom left */
-	cairo_matrix_init_rotate (&matrix, (G_PI / 180.0f) * 90.0f);
-	cairo_matrix_translate (&matrix, 0.0f, -height);
-	cairo_pattern_set_matrix (pattern, &matrix);
-	cairo_rectangle (cr,
-			 0.0f,
-			 2 * shadow_radius,
-			 2 * shadow_radius,
-			 height - 2 * shadow_radius);
-	cairo_fill (cr);
-
-	/* top right */
-	cairo_matrix_init_rotate (&matrix, (G_PI / 180.0f) * -90.0f);
-	cairo_matrix_translate (&matrix, -width, 0.0f);
-	cairo_pattern_set_matrix (pattern, &matrix);
-	cairo_rectangle (cr,
-			 width - 2 * shadow_radius,
-			 0.0f,
-			 2 * shadow_radius,
-			 height - 2 * shadow_radius);
-	cairo_fill (cr);
-
-	/* bottom right */
-	cairo_matrix_init_rotate (&matrix, (G_PI / 180.0f) * 180.0f);
-	cairo_matrix_translate (&matrix, -width, -height);
-	cairo_pattern_set_matrix (pattern, &matrix);
-	cairo_rectangle (cr,
-			 2 * shadow_radius,
-			 height - 2 * shadow_radius,
-			 width - 2 * shadow_radius,
-			 2 * shadow_radius);
-	cairo_fill (cr);
-
-	/* clean up */
-	cairo_pattern_destroy (pattern);
-	cairo_surface_destroy (blurred_surface);
-	cairo_surface_destroy (new_surface);
-}
-
-static void
-_render_background (cairo_t*  cr,
-		    Defaults* d,
-		    gint      width,
-		    gint      height,
-		    Bubble*   bubble)
-{
-	BubblePrivate* priv = GET_PRIVATE (bubble);
-
-        /* clear and render drop-shadow and bubble-background */
-	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	if (priv->composited)
-	{
-		draw_shadow (cr,
-			     width,
-			     height,
-			     EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					d),
-			     EM2PIXELS (defaults_get_bubble_corner_radius (d),
-					d));
-		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-		draw_round_rect (cr,
-				 1.0f,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					    d),
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					    d),
-				 EM2PIXELS (defaults_get_bubble_corner_radius (d),
-					    d),
-				 EM2PIXELS (defaults_get_bubble_width (d),
-					    d),
-				 (gdouble) bubble_get_height (bubble) -
-				 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
-						   d));
-		cairo_fill (cr);
-	}
-
-	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-	if (priv->composited)
-	{
-		cairo_set_source_rgba (cr,
-				       BUBBLE_BG_COLOR_R,
-				       BUBBLE_BG_COLOR_G,
-				       BUBBLE_BG_COLOR_B,
-				       BUBBLE_BG_COLOR_A);
-	}
-	else
-	{
-		cairo_set_source_rgb (cr,
-				      BUBBLE_BG_COLOR_R,
-				      BUBBLE_BG_COLOR_G,
-				      BUBBLE_BG_COLOR_B);
-	}
-
-	draw_round_rect (cr,
-			 1.0f,
-			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-				    d),
-			 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-				    d),
-			 EM2PIXELS (defaults_get_bubble_corner_radius (d),
-				    d),
-			 EM2PIXELS (defaults_get_bubble_width (d),
-				    d),
-			 (gdouble) bubble_get_height (bubble) -
-			 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					   d));
-	cairo_fill (cr);
-
-	/* urgency-indication bar */
-	if (g_getenv ("DEBUG"))
-	{
-		switch (bubble_get_urgency (bubble))
-		{
-			/* low urgency-bar is painted blue */
-			case 0:
-				cairo_set_source_rgb (cr, 0.25f, 0.5f, 1.0f);
-			break;
-
-			/* normal urgency-bar is painted green */
-			case 1:
-				cairo_set_source_rgb (cr, 0.0f, 1.0f, 0.0f);
-			break;
-
-			/* urgent urgency-bar is painted red */
-			case 2:
-				cairo_set_source_rgb (cr, 1.0f, 0.0f, 0.0f);
-			break;
-
-			default:
-			break;
-		}
-
-		draw_round_rect (cr,
-				 1.0f,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					    d) + 2.0f,
-				 EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					    d) + 2.0f,
-				 EM2PIXELS (defaults_get_bubble_corner_radius (d),
-					    d) - 2.0f,
-				 EM2PIXELS (defaults_get_bubble_width (d),
-					    d) - 4.0f,
-				 2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d),
-					    d) - 2.0f);
-		cairo_fill (cr);
-
-		cairo_set_source_rgb (cr, 0.0f, 0.0f, 0.0f);
-		cairo_set_font_size (cr, EM2PIXELS (defaults_get_text_body_size  (d), d));
-		cairo_move_to (cr,
-			       EM2PIXELS (defaults_get_text_body_size  (d), d) + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
-			       EM2PIXELS (defaults_get_text_body_size  (d), d) + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f + ((2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f) - EM2PIXELS (defaults_get_text_body_size  (d), d)) / 2);
-
-		switch (bubble_get_urgency (bubble))
-		{
-			case 0:
-				cairo_show_text (cr, "low - report incorrect urgency?");
-			break;
-
-			case 1:
-				cairo_show_text (cr, "normal - report incorrect urgency?");
-			break;
-
-			case 2:
-				cairo_show_text (cr, "urgent - report incorrect urgency?");
-			break;
-
-			default:
-			break;
-		}
-	}
-}
-
 static
 gboolean
 expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	Bubble*   bubble;
-	cairo_t*  cr;
-	gdouble   width  = (gdouble) window->allocation.width;
-	gdouble   height = (gdouble) window->allocation.height;
-	Defaults* d;
+	Bubble*        bubble;
+	cairo_t*       cr;
+	Defaults*      d;
+	BubblePrivate* priv;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
-	d = bubble->defaults;
+	d    = bubble->defaults;
+	priv = GET_PRIVATE (bubble);
 
 	cr = gdk_cairo_create (window->window);
 
-        /* clear bubble-background */
+        // clear bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-        /* render drop-shadow and bubble-background */
-	_render_background (cr, d, width, height, bubble);
+        // render drop-shadow and bubble-background
+	_render_background (bubble, cr, priv->distance, 1.0f - priv->distance);
 
-	switch (bubble_get_layout (bubble))
-	{
-		case LAYOUT_ICON_ONLY:
-			_render_icon_only (bubble, cr);
-		break;
+	// render content of bubble depending on layout
+	_render_layout (bubble, cr, priv->distance, 1.0f - priv->distance);
 
-		case LAYOUT_ICON_INDICATOR:
-			_render_icon_indicator (bubble, cr);
-		break;
-
-		case LAYOUT_ICON_TITLE:
-			_render_icon_title (bubble, cr);
-		break;
-
-		case LAYOUT_ICON_TITLE_BODY:
-			_render_icon_title_body (bubble, cr);
-		break;
-
-		case LAYOUT_TITLE_BODY:
-			_render_title_body (bubble, cr);
-		break;
-
-		case LAYOUT_TITLE_ONLY:
-			_render_title_only (bubble, cr);
-		break;
-
-		case LAYOUT_NONE:
-			/* should be intercepted by stack_notify_handler() */
-			g_warning ("WARNING: No layout defined!!!\n");
-		break;
-	}
-
-	/* draw_layout_grid (cr, bubble); */
+	// draw_layout_grid (cr, bubble);
 
 	cairo_destroy (cr);
 
@@ -1676,15 +1968,13 @@ redraw_handler (Bubble* bubble)
 	if (priv->alpha == NULL)
 	{
 		if (priv->distance < 1.0f)
+		{
 			gtk_window_set_opacity (window, 0.1f + priv->distance * 0.85f);
+			bubble_refresh (bubble);
+		}
 		else
 			gtk_window_set_opacity (window, 0.95f);
 	}
-
-	/*if (bubble_is_mouse_over (bubble))
-		gtk_window_set_opacity (window, 0.1f);
-	else if (priv->alpha == NULL)
-		gtk_window_set_opacity (window, 0.95f);*/
 
 	return TRUE;
 }
@@ -1846,7 +2136,6 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
-	cairo_status_t status;
 	BubblePrivate* priv = GET_PRIVATE (gobject);
 
 	if (GTK_IS_WIDGET (priv->widget))
@@ -1917,36 +2206,16 @@ bubble_finalize (GObject* gobject)
 		priv->timer_id = 0;
 	}
 
-	if (priv->blurred_content)
-	{
-		status = cairo_surface_status (priv->blurred_content);
-		if (status == CAIRO_STATUS_SUCCESS)
-		{
-			cairo_surface_destroy (priv->blurred_content);
-			priv->blurred_content = NULL;
-		}
-	}
-
-	if (priv->blurred_bubble)
-	{
-		status = cairo_surface_status (priv->blurred_bubble);
-		if (status == CAIRO_STATUS_SUCCESS)
-		{
-			cairo_surface_destroy (priv->blurred_bubble);
-			priv->blurred_bubble = NULL;
-		}
-	}
-
-	/* chain up to the parent class */
+	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
 
 static void
 bubble_init (Bubble* self)
 {
-	/* If you need specific construction properties to complete
-	** initialization, delay initialization completion until the
-	** property is set. */
+	// If you need specific construction properties to complete
+	// initialization, delay initialization completion until the
+	// property is set.
 
 	BubblePrivate *priv;
 
@@ -2003,7 +2272,7 @@ bubble_class_init (BubbleClass* klass)
 		G_TYPE_NONE,
 		0);
 
-    g_bubble_signals[VALUE_CHANGED] = g_signal_new (
+	g_bubble_signals[VALUE_CHANGED] = g_signal_new (
 		"value-changed",
 		G_OBJECT_CLASS_TYPE (gobject_class),
 		G_SIGNAL_RUN_LAST,
@@ -2016,7 +2285,7 @@ bubble_class_init (BubbleClass* klass)
         G_TYPE_INT);
 }
 
-/*-- public API --------------------------------------------------------------*/
+//-- public API ----------------------------------------------------------------
 
 Bubble*
 bubble_new (Defaults* defaults)
@@ -2050,7 +2319,7 @@ bubble_new (Defaults* defaults)
 			       GDK_BUTTON_PRESS_MASK |
 			       GDK_BUTTON_RELEASE_MASK);
 
-	/* hook up input/event handlers to window */
+	// hook up input/event handlers to window
 	g_signal_connect (G_OBJECT (window),
 			  "screen-changed",
 			  G_CALLBACK (screen_changed_handler),
@@ -2062,18 +2331,18 @@ bubble_new (Defaults* defaults)
 
 	gtk_window_move (GTK_WINDOW (window), 0, 0);
 
-	/* make sure the window opens with a RGBA-visual */
+	// make sure the window opens with a RGBA-visual
 	screen_changed_handler (window, NULL, NULL);
 	gtk_widget_realize (window);
 	gdk_window_set_back_pixmap (window->window, NULL, FALSE);
 
-	/* hook up window-event handlers to window */
+	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
 			  "expose-event",
 			  G_CALLBACK (expose_handler),
 			  this);
 
-	/*  "clear" input-mask, set title/icon/attributes */
+	// "clear" input-mask, set title/icon/attributes
 	gtk_widget_set_app_paintable (window, TRUE);
 	gtk_window_set_title (GTK_WINDOW (window), "notify-osd");
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
@@ -2083,32 +2352,34 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
 	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
 
-	/* TODO: fold some of that back into bubble_init */
+	// TODO: fold some of that back into bubble_init
 	this->priv = GET_PRIVATE (this);
-	this->priv->layout          = LAYOUT_NONE;
-	this->priv->widget          = window;
-	this->priv->title           = g_string_new ("");
-	this->priv->message_body    = g_string_new ("");
-	this->priv->icon_pixbuf     = NULL;
-	this->priv->value           = -2;
-	this->priv->visible         = FALSE;
-	this->priv->timeout         = 5000;
-	this->priv->mouse_over      = FALSE;
-	this->priv->distance        = 1.0f;
-	this->priv->composited      = gdk_screen_is_composited (
+	this->priv->layout               = LAYOUT_NONE;
+	this->priv->widget               = window;
+	this->priv->title                = g_string_new ("");
+	this->priv->message_body         = g_string_new ("");
+	this->priv->icon_pixbuf          = NULL;
+	this->priv->value                = -2;
+	this->priv->visible              = FALSE;
+	this->priv->timeout              = 5000;
+	this->priv->mouse_over           = FALSE;
+	this->priv->distance             = 1.0f;
+	this->priv->composited           = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
-	this->priv->alpha           = NULL;
-	this->priv->timeline        = NULL;
-	this->priv->blurred_content = NULL;
-	this->priv->blurred_bubble  = NULL;
-	this->priv->glow_surface    = NULL;
-	this->priv->dim_surface     = NULL;
-	this->priv->title_width     = 0;
-	this->priv->title_height    = 0;
-	this->priv->body_width      = 0;
-	this->priv->body_height     = 0;
-	this->priv->append          = FALSE;
-	this->priv->icon_only       = FALSE;
+	this->priv->alpha                = NULL;
+	this->priv->timeline             = NULL;
+	this->priv->title_width          = 0;
+	this->priv->title_height         = 0;
+	this->priv->body_width           = 0;
+	this->priv->body_height          = 0;
+	this->priv->append               = FALSE;
+	this->priv->icon_only            = FALSE;
+	this->priv->tile_background_part = NULL;
+	this->priv->tile_background      = NULL;
+	this->priv->tile_icon            = NULL;
+	this->priv->tile_title           = NULL;
+	this->priv->tile_body            = NULL;
+	this->priv->tile_indicator       = NULL;
 
 	update_input_shape (window, 1, 1);
 
@@ -2141,21 +2412,12 @@ bubble_del (Bubble* self)
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->blurred_content != NULL &&
-	    cairo_surface_status (priv->blurred_content) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (priv->blurred_content);
-
-	if (priv->blurred_bubble != NULL &&
-	    cairo_surface_status (priv->blurred_bubble) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (priv->blurred_bubble);
-
-	if (priv->glow_surface != NULL &&
-	    cairo_surface_status (priv->glow_surface) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (priv->glow_surface);
-
-	if (priv->dim_surface != NULL &&
-	    cairo_surface_status (priv->dim_surface) != CAIRO_STATUS_SUCCESS)
-		cairo_surface_destroy (priv->dim_surface);
+	tile_destroy (priv->tile_background_part);
+	tile_destroy (priv->tile_background);
+	tile_destroy (priv->tile_icon);
+	tile_destroy (priv->tile_title);
+	tile_destroy (priv->tile_body);
+	tile_destroy (priv->tile_indicator);
 
 	g_object_unref (self);
 }
@@ -2370,6 +2632,17 @@ bubble_set_size (Bubble* self,
 		return;
 
 	gtk_widget_set_size_request (GET_PRIVATE(self)->widget, width, height);
+}
+
+void
+bubble_get_size (Bubble* self,
+		 gint*   width,
+		 gint*   height)
+{
+	if (!self || !IS_BUBBLE (self))
+		return;
+
+	gtk_widget_get_size_request (GET_PRIVATE(self)->widget, width, height);
 }
 
 void
@@ -3220,6 +3493,8 @@ bubble_recalc_size (Bubble *self)
 	}
 	priv->future_height = new_bubble_height;
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
+
+	_refresh_background (self);
 
 	update_shape (self);
 }

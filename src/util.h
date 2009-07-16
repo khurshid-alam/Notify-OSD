@@ -10,6 +10,7 @@
 **
 ** Authors:
 **    Cody Russell <cody.russell@canonical.com>
+**    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
 **
 ** This program is free software: you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License version 3, as published
@@ -25,6 +26,11 @@
 **
 *******************************************************************************/
 
+#include <glib.h>
+#include <cairo.h>
+
 gchar*
 filter_text (const gchar* app_name);
 
+cairo_surface_t*
+copy_surface (cairo_surface_t* orig);

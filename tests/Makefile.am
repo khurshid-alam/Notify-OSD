@@ -23,7 +23,12 @@ test_modules_SOURCES =		                   \
 	../src/dbus.c		                   \
 	../src/dnd.c		                   \
 	../src/apport.c		                   \
-	../src/util.c				\
+	../src/util.c				   \
+	../src/stack-blur.c			   \
+	../src/exponential-blur.c		   \
+	../src/gaussian-blur.c			   \
+	../src/raico-blur.c			   \
+	../src/tile.c				   \
 	../src/bubble-window.c                     \
 	../src/bubble-window-accessible.c          \
 	../src/bubble-window-accessible-factory.c  \
@@ -111,6 +116,7 @@ test_raico_LDADD = \
 
 TILE_MODULES = \
 	$(RAICO_MODULES) \
+	../src/util.c \
 	../src/tile.c
 
 test_tile_SOURCES = \

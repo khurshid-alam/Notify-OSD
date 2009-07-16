@@ -1,23 +1,39 @@
-/*******************************************************************************
-**3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789 
-**      10        20        30        40        50        60        70        80
-**
-** how to compile:
-**
-**    gcc -Wall -O0 -Werror -ggdb `pkg-config --cflags --libs cairo gtk+-2.0 \
-**    pixman-1` shape-test.c -o shape-test
-**
-*******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+//3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
+//      10        20        30        40        50        60        70        80
+//
+// test-scroll-text
+//
+// test-scroll-text.c - test using tile to animate scrolling text in a bubble
+//
+// Copyright 2009 Canonical Ltd.
+//
+// Authors:
+//    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3, as published
+// by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranties of
+// MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+// PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////
 
 #include <X11/Xatom.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <math.h>
 #include <stdlib.h>
-#include <string.h>
 
 #include "raico-blur.h"
 #include "tile.h"
+#include "util.h"
 
 #define BUBBLE_SHADOW_SIZE  10.0f
 #define CORNER_RADIUS        6.0f
@@ -696,41 +712,6 @@ setup_text_tile (gint w, gint h)
 	cairo_surface_destroy (surface);
 
 	return tile;
-}
-
-cairo_surface_t*
-copy_surface (cairo_surface_t* orig)
-{
-	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
-	cairo_format_t   format;
-	gint             width;
-	gint             height;
-	gint             stride;
-
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
-	width  = cairo_image_surface_get_width (orig);
-	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
-
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
-
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
-
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
-
-	return copy;
 }
 
 void

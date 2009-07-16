@@ -25,8 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string.h>
-
+#include "util.h"
 #include "tile.h"
 #include "raico-blur.h"
 
@@ -39,41 +38,6 @@ struct _tile_private_t
 	guint            pad_width;
 	guint            pad_height;
 };
-
-cairo_surface_t*
-_copy_surface (cairo_surface_t* orig)
-{
-	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
-	cairo_format_t   format;
-	gint             width;
-	gint             height;
-	gint             stride;
-
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
-	width  = cairo_image_surface_get_width (orig);
-	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
-
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
-
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
-
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
-
-	return copy;
-}
 
 tile_t*
 tile_new (cairo_surface_t* source, guint blur_radius)
@@ -95,8 +59,8 @@ tile_new (cairo_surface_t* source, guint blur_radius)
 
 	tile->priv = priv;
 
-	tile->priv->normal      = _copy_surface (source);
-	tile->priv->blurred     = _copy_surface (source);
+	tile->priv->normal      = copy_surface (source);
+	tile->priv->blurred     = copy_surface (source);
 	tile->priv->blur_radius = blur_radius;
 	tile->priv->use_padding = FALSE;
 	tile->priv->pad_width   = 0;
@@ -137,8 +101,8 @@ tile_new_for_padding (cairo_surface_t* normal,
 
 	tile->priv = priv;
 
-	tile->priv->normal      = _copy_surface (normal);
-	tile->priv->blurred     = _copy_surface (blurred);
+	tile->priv->normal      = copy_surface (normal);
+	tile->priv->blurred     = copy_surface (blurred);
 	tile->priv->blur_radius = 0;
 	tile->priv->use_padding = TRUE;
 	tile->priv->pad_width   = cairo_image_surface_get_width (normal);
@@ -196,7 +160,6 @@ tile_paint (tile_t*  tile,
 		cairo_set_source_surface (cr, tile->priv->blurred, x, y);
 		cairo_paint_with_alpha (cr, blurred_alpha);
 	}
-
 }
 
 void
