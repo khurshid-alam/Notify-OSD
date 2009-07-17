@@ -136,6 +136,8 @@ enum
 
 #define FPS                60
 
+#define BUBBLE_CONTENT_BLUR_RADIUS 6
+
 //-- private functions ---------------------------------------------------------
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
@@ -471,7 +473,7 @@ _refresh_background (Bubble* self)
 
 	// now blur the surface-clone
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
-	raico_blur_set_radius (blur, 6);
+	raico_blur_set_radius (blur, BUBBLE_CONTENT_BLUR_RADIUS);
 	raico_blur_apply (blur, clone);
 	raico_blur_destroy (blur);
 
@@ -599,9 +601,50 @@ _refresh_background (Bubble* self)
 void
 _refresh_icon (Bubble* self)
 {
-	BubblePrivate* priv = GET_PRIVATE (self);
+	BubblePrivate*   priv   = GET_PRIVATE (self);
+	Defaults*        d      = self->defaults;
+	cairo_surface_t* normal = NULL;
+	cairo_t*         cr     = NULL;
 
 	tile_destroy (priv->tile_icon);
+
+	// create temp. scratch surface
+	normal = cairo_image_surface_create (
+			CAIRO_FORMAT_ARGB32,
+			EM2PIXELS (defaults_get_icon_size (d), d) +
+			2 * BUBBLE_CONTENT_BLUR_RADIUS,
+			EM2PIXELS (defaults_get_icon_size (d), d) +
+			2 * BUBBLE_CONTENT_BLUR_RADIUS);
+	if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		return;
+
+	// create context for normal surface
+	cr = cairo_create (normal);
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	{
+		cairo_surface_destroy (normal);
+		return;
+	}
+
+	// clear normal surface
+    	cairo_scale (cr, 1.0f, 1.0f);
+	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+	cairo_paint (cr);
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
+	// render icon into normal surface
+	gdk_cairo_set_source_pixbuf (cr,
+				     priv->icon_pixbuf,
+				     BUBBLE_CONTENT_BLUR_RADIUS,
+				     BUBBLE_CONTENT_BLUR_RADIUS);
+	cairo_paint (cr);
+
+	// create the surface/blur-cache from the normal surface
+	priv->tile_icon = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
+
+	// clean up
+	cairo_destroy (cr);
+	cairo_surface_destroy (normal);
 }
 
 void
@@ -788,13 +831,20 @@ _render_layout (Bubble*  self,
 		gdouble  alpha_normal,
 		gdouble  alpha_blur)
 {
+	Defaults* d           = self->defaults;
+	gint      shadow      = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	gint      icon_half   = EM2PIXELS (defaults_get_icon_size (d), d) / 2;
+	gint      width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
+	gint      height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
+	gint      margin      = EM2PIXELS (defaults_get_margin_size (d), d);
+
 	switch (bubble_get_layout (self))
 	{
 		case LAYOUT_ICON_ONLY:
 			_render_icon (self,
 				      cr,
-				      0.0f,
-				      0.0f,
+				      shadow + width_half - icon_half - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + height_half - icon_half - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 		break;
@@ -802,8 +852,8 @@ _render_layout (Bubble*  self,
 		case LAYOUT_ICON_INDICATOR:
 			_render_icon (self,
 				      cr,
-				      0.0f,
-				      0.0f,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 			_render_indicator (self,
@@ -817,8 +867,8 @@ _render_layout (Bubble*  self,
 		case LAYOUT_ICON_TITLE:
 			_render_icon (self,
 				      cr,
-				      0.0f,
-				      0.0f,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 			_render_title (self,
@@ -832,8 +882,8 @@ _render_layout (Bubble*  self,
 		case LAYOUT_ICON_TITLE_BODY:
 			_render_icon (self,
 				      cr,
-				      0.0f,
-				      0.0f,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 			_render_title (self,
@@ -2501,6 +2551,8 @@ bubble_set_icon (Bubble*      self,
 	priv->icon_pixbuf = load_icon (filename,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
+
+	_refresh_icon (self);
 }
 
 static GdkPixbuf *
@@ -2592,6 +2644,8 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	}
 
 	priv->icon_pixbuf = pixbuf;
+
+	_refresh_icon (self);
 }
 
 GdkPixbuf*
