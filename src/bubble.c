@@ -2931,6 +2931,16 @@ _calc_title_height (Bubble* self,
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
+	// make sure system-wide font-options like hinting, antialiasing etc.
+	// are taken into account
+	pango_cairo_context_set_font_options (
+		pango_layout_get_context (layout),
+		gdk_screen_get_font_options (
+			gtk_widget_get_screen (priv->widget)));
+	pango_cairo_context_set_resolution  (pango_layout_get_context (layout),
+					     defaults_get_screen_dpi (d));
+	pango_layout_context_changed (layout);
+
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_title_size (d) *
@@ -2987,6 +2997,17 @@ _calc_body_height (Bubble* self,
 
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
+
+	// make sure system-wide font-options like hinting, antialiasing etc.
+	// are taken into account
+	pango_cairo_context_set_font_options (
+		pango_layout_get_context (layout),
+		gdk_screen_get_font_options (
+			gtk_widget_get_screen (priv->widget)));
+	pango_cairo_context_set_resolution  (pango_layout_get_context (layout),
+					     defaults_get_screen_dpi (d));
+	pango_layout_context_changed (layout);
+
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_body_size (d) *
