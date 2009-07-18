@@ -97,6 +97,7 @@ struct _Defaults
 	gdouble      text_body_size;
 	gdouble      pixels_per_em;
 	gdouble      system_font_size;
+	gdouble      screen_dpi;
 };
 
 /* class structure */
@@ -222,6 +223,9 @@ defaults_get_pixel_per_em (Defaults* self);
 
 gdouble
 defaults_get_system_font_size (Defaults* self);
+
+gdouble
+defaults_get_screen_dpi (Defaults* self);
 
 void
 defaults_refresh_screen_dimension_properties (Defaults *self);

@@ -77,7 +77,8 @@ enum
 	PROP_TEXT_BODY_WEIGHT,
 	PROP_TEXT_BODY_SIZE,
 	PROP_PIXELS_PER_EM,
-	PROP_SYSTEM_FONT_SIZE
+	PROP_SYSTEM_FONT_SIZE,
+	PROP_SCREEN_DPI
 };
 
 enum
@@ -128,6 +129,7 @@ enum
 #define DEFAULT_TEXT_BODY_SIZE       0.8f
 #define DEFAULT_PIXELS_PER_EM        10.0f
 #define DEFAULT_SYSTEM_FONT_SIZE     10.0f
+#define DEFAULT_SCREEN_DPI           72.0f
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -239,11 +241,12 @@ _get_font_size_dpi (Defaults* self)
 	/* update stored DPI-value */
 	pixels_per_em = (gdouble) points * dpi / 72.0f;
 	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
+	g_object_set (self, "screen-dpi", dpi, NULL);
 
 	if (g_getenv ("DEBUG"))
 		g_print ("font-size: %dpt\ndpi: %3.1f\npixels/EM: %2.2f\nwidth: %d px\ntitle-height: %2.2f pt\nbody-height: %2.2f pt\n\n",
 			 points,
-			 dpi,
+			 defaults_get_screen_dpi (self),
 			 pixels_per_em,
 			 (gint) (pixels_per_em * DEFAULT_BUBBLE_WIDTH),
 			 defaults_get_system_font_size (self) *
@@ -882,6 +885,10 @@ defaults_get_property (GObject*    gobject,
 			g_value_set_double (value, defaults->system_font_size);
 		break;
 
+		case PROP_SCREEN_DPI:
+			g_value_set_double (value, defaults->screen_dpi);
+		break;
+
 		default :
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
 		break;
@@ -1086,6 +1093,10 @@ defaults_set_property (GObject*      gobject,
 			defaults->system_font_size = g_value_get_double (value);
 		break;
 
+		case PROP_SCREEN_DPI:
+			defaults->screen_dpi = g_value_get_double (value);
+		break;
+
 		default :
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
 		break;
@@ -1133,6 +1144,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_text_body_size;
 	GParamSpec*   property_pixels_per_em;
 	GParamSpec*   property_system_font_size;
+	GParamSpec*   property_screen_dpi;
 
 	gobject_class->constructed  = defaults_constructed;
 	gobject_class->dispose      = defaults_dispose;
@@ -1589,6 +1601,20 @@ defaults_class_init (DefaultsClass* klass)
 	g_object_class_install_property (gobject_class,
 					 PROP_SYSTEM_FONT_SIZE,
 					 property_system_font_size);
+
+	property_screen_dpi = g_param_spec_double (
+				"screen-dpi",
+				"screen-dpi",
+				"Screen DPI value",
+				10.0f,
+				600.0f,
+				DEFAULT_SCREEN_DPI,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_SCREEN_DPI,
+					 property_screen_dpi);
+
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -2108,6 +2134,19 @@ defaults_get_system_font_size (Defaults* self)
 	g_object_get (self, "system-font-size", &system_font_size, NULL);
 
 	return system_font_size;
+}
+
+gdouble
+defaults_get_screen_dpi (Defaults* self)
+{
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
+
+	gdouble screen_dpi;
+
+	g_object_get (self, "screen-dpi", &screen_dpi, NULL);
+
+	return screen_dpi;
 }
 
 static gboolean
