@@ -747,6 +747,9 @@ _refresh_icon (Bubble* self)
 
 	tile_destroy (priv->tile_icon);
 
+	if (!priv->icon_pixbuf)
+		return;
+
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
 			CAIRO_FORMAT_ARGB32,
