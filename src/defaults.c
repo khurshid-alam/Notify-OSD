@@ -105,7 +105,7 @@ enum
 /* these values are interpreted as em-measurements and do comply to the 
  * visual guide for jaunty-notifications */
 #define DEFAULT_DESKTOP_BOTTOM_GAP    6.0f
-#define DEFAULT_BUBBLE_WIDTH         28.0f
+#define DEFAULT_BUBBLE_WIDTH         24.0f
 #define DEFAULT_BUBBLE_MIN_HEIGHT     5.0f
 #define DEFAULT_BUBBLE_MAX_HEIGHT    12.2f
 #define DEFAULT_BUBBLE_VERT_GAP       0.5f
@@ -118,8 +118,8 @@ enum
 #define DEFAULT_BUBBLE_CORNER_RADIUS 0.375f
 #define DEFAULT_CONTENT_SHADOW_SIZE  0.125f
 #define DEFAULT_CONTENT_SHADOW_COLOR "#000000"
-#define DEFAULT_MARGIN_SIZE          1.4f
-#define DEFAULT_ICON_SIZE            4.0f
+#define DEFAULT_MARGIN_SIZE          1.0f
+#define DEFAULT_ICON_SIZE            3.0f
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
