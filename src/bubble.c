@@ -220,12 +220,12 @@ draw_round_rect (cairo_t* cr,
 // color-, alpha-, radius-, width-, height- and gradient-values were determined
 // by very close obvervation of a SVG-mockup from the design-team
 static void
-draw_value_indicator (cairo_t* cr,
-		      gint     value,   // value to render: 0 - 100
-		      gint     start_x, // top of surrounding rect
-		      gint     start_y, // left of surrounding rect
-		      gint     width,   // width of surrounding rect
-		      gint     height)  // height of surrounding rect
+_draw_value_indicator (cairo_t* cr,
+		       gint     value,   // value to render: 0 - 100
+		       gint     start_x, // top of surrounding rect
+		       gint     start_y, // left of surrounding rect
+		       gint     width,   // width of surrounding rect
+		       gint     height)  // height of surrounding rect
 {
 	gdouble          outline_radius;
 	gdouble          outline_thickness;
@@ -1036,7 +1036,7 @@ _refresh_indicator (Bubble* self)
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	draw_value_indicator (
+	_draw_value_indicator (
 		cr,
 		priv->value,
 		BUBBLE_CONTENT_BLUR_RADIUS,
