@@ -54,9 +54,11 @@ gint     g_offset     = -50;
 gint     g_step       = 1;
 
 cairo_surface_t*
-render_text_to_surface (gchar* text,
-			gint   width,
-			gint   height)
+render_text_to_surface (gchar*                      text,
+			gint                        width,
+			gint                        height,
+			const cairo_font_options_t* font_opts,
+			gdouble                     dpi)
 {
 	cairo_surface_t*      surface;
 	cairo_t*              cr;
@@ -65,20 +67,20 @@ render_text_to_surface (gchar* text,
 	PangoRectangle        ink_rect;
 	PangoRectangle        log_rect;
 
-	/* sanity check */
+	// sanity check
 	if (!text      ||
 	    width <= 0 ||
 	    height <= 0)
 		return NULL;
 
-	/* create surface */
+	// create surface
 	surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 					      width,
 					      height);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
 		return NULL;
 
-	/* create context */
+	// create context
 	cr = cairo_create (surface);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
@@ -86,12 +88,12 @@ render_text_to_surface (gchar* text,
 		return NULL;
 	}
 
-	/* clear context */
+	// clear context
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 
-	/**/
+	//
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
 
@@ -108,20 +110,25 @@ render_text_to_surface (gchar* text,
 	pango_layout_set_alignment (layout, PANGO_ALIGN_CENTER);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 
-	/* print and layout string (pango-wise) */
+	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, text, -1);
 	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
+	// make sure system-wide font-options like hinting, antialiasing etc.
+	// are taken into account
+	pango_cairo_context_set_font_options (pango_layout_get_context (layout),
+					      font_opts);
+	pango_cairo_context_set_resolution  (pango_layout_get_context (layout),
+					     dpi);
+	pango_layout_context_changed (layout);
+
+	// draw pango-text as path to our cairo-context
 	cairo_move_to (cr, 0.0f, 0.0f);
-
-	/* draw pango-text as path to our cairo-context */
-	pango_cairo_layout_path (cr, layout);
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 1.0f);
-	cairo_fill (cr);
+	pango_cairo_show_layout (cr, layout);
 
-	/* clean up*/
+	// clean up
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
@@ -130,12 +137,12 @@ render_text_to_surface (gchar* text,
 
 void
 draw_round_rect (cairo_t* cr,
-		 gdouble  aspect,         /* aspect-ratio            */
-		 gdouble  x,              /* top-left corner         */
-		 gdouble  y,              /* top-left corner         */
-		 gdouble  corner_radius,  /* "size" of the corners   */
-		 gdouble  width,          /* width of the rectangle  */
-		 gdouble  height          /* height of the rectangle */)
+		 gdouble  aspect,         // aspect-ratio
+		 gdouble  x,              // top-left corner
+		 gdouble  y,              // top-left corner
+		 gdouble  corner_radius,  // "size" of the corners
+		 gdouble  width,          // width of the rectangle
+		 gdouble  height)         // height of the rectangle
 {
 	gdouble radius = corner_radius / aspect;
 
@@ -230,7 +237,7 @@ update_input_shape (GtkWidget* window,
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 
-			/* just draw something */
+			// just draw something
 			draw_round_rect (cr,
 					 1.0f,
 					 0.0f, 0.0f,
@@ -260,7 +267,7 @@ update_shape (GtkWidget* window,
 
 	if (g_composited)
 	{
-		/* remove any current shape-mask */
+		// remove any current shape-mask
 		gtk_widget_shape_combine_mask (window, NULL, 0, 0);
 		return;
 	}
@@ -271,12 +278,12 @@ update_shape (GtkWidget* window,
 		cr = gdk_cairo_create (mask);
 		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
 		{
-			/* clear mask/context */
+			// clear mask/context
 			cairo_scale (cr, 1.0f, 1.0f);
 			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 			cairo_paint (cr);
 
-			/* draw rounded rectangle shape/mask */
+			// draw rounded rectangle shape/mask
 			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
 			draw_round_rect (cr,
@@ -289,10 +296,10 @@ update_shape (GtkWidget* window,
 			cairo_fill (cr);
 			cairo_destroy (cr);
 
-			/* remove any current shape-mask */
+			// remove any current shape-mask
 			gtk_widget_shape_combine_mask (window, NULL, 0, 0);
 
-			/* set new shape-mask */
+			// set new shape-mask
 			gtk_widget_shape_combine_mask (window, mask, 0, 0);
 		}
 
@@ -376,7 +383,7 @@ draw_shadow (cairo_t* cr,
 		return;
 	}
 
-	/* top left */
+	// top left
 	cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
 	cairo_set_source (cr, pattern);
 	cairo_rectangle (cr,
@@ -386,7 +393,7 @@ draw_shadow (cairo_t* cr,
 			 2 * shadow_radius);
 	cairo_fill (cr);
 
-	/* bottom left */
+	// bottom left
 	cairo_matrix_init_scale (&matrix, 1.0f, -1.0f);
 	cairo_matrix_translate (&matrix, 0.0f, -height);
 	cairo_pattern_set_matrix (pattern, &matrix);
@@ -397,7 +404,7 @@ draw_shadow (cairo_t* cr,
 			 height - 2 * shadow_radius);
 	cairo_fill (cr);
 
-	/* top right */
+	// top right
 	cairo_matrix_init_scale (&matrix, -1.0f, 1.0f);
 	cairo_matrix_translate (&matrix, -width, 0.0f);
 	cairo_pattern_set_matrix (pattern, &matrix);
@@ -408,7 +415,7 @@ draw_shadow (cairo_t* cr,
 			 height - 2 * shadow_radius);
 	cairo_fill (cr);
 
-	/* bottom right */
+	// bottom right
 	cairo_matrix_init_scale (&matrix, -1.0f, -1.0f);
 	cairo_matrix_translate (&matrix, -width, -height);
 	cairo_pattern_set_matrix (pattern, &matrix);
@@ -419,7 +426,7 @@ draw_shadow (cairo_t* cr,
 			 2 * shadow_radius);
 	cairo_fill (cr);
 
-	/* clean up */
+	// clean up
 	cairo_pattern_destroy (pattern);
 	cairo_surface_destroy (tmp_surface);
 	cairo_surface_destroy (new_surface);
@@ -436,7 +443,7 @@ expose_handler (GtkWidget*      window,
 
 	cr = gdk_cairo_create (window->window);
 
-        /* clear and render drop-shadow and bubble-background */
+        // clear and render drop-shadow and bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
@@ -502,14 +509,14 @@ set_bg_blur (GtkWidget* window,
 	if (blur)
 	{
 		glong data[] = {
-			2,                 /* threshold               */
-			0,                 /* filter                  */
-			NorthWestGravity,  /* gravity of top-left     */
-			shadow,            /* x-coord of top-left     */
-			-height/2 + shadow,/* y-coord of top-left     */
-			NorthWestGravity,  /* gravity of bottom-right */
-			width - shadow,    /* bottom-right x-coord    */
-			height/2 - shadow  /* bottom-right y-coord    */};
+			2,                  // threshold
+			0,                  // filter
+			NorthWestGravity,   // gravity of top-left
+			shadow,             // x-coord of top-left
+			-height/2 + shadow, // y-coord of top-left
+			NorthWestGravity,   // gravity of bottom-right
+			width - shadow,     // bottom-right x-coord
+			height/2 - shadow}; // bottom-right y-coord
 
 		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
 				 GDK_WINDOW_XID (window->window),
@@ -624,7 +631,10 @@ pointer_update (GtkWidget* window)
 }
 
 tile_t*
-setup_text_tile (gint w, gint h)
+setup_text_tile (const cairo_font_options_t* font_opts,
+		 gdouble                     dpi,
+		 gint                        w,
+		 gint                        h)
 {
 	tile_t*          tile    = NULL;
 	cairo_status_t   status;
@@ -650,37 +660,43 @@ setup_text_tile (gint w, gint h)
 		g_print ("Error: \"%s\"\n", cairo_status_to_string (status));
 	}
 
-        /* clear and render drop-shadow and bubble-background */
+        // clear and render drop-shadow and bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	text = render_text_to_surface ("After an evening of hacking at the"
-				       " Fataga hotel here at GUADEC I   "
-				       "can present you even text-scroll "
-				       "with blur-cache and fade-out mask"
-				       " and I dedicate this to Behdad who"
-				       " sadly burst his upper lip during "
-				       "the evening and had to go to the "
-				       "hospital. Some spanish KDE-folks "
-				       "kindly accompanied him to help out"
-				       " with translation. True collaboration!\0",
-				       width,
-				       height);
+	text = render_text_to_surface (
+			"After an evening of hacking at the"
+			" Fataga hotel here at GUADEC I   "
+			"can present you even text-scroll "
+			"with blur-cache and fade-out mask"
+			" and I dedicate this to Behdad who"
+			" sadly burst his upper lip during "
+			"the evening and had to go to the "
+			"hospital. Some spanish KDE-folks "
+			"kindly accompanied him to help out"
+			" with translation. True collaboration!\0",
+			width,
+			height,
+			font_opts,
+			dpi);
 
-	shadow = render_text_to_surface ("After an evening of hacking at the"
-				       " Fataga hotel here at GUADEC I   "
-				       "can present you even text-scroll "
-				       "with blur-cache and fade-out mask"
-				       " and I dedicate this to Behdad who"
-				       " sadly burst his upper lip during "
-				       "the evening and had to go to the "
-				       "hospital. Some spanish KDE-folks "
-				       "kindly accompanied him to help out"
-				       " with translation. True collaboration!\0",
-					 width,
-					 height);
+	shadow = render_text_to_surface (
+			"After an evening of hacking at the"
+			" Fataga hotel here at GUADEC I   "
+			"can present you even text-scroll "
+			"with blur-cache and fade-out mask"
+			" and I dedicate this to Behdad who"
+			" sadly burst his upper lip during "
+			"the evening and had to go to the "
+			"hospital. Some spanish KDE-folks "
+			"kindly accompanied him to help out"
+			" with translation. True collaboration!\0",
+			width,
+			height,
+			font_opts,
+			dpi);
 
 	// create and setup blur
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
@@ -881,7 +897,7 @@ main (int    argc,
 			       GDK_BUTTON_PRESS_MASK |
 			       GDK_BUTTON_RELEASE_MASK);
 
-	/* hook up input/event handlers to window */
+	// hook up input/event handlers to window
 	g_signal_connect (G_OBJECT (window),
 			  "screen-changed",
 			  G_CALLBACK (screen_changed_handler),
@@ -893,18 +909,18 @@ main (int    argc,
 
 	gtk_window_move (GTK_WINDOW (window), POS_X, POS_Y);
 
-	/* make sure the window opens with a RGBA-visual */
+	// make sure the window opens with a RGBA-visual
 	screen_changed_handler (window, NULL, NULL);
 	gtk_widget_realize (window);
 	gdk_window_set_back_pixmap (window->window, NULL, FALSE);
 
-	/* hook up window-event handlers to window */
+	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
 			  "expose-event",
 			  G_CALLBACK (expose_handler),
 			  NULL);       
 
-	/* FIXME: read out current mouse-pointer position every 1/25 second */
+	// FIXME: read out current mouse-pointer position every 1/25 second
         pointer_update_id = g_timeout_add (1000/40,
 					   (GSourceFunc) pointer_update,
 					   (gpointer) window);
@@ -913,7 +929,7 @@ main (int    argc,
 		       (GSourceFunc) quit,
 		       NULL);
 
-	/*  "clear" input-mask, set title/icon/attributes */
+	// "clear" input-mask, set title/icon/attributes
 	gtk_widget_set_app_paintable (window, TRUE);
 	gtk_window_set_decorated (GTK_WINDOW (window), FALSE);
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
@@ -938,7 +954,11 @@ main (int    argc,
 
 	setup_tile ((gint) (BUBBLE_WIDTH + 2.0f * BUBBLE_SHADOW_SIZE),
 		    (gint) (BUBBLE_HEIGHT + 2.0f * BUBBLE_SHADOW_SIZE));
-	g_text = setup_text_tile ((gint) (BUBBLE_WIDTH - 2*BUBBLE_SHADOW_SIZE),
+	g_text = setup_text_tile (gdk_screen_get_font_options (
+					gtk_widget_get_screen (window)),
+				  gdk_screen_get_resolution (
+					gtk_widget_get_screen (window)),
+				  (gint) (BUBBLE_WIDTH - 2*BUBBLE_SHADOW_SIZE),
 				  (gint) (3.0f * BUBBLE_HEIGHT));
 
 	g_print ("This test will run for 10 seconds and then quit.\n");
