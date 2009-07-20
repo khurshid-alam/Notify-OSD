@@ -24,6 +24,9 @@ notify_osd_sources =		\
 	apport.c		\
 	log.c			\
 	util.c			\
+	gaussian-blur.c		\
+	raico-blur.c		\
+	tile.c			\
 	bubble-window.c		\
 	bubble-window-accessible.c \
 	bubble-window-accessible-factory.c \
@@ -46,6 +49,9 @@ notify_osd_headers =		\
 	log.h			\
 	apport.h		\
 	util.h			\
+	gaussian-blur.h		\
+	raico-blur.h		\
+	tile.h			\
 	bubble-window.h \
 	bubble-window-accessible.h \
 	bubble-window-accessible-factory.h \

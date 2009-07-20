@@ -85,6 +85,8 @@ struct _Defaults
 	GString*     content_shadow_color;
 	gdouble      margin_size;
 	gdouble      icon_size;
+	gdouble      gauge_size;
+	gdouble      gauge_outline_width;
 	gint         fade_in_timeout;
 	gint         fade_out_timeout;
 	gint         on_screen_timeout;
@@ -97,6 +99,7 @@ struct _Defaults
 	gdouble      text_body_size;
 	gdouble      pixels_per_em;
 	gdouble      system_font_size;
+	gdouble      screen_dpi;
 };
 
 /* class structure */
@@ -187,6 +190,12 @@ defaults_get_margin_size (Defaults* self);
 gdouble
 defaults_get_icon_size (Defaults* self);
 
+gdouble
+defaults_get_gauge_size (Defaults* self);
+
+gdouble
+defaults_get_gauge_outline_width (Defaults* self);
+
 gint
 defaults_get_fade_in_timeout (Defaults* self);
 
@@ -222,6 +231,9 @@ defaults_get_pixel_per_em (Defaults* self);
 
 gdouble
 defaults_get_system_font_size (Defaults* self);
+
+gdouble
+defaults_get_screen_dpi (Defaults* self);
 
 void
 defaults_refresh_screen_dimension_properties (Defaults *self);

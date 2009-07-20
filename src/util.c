@@ -10,6 +10,7 @@
  **
  ** Authors:
  **    Cody Russell <cody.russell@canonical.com>
+ **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
  **
  ** This program is free software: you can redistribute it and/or modify it
  ** under the terms of the GNU General Public License version 3, as published
@@ -25,8 +26,10 @@
  **
  *******************************************************************************/
 
+#include <string.h>
 #include <glib.h>
 #include <pango/pango.h>
+#include <cairo.h>
 
 #define CHARACTER_LT_REGEX            "&(lt;|#60;|#x3c;)"
 #define CHARACTER_GT_REGEX            "&(gt;|#62;|#x3e;)"
@@ -107,3 +110,37 @@ filter_text (const gchar *text)
 	return text6;
 }
 
+cairo_surface_t*
+copy_surface (cairo_surface_t* orig)
+{
+	cairo_surface_t* copy       = NULL;
+	guchar*          pixels_src = NULL;
+	guchar*          pixels_cpy = NULL;
+	cairo_format_t   format;
+	gint             width;
+	gint             height;
+	gint             stride;
+
+	pixels_src = cairo_image_surface_get_data (orig);
+	if (!pixels_src)
+		return NULL;
+
+	format = cairo_image_surface_get_format (orig);
+	width  = cairo_image_surface_get_width (orig);
+	height = cairo_image_surface_get_height (orig);
+	stride = cairo_image_surface_get_stride (orig);
+
+	pixels_cpy = g_malloc0 (stride * height);
+	if (!pixels_cpy)
+		return NULL;
+
+	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
+
+	copy = cairo_image_surface_create_for_data (pixels_cpy,
+						    format,
+						    width,
+						    height,
+						    stride);
+
+	return copy;
+}

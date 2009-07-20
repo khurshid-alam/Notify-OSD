@@ -119,29 +119,29 @@ if __name__ == '__main__':
 
 	# try the icon-summary-body case
 	n = pynotify.Notification (
-			"Inital notification",
+			"Inital notification (1. notification)",
 			"This is the original content of this notification-bubble.",
 			"notification-message-im")
 	n.show ()
-	time.sleep (3); # simulate app activity
+	time.sleep (4); # simulate app activity
 
 	# update the current notification with new content
-	n.update ("Updated notification",
+	n.update ("Updated notification (1. notification)",
 		  "Here the same bubble with new title- and body-text, even the icon can be changed on the update.",
 		  "notification-message-email")
 	n.show ();
-	time.sleep (6); # wait longer now
+	time.sleep (10); # wait longer now
 
 	# create a new bubble using the icon-summary-body layout
 	n = pynotify.Notification (
-			"Initial layout",
+			"Initial layout (2. notification)",
 			"This bubble uses the icon-title-body layout.",
 			"notification-message-im");
 	n.show ()
-	time.sleep (3); # simulate app activity
+	time.sleep (4); # simulate app activity
 
 	# now update current bubble again, but change the layout
-	n.update ("Updated layout",
+	n.update ("Updated layout (2. notification)",
 		  "After the update we now have a bubble using the title-body layout.",
 		  " ")
 	n.show ()

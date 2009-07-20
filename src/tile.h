@@ -42,6 +42,10 @@ tile_t*
 tile_new (cairo_surface_t* source,
 	  guint            blur_radius);
 
+tile_t*
+tile_new_for_padding (cairo_surface_t* normal,
+		      cairo_surface_t* blurred);
+
 void
 tile_destroy (tile_t* tile);
 
@@ -52,6 +56,16 @@ tile_paint (tile_t*  tile,
 	    gdouble  y,
 	    gdouble  normal_alpha,
 	    gdouble  blurred_alpha);
+
+void
+tile_paint_with_padding (tile_t*  tile,
+			 cairo_t* cr,
+			 gdouble  x,
+			 gdouble  y,
+			 gdouble  width,
+			 gdouble  height,
+			 gdouble  normal_alpha,
+			 gdouble  blurred_alpha);
 
 #endif // _TILE_H
 

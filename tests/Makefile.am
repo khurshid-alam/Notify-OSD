@@ -4,7 +4,11 @@ noinst_PROGRAMS = test-modules \
 		  test-timeline-interpolate \
 		  test-timeline-rewind \
 		  test-timeline-smoothness \
-		  test-alpha-animation
+		  test-alpha-animation \
+		  test-raico \
+		  test-tile \
+		  test-grow-bubble \
+		  test-scroll-text
 
 check_PROGRAMS = test-modules
 TESTS = test-modules
@@ -19,7 +23,12 @@ test_modules_SOURCES =		                   \
 	../src/dbus.c		                   \
 	../src/dnd.c		                   \
 	../src/apport.c		                   \
-	../src/util.c				\
+	../src/util.c				   \
+	../src/stack-blur.c			   \
+	../src/exponential-blur.c		   \
+	../src/gaussian-blur.c			   \
+	../src/raico-blur.c			   \
+	../src/tile.c				   \
 	../src/bubble-window.c                     \
 	../src/bubble-window-accessible.c          \
 	../src/bubble-window-accessible-factory.c  \
@@ -86,6 +95,73 @@ test_timeline_smoothness_SOURCES = ../egg/test-timeline-smoothness.c \
 
 test_alpha_animation_SOURCES = test-alpha-animation.c \
 	$(EGG_MODULES)
+
+RAICO_MODULES = \
+	../src/stack-blur.c \
+	../src/exponential-blur.c \
+	../src/gaussian-blur.c \
+	../src/raico-blur.c
+
+test_raico_SOURCES = \
+	$(RAICO_MODULES) \
+	test-raico.c
+
+test_raico_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_raico_LDADD = \
+	$(GTK_LIBS)
+
+TILE_MODULES = \
+	$(RAICO_MODULES) \
+	../src/util.c \
+	../src/tile.c
+
+test_tile_SOURCES = \
+	$(TILE_MODULES) \
+	test-tile.c
+
+test_tile_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_tile_LDADD = \
+	$(GTK_LIBS)
+
+GROW_BUBBLE_MODULES = \
+	$(RAICO_MODULES) \
+	../src/tile.c
+
+test_grow_bubble_SOURCES = \
+	$(TILE_MODULES) \
+	test-grow-bubble.c
+
+test_grow_bubble_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_grow_bubble_LDADD = \
+	$(GTK_LIBS)
+
+SCROLL_TEXT_MODULES = \
+	$(RAICO_MODULES) \
+	../src/tile.c
+
+test_scroll_text_SOURCES = \
+	$(TILE_MODULES) \
+	test-scroll-text.c
+
+test_scroll_text_CFLAGS = \
+	-Wall -Werror -O0 -ggdb -std=c99  \
+	$(GTK_CFLAGS) \
+	-I$(top_srcdir)/src
+
+test_scroll_text_LDADD = \
+	$(GTK_LIBS)
 
 test: test-modules
 	gtester -o=test-modules.xml -k ./test-modules

@@ -25,8 +25,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <string.h>
-
+#include "util.h"
 #include "tile.h"
 #include "raico-blur.h"
 
@@ -35,42 +34,10 @@ struct _tile_private_t
 	cairo_surface_t* normal;
 	cairo_surface_t* blurred;
 	guint            blur_radius;
+	gboolean         use_padding;
+	guint            pad_width;
+	guint            pad_height;
 };
-
-cairo_surface_t*
-_copy_surface (cairo_surface_t* orig)
-{
-	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
-	cairo_format_t   format;
-	gint             width;
-	gint             height;
-	gint             stride;
-
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
-	width  = cairo_image_surface_get_width (orig);
-	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
-
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
-
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
-
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
-
-	return copy;
-}
 
 tile_t*
 tile_new (cairo_surface_t* source, guint blur_radius)
@@ -92,9 +59,12 @@ tile_new (cairo_surface_t* source, guint blur_radius)
 
 	tile->priv = priv;
 
-	tile->priv->normal      = _copy_surface (source);
-	tile->priv->blurred     = _copy_surface (source);
+	tile->priv->normal      = copy_surface (source);
+	tile->priv->blurred     = copy_surface (source);
 	tile->priv->blur_radius = blur_radius;
+	tile->priv->use_padding = FALSE;
+	tile->priv->pad_width   = 0;
+	tile->priv->pad_height  = 0;
 
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
 	raico_blur_set_radius (blur, blur_radius);
@@ -104,16 +74,60 @@ tile_new (cairo_surface_t* source, guint blur_radius)
 	return tile;
 }
 
+tile_t*
+tile_new_for_padding (cairo_surface_t* normal,
+		      cairo_surface_t* blurred)
+{
+	tile_private_t* priv = NULL;
+	tile_t*         tile = NULL;
+
+	priv = g_new0 (tile_private_t, 1);
+	if (!priv)
+		return NULL;
+
+	tile = g_new0 (tile_t, 1);
+	if (!tile)
+		return NULL;
+
+	if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS ||
+	    cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
+		return NULL;
+
+	if (cairo_image_surface_get_width (normal) !=
+	    cairo_image_surface_get_width (blurred) &&
+	    cairo_image_surface_get_height (normal) !=
+	    cairo_image_surface_get_height (blurred))
+		return NULL;
+
+	tile->priv = priv;
+
+	tile->priv->normal      = copy_surface (normal);
+	tile->priv->blurred     = copy_surface (blurred);
+	tile->priv->blur_radius = 0;
+	tile->priv->use_padding = TRUE;
+	tile->priv->pad_width   = cairo_image_surface_get_width (normal);
+	tile->priv->pad_height  = cairo_image_surface_get_height (normal);
+
+	return tile;
+}
+
 void
 tile_destroy (tile_t* tile)
 {
+	gpointer data;
+
 	if (!tile)
 		return;
 
 	//cairo_surface_write_to_png (tile->priv->normal, "./tile-normal.png");
 	//cairo_surface_write_to_png (tile->priv->blurred, "./tile-blurred.png");
 
+    	data = (gpointer) cairo_image_surface_get_data (tile->priv->normal);
+	g_free (data);
 	cairo_surface_destroy (tile->priv->normal);
+
+	data = (gpointer) cairo_image_surface_get_data (tile->priv->blurred);
+	g_free (data);
 	cairo_surface_destroy (tile->priv->blurred);
 
 	g_free ((gpointer) tile->priv);
@@ -146,6 +160,138 @@ tile_paint (tile_t*  tile,
 		cairo_set_source_surface (cr, tile->priv->blurred, x, y);
 		cairo_paint_with_alpha (cr, blurred_alpha);
 	}
-
 }
 
+void
+_pad_paint (cairo_t*         cr,
+	    cairo_pattern_t* pattern,
+	    guint            x,
+	    guint            y,
+	    guint            width,
+	    guint            height,
+	    guint            pad_width,
+	    guint            pad_height,
+	    gdouble          alpha)
+{
+	cairo_matrix_t matrix;
+
+	// top left
+	cairo_rectangle (cr,
+			 x,
+			 y,
+			 width - pad_width,
+			 height - pad_height);
+	cairo_clip (cr);
+	cairo_paint_with_alpha (cr, alpha);
+	cairo_reset_clip (cr);
+
+	// top right
+	cairo_matrix_init_scale (&matrix, -1.0f, 1.0f);
+	cairo_matrix_translate (&matrix, -width, 0.0f);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 width - pad_width,
+			 y,
+			 pad_width,
+			 height - pad_height);
+	cairo_clip (cr);
+	cairo_paint_with_alpha (cr, alpha);
+	cairo_reset_clip (cr);
+
+	// bottom right
+	cairo_matrix_init_scale (&matrix, -1.0f, -1.0f);
+	cairo_matrix_translate (&matrix, -width, -height);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 pad_width,
+			 height - pad_height,
+			 width - pad_width,
+			 pad_height);
+	cairo_clip (cr);
+	cairo_paint_with_alpha (cr, alpha);
+	cairo_reset_clip (cr);
+
+	// bottom left
+	cairo_matrix_init_scale (&matrix, 1.0f, -1.0f);
+	cairo_matrix_translate (&matrix, 0.0f, -height);
+	cairo_pattern_set_matrix (pattern, &matrix);
+	cairo_rectangle (cr,
+			 x,
+			 height - pad_height,
+			 pad_width,
+			 pad_height);
+	cairo_clip (cr);
+	cairo_paint_with_alpha (cr, alpha);
+	cairo_reset_clip (cr);
+}
+
+void
+tile_paint_with_padding (tile_t*  tile,
+			 cairo_t* cr,
+			 gdouble  x,
+			 gdouble  y,
+			 gdouble  width,
+			 gdouble  height,
+			 gdouble  normal_alpha,
+			 gdouble  blurred_alpha)
+{
+	cairo_pattern_t* pattern    = NULL;
+	guint            pad_width  = 0;
+	guint            pad_height = 0;
+
+	if (!tile)
+		return;
+
+	if (!tile->priv->use_padding)
+		return;
+
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+		return;
+
+	pad_width = tile->priv->pad_width;
+	pad_height = tile->priv->pad_height;
+
+	if (normal_alpha > 0.0f)
+	{
+		pattern = cairo_pattern_create_for_surface (tile->priv->normal);
+		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
+			return;
+
+		cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
+		cairo_set_source (cr, pattern);
+
+		_pad_paint (cr,
+			    pattern,
+			    x,
+			    y,
+			    width,
+			    height,
+			    pad_width,
+			    pad_height,
+			    normal_alpha);
+
+		cairo_pattern_destroy (pattern);
+	}
+
+	if (blurred_alpha > 0.0f)
+	{
+		pattern = cairo_pattern_create_for_surface (tile->priv->blurred);
+		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
+			return;
+
+		cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
+		cairo_set_source (cr, pattern);
+
+		_pad_paint (cr,
+			    pattern,
+			    x,
+			    y,
+			    width,
+			    height,
+			    pad_width,
+			    pad_height,
+			    blurred_alpha);
+
+		cairo_pattern_destroy (pattern);
+	}
+}
