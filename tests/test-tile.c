@@ -36,7 +36,7 @@
 #define TILE_WIDTH  250
 #define TILE_HEIGHT 100
 
-#define BLUR_RADIUS 2
+#define BLUR_RADIUS 6
 
 cairo_surface_t*
 render_text_to_surface (gchar* text,
@@ -183,12 +183,12 @@ main (int    argc,
 	cairo_push_group (cr);
 	tile_paint (tile, cr, 10.0f, 10.0f, 0.0f, 1.0f);
 	pattern = cairo_pop_group (cr);
-	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.5f);
+	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.75f);
 	cairo_mask (cr, pattern);
 	cairo_pattern_destroy (pattern);
 
-	// draw the normal tile-state over drop-shadow
-	tile_paint (tile, cr, 10.0f, 10.0f, 1.0f, 0.0f);
+	// draw the normal tile-state over drop-shadow, but slightly offset-ed
+	tile_paint (tile, cr, 8.5f, 8.5f, 1.0f, 0.0f);
 
 	// just draw the normal tile-state
 	tile_paint (tile, cr, 10.0f, 110.0f, 1.0f, 0.0f);
