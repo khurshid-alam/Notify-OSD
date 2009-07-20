@@ -122,7 +122,7 @@ render_text_to_surface (gchar*                      text,
 					     dpi);
 	pango_layout_context_changed (layout);
 
-	// draw pango-text as path to our cairo-context
+	// draw pango-text to our cairo-context
 	cairo_move_to (cr, 0.0f, 0.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 1.0f);
@@ -454,19 +454,45 @@ expose_handler (GtkWidget*      window,
 		tile_paint (g_tile, cr, 0.0f, 0.0f, g_distance, 1.0f - g_distance);
 
 		cairo_push_group (cr);
-		tile_paint (g_text, cr, 2 * BUBBLE_SHADOW_SIZE, BUBBLE_SHADOW_SIZE - g_offset, g_distance, 1.0f - g_distance);
+		tile_paint (g_text,
+			    cr,
+			    2 * BUBBLE_SHADOW_SIZE,
+			    BUBBLE_SHADOW_SIZE - g_offset,
+			    g_distance,
+			    1.0f - g_distance);
 		pattern = cairo_pop_group (cr);
 		cairo_set_source (cr, pattern);
 		mask = cairo_pattern_create_linear (0.0f, 2 * BUBBLE_SHADOW_SIZE, 0.0f, BUBBLE_HEIGHT);
-		cairo_pattern_add_color_stop_rgba (mask, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-		cairo_pattern_add_color_stop_rgba (mask, 0.2f, 0.0f, 0.0f, 0.0f, 1.0f);
-		cairo_pattern_add_color_stop_rgba (mask, 0.8f, 0.0f, 0.0f, 0.0f, 1.0f);
-		cairo_pattern_add_color_stop_rgba (mask, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+		cairo_pattern_add_color_stop_rgba (mask,
+						   0.0f,
+						   0.0f,
+						   0.0f,
+						   0.0f,
+						   0.0f);
+		cairo_pattern_add_color_stop_rgba (mask,
+						   0.2f,
+						   0.0f,
+						   0.0f,
+						   0.0f,
+						   1.0f);
+		cairo_pattern_add_color_stop_rgba (mask,
+						   0.8f,
+						   0.0f,
+						   0.0f,
+						   0.0f,
+						   1.0f);
+		cairo_pattern_add_color_stop_rgba (mask,
+						   1.0f,
+						   0.0f,
+						   0.0f,
+						   0.0f,
+						   0.0f);
 		cairo_mask (cr, mask);
 		cairo_pattern_destroy (mask);
 		cairo_pattern_destroy (pattern);
 
-		gtk_window_set_opacity (GTK_WINDOW (window), 0.3f + g_distance * 0.7f);
+		gtk_window_set_opacity (GTK_WINDOW (window),
+					0.3f + g_distance * 0.7f);
 	}
 	else
 	{
