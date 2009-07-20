@@ -86,6 +86,7 @@ struct _Defaults
 	gdouble      margin_size;
 	gdouble      icon_size;
 	gdouble      gauge_size;
+	gdouble      gauge_outline_width;
 	gint         fade_in_timeout;
 	gint         fade_out_timeout;
 	gint         on_screen_timeout;
@@ -191,6 +192,9 @@ defaults_get_icon_size (Defaults* self);
 
 gdouble
 defaults_get_gauge_size (Defaults* self);
+
+gdouble
+defaults_get_gauge_outline_width (Defaults* self);
 
 gint
 defaults_get_fade_in_timeout (Defaults* self);
