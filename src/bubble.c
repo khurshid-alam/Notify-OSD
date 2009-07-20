@@ -1254,7 +1254,7 @@ _render_layout (Bubble*  self,
 			_render_title (self,
 				       cr,
 				       shadow + 2 * margin + 2 * icon_half - BUBBLE_CONTENT_BLUR_RADIUS,
-				       shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
+				       shadow + margin + icon_half - self->priv->title_height / 2 - BUBBLE_CONTENT_BLUR_RADIUS,
 				       alpha_normal,
 				       alpha_blur);
 		break;
