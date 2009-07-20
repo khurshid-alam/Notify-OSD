@@ -124,9 +124,9 @@ enum
 #define TEXT_SHADOW_COLOR_B 0.0f 
 #define TEXT_SHADOW_COLOR_A 1.0f 
 
-#define BUBBLE_BG_COLOR_R  0.07f
-#define BUBBLE_BG_COLOR_G  0.07f
-#define BUBBLE_BG_COLOR_B  0.07f
+#define BUBBLE_BG_COLOR_R  0.15f
+#define BUBBLE_BG_COLOR_G  0.15f
+#define BUBBLE_BG_COLOR_B  0.15f
 #define BUBBLE_BG_COLOR_A  0.9f
 
 #define INDICATOR_UNLIT_R  1.0f
@@ -221,14 +221,14 @@ draw_round_rect (cairo_t* cr,
 // by very close obvervation of a SVG-mockup from the design-team
 static void
 _draw_value_indicator (cairo_t* cr,
-		       gint     value,   // value to render: 0 - 100
-		       gint     start_x, // top of surrounding rect
-		       gint     start_y, // left of surrounding rect
-		       gint     width,   // width of surrounding rect
-		       gint     height)  // height of surrounding rect
+		       gint     value,             // value to render: 0 - 100
+		       gint     start_x,           // top of surrounding rect
+		       gint     start_y,           // left of surrounding rect
+		       gint     width,             // width of surrounding rect
+		       gint     height,            // height of surrounding rect
+		       gint     outline_thickness) // outline-thickness
 {
 	gdouble          outline_radius;
-	gdouble          outline_thickness;
 	gdouble          outline_width;
 	gdouble          outline_height;
 	gdouble          bar_radius;
@@ -236,36 +236,27 @@ _draw_value_indicator (cairo_t* cr,
 	gdouble          bar_height;
 	cairo_pattern_t* gradient;
 
-	outline_radius    = 2.0f;
-	outline_thickness = 2.0f;
-	outline_width     = width - 2 * outline_radius;
-	outline_height    = height;
+	outline_radius = outline_thickness;
+	outline_width  = width;
+	outline_height = height;
 
 	// draw bar-background
 	cairo_set_line_width (cr, outline_thickness);
-	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.3f);
+	cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 0.5f);
 	draw_round_rect (cr,
 			 1.0f,
-			 (gdouble) start_x + 0.5f,
-			 (gdouble) start_y +
-			 height / 2.0f -
-			 outline_height / 2.0f +
-			 0.5f,
+			 start_x,
+			 start_y,
 			 outline_radius,
-			 (gdouble) outline_width,
-			 (gdouble) outline_height);
-	cairo_stroke_preserve (cr);
+			 outline_width,
+			 outline_height);
+	cairo_fill (cr);
 	gradient = cairo_pattern_create_linear (0.0f,
-						(gdouble) start_y +
-						height / 2.0f -
-						outline_height / 2.0f +
-						0.5f,
+						start_y + outline_thickness,
 						0.0f,
-						(gdouble) start_y +
-						height / 2.0f -
-						outline_height / 2.0f +
-						0.5f +
-						outline_height);
+						start_y +
+						outline_height -
+	                                        2 * outline_thickness);
 	cairo_pattern_add_color_stop_rgba (gradient,
 					   0.0f,
 					   0.866f,
@@ -291,11 +282,18 @@ _draw_value_indicator (cairo_t* cr,
 					   0.623f,
 					   0.3f);
 	cairo_set_source (cr, gradient);
+	draw_round_rect (cr,
+			 1.0f,
+			 start_x + outline_thickness,
+			 start_y + outline_thickness,
+			 outline_radius,
+			 outline_width - 2 * outline_thickness,
+			 outline_height - 2 * outline_thickness);
 	cairo_fill (cr);
 	cairo_pattern_destroy (gradient);
 
-	bar_radius = 0.8f;
-	bar_width  = outline_width - outline_radius;
+	bar_radius = outline_radius;
+	bar_width  = outline_width - 2 * outline_radius;
 	bar_height = outline_height - outline_radius;
 
 	// draw value-bar
@@ -308,39 +306,36 @@ _draw_value_indicator (cairo_t* cr,
 
 		draw_round_rect (cr,
 				 1.0f,
-				 (gdouble) start_x + outline_thickness + 0.5f,
-				 (gdouble) start_y +
-				 height / 2.0f -
-				 outline_height / 2.0f +
-				 outline_thickness / 2.0f +
-				 0.5f,
+				 start_x + outline_thickness,
+				 start_y + outline_thickness,
 				 bar_radius,
 				 bar_width / 100.0f * (gdouble) corrected_value,
-				 bar_height);
+				 outline_height - 2 * outline_thickness);
+
 		gradient = cairo_pattern_create_linear (0.0f,
-
-							(gdouble) start_x +
-							outline_thickness +
-							0.5f,
-
+							start_y +
+							outline_thickness,
 		                                        0.0f,
-
-							(gdouble) start_y +
-							height / 2.0f -
-							outline_height / 2.0f +
-							outline_thickness / 2.0f +
-							0.5f);
+							start_y +
+							outline_height -
+							2 * outline_thickness);
+		cairo_pattern_add_color_stop_rgba (gradient,
+						   0.0f,
+						   0.9f,
+						   0.9f,
+						   0.9f,
+						   1.0f);
 		cairo_pattern_add_color_stop_rgba (gradient,
 						   0.75f,
-						   0.4f,
-						   0.4f,
-						   0.4f,
+						   0.5f,
+						   0.5f,
+						   0.5f,
 						   1.0f);
 		cairo_pattern_add_color_stop_rgba (gradient,
 						   1.0f,
-						   0.9f,
-						   0.9f,
-						   0.9f,
+						   0.4f,
+						   0.4f,
+						   0.4f,
 						   1.0f);
 
 		cairo_set_source (cr, gradient);
@@ -1044,7 +1039,8 @@ _refresh_indicator (Bubble* self)
 		EM2PIXELS (defaults_get_bubble_width (d), d) -
 		3 * EM2PIXELS (defaults_get_margin_size (d), d) -
 		EM2PIXELS (defaults_get_icon_size (d), d),
-		EM2PIXELS (defaults_get_icon_size (d), d) / 5.0f);
+		EM2PIXELS (defaults_get_gauge_size (d), d),
+		EM2PIXELS (defaults_get_gauge_outline_width (d), d));
 
 	// create the surface/blur-cache from the normal surface
 	priv->tile_indicator = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
@@ -1219,6 +1215,7 @@ _render_layout (Bubble*  self,
 	gint      icon_half   = EM2PIXELS (defaults_get_icon_size (d), d) / 2;
 	gint      width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
 	gint      height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
+	gint      gauge_half  = EM2PIXELS (defaults_get_gauge_size (d), d) / 2;
 	gint      margin      = EM2PIXELS (defaults_get_margin_size (d), d);
 
 	switch (bubble_get_layout (self))
@@ -1242,7 +1239,7 @@ _render_layout (Bubble*  self,
 			_render_indicator (self,
 					   cr,
 					   shadow + 2 * margin + 2 * icon_half - BUBBLE_CONTENT_BLUR_RADIUS,
-					   shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
+					   shadow + margin + icon_half - gauge_half - BUBBLE_CONTENT_BLUR_RADIUS,
 					   alpha_normal,
 					   alpha_blur);
 		break;
