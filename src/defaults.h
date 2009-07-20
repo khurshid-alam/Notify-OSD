@@ -85,6 +85,7 @@ struct _Defaults
 	GString*     content_shadow_color;
 	gdouble      margin_size;
 	gdouble      icon_size;
+	gdouble      gauge_size;
 	gint         fade_in_timeout;
 	gint         fade_out_timeout;
 	gint         on_screen_timeout;
@@ -187,6 +188,9 @@ defaults_get_margin_size (Defaults* self);
 
 gdouble
 defaults_get_icon_size (Defaults* self);
+
+gdouble
+defaults_get_gauge_size (Defaults* self);
 
 gint
 defaults_get_fade_in_timeout (Defaults* self);

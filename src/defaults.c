@@ -66,6 +66,7 @@ enum
 	PROP_CONTENT_SHADOW_COLOR,
 	PROP_MARGIN_SIZE,
 	PROP_ICON_SIZE,
+	PROP_GAUGE_SIZE,
 	PROP_FADE_IN_TIMEOUT,
 	PROP_FADE_OUT_TIMEOUT,
 	PROP_ON_SCREEN_TIMEOUT,
@@ -120,6 +121,7 @@ enum
 #define DEFAULT_CONTENT_SHADOW_COLOR "#000000"
 #define DEFAULT_MARGIN_SIZE          1.0f
 #define DEFAULT_ICON_SIZE            3.0f
+#define DEFAULT_GAUGE_SIZE           0.625f
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
 #define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
@@ -834,6 +836,10 @@ defaults_get_property (GObject*    gobject,
 			g_value_set_double (value, defaults->icon_size);
 		break;
 
+		case PROP_GAUGE_SIZE:
+			g_value_set_double (value, defaults->gauge_size);
+		break;
+
 		case PROP_FADE_IN_TIMEOUT:
 			g_value_set_int (value, defaults->fade_in_timeout);
 		break;
@@ -1028,6 +1034,10 @@ defaults_set_property (GObject*      gobject,
 			defaults->icon_size = g_value_get_double (value);
 		break;
 
+		case PROP_GAUGE_SIZE:
+			defaults->gauge_size = g_value_get_double (value);
+		break;
+
 		case PROP_FADE_IN_TIMEOUT:
 			defaults->fade_in_timeout = g_value_get_int (value);
 		break;
@@ -1132,6 +1142,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_content_shadow_color;
 	GParamSpec*   property_margin_size;
 	GParamSpec*   property_icon_size;
+	GParamSpec*   property_gauge_size;
 	GParamSpec*   property_fade_in_timeout;
 	GParamSpec*   property_fade_out_timeout;
 	GParamSpec*   property_on_screen_timeout;
@@ -1451,6 +1462,19 @@ defaults_class_init (DefaultsClass* klass)
 	g_object_class_install_property (gobject_class,
 					 PROP_ICON_SIZE,
 					 property_icon_size);
+
+	property_gauge_size = g_param_spec_double (
+				"gauge-size",
+				"gauge-size",
+				"Size/height (in em) of gauge/indicator",
+				0.5f,
+				1.0f,
+				DEFAULT_GAUGE_SIZE,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_GAUGE_SIZE,
+					 property_gauge_size);
 
 	property_fade_in_timeout = g_param_spec_int (
 				"fade-in-timeout",
@@ -1974,6 +1998,19 @@ defaults_get_icon_size (Defaults* self)
 	g_object_get (self, "icon-size", &icon_size, NULL);
 
 	return icon_size;
+}
+
+gdouble
+defaults_get_gauge_size (Defaults* self)
+{
+	gdouble gauge_size;
+
+	if (!self || !IS_DEFAULTS (self))
+		return 0.0f;
+
+	g_object_get (self, "gauge-size", &gauge_size, NULL);
+
+	return gauge_size;
 }
 
 gint
