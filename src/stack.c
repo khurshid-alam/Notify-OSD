@@ -14,6 +14,7 @@
 **
 ** Contributor(s):
 **    Abhishek Mukherjee <abhishek.mukher.g@gmail.com> (append fixes, rev. 280)
+**    Aurélien Gâteau <aurelien.gateau@canonical.com> (0.10 spec, rev. 348)
 **
 ** This program is free software: you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License version 3, as published
