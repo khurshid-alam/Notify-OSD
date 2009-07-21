@@ -34,6 +34,7 @@
 #include <gconf/gconf-client.h>
 #include <libwnck/application.h>
 #include <libwnck/class-group.h>
+#include <libwnck/window.h>
 #include <libwnck/workspace.h>
 
 #include "defaults.h"
@@ -2268,8 +2269,8 @@ _window_look_for_top_panel_attributes (GdkWindow *win)
 		goto failed;
 
 	/* discard dialog windows like panel properties or the applet directory... */
-	if (gdk_window_get_type_hint (win)
-	    != GDK_WINDOW_TYPE_HINT_DOCK)
+	if (wnck_window_get_window_type (wnck_window_get (GDK_WINDOW_XWINDOW (win)))
+	    != WNCK_WINDOW_DOCK)
 		goto failed;
 
 	/* select only the top panel */
