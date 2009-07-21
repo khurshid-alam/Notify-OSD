@@ -608,13 +608,31 @@ stack_notify_handler (Stack*                 self,
 
 	if (hints)
 	{
-		data = (GValue*) g_hash_table_lookup (hints, "icon_data");
-		if (*icon == '\0' && data != NULL)
+		if ((data = (GValue*) g_hash_table_lookup (hints, "image_data")))
 		{
+			g_debug("Using image_data hint\n");
 			pixbuf = process_dbus_icon_data (data);
 			bubble_set_icon_from_pixbuf (bubble, pixbuf);
-		} else
+		}
+		else if ((data = (GValue*) g_hash_table_lookup (hints, "image_path")))
+		{
+			g_debug("Using image_path hint\n");
+			if (G_VALUE_HOLDS_STRING (data))
+				bubble_set_icon (bubble, g_value_get_string(data));
+			else
+				g_warning ("image_path hint is not a string\n");
+		}
+		else if (icon && *icon != '\0')
+		{
+			g_debug("Using icon parameter\n");
 			bubble_set_icon (bubble, icon);
+		}
+		else if ((data = (GValue*) g_hash_table_lookup (hints, "icon_data")))
+		{
+			g_debug("Using deprecated icon_data hint\n");
+			pixbuf = process_dbus_icon_data (data);
+			bubble_set_icon_from_pixbuf (bubble, pixbuf);
+		}
 	}
 
 	log_bubble_debug (bubble, app_name,
@@ -736,7 +754,7 @@ stack_get_server_information (Stack*  self,
 	*out_name     = g_strdup ("notify-osd");
 	*out_vendor   = g_strdup ("Canonical Ltd");
 	*out_version  = g_strdup ("1.0");
-	*out_spec_ver = g_strdup ("0.9");
+	*out_spec_ver = g_strdup ("0.10");
 
 	return TRUE;
 }
