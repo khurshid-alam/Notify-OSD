@@ -37,6 +37,7 @@ static const char* bubble_window_accessible_get_description (AtkObject*         
 static void        bubble_window_real_initialize            (AtkObject*                   obj,
                                                              gpointer                     data);
 static void        atk_value_interface_init                 (AtkValueIface*               iface);
+static void        atk_text_interface_init                  (AtkTextIface*                iface);
 static void        bubble_window_get_current_value          (AtkValue*                    obj,
                                                              GValue*                      value);
 static void        bubble_window_get_maximum_value          (AtkValue*                    obj,
@@ -46,6 +47,19 @@ static void        bubble_window_get_minimum_value          (AtkValue*          
 static void        bubble_value_changed_event               (Bubble*                      bubble,
                                                              gint                         value,
                                                              AtkObject                   *obj);
+static void        bubble_message_body_deleted_event        (Bubble*                      bubble,
+                                                             const gchar*                 text,
+                                                             AtkObject*                   obj);
+static void        bubble_message_body_inserted_event       (Bubble*                      bubble,
+                                                             const gchar*                 text,
+                                                             AtkObject*                   obj);
+
+static gchar*      bubble_window_get_text                   (AtkText                     *obj,
+															 gint                         start_offset,
+															 gint                         end_offset);
+static gint        bubble_window_get_character_count        (AtkText                     *obj);
+static gunichar    bubble_window_get_character_at_offset    (AtkText                     *obj,
+                                                             gint                         offset);
 
 static void* bubble_window_accessible_parent_class;
 
@@ -76,6 +90,13 @@ bubble_window_accessible_get_type (void)
             (GInterfaceFinalizeFunc) NULL,
             NULL
         };
+
+        const GInterfaceInfo atk_text_info = 
+        {
+            (GInterfaceInitFunc) atk_text_interface_init,
+            (GInterfaceFinalizeFunc) NULL,
+            NULL
+        };
         
         /*
          * Figure out the size of the class and instance
@@ -100,6 +121,8 @@ bubble_window_accessible_get_type (void)
                                        "BubbleWindowAccessible", &tinfo, 0);
 
         g_type_add_interface_static (type, ATK_TYPE_VALUE, &atk_value_info);
+
+        g_type_add_interface_static (type, ATK_TYPE_TEXT, &atk_text_info);
     }
     
     return type;
@@ -113,6 +136,17 @@ atk_value_interface_init (AtkValueIface* iface)
     iface->get_current_value = bubble_window_get_current_value;
     iface->get_maximum_value = bubble_window_get_maximum_value;
     iface->get_minimum_value = bubble_window_get_minimum_value;
+}
+
+static void
+atk_text_interface_init (AtkTextIface* iface)
+{
+    g_return_if_fail (iface != NULL);
+
+	iface->get_text = bubble_window_get_text;
+	iface->get_character_count = bubble_window_get_character_count;
+    iface->get_character_at_offset = bubble_window_get_character_at_offset;
+
 }
 
 static void
@@ -158,6 +192,16 @@ bubble_window_real_initialize (AtkObject* obj,
     g_signal_connect (bubble,
                       "value-changed",
                       G_CALLBACK (bubble_value_changed_event),
+                      obj);
+
+    g_signal_connect (bubble,
+                      "message-body-deleted",
+                      G_CALLBACK (bubble_message_body_deleted_event),
+                      obj);
+
+    g_signal_connect (bubble,
+                      "message-body-inserted",
+                      G_CALLBACK (bubble_message_body_inserted_event),
                       obj);
 
 }
@@ -285,4 +329,109 @@ bubble_value_changed_event (Bubble*    bubble,
                             AtkObject* obj)
 {
     g_object_notify (G_OBJECT (obj), "accessible-value");
+}
+
+static void
+bubble_message_body_deleted_event (Bubble*      bubble,
+                                   const gchar* text,
+                                   AtkObject*   obj)
+{
+    /* Not getting very fancy here, delete is always complete */
+    g_signal_emit_by_name (
+        obj, "text_changed::delete", 0, g_utf8_strlen (text, -1));    
+}
+
+static void
+bubble_message_body_inserted_event (Bubble*      bubble,
+                                  const gchar* text,
+                                  AtkObject*   obj)
+{
+    const gchar* message_body;
+
+    message_body = bubble_get_message_body (bubble);
+
+    g_signal_emit_by_name (
+        obj, "text_changed::insert",
+        g_utf8_strlen (message_body, -1) - g_utf8_strlen (text, -1),
+        g_utf8_strlen (message_body, -1));    
+}
+
+static gchar*
+bubble_window_get_text (AtkText *obj,
+						gint    start_offset,
+						gint    end_offset)
+{
+    GtkAccessible* accessible;
+ 	Bubble*        bubble;
+	const gchar*   body_text;
+    gsize          char_length;
+	glong          body_strlen;
+
+	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), g_strdup(""));
+
+ 	accessible = GTK_ACCESSIBLE (obj);
+
+	g_return_val_if_fail (accessible->widget == NULL, g_strdup(""));
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	if (end_offset <= start_offset)
+		return g_strdup("");
+
+	body_text = bubble_get_message_body (bubble);
+
+	body_strlen = g_utf8_strlen(body_text, -1);
+
+	if (start_offset > body_strlen)
+		start_offset = body_strlen;
+
+	if (end_offset > body_strlen || end_offset == -1)
+		end_offset = body_strlen;
+
+
+    char_length = g_utf8_offset_to_pointer (body_text, end_offset) - 
+        g_utf8_offset_to_pointer (body_text, start_offset);
+    
+	return g_strndup (g_utf8_offset_to_pointer(body_text, start_offset), 
+					  char_length);
+}
+
+static gint
+bubble_window_get_character_count (AtkText *obj)
+{
+	GtkAccessible* accessible;
+ 	Bubble*        bubble;
+
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return 0;
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	return g_utf8_strlen(bubble_get_message_body (bubble), -1);
+}
+
+static gunichar
+bubble_window_get_character_at_offset (AtkText *obj,
+                                       gint    offset)
+{
+	GtkAccessible* accessible;
+ 	Bubble*        bubble;
+    const gchar*   body_text;
+
+ 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
+ 	
+ 	accessible = GTK_ACCESSIBLE (obj);
+    
+    if (accessible->widget == NULL)
+        return 0;
+ 	
+ 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+
+	body_text = bubble_get_message_body (bubble);
+
+    return g_utf8_get_char (g_utf8_offset_to_pointer (body_text, offset));
 }

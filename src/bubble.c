@@ -14,6 +14,7 @@
 //
 // Contributor(s):
 //    Frederic "fredp" Peters <fpeters@gnome.org> (icon-only fix, rev. 204)
+//    Eitan Isaacson <eitan@ascender.com> (ATK interface for a11y, rev. 351)
 //
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License version 3, as published
@@ -95,6 +96,8 @@ enum
 {
 	TIMED_OUT,
 	VALUE_CHANGED,
+	MESSAGE_BODY_DELETED,
+	MESSAGE_BODY_INSERTED,
 	LAST_SIGNAL
 };
 
@@ -2027,6 +2030,30 @@ bubble_class_init (BubbleClass* klass)
 		G_TYPE_NONE,
 		1,
         G_TYPE_INT);
+
+    g_bubble_signals[MESSAGE_BODY_DELETED] = g_signal_new (
+		"message-body-deleted",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, message_body_deleted),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__STRING,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_STRING);
+
+    g_bubble_signals[MESSAGE_BODY_INSERTED] = g_signal_new (
+		"message-body-inserted",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (BubbleClass, message_body_inserted),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__STRING,
+		G_TYPE_NONE,
+		1,
+        G_TYPE_STRING);
 }
 
 //-- public API ----------------------------------------------------------------
@@ -2181,6 +2208,10 @@ bubble_set_title (Bubble*      self,
 		g_string_free (priv->title, TRUE);
 
 	priv->title = g_string_new (title);
+
+	g_object_notify (
+		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+		"accessible-name");
 }
 
 const gchar*
@@ -2204,13 +2235,24 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->message_body)
+	if (priv->message_body->len != 0)
+	{
+		g_signal_emit (self,
+			       g_bubble_signals[MESSAGE_BODY_DELETED], 
+			       0,
+			       priv->message_body->str);
 		g_string_free (priv->message_body, TRUE);
+	}
 
 	/* filter out any HTML/markup if possible */
 	text = filter_text (body);
 
 	priv->message_body = g_string_new (text);
+
+	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+	g_object_notify (G_OBJECT (gtk_widget_get_accessible (priv->widget)), 
+					 "accessible-description");
+
 	g_free (text);
 }
 
@@ -3473,6 +3515,12 @@ bubble_append_message_body (Bubble*      self,
 
 	/* append text to current message-body */
 	g_string_append (GET_PRIVATE (self)->message_body, text);
+
+	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+
+	g_object_notify (
+		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+		"accessible-description");
 
 	g_free ((gpointer) text);
 }

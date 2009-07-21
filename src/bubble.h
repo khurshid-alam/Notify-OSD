@@ -12,6 +12,9 @@
 //    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
 //    David Barth <david.barth@canonical.com>
 //
+// Contributor(s):
+//    Eitan Isaacson <eitan@ascender.com> (ATK interface for a11y, rev. 351)
+//
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License version 3, as published
 // by the Free Software Foundation.
@@ -76,6 +79,8 @@ struct _BubbleClass
 	//< signals >
 	void (*timed_out) (Bubble* bubble);
 	void (*value_changed) (Bubble* bubble);
+	void (*message_body_deleted) (Bubble* bubble);
+	void (*message_body_inserted) (Bubble* bubble);
 };
 
 GType bubble_get_type (void);
