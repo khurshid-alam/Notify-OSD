@@ -5,6 +5,7 @@ transform = s/_/-/g
 INCLUDES =			\
 	-I.			\
 	-I$(srcdir)		\
+	-I$(top_srcdir)		\
 	$(NULL)
 
 notify_osddir = $(libexecdir)
@@ -24,48 +25,48 @@ notify_osd_sources =		\
 	apport.c		\
 	log.c			\
 	util.c			\
-	stack-blur.c		\
-	exponential-blur.c	\
-	gaussian-blur.c		\
-	raico-blur.c		\
-	tile.c			\
-	bubble-window.c		\
-	bubble-window-accessible.c \
-	bubble-window-accessible-factory.c \
-	../egg/egg-fixed.c		\
-	../egg/egg-units.c		\
-	../egg/egg-timeline.c		\
-	../egg/egg-timeout-pool.c	\
-	../egg/egg-alpha.c		\
-	../egg/egg-hack.c		\
+	stack-blur.c				\
+	exponential-blur.c			\
+	gaussian-blur.c				\
+	raico-blur.c				\
+	tile.c					\
+	bubble-window.c				\
+	bubble-window-accessible.c		\
+	bubble-window-accessible-factory.c	\
+	$(top_srcdir)/egg/egg-fixed.c		\
+	$(top_srcdir)/egg/egg-units.c		\
+	$(top_srcdir)/egg/egg-timeline.c	\
+	$(top_srcdir)/egg/egg-timeout-pool.c	\
+	$(top_srcdir)/egg/egg-alpha.c		\
+	$(top_srcdir)/egg/egg-hack.c		\
 	$(NULL)
 
-notify_osd_headers =		\
-	bubble.h		\
-	defaults.h		\
-	observer.h		\
-	stack.h			\
-	stack-glue.h		\
-	dbus.h			\
-	dnd.h			\
-	log.h			\
-	apport.h		\
-	util.h			\
-	stack-blur.h		\
-	exponential-blur.h	\
-	gaussian-blur.h		\
-	raico-blur.h		\
-	tile.h			\
-	bubble-window.h \
-	bubble-window-accessible.h \
-	bubble-window-accessible-factory.h \
-	../egg/egg-fixed.h		\
-	../egg/egg-units.h		\
-	../egg/egg-timeline.h		\
-	../egg/egg-timeout-pool.h	\
-	../egg/egg-alpha.h		\
-	../egg/egg-debug.h		\
-	../egg/egg-hack.h		\
+notify_osd_headers =				\
+	bubble.h				\
+	defaults.h				\
+	observer.h				\
+	stack.h					\
+	stack-glue.h				\
+	dbus.h					\
+	dnd.h					\
+	log.h					\
+	apport.h				\
+	util.h					\
+	stack-blur.h				\
+	exponential-blur.h			\
+	gaussian-blur.h				\
+	raico-blur.h				\
+	tile.h					\
+	bubble-window.h				\
+	bubble-window-accessible.h		\
+	bubble-window-accessible-factory.h	\
+	$(top_srcdir)/egg/egg-fixed.h		\
+	$(top_srcdir)/egg/egg-units.h		\
+	$(top_srcdir)/egg/egg-timeline.h	\
+	$(top_srcdir)/egg/egg-timeout-pool.h	\
+	$(top_srcdir)/egg/egg-alpha.h		\
+	$(top_srcdir)/egg/egg-debug.h		\
+	$(top_srcdir)/egg/egg-hack.h		\
 	$(NULL)
 
 notify_osd_SOURCES =		\
@@ -92,6 +93,7 @@ notify_osd_CFLAGS = 		\
 	$(DBUS_CFLAGS)		\
 	-DWNCK_I_KNOW_THIS_IS_UNSTABLE \
 	$(WNCK_CFLAGS)		\
+	$(INCLUDES)		\
 	$(NULL)
 
 notify_osd_LDFLAGS = 		\
@@ -103,17 +105,17 @@ notify_osd_LDFLAGS = 		\
 stack-glue.h: notify-osd.xml Makefile
 	$(LIBTOOL) --mode=execute $(DBUS_GLIB_BIN)/dbus-binding-tool --prefix=stack --mode=glib-server --output=$@ $<
 
-BUILT_SOURCES =			\
+BUILT_SOURCES =		\
 	stack-glue.h
 
-EXTRA_DIST =			\
-	notify-osd.xml		\
-	dialog.c		\
-	display.c		\
-	$(NULL)
-
-CLEANFILES = 			\
+EXTRA_DIST =		\
+	notify-osd.xml	\
+	dialog.c	\
+	display.c	\
 	$(NULL)
 
 dist-hook:
 	cd $(distdir) ; rm -f $(CLEANFILES)
+
+DISTCLEANFILES = $(BUILT_SOURCES)
+
