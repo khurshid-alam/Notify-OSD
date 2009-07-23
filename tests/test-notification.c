@@ -26,6 +26,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+#define _XOPEN_SOURCE 500 // needed for usleep() from unistd.h
+#include <unistd.h>
+
 #include "notification.h"
 
 static void
@@ -470,17 +473,37 @@ test_notification_setget_reception_timestamp (void)
 	g_assert_cmpint (tvptr->tv_sec, ==, tv_old.tv_sec);
 	g_assert_cmpint (tvptr->tv_usec, ==, tv_old.tv_usec);
 
+	// wait at least two seconds
+	sleep (2);
+
 	// get current time
 	g_get_current_time (&tv_new);
 
 	// trying to store an older timestamp over a newer one should fail
-	notification_set_reception_timestamp (n, &tv_old);
+	// second-granularity
 	notification_set_reception_timestamp (n, &tv_new);
+	notification_set_reception_timestamp (n, &tv_old);
 	tvptr = notification_get_reception_timestamp (n);
-	g_assert_cmpint (tvptr->tv_sec, !=, tv_new.tv_sec);
-	g_assert_cmpint (tvptr->tv_usec, !=, tv_new.tv_usec);
-	g_assert_cmpint (tvptr->tv_sec, ==, tv_old.tv_sec);
-	g_assert_cmpint (tvptr->tv_usec, ==, tv_old.tv_usec);
+	g_assert_cmpint (tvptr->tv_sec, !=, tv_old.tv_sec);
+	g_assert_cmpint (tvptr->tv_sec, ==, tv_new.tv_sec);
+
+	// get current time
+	g_get_current_time (&tv_old);
+	notification_set_reception_timestamp (n, &tv_old);
+
+	// wait some micro-seconds
+	usleep (10000);
+
+	// get current time
+	g_get_current_time (&tv_new);
+
+	// trying to store an older timestamp over a newer one should fail
+	// microsecond-granularity
+	notification_set_reception_timestamp (n, &tv_new);
+	notification_set_reception_timestamp (n, &tv_old);
+	tvptr = notification_get_reception_timestamp (n);
+	g_assert_cmpint (tvptr->tv_usec, !=, tv_old.tv_usec);
+	g_assert_cmpint (tvptr->tv_usec, ==, tv_new.tv_usec);
 
 	// clean up
 	notification_destroy (n);

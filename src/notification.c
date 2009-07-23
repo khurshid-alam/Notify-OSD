@@ -431,6 +431,12 @@ notification_set_reception_timestamp (notification_t* n,
 	if (n->priv->reception_timestamp.tv_sec > reception_timestamp->tv_sec)
 		return;
 
+	if (n->priv->reception_timestamp.tv_sec == reception_timestamp->tv_sec)
+		if (n->priv->reception_timestamp.tv_usec >
+		    reception_timestamp->tv_usec)
+			return;
+
+	// new timestamp certainly more current that stored one
 	n->priv->reception_timestamp.tv_sec  = reception_timestamp->tv_sec;
 	n->priv->reception_timestamp.tv_usec = reception_timestamp->tv_usec;
 }
