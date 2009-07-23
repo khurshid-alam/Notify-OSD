@@ -127,46 +127,26 @@ notification_destroy (notification_t* n)
 
 	// free any allocated string of pixbuf
 	if (n->priv->title)
-	{
 		g_string_free (n->priv->title, TRUE);
-		n->priv->title = NULL;
-	}
 
 	if (n->priv->body)
-	{
 		g_string_free (n->priv->body, TRUE);
-		n->priv->body = NULL;
-	}
 
 	if (n->priv->icon_themename)
-	{
 		g_string_free (n->priv->icon_themename, TRUE);
-		n->priv->icon_themename = NULL;
-	}
 
 	if (n->priv->icon_filename)
-	{
 		g_string_free (n->priv->icon_filename, TRUE);
-		n->priv->icon_filename = NULL;
-	}
 
 	if (n->priv->icon_pixbuf)
-	{
 		g_object_unref ((gpointer) n->priv->icon_pixbuf);
-		n->priv->icon_pixbuf = NULL;
-	}
 
 	if (n->priv->sender_name)
-	{
 		g_string_free (n->priv->sender_name, TRUE);
-		n->priv->sender_name = NULL;
-	}
 
 	// get rid of the main allocated structs
 	g_free ((gpointer) n->priv);
-	n->priv = NULL;
 	g_free ((gpointer) n);
-	n = NULL;
 }
 
 gint

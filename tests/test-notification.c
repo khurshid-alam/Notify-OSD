@@ -62,6 +62,7 @@ test_notification_destroy (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// verify destruction notification object
 	g_assert_cmpint (notification_get_id (n), ==, -1);
@@ -92,6 +93,7 @@ test_notification_setget_id (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting an id should not crash and it should
 	// yield -1
@@ -121,6 +123,7 @@ test_notification_setget_title (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a title should not crash and it should
 	// yield NULL
@@ -150,6 +153,7 @@ test_notification_setget_body (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a body should not crash and it should
 	// yield NULL
@@ -189,6 +193,7 @@ test_notification_setget_value (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a value should not crash and it should
 	// yield -2
@@ -224,6 +229,7 @@ test_notification_setget_icon_themename (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting an icon-themename should not crash and it
 	// should yield NULL
@@ -276,6 +282,7 @@ test_notification_setget_icon_filename (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting an icon-filename should not crash and it
 	// should yield NULL
@@ -309,6 +316,7 @@ test_notification_setget_icon_pixbuf (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting an icon-pixbuf should not crash and it
 	// should yield NULL
@@ -350,6 +358,7 @@ test_notification_setget_onscreen_time (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a value should not crash and it should
 	// yield -1
@@ -390,6 +399,7 @@ test_notification_setget_sender_name (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting an icon-filename should not crash and it
 	// should yield NULL
@@ -427,6 +437,7 @@ test_notification_setget_sender_pid (void)
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a pid should not crash and it should
 	// yield -1
@@ -463,16 +474,17 @@ test_notification_setget_reception_timestamp (void)
 	g_get_current_time (&tv_new);
 
 	// trying to store an older timestamp over a newer one should fail
-	notification_set_reception_timestamp (n, &tv_new);
 	notification_set_reception_timestamp (n, &tv_old);
+	notification_set_reception_timestamp (n, &tv_new);
 	tvptr = notification_get_reception_timestamp (n);
-	g_assert_cmpint (tvptr->tv_sec, !=, tv_old.tv_sec);
-	g_assert_cmpint (tvptr->tv_usec, !=, tv_old.tv_usec);
-	g_assert_cmpint (tvptr->tv_sec, ==, tv_new.tv_sec);
-	g_assert_cmpint (tvptr->tv_usec, ==, tv_new.tv_usec);
+	g_assert_cmpint (tvptr->tv_sec, !=, tv_new.tv_sec);
+	g_assert_cmpint (tvptr->tv_usec, !=, tv_new.tv_usec);
+	g_assert_cmpint (tvptr->tv_sec, ==, tv_old.tv_sec);
+	g_assert_cmpint (tvptr->tv_usec, ==, tv_old.tv_usec);
 
 	// clean up
 	notification_destroy (n);
+	n = NULL;
 
 	// after destruction setting a reception-time should not crash and it
 	// should yield NULL
