@@ -515,6 +515,43 @@ test_notification_setget_reception_timestamp (void)
 	g_assert (notification_get_reception_timestamp (n) == NULL);
 }
 
+static void
+test_notification_setget_urgency (void)
+{
+	notification_t* n = NULL;
+
+	// create new object
+	n = notification_new ();
+
+	// if no urgency has been set yet it should return urgency-low
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_LOW);
+
+	// test all three urgency-levels
+	notification_set_urgency (n, URGENCY_HIGH);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_HIGH);
+	notification_set_urgency (n, URGENCY_LOW);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_LOW);
+	notification_set_urgency (n, URGENCY_NORMAL);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
+
+	// test non-urgency levels, last valid urgency should be returned
+	notification_set_urgency (n, 3);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
+	notification_set_urgency (n, 4);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
+	notification_set_urgency (n, -2);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
+
+	// clean up
+	notification_destroy (n);
+	n = NULL;
+
+	// after destruction setting an urgency should not crash and it should
+	// yield -1 to indicate the error
+	notification_set_urgency (n, URGENCY_NORMAL);
+	g_assert_cmpint (notification_get_urgency (n), ==, -1);
+}
+
 GTestSuite *
 test_notification_create_test_suite (void)
 {
@@ -648,6 +685,16 @@ test_notification_create_test_suite (void)
 			NULL,
 			NULL,
 			test_notification_setget_reception_timestamp,
+			NULL));
+
+	g_test_suite_add (
+		ts,
+		g_test_create_case (
+			"can set|get urgency",
+			0,
+			NULL,
+			NULL,
+			test_notification_setget_urgency,
 			NULL));
 
 	return ts;

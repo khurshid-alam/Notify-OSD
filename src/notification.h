@@ -35,6 +35,13 @@
 #include <glib.h>
 #include <gdk-pixbuf/gdk-pixbuf.h>
 
+typedef enum
+{
+	URGENCY_LOW = 0,
+	URGENCY_NORMAL,
+	URGENCY_HIGH
+} Urgency;
+
 typedef struct _notification_private_t notification_private_t;
 
 typedef struct _notification_t
@@ -124,6 +131,13 @@ notification_get_reception_timestamp (notification_t* n);
 void
 notification_set_reception_timestamp (notification_t* n,
 				      GTimeVal*       reception_timestamp);
+
+gint
+notification_get_urgency (notification_t* n);
+
+void
+notification_set_urgency (notification_t* n,
+			  Urgency         urgency);
 
 #endif // _NOTIFICATION_H
 

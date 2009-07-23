@@ -59,6 +59,7 @@ struct _notification_private_t
 	GString*   sender_name;         // app-name, strdup'ed from setter
 	gint       sender_pid;          // pid of sending application
 	GTimeVal   reception_timestamp; // timestamp of  reception
+	Urgency    urgency;             // urgency-level: low, normal, high
 };
 
 // a little utility function to help avoid code-duplication
@@ -439,5 +440,39 @@ notification_set_reception_timestamp (notification_t* n,
 	// new timestamp certainly more current that stored one
 	n->priv->reception_timestamp.tv_sec  = reception_timestamp->tv_sec;
 	n->priv->reception_timestamp.tv_usec = reception_timestamp->tv_usec;
+}
+
+// a return-value of -1 indicates an error on behalf of the caller, urgency can
+// only be low = 0, normal = 1 or high = 2
+gint
+notification_get_urgency (notification_t* n)
+{
+	// sanity checks
+	if (!n)
+		return -1;
+
+	if (!n->priv)
+		return -1;
+
+	return n->priv->urgency;
+}
+
+void
+notification_set_urgency (notification_t* n,
+			  Urgency         urgency)
+{
+	// sanity checks
+	if (!n)
+		return;
+
+	if (!n->priv)
+		return;
+
+	if (urgency != URGENCY_LOW    &&
+	    urgency != URGENCY_NORMAL &&
+	    urgency != URGENCY_HIGH)
+		return;
+
+	n->priv->urgency = urgency;
 }
 
