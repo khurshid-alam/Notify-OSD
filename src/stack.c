@@ -408,6 +408,11 @@ stack_push_bubble (Stack*  self,
 
 	/* add bubble/id to stack */
 	notification_id = self->next_id++;
+
+	// FIXME: migrate stack to use abstract notification object and don't
+	// keep heavy bubble objects around, at anyone time at max. only two
+	// bubble-objects will be in memory... this will also reduce leak-
+	// potential
 	bubble_set_id (bubble, notification_id);
 	self->list = g_list_append (self->list, (gpointer) bubble);
 

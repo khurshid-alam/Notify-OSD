@@ -59,19 +59,11 @@ G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
 struct _BubblePrivate {
 	BubbleLayout     layout;
 	GtkWidget*       widget;
-	GString*         title;
-	GString*         message_body;
-	guint            id;
-	GdkPixbuf*       icon_pixbuf;
 	gboolean         visible;
 	guint            timer_id;
-	guint            timeout;
 	gboolean         mouse_over;
 	gfloat           distance;
-	gint             value; // "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect
 	gchar*           synchronous;
-	gchar*           sender;
-	guint            urgency;
 	gboolean         composited;
 	EggAlpha*        alpha;
 	EggTimeline*     timeline;
@@ -90,6 +82,17 @@ struct _BubblePrivate {
 	gboolean         append;
 	gboolean         icon_only;
 	gint             future_height;
+
+	// these will be replaced by notification_t* later on
+	GString*         title;
+	GString*         message_body;
+	guint            id;
+	GdkPixbuf*       icon_pixbuf;
+	gint             value; // "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect
+	gchar*           sender;
+	guint            timeout;
+	guint            urgency;
+	//notification_t* notification;
 };
 
 enum
