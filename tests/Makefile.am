@@ -18,6 +18,7 @@ GCOV_CFLAGS = -fprofile-arcs -ftest-coverage
 test_modules_SOURCES =						\
 	$(top_srcdir)/src/bubble.c				\
 	$(top_srcdir)/src/defaults.c				\
+	$(top_srcdir)/src/notification.c			\
 	$(top_srcdir)/src/observer.c				\
 	$(top_srcdir)/src/stack.c				\
 	$(top_srcdir)/src/dbus.c				\
@@ -40,6 +41,7 @@ test_modules_SOURCES =						\
 	test-withlib.c						\
 	test-bubble.c						\
 	test-defaults.c						\
+	test-notification.c					\
 	test-observer.c						\
 	test-i18n.c						\
 	test-synchronous.c					\
