@@ -28,9 +28,23 @@
 
 #include <glib.h>
 #include <cairo.h>
+#include <gtk/gtk.h>
+#include <gdk/gdkx.h>
+
+#define WM_NAME_COMPIZ   "compiz"
+#define WM_NAME_METACITY "Metacity"
+#define WM_NAME_XFCE     "Xfwm4"
+#define WM_NAME_KWIN     "KWin"
+#define WM_NAME_XMONAD   "xmonad"
 
 gchar*
 filter_text (const gchar* app_name);
 
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig);
+
+gboolean
+wm_is_compiz ();
+
+gchar*
+get_wm_name (Display* dpy);
