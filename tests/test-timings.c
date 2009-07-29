@@ -93,7 +93,7 @@ test_timings_destroy (void)
 	t = NULL;
 }
 
-static void
+void
 test_timings_extend (void)
 {
 	timings_t* t = NULL;
@@ -111,7 +111,7 @@ test_timings_extend (void)
 	timings_extend_by_ms (t, EXTENSION);
 
 	// wait a bit
-	sleep ((INITIAL_DURATION + EXTENSION)/ 1000 + 1);
+	sleep ((INITIAL_DURATION + EXTENSION) / 1000 + 1);
 
 	// clean up
 	timings_destroy (t);
