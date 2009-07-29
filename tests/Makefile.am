@@ -33,6 +33,7 @@ test_modules_SOURCES =						\
 	$(top_srcdir)/src/bubble-window-accessible.c		\
 	$(top_srcdir)/src/bubble-window-accessible-factory.c	\
 	$(top_srcdir)/src/log.c					\
+	$(top_srcdir)/src/timings.c				\
 	$(EGG_MODULES)						\
 	test-modules-main.c					\
 	test-apport.c						\
@@ -45,6 +46,7 @@ test_modules_SOURCES =						\
 	test-synchronous.c					\
 	test-dnd.c						\
 	test-stack.c						\
+	test-timings.c						\
 	test-text-filtering.c
 
 test_modules_CFLAGS =		\
