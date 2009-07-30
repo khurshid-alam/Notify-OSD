@@ -11,6 +11,10 @@
 // Authors:
 //    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
 //
+// Notes:
+//    to see timings working in a more obvious way start it with DEBUG=1 set in
+//    the environment
+//
 // This program is free software: you can redistribute it and/or modify it
 // under the terms of the GNU General Public License version 3, as published
 // by the Free Software Foundation.
@@ -29,22 +33,40 @@
 
 #include "timings.h"
 
-#define MAX_TIME_LIMIT   15000
+#define MAX_TIME_LIMIT    3000
 #define INITIAL_DURATION  1000
 #define EXTENSION         1000
 
 gboolean
-_close_cb (gpointer data)
+_stop_main_loop (GMainLoop *loop)
 {
-	g_print ("\ncoming from _close_cb()\n");
+	g_main_loop_quit (loop);
 
 	return FALSE;
 }
 
 gboolean
-_force_close_cb (gpointer data)
+_trigger_pause (gpointer data)
 {
-	g_print ("\ncoming from _force_close_cb()\n");
+	Timings* t = NULL;
+
+	g_assert (data);
+	t = TIMINGS (data);
+
+	timings_pause (t);
+
+	return FALSE;
+}
+
+gboolean
+_trigger_continue (gpointer data)
+{
+	Timings* t = NULL;
+
+	g_assert (data);
+	t = TIMINGS (data);
+
+	timings_continue (t);
 
 	return FALSE;
 }
@@ -52,16 +74,10 @@ _force_close_cb (gpointer data)
 static void
 test_timings_new (void)
 {
-	timings_t* t = NULL;
+	Timings* t = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
-
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
@@ -74,19 +90,13 @@ test_timings_new (void)
 static void
 test_timings_destroy (void)
 {
-	timings_t* t = NULL;
+	Timings* t = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
-
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
 
 	// clean up
 	timings_destroy (t);
@@ -96,22 +106,27 @@ test_timings_destroy (void)
 static void
 test_timings_extend (void)
 {
-	timings_t* t = NULL;
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
 
-	// try to extend by 3 seconds
-	timings_extend_by_ms (t, EXTENSION);
+	// verify we're fool-proof
+	g_assert (!timings_extend (t, 0));
 
-	// wait a bit
-	sleep ((INITIAL_DURATION + EXTENSION) / 1000 + 1);
+	// try to extend by 1 second
+	g_assert (timings_extend (t, EXTENSION));
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (INITIAL_DURATION + 2 * EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
 
 	// clean up
 	timings_destroy (t);
@@ -121,24 +136,26 @@ test_timings_extend (void)
 static void
 test_timings_pause (void)
 {
-	timings_t* t = NULL;
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
 
-	// try to pause for 2 seconds
-	timings_pause (t);
-	sleep (2);
-	timings_continue (t);
+	// trigger pause after .5 second
+	g_timeout_add (500,
+		       (GSourceFunc) _trigger_pause,
+		       (gpointer) t);
 
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (INITIAL_DURATION + EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
 
 	// clean up
 	timings_destroy (t);
@@ -148,24 +165,31 @@ test_timings_pause (void)
 static void
 test_timings_continue (void)
 {
-	timings_t* t = NULL;
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
 
-	// try to pause for 2 seconds
-	timings_pause (t);
-	sleep (2);
-	timings_continue (t);
+	// trigger pause after .5 second
+	g_timeout_add (500,
+		       (GSourceFunc) _trigger_pause,
+		       (gpointer) t);
 
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
+	// trigger continue after .75 seconds
+	g_timeout_add (750,
+		       (GSourceFunc) _trigger_continue,
+		       (gpointer) t);
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (INITIAL_DURATION + EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
 
 	// clean up
 	timings_destroy (t);
@@ -175,25 +199,31 @@ test_timings_continue (void)
 static void
 test_timings_intercept_pause (void)
 {
-	timings_t* t = NULL;
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
 
-	// try to pause twice should result in message on stdout
-	timings_pause (t);
-	sleep (2);
-	timings_pause (t);
-	timings_continue (t);
+	// trigger pause after .5 second
+	g_timeout_add (500,
+		       (GSourceFunc) _trigger_pause,
+		       (gpointer) t);
 
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
+	// trigger 2nd pause after .75 seconds
+	g_timeout_add (750,
+		       (GSourceFunc) _trigger_pause,
+		       (gpointer) t);
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (INITIAL_DURATION + EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
 
 	// clean up
 	timings_destroy (t);
@@ -203,45 +233,97 @@ test_timings_intercept_pause (void)
 static void
 test_timings_intercept_continue (void)
 {
-	timings_t* t = NULL;
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
 
 	// create new object
-	t = timings_new (INITIAL_DURATION,
-			 MAX_TIME_LIMIT,
-			 _close_cb,
-			 _force_close_cb);
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
 
 	// test validity of main notification object
 	g_assert (t != NULL);
 
-	// try to continue twice should result in message on stdout
-	timings_pause (t);
-	sleep (2);
-	timings_continue (t);
-	timings_continue (t);
+	// trigger 1st continue after .5 second
+	g_timeout_add (500,
+		       (GSourceFunc) _trigger_continue,
+		       (gpointer) t);
 
-	// wait a bit
-	sleep (INITIAL_DURATION / 1000 + 1);
+	// trigger 2nd continue after .75 seconds
+	g_timeout_add (750,
+		       (GSourceFunc) _trigger_continue,
+		       (gpointer) t);
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (INITIAL_DURATION + EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
 
 	// clean up
 	timings_destroy (t);
 	t = NULL;
 }
 
-GTestSuite *
+static void
+test_timings_normal_callback (void)
+{
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
+
+	// create new object
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (MAX_TIME_LIMIT,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
+
+	// clean up
+	timings_destroy (t);
+	t = NULL;
+}
+
+static void
+test_timings_force_callback (void)
+{
+	Timings*   t    = NULL;
+	GMainLoop* loop = NULL;
+
+	// create new object
+	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
+
+	// trigger pause after .5 seconds
+	g_timeout_add (500,
+		       (GSourceFunc) _trigger_pause,
+		       (gpointer) t);
+
+	// let the main loop run
+	loop = g_main_loop_new (NULL, FALSE);
+	g_timeout_add (MAX_TIME_LIMIT + EXTENSION,
+		       (GSourceFunc) _stop_main_loop,
+		       loop);
+	g_main_loop_run (loop);
+
+	// clean up
+	timings_destroy (t);
+	t = NULL;
+}
+
+GTestSuite*
 test_timings_create_test_suite (void)
 {
-	GTestSuite *ts = NULL;
-	GTestCase  *tc = NULL;
+	GTestSuite* ts = NULL;
 
 	ts = g_test_create_suite ("timings");
-	tc = g_test_create_case ("can create",
-				 0,
-				 NULL,
-				 NULL,
-				 test_timings_new,
-				 NULL);
-	g_test_suite_add (ts, tc);
+	g_test_suite_add (ts,
+			  g_test_create_case ("can create",
+					      0,
+					      NULL,
+					      NULL,
+					      test_timings_new,
+					      NULL));
 
 	g_test_suite_add (ts,
 			  g_test_create_case ("can destroy",
@@ -290,6 +372,24 @@ test_timings_create_test_suite (void)
 				NULL,
 				NULL,
 				test_timings_intercept_continue,
+				NULL));
+
+	g_test_suite_add (ts,
+			  g_test_create_case (
+			  	"let normal-callback kick in",
+				0,
+				NULL,
+				NULL,
+				test_timings_normal_callback,
+				NULL));
+
+	g_test_suite_add (ts,
+			  g_test_create_case (
+			  	"let force-callback kick in",
+				0,
+				NULL,
+				NULL,
+				test_timings_force_callback,
 				NULL));
 
 	return ts;

@@ -29,18 +29,33 @@
 
 #include "timings.h"
 
-struct _timings_private_t
-{
-	GTimer*     on_screen_timer;
-	GTimer*     duration_timer;
-	GTimer*     paused_timer;
-	guint       timeout_id;
-	guint       max_timeout_id;
-	guint       scheduled_duration; // value interpreted as milliseconds
-	guint       max_duration;       // value interpreted as milliseconds
-	gboolean    is_paused;
-	GSourceFunc close_cb;
+G_DEFINE_TYPE (Timings, timings, G_TYPE_OBJECT);
+
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), TIMINGS_TYPE, TimingsPrivate))
+
+struct _TimingsPrivate {
+	GTimer*  on_screen_timer;
+	GTimer*  duration_timer;
+	GTimer*  paused_timer;
+	guint    timeout_id;
+	guint    max_timeout_id;
+	guint    scheduled_duration; // value interpreted as milliseconds
+	guint    max_duration;       // value interpreted as milliseconds
+	gboolean is_started;
+	gboolean is_paused;
 };
+
+enum
+{
+	COMPLETED,
+	LIMIT_REACHED,
+	LAST_SIGNAL
+};
+
+//-- private functions ---------------------------------------------------------
+
+static guint g_timings_signals[LAST_SIGNAL] = { 0 };
 
 guint
 _ms_elapsed (GTimer* timer)
@@ -64,203 +79,399 @@ _ms_elapsed (GTimer* timer)
 	return seconds * 1000 + milliseconds;
 }
 
-timings_t*
-timings_new (guint       scheduled_duration,
-	     guint       max_duration,
-	     GSourceFunc close_cb,
-	     GSourceFunc force_close_cb)
+gboolean
+_emit_completed (gpointer data)
 {
-	timings_private_t* priv = NULL;
-	timings_t*         t    = NULL;
+	Timings* t;
 
-	// sanity checks
-	g_assert (scheduled_duration <= max_duration);
-	g_assert (close_cb);
-	g_assert (force_close_cb);
+	if (!data)
+		return TRUE;
 
-	// create private struct
-	priv = g_new0 (timings_private_t, 1);
-	if (!priv)
-		return NULL;
+	t = (Timings*) data;
 
-	// create public struct
-	t = g_new0 (timings_t, 1);
-	if (!t)
-	{
-		g_free ((gpointer) priv);
-		return NULL;
-	}
+	if (!t || !IS_TIMINGS (t))
+		return TRUE;
 
-	// fill private struct
-	priv->on_screen_timer    = g_timer_new ();
-	priv->duration_timer     = g_timer_new ();
-	priv->paused_timer       = g_timer_new ();
-	g_timer_stop (priv->paused_timer);
-	priv->timeout_id         = g_timeout_add (scheduled_duration,
-						  close_cb,
-						  NULL);
-	priv->max_timeout_id     = g_timeout_add (max_duration,
-						  force_close_cb,
-						  NULL);
-	priv->scheduled_duration = scheduled_duration;
-	priv->max_duration       = max_duration;
-	priv->is_paused          = FALSE;
-	priv->close_cb           = close_cb;
+	g_signal_emit (t, g_timings_signals[COMPLETED], 0);
 
-	// hook up private struct to public struct
-	t->priv = priv;
-
-	return t;
+	return FALSE;
 }
 
-void
-timings_destroy (timings_t* t)
+gboolean
+_emit_limit_reached (gpointer data)
 {
-	// sanity checks
-	g_assert (t != NULL);
-	g_assert (t->priv != NULL);
+	Timings* t;
+
+	if (!data)
+		return TRUE;
+
+	t = (Timings*) data;
+
+	if (!t || !IS_TIMINGS (t))
+		return TRUE;
+
+	g_signal_emit (t, g_timings_signals[LIMIT_REACHED], 0);
+
+	return FALSE;
+}
+
+//-- internal functions --------------------------------------------------------
+
+static void
+timings_dispose (GObject* gobject)
+{
+	// chain up to the parent class
+	G_OBJECT_CLASS (timings_parent_class)->dispose (gobject);
+}
+
+static void
+timings_finalize (GObject* gobject)
+{
+	TimingsPrivate* priv = GET_PRIVATE (gobject);
 
 	if (g_getenv ("DEBUG"))
 	{
-		g_print ("\non-screen time: %d seconds, %d ms.\n",
-			 _ms_elapsed (t->priv->on_screen_timer) / 1000,
-			 _ms_elapsed (t->priv->on_screen_timer) % 1000);
+		g_print ("on-screen time: %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->on_screen_timer) / 1000,
+			 _ms_elapsed (priv->on_screen_timer) % 1000);
 		g_print ("paused time   : %d seconds, %d ms.\n",
-			 _ms_elapsed (t->priv->paused_timer) / 1000,
-			 _ms_elapsed (t->priv->paused_timer) % 1000);
+			 _ms_elapsed (priv->paused_timer) / 1000,
+			 _ms_elapsed (priv->paused_timer) % 1000);
 		g_print ("unpaused time : %d seconds, %d ms.\n",
-			 _ms_elapsed (t->priv->duration_timer) / 1000,
-			 _ms_elapsed (t->priv->duration_timer) % 1000);
+			 _ms_elapsed (priv->duration_timer) / 1000,
+			 _ms_elapsed (priv->duration_timer) % 1000);
 		g_print ("scheduled time: %d seconds, %d ms.\n",
-			 t->priv->scheduled_duration / 1000,
-			 t->priv->scheduled_duration % 1000);
+			 priv->scheduled_duration / 1000,
+			 priv->scheduled_duration % 1000);
 	} 
 
 	// free any allocated resources
-	if (t->priv->on_screen_timer)
-		g_timer_destroy (t->priv->on_screen_timer);
+	if (priv->on_screen_timer)
+		g_timer_destroy (priv->on_screen_timer);
 
-	if (t->priv->duration_timer)
-		g_timer_destroy (t->priv->duration_timer);
+	if (priv->duration_timer)
+		g_timer_destroy (priv->duration_timer);
 
-	if (t->priv->paused_timer)
-		g_timer_destroy (t->priv->paused_timer);
+	if (priv->paused_timer)
+		g_timer_destroy (priv->paused_timer);
 
-	if (t->priv->timeout_id != 0)
-		g_source_remove (t->priv->timeout_id);
+	if (priv->timeout_id != 0)
+		g_source_remove (priv->timeout_id);
 
-	if (t->priv->max_timeout_id != 0)
-		g_source_remove (t->priv->max_timeout_id);
+	if (priv->max_timeout_id != 0)
+		g_source_remove (priv->max_timeout_id);
 
-	// get rid of the main allocated structs
-	g_free ((gpointer) t->priv);
-	g_free ((gpointer) t);
+	// chain up to the parent class
+	G_OBJECT_CLASS (timings_parent_class)->finalize (gobject);
 }
 
-void
-timings_extend_by_ms (timings_t* t,
-		      guint      extension)
+static void
+timings_init (Timings* self)
 {
-	gboolean removed_successfully;
-	guint    on_screen_time; // value interpreted as milliseconds
-
-	// sanity checks
-	g_assert (t != NULL);
-
-	// you never know how stupid the caller may be
-	if (extension == 0)
-		return;
-
-	// if paused only update scheduled duration and return
-	if (t->priv->is_paused)
-	{
-		if (t->priv->scheduled_duration + extension >
-		    t->priv->max_duration)
-			t->priv->scheduled_duration = t->priv->max_duration;
-		else
-			t->priv->scheduled_duration += extension;
-
-		return;
-	}
-
-	// try to get rid of old timeout
-	removed_successfully = g_source_remove (t->priv->timeout_id);
-	g_assert (removed_successfully);
-
-	// ensure we don't overshoot limit with the on-screen time
-	on_screen_time = _ms_elapsed (t->priv->duration_timer);
-	if (t->priv->scheduled_duration + extension > t->priv->max_duration)
-	{
-		extension = t->priv->max_duration - on_screen_time;
-		t->priv->scheduled_duration = t->priv->max_duration;
-	}
-	else
-	{
-		t->priv->scheduled_duration += extension;
-		extension = t->priv->scheduled_duration - on_screen_time;
-	}
-
-	// add new timeout
-	t->priv->timeout_id = g_timeout_add (extension,
-					     t->priv->close_cb,
-					     NULL);
+	// If you need specific construction properties to complete
+	// initialization, delay initialization completion until the
+	// property is set.
 }
 
-void
-timings_pause (timings_t* t)
+static void
+timings_get_property (GObject*    gobject,
+		      guint       prop,
+		      GValue*     value,
+		      GParamSpec* spec)
 {
-	gboolean removed_successfully;
+	Timings* timings;
+
+	timings = TIMINGS (gobject);
+
+	switch (prop)
+	{
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
+timings_class_init (TimingsClass* klass)
+{
+	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (TimingsPrivate));
+
+	gobject_class->dispose      = timings_dispose;
+	gobject_class->finalize     = timings_finalize;
+	gobject_class->get_property = timings_get_property;
+
+	g_timings_signals[COMPLETED] = g_signal_new (
+		"completed",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (TimingsClass, completed),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__POINTER,
+		G_TYPE_NONE,
+		1,
+		G_TYPE_POINTER);
+
+	g_timings_signals[LIMIT_REACHED] = g_signal_new (
+		"limit-reached",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (TimingsClass, limit_reached),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__POINTER,
+		G_TYPE_NONE,
+		1,
+		G_TYPE_POINTER);
+}
+
+//-- public functions ----------------------------------------------------------
+
+Timings*
+timings_new (guint scheduled_duration,
+	     guint max_duration)
+{
+	Timings*        this;
+	TimingsPrivate* priv;
+
+	// verify the caller is not stupid
+	if (scheduled_duration > max_duration)
+		return NULL;
+
+	this = g_object_new (TIMINGS_TYPE, NULL);
+	if (!this)
+		return NULL;
+
+	priv = GET_PRIVATE (this);
+
+	priv->on_screen_timer = g_timer_new ();
+	g_timer_stop (priv->on_screen_timer);
+
+	priv->duration_timer = g_timer_new ();
+	g_timer_stop (priv->duration_timer);
+
+	priv->paused_timer = g_timer_new ();
+	g_timer_stop (priv->paused_timer);
+
+	priv->scheduled_duration = scheduled_duration;
+	priv->max_duration       = max_duration;
+	priv->is_started         = FALSE;
+	priv->is_paused          = FALSE;
+
+	return this;
+}
+
+gboolean
+timings_start (Timings* t)
+{
+	TimingsPrivate* priv;
 
 	// sanity checks
-	g_assert (t != NULL);
+	if (!t)
+		return FALSE;
 
-	// don't continue if we are already paused
-	if (t->priv->is_paused)
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
+
+	// install and start the two timeout-handlers
+	priv->timeout_id = g_timeout_add (priv->scheduled_duration,
+					  _emit_completed,
+					  (gpointer) t);
+	priv->max_timeout_id = g_timeout_add (priv->max_duration,
+					      _emit_limit_reached,
+					      (gpointer) t);
+
+	// let the on-screen- and duration-timers tick
+	g_timer_continue (priv->on_screen_timer);
+	g_timer_continue (priv->duration_timer);
+
+	// indicate that we started
+	priv->is_started = TRUE;
+
+	return TRUE;
+}
+
+gboolean
+timings_pause (Timings* t)
+{
+	TimingsPrivate* priv;
+	gboolean        removed_successfully;
+
+	// sanity checks
+	if (!t)
+		return FALSE;
+
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
+
+	// don't halt if we are already paused
+	if (priv->is_paused)
 	{
 		if (g_getenv ("DEBUG"))
 			g_print ("\n*** WARNING: Already paused!\n");
 
-		return;
+		return FALSE;
 	}
 
 	// make paused-timer tick again, hold duration-timer and update flag
-	g_timer_continue (t->priv->paused_timer);
-	g_timer_stop (t->priv->duration_timer);
-	t->priv->is_paused = TRUE;
+	g_timer_continue (priv->paused_timer);
+	g_timer_stop (priv->duration_timer);
+	priv->is_paused = TRUE;
 
 	// try to get rid of old timeout
 	removed_successfully = g_source_remove (t->priv->timeout_id);
 	g_assert (removed_successfully);
+
+	return TRUE;
 }
 
-void
-timings_continue (timings_t* t)
+gboolean
+timings_continue (Timings* t)
 {
-	guint extension;
+	TimingsPrivate* priv;
+	guint           extension;
 
 	// sanity checks
-	g_assert (t != NULL);
+	if (!t)
+		return FALSE;
+
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
 
 	// don't continue if we are not paused
-	if (!t->priv->is_paused)
+	if (!priv->is_paused)
 	{
 		if (g_getenv ("DEBUG"))
 			g_print ("\n*** WARNING: Already running!\n");
 
-		return;
+		return FALSE;
 	}
 
 	// make duration-timer tick again, hold paused-timer and update flag
-	g_timer_continue (t->priv->duration_timer);
-	g_timer_stop (t->priv->paused_timer);
-	t->priv->is_paused = FALSE;
+	g_timer_continue (priv->duration_timer);
+	g_timer_stop (priv->paused_timer);
+	priv->is_paused = FALSE;
 
 	// put new timeout in place
-	extension = t->priv->scheduled_duration -
-		    _ms_elapsed (t->priv->duration_timer);
-	t->priv->timeout_id = g_timeout_add (extension,
-					     t->priv->close_cb,
-					     NULL);
-	g_assert (t->priv->timeout_id != 0);
+	extension = priv->scheduled_duration -
+		    _ms_elapsed (priv->duration_timer);
+	priv->timeout_id = g_timeout_add (extension,
+					  _emit_completed,
+					  (gpointer) t);
+	g_assert (priv->timeout_id != 0);
+
+	return TRUE;
+}
+
+gboolean
+timings_extend (Timings* t,
+		guint    extension)
+{
+	TimingsPrivate* priv;
+	gboolean        removed_successfully;
+	guint           on_screen_time; // value interpreted as milliseconds
+
+	// sanity checks
+	if (!t)
+		return FALSE;
+
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
+
+	// you never know how stupid the caller may be
+	if (extension == 0)
+		return FALSE;
+
+	// if paused only update scheduled duration and return
+	if (priv->is_paused)
+	{
+		if (priv->scheduled_duration + extension >
+		    priv->max_duration)
+			priv->scheduled_duration = priv->max_duration;
+		else
+			priv->scheduled_duration += extension;
+
+		return TRUE;
+	}
+
+	// try to get rid of old timeout
+	removed_successfully = g_source_remove (priv->timeout_id);
+	g_assert (removed_successfully);
+
+	// ensure we don't overshoot limit with the on-screen time
+	on_screen_time = _ms_elapsed (priv->duration_timer);
+	if (priv->scheduled_duration + extension > priv->max_duration)
+	{
+		extension = priv->max_duration - on_screen_time;
+		priv->scheduled_duration = priv->max_duration;
+	}
+	else
+	{
+		priv->scheduled_duration += extension;
+		extension = priv->scheduled_duration - on_screen_time;
+	}
+
+	// add new timeout
+	priv->timeout_id = g_timeout_add (extension,
+					  _emit_completed,
+					  (gpointer) t);
+
+	return TRUE;
+}
+
+gboolean
+timings_destroy (Timings* t)
+{
+	TimingsPrivate* priv;
+
+	// sanity checks
+	if (!t || !IS_TIMINGS (t))
+		return FALSE;
+
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
+
+	if (g_getenv ("DEBUG"))
+	{
+		g_print ("on-screen time: %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->on_screen_timer) / 1000,
+			 _ms_elapsed (priv->on_screen_timer) % 1000);
+		g_print ("paused time   : %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->paused_timer) / 1000,
+			 _ms_elapsed (priv->paused_timer) % 1000);
+		g_print ("unpaused time : %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->duration_timer) / 1000,
+			 _ms_elapsed (priv->duration_timer) % 1000);
+		g_print ("scheduled time: %d seconds, %d ms.\n",
+			 priv->scheduled_duration / 1000,
+			 priv->scheduled_duration % 1000);
+	} 
+
+	// free any allocated resources
+	if (priv->on_screen_timer)
+		g_timer_destroy (priv->on_screen_timer);
+
+	if (priv->duration_timer)
+		g_timer_destroy (priv->duration_timer);
+
+	if (priv->paused_timer)
+		g_timer_destroy (priv->paused_timer);
+
+	if (priv->timeout_id != 0)
+		g_source_remove (priv->timeout_id);
+
+	if (priv->max_timeout_id != 0)
+		g_source_remove (priv->max_timeout_id);
+
+	g_object_unref (t);
+
+	return TRUE;
 }
 

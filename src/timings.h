@@ -25,36 +25,66 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _TIMINGS_H
-#define _TIMINGS_H
+#ifndef __TIMINGS_H
+#define __TIMINGS_H
 
-#include <glib.h>
+#include <glib-object.h>
 
-typedef struct _timings_private_t timings_private_t;
+G_BEGIN_DECLS
 
-typedef struct _timings_t
+#define TIMINGS_TYPE            (timings_get_type ())
+#define TIMINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), TIMINGS_TYPE, Timings))
+#define TIMINGS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), TIMINGS_TYPE, TimingsClass))
+#define IS_TIMINGS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), TIMINGS_TYPE))
+#define IS_TIMINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), TIMINGS_TYPE))
+#define TIMINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), TIMINGS_TYPE, TimingsClass))
+
+typedef struct _Timings        Timings;
+typedef struct _TimingsClass   TimingsClass;
+typedef struct _TimingsPrivate TimingsPrivate;
+
+// instance structure
+struct _Timings
 {
-	timings_private_t* priv;
-} timings_t;
+	GObject parent;
 
-timings_t*
-timings_new (guint       scheduled_duration,
-	     guint       max_duration,
-	     GSourceFunc close_cb,
-	     GSourceFunc force_close_cb);
+	//< private >
+	TimingsPrivate* priv;
+};
 
-void
-timings_destroy (timings_t* t);
+// class structure
+struct _TimingsClass
+{
+	GObjectClass parent;
 
-void
-timings_extend_by_ms (timings_t* t,
-		      guint      extension);
+	//< signals >
+	void (*completed) (Timings* timings);
+	void (*limit_reached) (Timings* timings);
+};
 
-void
-timings_pause (timings_t* t);
+GType timings_get_type (void);
 
-void
-timings_continue (timings_t* t);
+Timings*
+timings_new (guint scheduled_duration,
+	     guint max_duration);
 
-#endif // _TIMINGS_H
+gboolean
+timings_start (Timings* t);
+
+gboolean
+timings_pause (Timings* t);
+
+gboolean
+timings_continue (Timings* t);
+
+gboolean
+timings_extend (Timings* t,
+		guint    extension);
+
+gboolean
+timings_destroy (Timings* t);
+
+G_END_DECLS
+
+#endif // __TIMINGS_H
 
