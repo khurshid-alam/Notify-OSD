@@ -81,9 +81,6 @@ gboolean
 timings_extend (Timings* t,
 		guint    extension);
 
-gboolean
-timings_destroy (Timings* t);
-
 G_END_DECLS
 
 #endif // __TIMINGS_H

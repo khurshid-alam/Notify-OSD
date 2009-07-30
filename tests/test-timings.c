@@ -83,23 +83,7 @@ test_timings_new (void)
 	g_assert (t != NULL);
 
 	// clean up
-	timings_destroy (t);
-	t = NULL;
-}
-
-static void
-test_timings_destroy (void)
-{
-	Timings* t = NULL;
-
-	// create new object
-	t = timings_new (INITIAL_DURATION, MAX_TIME_LIMIT);
-
-	// test validity of main notification object
-	g_assert (t != NULL);
-
-	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -118,6 +102,12 @@ test_timings_extend (void)
 	// verify we're fool-proof
 	g_assert (!timings_extend (t, 0));
 
+	// try to extend without being started, should not fail
+	g_assert (!timings_extend (t, EXTENSION));
+
+	// start the thing
+	timings_start (t);
+
 	// try to extend by 1 second
 	g_assert (timings_extend (t, EXTENSION));
 
@@ -129,7 +119,7 @@ test_timings_extend (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -158,7 +148,7 @@ test_timings_pause (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -192,7 +182,7 @@ test_timings_continue (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -226,7 +216,7 @@ test_timings_intercept_pause (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -260,7 +250,7 @@ test_timings_intercept_continue (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -281,7 +271,7 @@ test_timings_normal_callback (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -307,7 +297,7 @@ test_timings_force_callback (void)
 	g_main_loop_run (loop);
 
 	// clean up
-	timings_destroy (t);
+	g_object_unref (t);
 	t = NULL;
 }
 
@@ -323,14 +313,6 @@ test_timings_create_test_suite (void)
 					      NULL,
 					      NULL,
 					      test_timings_new,
-					      NULL));
-
-	g_test_suite_add (ts,
-			  g_test_create_case ("can destroy",
-					      0,
-					      NULL,
-					      NULL,
-					      test_timings_destroy,
 					      NULL));
 
 	g_test_suite_add (ts,

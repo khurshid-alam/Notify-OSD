@@ -117,21 +117,25 @@ _emit_limit_reached (gpointer data)
 
 //-- internal functions --------------------------------------------------------
 
+// this is what gets called if one does g_object_unref(bla)
 static void
 timings_dispose (GObject* gobject)
 {
-	// chain up to the parent class
-	G_OBJECT_CLASS (timings_parent_class)->dispose (gobject);
-}
+	Timings*        t;
+	TimingsPrivate* priv;
 
-static void
-timings_finalize (GObject* gobject)
-{
-	TimingsPrivate* priv = GET_PRIVATE (gobject);
+	// sanity checks
+	g_assert (gobject);
+	t = TIMINGS (gobject);
+	g_assert (t);
+	g_assert (IS_TIMINGS (t));
+	priv = GET_PRIVATE (t);
+	g_assert (priv);
 
+	// spit out some debugging information
 	if (g_getenv ("DEBUG"))
 	{
-		g_print ("on-screen time: %d seconds, %d ms.\n",
+		g_print ("\non-screen time: %d seconds, %d ms.\n",
 			 _ms_elapsed (priv->on_screen_timer) / 1000,
 			 _ms_elapsed (priv->on_screen_timer) % 1000);
 		g_print ("paused time   : %d seconds, %d ms.\n",
@@ -161,6 +165,15 @@ timings_finalize (GObject* gobject)
 	if (priv->max_timeout_id != 0)
 		g_source_remove (priv->max_timeout_id);
 
+	// chain up to the parent class
+	G_OBJECT_CLASS (timings_parent_class)->dispose (gobject);
+}
+
+static void
+timings_finalize (GObject* gobject)
+{
+	// gee, I wish I knew the difference between foobar_dispose() and
+	// foobar_finalize()
 	// chain up to the parent class
 	G_OBJECT_CLASS (timings_parent_class)->finalize (gobject);
 }
@@ -276,6 +289,10 @@ timings_start (Timings* t)
 	if (!priv)
 		return FALSE;
 
+	// if we have been started already return early
+	if (priv->is_started)
+		return FALSE;
+
 	// install and start the two timeout-handlers
 	priv->timeout_id = g_timeout_add (priv->scheduled_duration,
 					  _emit_completed,
@@ -306,6 +323,10 @@ timings_pause (Timings* t)
 
 	priv = GET_PRIVATE (t);
 	if (!priv)
+		return FALSE;
+
+	// only if we have been started it makes sense to move on
+	if (!priv->is_started)
 		return FALSE;
 
 	// don't halt if we are already paused
@@ -341,6 +362,10 @@ timings_continue (Timings* t)
 
 	priv = GET_PRIVATE (t);
 	if (!priv)
+		return FALSE;
+
+	// only if we have been started it makes sense to move on
+	if (!priv->is_started)
 		return FALSE;
 
 	// don't continue if we are not paused
@@ -388,6 +413,10 @@ timings_extend (Timings* t,
 	if (extension == 0)
 		return FALSE;
 
+	// only if we have been started we can extend
+	if (!priv->is_started)
+		return FALSE;
+
 	// if paused only update scheduled duration and return
 	if (priv->is_paused)
 	{
@@ -421,56 +450,6 @@ timings_extend (Timings* t,
 	priv->timeout_id = g_timeout_add (extension,
 					  _emit_completed,
 					  (gpointer) t);
-
-	return TRUE;
-}
-
-gboolean
-timings_destroy (Timings* t)
-{
-	TimingsPrivate* priv;
-
-	// sanity checks
-	if (!t || !IS_TIMINGS (t))
-		return FALSE;
-
-	priv = GET_PRIVATE (t);
-	if (!priv)
-		return FALSE;
-
-	if (g_getenv ("DEBUG"))
-	{
-		g_print ("on-screen time: %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->on_screen_timer) / 1000,
-			 _ms_elapsed (priv->on_screen_timer) % 1000);
-		g_print ("paused time   : %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->paused_timer) / 1000,
-			 _ms_elapsed (priv->paused_timer) % 1000);
-		g_print ("unpaused time : %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->duration_timer) / 1000,
-			 _ms_elapsed (priv->duration_timer) % 1000);
-		g_print ("scheduled time: %d seconds, %d ms.\n",
-			 priv->scheduled_duration / 1000,
-			 priv->scheduled_duration % 1000);
-	} 
-
-	// free any allocated resources
-	if (priv->on_screen_timer)
-		g_timer_destroy (priv->on_screen_timer);
-
-	if (priv->duration_timer)
-		g_timer_destroy (priv->duration_timer);
-
-	if (priv->paused_timer)
-		g_timer_destroy (priv->paused_timer);
-
-	if (priv->timeout_id != 0)
-		g_source_remove (priv->timeout_id);
-
-	if (priv->max_timeout_id != 0)
-		g_source_remove (priv->max_timeout_id);
-
-	g_object_unref (t);
 
 	return TRUE;
 }
