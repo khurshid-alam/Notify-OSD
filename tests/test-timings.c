@@ -36,7 +36,7 @@
 gboolean
 _close_cb (gpointer data)
 {
-	g_print ("coming from _close_cb()\n");
+	g_print ("\ncoming from _close_cb()\n");
 
 	return FALSE;
 }
@@ -44,7 +44,7 @@ _close_cb (gpointer data)
 gboolean
 _force_close_cb (gpointer data)
 {
-	g_print ("coming from _force_close_cb()\n");
+	g_print ("\ncoming from _force_close_cb()\n");
 
 	return FALSE;
 }
@@ -93,7 +93,7 @@ test_timings_destroy (void)
 	t = NULL;
 }
 
-void
+static void
 test_timings_extend (void)
 {
 	timings_t* t = NULL;
@@ -116,9 +116,6 @@ test_timings_extend (void)
 	// clean up
 	timings_destroy (t);
 	t = NULL;
-
-	// trying to extend an invalid timing object should not crash
-	timings_extend_by_ms (t, EXTENSION);
 }
 
 static void
@@ -146,9 +143,6 @@ test_timings_pause (void)
 	// clean up
 	timings_destroy (t);
 	t = NULL;
-
-	// trying to pause an invalid timing object should not crash
-	timings_pause (t);
 }
 
 static void
@@ -176,9 +170,6 @@ test_timings_continue (void)
 	// clean up
 	timings_destroy (t);
 	t = NULL;
-
-	// trying to continue an invalid timing object should not crash
-	timings_continue (t);
 }
 
 static void

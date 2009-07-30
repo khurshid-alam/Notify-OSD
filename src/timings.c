@@ -122,7 +122,7 @@ timings_destroy (timings_t* t)
 
 	if (g_getenv ("DEBUG"))
 	{
-		g_print ("on-screen time: %d seconds, %d ms.\n",
+		g_print ("\non-screen time: %d seconds, %d ms.\n",
 			 _ms_elapsed (t->priv->on_screen_timer) / 1000,
 			 _ms_elapsed (t->priv->on_screen_timer) % 1000);
 		g_print ("paused time   : %d seconds, %d ms.\n",
@@ -218,7 +218,7 @@ timings_pause (timings_t* t)
 	if (t->priv->is_paused)
 	{
 		if (g_getenv ("DEBUG"))
-			g_print ("*** WARNING: Already paused!\n");
+			g_print ("\n*** WARNING: Already paused!\n");
 
 		return;
 	}
@@ -245,7 +245,7 @@ timings_continue (timings_t* t)
 	if (!t->priv->is_paused)
 	{
 		if (g_getenv ("DEBUG"))
-			g_print ("*** WARNING: Already running!\n");
+			g_print ("\n*** WARNING: Already running!\n");
 
 		return;
 	}
