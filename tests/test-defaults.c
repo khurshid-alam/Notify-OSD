@@ -38,7 +38,7 @@ test_defaults_new ()
 
 	defaults = defaults_new ();
 	g_assert (defaults != NULL);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -48,8 +48,7 @@ test_defaults_del ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	defaults_del (defaults);
-	/*g_assert (defaults == NULL);*/
+	g_object_unref (defaults);
 }
 
 static
@@ -61,7 +60,7 @@ test_defaults_get_desktop_width ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_width (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_width (defaults), >=, 640);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -73,7 +72,7 @@ test_defaults_get_desktop_height ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_height (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_height (defaults), >=, 600);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -85,7 +84,7 @@ test_defaults_get_desktop_top ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_top (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_top (defaults), >=, 0);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -97,7 +96,7 @@ test_defaults_get_desktop_bottom ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_bottom (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_bottom (defaults), >=, 0);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -109,7 +108,7 @@ test_defaults_get_desktop_left ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_left (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_left (defaults), >=, 0);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -121,7 +120,7 @@ test_defaults_get_desktop_right ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_desktop_right (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_desktop_right (defaults), >=, 0);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -133,7 +132,7 @@ test_defaults_get_stack_height ()
 	defaults = defaults_new ();
 	g_assert_cmpint (defaults_get_stack_height (defaults), <=, 4096);
 	g_assert_cmpint (defaults_get_stack_height (defaults), >=, 0);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 static
@@ -145,7 +144,7 @@ test_defaults_get_bubble_width ()
 	defaults = defaults_new ();
 	g_assert_cmpfloat (defaults_get_bubble_width (defaults), <=, 256.0f);
 	g_assert_cmpfloat (defaults_get_bubble_width (defaults), >=, 0.0f);
-	defaults_del (defaults);
+	g_object_unref (defaults);
 }
 
 GTestSuite *
