@@ -368,13 +368,18 @@ _draw_shadow (cairo_t* cr,
 	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						  4 * shadow_radius,
 						  4 * shadow_radius);
-	if (cairo_surface_status (tmp_surface) != CAIRO_STATUS_SUCCESS)
+	if (cairo_surface_status (tmp_surface) != CAIRO_STATUS_SUCCESS) {
+		if (tmp_surface)
+			cairo_surface_destroy (tmp_surface);
 		return;
+	}
 
 	cr_surf = cairo_create (tmp_surface);
 	if (cairo_status (cr_surf) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (tmp_surface);
+		if (cr_surf)
+			cairo_destroy (cr_surf);
 		return;
 	}
 
@@ -413,6 +418,8 @@ _draw_shadow (cairo_t* cr,
 	{
 		cairo_surface_destroy (tmp_surface);
 		cairo_surface_destroy (new_surface);
+		if (pattern)
+			cairo_pattern_destroy (pattern);
 		return;
 	}
 
@@ -653,14 +660,21 @@ _refresh_background (Bubble* self)
 			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
 
-	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS)
+	g_return_if_fail (scratch);
+
+	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS) {
+		if (scratch)
+			cairo_surface_destroy (scratch);
 		return;
+	}
 
 	// create drawing context for that temp. scratch surface
 	cr = cairo_create (scratch);
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (scratch);
+		if (cr)
+			cairo_destroy (cr);
 		return;
 	}
 
@@ -765,14 +779,19 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+			if (normal)
+				cairo_surface_destroy (normal);
 			return;
+		}
 
 		blurred = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						      width,
 						      height);
 		if (cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
 		{
+			if (blurred)
+				cairo_surface_destroy (blurred);
 			cairo_surface_destroy (normal);
 			return;
 		}
@@ -783,8 +802,11 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+			if (normal)
+				cairo_surface_destroy (normal);
 			return;
+		}
 	}
 
 	// use tile for top-left background-part to fill the full bg-surface
@@ -796,6 +818,8 @@ _refresh_background (Bubble* self)
 		{
 			cairo_surface_destroy (normal);
 			cairo_surface_destroy (blurred);
+			if (cr)
+				cairo_destroy (cr);
 			return;
 		}
 
@@ -2973,13 +2997,19 @@ _calc_title_height (Bubble* self,
 	priv = GET_PRIVATE (self);
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
-	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
+	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
+		if (surface)
+			cairo_surface_destroy (surface);
 		return 0;
+	}
 
 	cr = cairo_create (surface);
 	cairo_surface_destroy (surface);
-	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
+		if (cr)
+			cairo_destroy (cr);
 		return 0;
+	}
 
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
@@ -3045,8 +3075,11 @@ _calc_body_height (Bubble* self,
 	priv = GET_PRIVATE (self);
 
 	cr = gdk_cairo_create (priv->widget->window);
-	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
+	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
+		if (cr)
+			cairo_destroy (cr);
 		return 0;
+	}
 
 	layout = pango_cairo_create_layout (cr);
 	desc = pango_font_description_new ();
