@@ -115,6 +115,26 @@ _emit_limit_reached (gpointer data)
 	return FALSE;
 }
 
+void
+_debug_output (TimingsPrivate* priv)
+{
+	if (g_getenv ("DEBUG"))
+	{
+		g_print ("\non-screen time: %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->on_screen_timer) / 1000,
+			 _ms_elapsed (priv->on_screen_timer) % 1000);
+		g_print ("paused time   : %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->paused_timer) / 1000,
+			 _ms_elapsed (priv->paused_timer) % 1000);
+		g_print ("unpaused time : %d seconds, %d ms.\n",
+			 _ms_elapsed (priv->duration_timer) / 1000,
+			 _ms_elapsed (priv->duration_timer) % 1000);
+		g_print ("scheduled time: %d seconds, %d ms.\n",
+			 priv->scheduled_duration / 1000,
+			 priv->scheduled_duration % 1000);
+	} 
+}
+
 //-- internal functions --------------------------------------------------------
 
 // this is what gets called if one does g_object_unref(bla)
@@ -131,23 +151,6 @@ timings_dispose (GObject* gobject)
 	g_assert (IS_TIMINGS (t));
 	priv = GET_PRIVATE (t);
 	g_assert (priv);
-
-	// spit out some debugging information
-	if (g_getenv ("DEBUG"))
-	{
-		g_print ("\non-screen time: %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->on_screen_timer) / 1000,
-			 _ms_elapsed (priv->on_screen_timer) % 1000);
-		g_print ("paused time   : %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->paused_timer) / 1000,
-			 _ms_elapsed (priv->paused_timer) % 1000);
-		g_print ("unpaused time : %d seconds, %d ms.\n",
-			 _ms_elapsed (priv->duration_timer) / 1000,
-			 _ms_elapsed (priv->duration_timer) % 1000);
-		g_print ("scheduled time: %d seconds, %d ms.\n",
-			 priv->scheduled_duration / 1000,
-			 priv->scheduled_duration % 1000);
-	} 
 
 	// free any allocated resources
 	if (priv->on_screen_timer)
@@ -174,6 +177,7 @@ timings_finalize (GObject* gobject)
 {
 	// gee, I wish I knew the difference between foobar_dispose() and
 	// foobar_finalize()
+
 	// chain up to the parent class
 	G_OBJECT_CLASS (timings_parent_class)->finalize (gobject);
 }
@@ -291,7 +295,12 @@ timings_start (Timings* t)
 
 	// if we have been started already return early
 	if (priv->is_started)
+	{
+		if (g_getenv ("DEBUG"))
+			g_print ("\n*** WARNING: Already started!\n");
+
 		return FALSE;
+	}
 
 	// install and start the two timeout-handlers
 	priv->timeout_id = g_timeout_add (priv->scheduled_duration,
@@ -312,6 +321,61 @@ timings_start (Timings* t)
 }
 
 gboolean
+timings_stop (Timings* t)
+{
+	TimingsPrivate* priv;
+	gboolean        removed_successfully;
+
+	// sanity checks
+	if (!t)
+		return FALSE;
+
+	priv = GET_PRIVATE (t);
+	if (!priv)
+		return FALSE;
+
+	// if we have not been started, return early
+	if (!priv->is_started)
+	{
+		if (g_getenv ("DEBUG"))
+			g_print ("\n*** WARNING: Can't stop something, which "
+				 "is not started yet!\n");
+
+		return FALSE;
+	}
+
+	// get rid of timeouts
+	if (!priv->is_paused)
+	{
+		// remove timeout for normal scheduled duration
+		removed_successfully = g_source_remove (priv->timeout_id);
+		g_assert (removed_successfully);
+	}
+
+	// remove timeout enforcing max. time-limit
+	removed_successfully = g_source_remove (priv->max_timeout_id);
+	g_assert (removed_successfully);
+
+	// halt all timers
+	if (priv->is_paused)
+		g_timer_stop (priv->paused_timer);
+	else
+	{
+		g_timer_stop (priv->on_screen_timer);
+		g_timer_stop (priv->duration_timer);
+	}
+
+	// indicate that we stopped (means also not paused)
+	priv->is_started = FALSE;
+	priv->is_paused = FALSE;
+
+	// spit out some debugging information
+	_debug_output (priv);
+
+	return TRUE;
+}
+
+gboolean
 timings_pause (Timings* t)
 {
 	TimingsPrivate* priv;
@@ -325,9 +389,15 @@ timings_pause (Timings* t)
 	if (!priv)
 		return FALSE;
 
-	// only if we have been started it makes sense to move on
+	// only if we have been started it makes sense pause
 	if (!priv->is_started)
+	{
+		if (g_getenv ("DEBUG"))
+			g_print ("\n*** WARNING: Can't pause something, which "
+				 " is not started yet!\n");
+
 		return FALSE;
+	}
 
 	// don't halt if we are already paused
 	if (priv->is_paused)
@@ -344,7 +414,7 @@ timings_pause (Timings* t)
 	priv->is_paused = TRUE;
 
 	// try to get rid of old timeout
-	removed_successfully = g_source_remove (t->priv->timeout_id);
+	removed_successfully = g_source_remove (priv->timeout_id);
 	g_assert (removed_successfully);
 
 	return TRUE;
@@ -366,7 +436,13 @@ timings_continue (Timings* t)
 
 	// only if we have been started it makes sense to move on
 	if (!priv->is_started)
+	{
+		if (g_getenv ("DEBUG"))
+			g_print ("\n*** WARNING: Can't continue something, "
+				 "which is not started yet!\n");
+
 		return FALSE;
+	}
 
 	// don't continue if we are not paused
 	if (!priv->is_paused)

@@ -72,6 +72,9 @@ gboolean
 timings_start (Timings* t);
 
 gboolean
+timings_stop (Timings* t);
+
+gboolean
 timings_pause (Timings* t);
 
 gboolean
