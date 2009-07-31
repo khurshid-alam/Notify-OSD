@@ -361,6 +361,17 @@ close_handler (GObject *n,
 		{
 			g_object_unref (n);
 			sync_bubble = NULL;
+		} if (IS_BUBBLE (n)) {
+			stack_pop_bubble_by_id (stack, bubble_get_id ((Bubble*) n));
+			/* Fix for a tricky race condition
+			   where a bubble fades out in sync
+			   with a synchronous bubble: the symc.
+			   one is still considered visible while
+			   the normal one has triggered this signal.
+			   This ensures the display slot of the
+			   sync. bubble is recycled, and no gap is
+			   left on the screen */
+			sync_bubble = NULL;
 		} else {
 			/* Fix for a tricky race condition
 			   where a bubble fades out in sync
