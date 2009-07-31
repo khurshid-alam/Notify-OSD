@@ -110,6 +110,20 @@ filter_text (const gchar *text)
 	return text6;
 }
 
+gboolean
+destroy_cloned_surface (cairo_surface_t* surface)
+{
+	gboolean finalref = FALSE;
+	g_return_val_if_fail (surface, FALSE);
+
+	if (cairo_surface_get_reference_count  (surface) == 1) {
+		g_free (cairo_image_surface_get_data (surface));
+		finalref = TRUE;
+	}
+	cairo_surface_destroy (surface);
+	return finalref;
+}
+
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig)
 {
