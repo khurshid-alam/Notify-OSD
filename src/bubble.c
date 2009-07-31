@@ -155,6 +155,7 @@ enum
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
+static void bubble_del (Bubble* self);
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -1957,6 +1958,8 @@ bubble_finalize (GObject* gobject)
 		priv->timer_id = 0;
 	}
 
+	bubble_del ( (Bubble*) gobject);
+
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
@@ -2177,7 +2180,7 @@ bubble_get_sender (Bubble* self)
 	return GET_PRIVATE (self)->sender;
 }
 
-void
+static void
 bubble_del (Bubble* self)
 {
 	BubblePrivate* priv;
@@ -2199,8 +2202,6 @@ bubble_del (Bubble* self)
 		tile_destroy (priv->tile_body);
 	if (priv->tile_indicator)
 		tile_destroy (priv->tile_indicator);
-
-	g_object_unref (self);
 }
 
 void
