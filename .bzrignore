@@ -194,3 +194,6 @@ tests/test-timeline.gcno
 tests/test-timeline-interpolate.gcno
 tests/test-timeline-rewind.gcno
 tests/test-timeline-smoothness.gcno
+tests/*.gcno
+tests/*.gcda
+tests/*.gcov
