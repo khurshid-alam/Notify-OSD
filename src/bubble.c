@@ -754,8 +754,8 @@ _refresh_background (Bubble* self)
 	if (priv->tile_background_part)
 		tile_destroy (priv->tile_background_part);
 	priv->tile_background_part = tile_new_for_padding (normal, blurred);
-	cairo_surface_destroy (normal);
-	cairo_surface_destroy (blurred);
+	destroy_cloned_surface (normal);
+	destroy_cloned_surface (blurred);
 
 	// create surface(s) for full shadow/background tile
 	if (priv->composited)

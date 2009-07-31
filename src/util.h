@@ -34,3 +34,7 @@ filter_text (const gchar* app_name);
 
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig);
+
+gboolean
+destroy_cloned_surface (cairo_surface_t* surface);
+
