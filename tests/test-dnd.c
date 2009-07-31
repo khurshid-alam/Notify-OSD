@@ -31,6 +31,7 @@
 #include <gtk/gtk.h>
 
 #include "dnd.h"
+#include "util.h"
 
 #include <libwnck/libwnck.h>
 
@@ -69,13 +70,13 @@ check_no_fullscreen (GMainLoop *loop)
 	return FALSE;
 }
 
+// FIXME: fails under compiz, needs to be able handle compiz' viewports
 static
 WnckWorkspace *
 find_free_workspace (WnckScreen *screen)
 {
 	WnckWorkspace *active_workspace = wnck_screen_get_active_workspace (screen);
 	GList *lst = wnck_screen_get_workspaces (screen);
-
 	if (lst->data != active_workspace) {
 		return WNCK_WORKSPACE(lst->data);
 	}
@@ -116,12 +117,23 @@ test_dnd_fullscreen (void)
 GTestSuite *
 test_dnd_create_test_suite (void)
 {
-	GTestSuite *ts = NULL;
+	GTestSuite* ts      = NULL;
+	gchar*      wm_name = NULL;
 
 	ts = g_test_create_suite ("dnd");
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
 	g_test_suite_add (ts, TC(test_dnd_screensaver));
-	g_test_suite_add (ts, TC(test_dnd_fullscreen));
+
+	// FIXME: test_dnd_fullscreen() fails under compiz because of it using
+	// viewports instead of workspaces
+	wm_name = get_wm_name (GDK_DISPLAY ());
+	if (wm_name && g_ascii_strcasecmp (WM_NAME_COMPIZ, wm_name))
+		g_test_suite_add (ts, TC(test_dnd_fullscreen));
+	else
+	{
+		g_print ("*** WARNING: Skipping /dnd/test_dnd_fullscreen ");
+		g_print ("because it does currently not work under compiz!\n");
+	}
 
 	return ts;
 }
