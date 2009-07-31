@@ -586,6 +586,54 @@ defaults_dispose (GObject* gobject)
 	gconf_client_remove_dir (defaults->context, GCONF_FONT_TREE, NULL);
 	g_object_unref (defaults->context);
 
+	if (defaults->bubble_shadow_color)
+	{
+		g_string_free (defaults->bubble_shadow_color, TRUE);
+		defaults->bubble_shadow_color = NULL;
+	}
+
+	if (defaults->bubble_bg_color)
+	{
+		g_string_free (defaults->bubble_bg_color, TRUE);
+		defaults->bubble_bg_color = NULL;
+	}
+
+	if (defaults->bubble_bg_opacity)
+	{
+		g_string_free (defaults->bubble_bg_opacity, TRUE);
+		defaults->bubble_bg_opacity = NULL;
+	}
+
+	if (defaults->bubble_hover_opacity)
+	{
+		g_string_free (defaults->bubble_hover_opacity, TRUE);
+		defaults->bubble_hover_opacity = NULL;
+	}
+
+	if (defaults->content_shadow_color)
+	{
+		g_string_free (defaults->content_shadow_color, TRUE);
+		defaults->content_shadow_color = NULL;
+	}
+
+	if (defaults->text_font_face)
+	{
+		g_string_free (defaults->text_font_face, TRUE);
+		defaults->text_font_face = NULL;
+	}
+
+	if (defaults->text_title_color)
+	{
+		g_string_free (defaults->text_title_color, TRUE);
+		defaults->text_title_color = NULL;
+	}
+
+	if (defaults->text_body_color)
+	{
+		g_string_free (defaults->text_body_color, TRUE);
+		defaults->text_body_color = NULL;
+	}
+
 	// chain up to the parent class
 	G_OBJECT_CLASS (defaults_parent_class)->dispose (gobject);
 }
