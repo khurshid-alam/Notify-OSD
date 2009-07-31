@@ -118,9 +118,6 @@ GType defaults_get_type (void);
 Defaults*
 defaults_new (void);
 
-void
-defaults_del (Defaults* self);
-
 gint
 defaults_get_desktop_width (Defaults* self);
 

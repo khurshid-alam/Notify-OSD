@@ -116,8 +116,8 @@ test_stack_layout_rtl (void)
 	bubble_move (bubble, 30, 30);		       \
 	bubble_show (bubble);			       \
 	wait_a_little (1000);			       \
-	g_object_unref (G_OBJECT(bubble));       \
-	defaults_del (defaults);			\
+	g_object_unref (G_OBJECT(bubble));       	\
+	g_object_unref (defaults);			\
 	}
 
 GENERATE(en, "About Ubuntu")

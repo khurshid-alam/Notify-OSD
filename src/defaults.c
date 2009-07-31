@@ -586,14 +586,14 @@ defaults_dispose (GObject* gobject)
 	gconf_client_remove_dir (defaults->context, GCONF_FONT_TREE, NULL);
 	g_object_unref (defaults->context);
 
-	/* chain up to the parent class */
+	// chain up to the parent class
 	G_OBJECT_CLASS (defaults_parent_class)->dispose (gobject);
 }
 
 static void
 defaults_finalize (GObject* gobject)
 {
-	/* chain up to the parent class */
+	// chain up to the parent class
 	G_OBJECT_CLASS (defaults_parent_class)->finalize (gobject);
 }
 
@@ -1677,12 +1677,6 @@ defaults_new (void)
 	Defaults* this = g_object_new (DEFAULTS_TYPE, NULL);
 
 	return this;
-}
-
-void
-defaults_del (Defaults* self)
-{
-	g_object_unref (self);
 }
 
 gint
