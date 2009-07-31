@@ -249,8 +249,11 @@ tile_paint_with_padding (tile_t*  tile,
 	if (normal_alpha > 0.0f)
 	{
 		pattern = cairo_pattern_create_for_surface (tile->priv->normal);
-		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
+		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS) {
+			if (pattern)
+				cairo_pattern_destroy (pattern);
 			return;
+		}
 
 		cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
 		cairo_set_source (cr, pattern);
@@ -271,8 +274,11 @@ tile_paint_with_padding (tile_t*  tile,
 	if (blurred_alpha > 0.0f)
 	{
 		pattern = cairo_pattern_create_for_surface (tile->priv->blurred);
-		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
+		if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS) {
+			if (pattern)
+				cairo_pattern_destroy (pattern);
 			return;
+		}
 
 		cairo_pattern_set_extend (pattern, CAIRO_EXTEND_PAD);
 		cairo_set_source (cr, pattern);
