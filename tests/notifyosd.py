@@ -3,6 +3,7 @@ import sys
 import time
 from optparse import OptionParser
 
+import gtk
 import pynotify
 
 ICON_ONLY_HINT   = "x-canonical-private-icon-only"
@@ -36,6 +37,9 @@ def main ():
 
 	parser.add_option("-i", "--icon",  dest="icon",
 		help = "Name of the icon to show")
+
+	parser.add_option("--icon-data",   dest="icon_data",
+		help = "Load icon data from a custom file")
 
 	parser.add_option("-v", "--value", dest="value",
 		help = "Start in value mode and display the percentage VALUE in a gauge")
@@ -72,6 +76,11 @@ def main ():
 		n = create_icon_only_notification(title, options.icon)
 	else:
 		n = pynotify.Notification(title, body, options.icon)
+
+	if options.icon_data:
+		pixbuf = gtk.gdk.pixbuf_new_from_file(options.icon_data)
+		n.set_icon_from_pixbuf(pixbuf)
+
 	n.show ()
 
 if __name__ == "__main__":
