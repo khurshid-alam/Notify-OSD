@@ -638,8 +638,6 @@ _refresh_background (Bubble* self)
 	gint             width;
 	gint             height;
 
-	tile_destroy (priv->tile_background);
-
 	bubble_get_size (self, &width, &height);
 
 	// create temp. scratch surface for top-left shadow/background part
@@ -753,6 +751,8 @@ _refresh_background (Bubble* self)
 	cairo_surface_destroy (clone);
 
 	// finally create tile with top-left shadow/background part
+	if (priv->tile_background_part)
+		tile_destroy (priv->tile_background_part);
 	priv->tile_background_part = tile_new_for_padding (normal, blurred);
 	cairo_surface_destroy (normal);
 	cairo_surface_destroy (blurred);
@@ -850,6 +850,8 @@ _refresh_background (Bubble* self)
 	cairo_destroy (cr);
 
 	// finally create tile for full background
+	if (priv->tile_background)
+		tile_destroy (priv->tile_background);
 	if (priv->composited)
 		priv->tile_background = tile_new_for_padding (normal, blurred);
 	else
@@ -869,8 +871,6 @@ _refresh_icon (Bubble* self)
 	Defaults*        d      = self->defaults;
 	cairo_surface_t* normal = NULL;
 	cairo_t*         cr     = NULL;
-
-	tile_destroy (priv->tile_icon);
 
 	if (!priv->icon_pixbuf)
 		return;
@@ -907,6 +907,8 @@ _refresh_icon (Bubble* self)
 	cairo_paint (cr);
 
 	// create the surface/blur-cache from the normal surface
+	if (priv->tile_icon)
+		tile_destroy (priv->tile_icon);
 	priv->tile_icon = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
 
 	// clean up
@@ -924,8 +926,6 @@ _refresh_title (Bubble* self)
 	PangoFontDescription* desc   = NULL;
 	PangoLayout*          layout = NULL;
 	raico_blur_t*         blur   = NULL;
-
-	tile_destroy (priv->tile_title);
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -1011,6 +1011,8 @@ _refresh_title (Bubble* self)
 	g_object_unref (layout);
 
 	// create the surface/blur-cache from the normal surface
+	if (priv->tile_title)
+		tile_destroy (priv->tile_title);
 	priv->tile_title = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
 
 	// clean up
@@ -1028,8 +1030,6 @@ _refresh_body (Bubble* self)
 	PangoFontDescription* desc      = NULL;
 	PangoLayout*          layout    = NULL;
 	raico_blur_t*         blur      = NULL;
-
-	tile_destroy (priv->tile_body);
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -1118,6 +1118,8 @@ _refresh_body (Bubble* self)
 	g_object_unref (layout);
 
 	// create the surface/blur-cache from the normal surface
+	if (priv->tile_body)
+		tile_destroy (priv->tile_body);
 	priv->tile_body = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
 
 	// clean up
@@ -1132,8 +1134,6 @@ _refresh_indicator (Bubble* self)
 	Defaults*        d      = self->defaults;
 	cairo_surface_t* normal = NULL;
 	cairo_t*         cr     = NULL;
-
-	tile_destroy (priv->tile_indicator);
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -1173,6 +1173,8 @@ _refresh_indicator (Bubble* self)
 		EM2PIXELS (defaults_get_gauge_outline_width (d), d));
 
 	// create the surface/blur-cache from the normal surface
+	if (priv->tile_indicator)
+		tile_destroy (priv->tile_indicator);
 	priv->tile_indicator = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
 
 	// clean up
@@ -2185,12 +2187,18 @@ bubble_del (Bubble* self)
 
 	priv = GET_PRIVATE (self);
 
-	tile_destroy (priv->tile_background_part);
-	tile_destroy (priv->tile_background);
-	tile_destroy (priv->tile_icon);
-	tile_destroy (priv->tile_title);
-	tile_destroy (priv->tile_body);
-	tile_destroy (priv->tile_indicator);
+	if (priv->tile_background_part)
+		tile_destroy (priv->tile_background_part);
+	if (priv->tile_background)
+		tile_destroy (priv->tile_background);
+	if (priv->tile_icon)
+		tile_destroy (priv->tile_icon);
+	if (priv->tile_title)
+		tile_destroy (priv->tile_title);
+	if (priv->tile_body)
+		tile_destroy (priv->tile_body);
+	if (priv->tile_indicator)
+		tile_destroy (priv->tile_indicator);
 
 	g_object_unref (self);
 }
