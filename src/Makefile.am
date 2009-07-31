@@ -17,6 +17,7 @@ notify_osd_PROGRAMS = \
 notify_osd_sources =		\
 	bubble.c		\
 	defaults.c		\
+	dialog.c		\
 	notification.c		\
 	main.c			\
 	observer.c		\
@@ -45,6 +46,7 @@ notify_osd_sources =		\
 notify_osd_headers =				\
 	bubble.h				\
 	defaults.h				\
+	dialog.h				\
 	notification.h				\
 	observer.h				\
 	stack.h					\
