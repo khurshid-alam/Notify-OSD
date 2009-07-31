@@ -155,7 +155,6 @@ enum
 
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
-static void bubble_del (Bubble* self);
 
 static void
 draw_round_rect (cairo_t* cr,
@@ -1905,14 +1904,12 @@ pointer_update (Bubble* bubble)
 static void
 bubble_dispose (GObject* gobject)
 {
-	/* chain up to the parent class */
-	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
-}
+	BubblePrivate* priv;
 
-static void
-bubble_finalize (GObject* gobject)
-{
-	BubblePrivate* priv = GET_PRIVATE (gobject);
+	if (!gobject || !IS_BUBBLE (gobject))
+		return;
+
+	priv = GET_PRIVATE (gobject);
 
 	if (GTK_IS_WIDGET (priv->widget))
 	{
@@ -1982,8 +1979,49 @@ bubble_finalize (GObject* gobject)
 		priv->timer_id = 0;
 	}
 
-	bubble_del ( (Bubble*) gobject);
+	if (priv->tile_background_part)
+	{
+		tile_destroy (priv->tile_background_part);
+		priv->tile_background_part = NULL;
+	}
 
+	if (priv->tile_background)
+	{
+		tile_destroy (priv->tile_background);
+		priv->tile_background = NULL;
+	}
+
+	if (priv->tile_icon)
+	{
+		tile_destroy (priv->tile_icon);
+		priv->tile_icon = NULL;
+	}
+
+	if (priv->tile_title)
+	{
+		tile_destroy (priv->tile_title);
+		priv->tile_title = NULL;
+	}
+
+	if (priv->tile_body)
+	{
+		tile_destroy (priv->tile_body);
+		priv->tile_body = NULL;
+	}
+
+	if (priv->tile_indicator)
+	{
+		tile_destroy (priv->tile_indicator);
+		priv->tile_indicator = NULL;
+	}
+
+	// chain up to the parent class
+	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
+}
+
+static void
+bubble_finalize (GObject* gobject)
+{
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }
@@ -2202,30 +2240,6 @@ bubble_get_sender (Bubble* self)
 	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
 	return GET_PRIVATE (self)->sender;
-}
-
-static void
-bubble_del (Bubble* self)
-{
-	BubblePrivate* priv;
-
-	if (!self || !IS_BUBBLE (self))
-		return;
-
-	priv = GET_PRIVATE (self);
-
-	if (priv->tile_background_part)
-		tile_destroy (priv->tile_background_part);
-	if (priv->tile_background)
-		tile_destroy (priv->tile_background);
-	if (priv->tile_icon)
-		tile_destroy (priv->tile_icon);
-	if (priv->tile_title)
-		tile_destroy (priv->tile_title);
-	if (priv->tile_body)
-		tile_destroy (priv->tile_body);
-	if (priv->tile_indicator)
-		tile_destroy (priv->tile_indicator);
 }
 
 void
