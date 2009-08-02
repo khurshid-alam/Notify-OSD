@@ -34,7 +34,7 @@
 static void
 test_notification_new (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -55,7 +55,7 @@ test_notification_new (void)
 static void
 test_notification_destroy (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -74,7 +74,7 @@ test_notification_destroy (void)
 static void
 test_notification_setget_id (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -107,7 +107,7 @@ test_notification_setget_id (void)
 static void
 test_notification_setget_title (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -137,7 +137,7 @@ test_notification_setget_title (void)
 static void
 test_notification_setget_body (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -167,7 +167,7 @@ test_notification_setget_body (void)
 static void
 test_notification_setget_value (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -207,7 +207,7 @@ test_notification_setget_value (void)
 static void
 test_notification_setget_icon_themename (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -243,7 +243,7 @@ test_notification_setget_icon_themename (void)
 static void
 test_notification_setget_icon_filename (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -296,7 +296,7 @@ test_notification_setget_icon_filename (void)
 static void
 test_notification_setget_icon_pixbuf (void)
 {
-	notification_t* n      = NULL;
+	Notification* n      = NULL;
 	GdkPixbuf*      pixbuf = NULL;
 
 	// create new object
@@ -333,7 +333,7 @@ test_notification_setget_icon_pixbuf (void)
 static void
 test_notification_setget_onscreen_time (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -372,7 +372,7 @@ test_notification_setget_onscreen_time (void)
 static void
 test_notification_setget_sender_name (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -413,7 +413,7 @@ test_notification_setget_sender_name (void)
 static void
 test_notification_setget_sender_pid (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -451,7 +451,7 @@ test_notification_setget_sender_pid (void)
 static void
 test_notification_setget_reception_timestamp (void)
 {
-	notification_t* n     = NULL;
+	Notification* n     = NULL;
 	GTimeVal*       tvptr = NULL;
 	GTimeVal        tv_old;
 	GTimeVal        tv_new;
@@ -518,7 +518,7 @@ test_notification_setget_reception_timestamp (void)
 static void
 test_notification_setget_urgency (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();

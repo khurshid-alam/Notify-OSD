@@ -28,6 +28,496 @@
 
 #include "notification.h"
 
+G_DEFINE_TYPE (Notification, notification, G_TYPE_OBJECT);
+
+enum
+{
+	PROP_DUMMY = 0,
+	PROP_ID,
+	PROP_TITLE,
+	PROP_BODY,
+	PROP_VALUE,
+	PROP_ICON_THEMENAME,
+	PROP_ICON_FILENAME,
+	PROP_ICON_PIXBUF,
+	PROP_ONSCREEN_TIME,
+	PROP_SENDER_NAME,
+	PROP_SENDER_PID,
+	PROP_RECEPTION_TIMESTAMP,
+	PROP_URGENCY
+};
+
+#define GET_PRIVATE(o) \
+  (G_TYPE_INSTANCE_GET_PRIVATE ((o), NOTIFICATION_TYPE, NotificationPrivate))
+
+struct _NotificationPrivate {
+	gint       id;                  // unique notification-id
+	GString*   title;               // summary-text strdup'ed from setter
+	GString*   body;                // body-text strdup'ed from setter
+	gint       value;               // range: 0..100, special: -1, 101
+	GString*   icon_themename;      // e.g. "notification-message-email"
+	GString*   icon_filename;       // e.g. "/usr/share/icons/icon.png"
+	GdkPixbuf* icon_pixbuf;         // from setter memcpy'ed pixbuf 
+	gint       onscreen_time;       // time on-screen in ms
+	GString*   sender_name;         // app-name, strdup'ed from setter
+	gint       sender_pid;          // pid of sending application
+	GTimeVal   reception_timestamp; // timestamp of  reception
+	Urgency    urgency;             // urgency-level: low, normal, high
+};
+
+//-- private functions ---------------------------------------------------------
+
+//-- internal functions --------------------------------------------------------
+
+// this is what gets called if one does g_object_unref(bla)
+static void
+notification_dispose (GObject* gobject)
+{
+	Notification*        n;
+	NotificationPrivate* priv;
+
+	// sanity checks
+	g_assert (gobject);
+	n = NOTIFICATION (gobject);
+	g_assert (n);
+	g_assert (IS_NOTIFICATION (n));
+	priv = GET_PRIVATE (n);
+	g_assert (priv);
+
+	// free any allocated resources
+	if (priv->title)
+	{
+		g_string_free (priv->title, TRUE);
+		priv->title = NULL;
+	}
+
+	if (priv->body)
+	{
+		g_string_free (priv->body, TRUE);
+		priv->body;
+	}
+
+	if (priv->icon_themename)
+	{
+		g_string_free (priv->icon_themename, TRUE);
+		priv->icon_themename = NULL;
+	}
+
+	if (priv->icon_filename)
+	{
+		g_string_free (priv->icon_filename, TRUE);
+		priv->icon_filename = NULL;
+	}
+
+	if (priv->icon_pixbuf)
+	{
+		g_object_unref (priv->icon_pixbuf);
+	}
+
+	if (priv->sender_name)
+	{
+		g_string_free (priv->sender_name, TRUE);
+		priv->sender_name = NULL;
+	}
+
+	//GTimeVal reception_timestamp;
+
+	// chain up to the parent class
+	G_OBJECT_CLASS (defaults_parent_class)->dispose (gobject);
+}
+
+static void
+notification_finalize (GObject* gobject)
+{
+	// gee, I wish I knew the difference between foobar_dispose() and
+	// foobar_finalize()
+
+	// chain up to the parent class
+	G_OBJECT_CLASS (timings_parent_class)->finalize (gobject);
+}
+
+static void
+notification_init (Notification* n)
+{
+	NotificationPrivate* priv;
+
+	// sanity checks
+	g_assert (n);
+	priv = GET_PRIVATE (n);
+	g_assert (priv);
+
+	priv->id                          = -1;
+	priv->title                       = NULL;
+	priv->body                        = NULL;
+	priv->value                       = -2;
+	priv->icon_themename              = NULL;
+	priv->icon_filename               = NULL;
+	priv->icon_pixbuf                 = NULL;
+	priv->onscreen_time               = 0;
+	priv->sender_name                 = NULL;
+	priv->sender_pid                  = -1;
+	priv->reception_timestamp.tv_sec  = 0;
+	priv->reception_timestamp.tv_usec = 0;
+	priv->urgency                     = NOTIFICATION_URGENCY_NONE;
+}
+
+static void
+notification_get_property (GObject*    gobject,
+			   guint       prop,
+			   GValue*     value,
+			   GParamSpec* spec)
+{
+	Notification*        n;
+	NotificationPrivate* priv;
+
+	// sanity checks
+	g_assert (gobject);
+	n = NOTIFICATION (gobject);
+	g_assert (n);
+	g_assert (IS_NOTIFICATION (n));
+	priv = GET_PRIVATE (n);
+	g_assert (priv);
+
+	switch (prop)
+	{
+		case PROP_ID:
+			g_value_set_int (value, priv->id);
+		break;
+
+		case PROP_TITLE:
+			g_value_set_string (value, priv->title->str);
+		break;
+
+		case PROP_BODY:
+			g_value_set_string (value, priv->body->str);
+		break;
+
+		case PROP_VALUE:
+			g_value_set_int (value, priv->value);
+		break;
+
+		case PROP_ICON_THEMENAME:
+			g_value_set_string (value, priv->icon_themename->str);
+		break;
+
+		case PROP_ICON_FILENAME:
+			g_value_set_string (value, priv->icon_filename->str);
+		break;
+
+		case PROP_ICON_PIXBUF:
+			// GdkPixbuf*
+		break;
+
+		case PROP_ONSCREEN_TIME:
+			g_value_set_int (value, priv->onscreen_time);
+		break;
+
+		case PROP_SENDER_NAME:
+			g_value_set_string (value, priv->sender_name->str);
+		break;
+
+		case PROP_SENDER_PID:
+			g_value_set_int (value, priv->sender_pid);
+		break;
+
+		case PROP_RECEPTION_TIMESTAMP:
+		break;
+
+		case PROP_URGENCY:
+			g_value_set_int (value, priv->urgency);
+		break;
+
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
+notification_set_property (GObject*      gobject,
+			   guint         prop,
+			   const GValue* value,
+			   GParamSpec*   spec)
+{
+	Notification*        n;
+	NotificationPrivate* priv;
+
+	// sanity checks
+	g_assert (gobject);
+	n = NOTIFICATION (gobject);
+	g_assert (n);
+	g_assert (IS_NOTIFICATION (n));
+	priv = GET_PRIVATE (n);
+	g_assert (priv);
+
+	switch (prop)
+	{
+		case PROP_ID:
+			priv->id = g_value_get_int (value);
+		break;
+
+		case PROP_TITLE:
+			if (priv->title != NULL)
+			{
+				g_string_free (priv->title, TRUE);
+				priv->title = NULL
+			}
+
+			priv->title = g_string_new (g_value_get_string (value));
+		break;
+
+		case PROP_BODY:
+			if (priv->body != NULL)
+			{
+				g_string_free (priv->body, TRUE);
+				priv->body = NULL
+			}
+
+			priv->body = g_string_new (g_value_get_string (value));
+		break;
+
+		case PROP_VALUE:
+			priv->value = g_value_get_int (value);
+		break;
+
+		case PROP_ICON_THEMENAME:
+			if (priv->icon_themename != NULL)
+			{
+				g_string_free (priv->icon_themename, TRUE);
+				priv->icon_themename = NULL
+			}
+
+			priv->icon_themename = g_string_new (
+						g_value_get_string (value));
+		break;
+
+		case PROP_ICON_FILENAME:
+			if (priv->icon_filename != NULL)
+			{
+				g_string_free (priv->icon_filename, TRUE);
+				priv->icon_filename = NULL
+			}
+
+			priv->icon_filename = g_string_new (
+						g_value_get_string (value));
+		break;
+
+		case PROP_ICON_PIXBUF:
+			// GdkPixbuf*
+		break;
+
+		case PROP_ONSCREEN_TIME:
+			priv->onscreen_time = g_value_get_int (value);
+		break;
+
+		case PROP_SENDER_NAME:
+			if (priv->sender_name != NULL)
+			{
+				g_string_free (priv->sender_name, TRUE);
+				priv->sender_name = NULL
+			}
+
+			priv->sender_name = g_string_new (
+						g_value_get_string (value));
+		break;
+
+		case PROP_SENDER_PID:
+			priv->sender_pid = g_value_get_int (value);
+		break;
+
+		case PROP_RECEPTION_TIMESTAMP:
+			// GTimeVal
+		break;
+
+		case PROP_URGENCY:
+			priv->urgency = g_value_get_int (value);
+		break;
+
+		default :
+			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
+		break;
+	}
+}
+
+static void
+notification_class_init (NotificationClass* klass)
+{
+	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
+	GParamSpec*   property_id;
+	GParamSpec*   property_title;
+
+	g_type_class_add_private (klass, sizeof (NotificationPrivate));
+
+	gobject_class->dispose      = notification_dispose;
+	gobject_class->finalize     = notification_finalize;
+	gobject_class->get_property = notification_get_property;
+	gobject_class->set_property = notification_set_property;
+
+	property_id = g_param_spec_int ("id",
+					"id",
+					"unique notification id",
+					G_MININT,
+					G_MAXINT,
+					G_MININT,
+					G_PARAM_CONSTRUCT |
+					G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_ID,
+					 property_id);
+
+	property_title = g_param_spec_string ("title",
+					      "title",
+					      "title-text of a notification",
+					      "",
+					      G_PARAM_CONSTRUCT |
+					      G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_TITLE,
+					 property_title);
+
+}
+
+//-- public functions ----------------------------------------------------------
+
+Notification*
+notification_new ()
+{
+}
+
+gint
+notification_get_id (Notification* n)
+{
+}
+
+void
+notification_set_id (Notification* n,
+		     gint          id)
+{
+}
+
+gchar*
+notification_get_title (Notification* n)
+{
+}
+
+void
+notification_set_title (Notification* n,
+			gchar*        title)
+{
+}
+
+gchar*
+notification_get_body (Notification* n)
+{
+}
+
+void
+notification_set_body (Notification* n,
+		       gchar*        body)
+{
+}
+
+gint
+notification_get_value (Notification* n)
+{
+}
+
+void
+notification_set_value (Notification* n,
+			gint          value)
+{
+}
+
+gchar*
+notification_get_icon_themename (Notification* n)
+{
+}
+
+void
+notification_set_icon_themename (Notification* n,
+				 gchar*        icon_themename)
+{
+}
+
+gchar*
+notification_get_icon_filename (Notification* n)
+{
+}
+
+void
+notification_set_icon_filename (Notification* n,
+				gchar*        icon_filename)
+{
+}
+
+GdkPixbuf*
+notification_get_icon_pixbuf (Notification* n)
+{
+}
+
+void
+notification_set_icon_pixbuf (Notification* n,
+			      GdkPixbuf*    icon_pixbuf)
+{
+}
+
+gint
+notification_get_onscreen_time (Notification* n)
+{
+}
+
+void
+notification_set_onscreen_time (Notification* n,
+				gint          onscreen_time)
+{
+}
+
+gchar*
+notification_get_sender_name (Notification* n)
+{
+}
+
+void
+notification_set_sender_name (Notification* n,
+			      gchar*        sender_name)
+{
+}
+
+gint
+notification_get_sender_pid (Notification* n)
+{
+}
+
+void
+notification_set_sender_pid (Notification* n,
+			     gint          sender_pid)
+{
+}
+
+GTimeVal*
+notification_get_reception_timestamp (Notification* n)
+{
+}
+
+void
+notification_set_reception_timestamp (Notification* n,
+				      GTimeVal*     reception_timestamp)
+{
+}
+
+gint
+notification_get_urgency (Notification* n)
+{
+}
+
+void
+notification_set_urgency (Notification* n,
+			  Urgency       urgency)
+{
+}
+
+//------------------------------------------------------------------------------
+
 #define RETURN_GCHAR(n, string) \
 	if (!n)\
 		return NULL;\
@@ -45,22 +535,6 @@
 	if (!n->priv)\
 		return;\
 	_set_text (&n->priv->string, string);
-
-struct _notification_private_t
-{
-	gint       id;                  // unique notification-id
-	GString*   title;               // summary-text strdup'ed from setter
-	GString*   body;                // body-text strdup'ed from setter
-	gint       value;               // range: 0..100, special: -1, 101
-	GString*   icon_themename;      // e.g. "notification-message-email"
-	GString*   icon_filename;       // e.g. "/usr/share/icons/icon.png"
-	GdkPixbuf* icon_pixbuf;         // from setter memcpy'ed pixbuf 
-	gint       onscreen_time;       // time on-screen in ms
-	GString*   sender_name;         // app-name, strdup'ed from setter
-	gint       sender_pid;          // pid of sending application
-	GTimeVal   reception_timestamp; // timestamp of  reception
-	Urgency    urgency;             // urgency-level: low, normal, high
-};
 
 // a little utility function to help avoid code-duplication
 void
