@@ -26,118 +26,142 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef _NOTIFICATION_H
-#define _NOTIFICATION_H
+#ifndef __NOTIFICATION_H
+#define __NOTIFICATION_H
+
+#include <glib-object.h>
+#include <gdk-pixbuf/gdk-pixbuf.h>
+
+G_BEGIN_DECLS
+
+#define NOTIFICATION_TYPE            (notification_get_type ())
+#define NOTIFICATION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NOTIFICATION_TYPE, Notification))
+#define NOTIFICATION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NOTIFICATION_TYPE, NotificationClass))
+#define IS_NOTIFICATION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NOTIFICATION_TYPE))
+#define IS_NOTIFICATION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), NOTIFICATION_TYPE))
+#define NOTIFICATION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NOTIFICATION_TYPE, NotificationClass))
 
 #define NOTIFICATION_VALUE_MIN_ALLOWED  -1
 #define NOTIFICATION_VALUE_MAX_ALLOWED 101
 
-#include <glib.h>
-#include <gdk-pixbuf/gdk-pixbuf.h>
+typedef struct _Notification        Notification;
+typedef struct _NotificationClass   NotificationClass;
+typedef struct _NotificationPrivate NotificationPrivate;
 
 typedef enum
 {
 	URGENCY_LOW = 0,
 	URGENCY_NORMAL,
-	URGENCY_HIGH
+	URGENCY_HIGH,
+	URGENCY_NONE	
 } Urgency;
 
-typedef struct _notification_private_t notification_private_t;
-
-typedef struct _notification_t
+// instance structure
+struct _Notification
 {
-	notification_private_t* priv;
-} notification_t;
+	GObject parent;
 
-notification_t*
+	//< private >
+	NotificationPrivate* priv;
+};
+
+// class structure
+struct _NotificationClass
+{
+	GObjectClass parent;
+
+	//< signals >
+};
+
+GType Notification_get_type (void);
+
+Notification*
 notification_new ();
 
+gint
+notification_get_id (Notification* n);
+
 void
-notification_destroy (notification_t* n);
+notification_set_id (Notification* n,
+		     const gint    id);
+
+gchar*
+notification_get_title (Notification* n);
+
+void
+notification_set_title (Notification* n,
+			const gchar*  title);
+
+gchar*
+notification_get_body (Notification* n);
+
+void
+notification_set_body (Notification* n,
+		       const gchar*  body);
 
 gint
-notification_get_id (notification_t* n);
+notification_get_value (Notification* n);
 
 void
-notification_set_id (notification_t* n,
-		     gint            id);
+notification_set_value (Notification* n,
+			const gint    value);
 
 gchar*
-notification_get_title (notification_t* n);
+notification_get_icon_themename (Notification* n);
 
 void
-notification_set_title (notification_t* n,
-			gchar*          title);
+notification_set_icon_themename (Notification* n,
+				 const gchar*  icon_themename);
 
 gchar*
-notification_get_body (notification_t* n);
+notification_get_icon_filename (Notification* n);
 
 void
-notification_set_body (notification_t* n,
-		       gchar*          body);
-
-gint
-notification_get_value (notification_t* n);
-
-void
-notification_set_value (notification_t* n,
-			gint            value);
-
-gchar*
-notification_get_icon_themename (notification_t* n);
-
-void
-notification_set_icon_themename (notification_t* n,
-				 gchar*          icon_themename);
-
-gchar*
-notification_get_icon_filename (notification_t* n);
-
-void
-notification_set_icon_filename (notification_t* n,
-				gchar*          icon_filename);
+notification_set_icon_filename (Notification* n,
+				const gchar*  icon_filename);
 
 GdkPixbuf*
-notification_get_icon_pixbuf (notification_t* n);
+notification_get_icon_pixbuf (Notification* n);
 
 void
-notification_set_icon_pixbuf (notification_t* n,
-			      GdkPixbuf*      icon_pixbuf);
+notification_set_icon_pixbuf (Notification*    n,
+			      const GdkPixbuf* icon_pixbuf);
 
 gint
-notification_get_onscreen_time (notification_t* n);
+notification_get_onscreen_time (Notification* n);
 
 void
-notification_set_onscreen_time (notification_t* n,
-				gint            onscreen_time);
+notification_set_onscreen_time (Notification* n,
+				const gint    onscreen_time);
 
 gchar*
-notification_get_sender_name (notification_t* n);
+notification_get_sender_name (Notification* n);
 
 void
-notification_set_sender_name (notification_t* n,
-			      gchar*          sender_name);
+notification_set_sender_name (Notification* n,
+			      const gchar*  sender_name);
 
 gint
-notification_get_sender_pid (notification_t* n);
+notification_get_sender_pid (Notification* n);
 
 void
-notification_set_sender_pid (notification_t* n,
-			     gint            sender_pid);
+notification_set_sender_pid (Notification* n,
+			     const gint    sender_pid);
 
 GTimeVal*
-notification_get_reception_timestamp (notification_t* n);
+notification_get_timestamp (Notification* n);
 
 void
-notification_set_reception_timestamp (notification_t* n,
-				      GTimeVal*       reception_timestamp);
+notification_set_timestamp (Notification*   n,
+			    const GTimeVal* timestamp);
 
 gint
-notification_get_urgency (notification_t* n);
+notification_get_urgency (Notification* n);
 
 void
-notification_set_urgency (notification_t* n,
-			  Urgency         urgency);
+notification_set_urgency (Notification* n,
+			  const Urgency urgency);
 
-#endif // _NOTIFICATION_H
+G_END_DECLS
 
+#endif // __NOTIFICATION_H

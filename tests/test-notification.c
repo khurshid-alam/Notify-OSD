@@ -34,28 +34,40 @@
 static void
 test_notification_new (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
+	GTimeVal*     timestamp;
 
 	// create new object
 	n = notification_new ();
 
 	// test validity of main notification object
-	g_assert (n != NULL);
+	g_assert (n);
 
-	// test validity of initialized non-pointer and zeroed values
-	g_assert_cmpint (notification_get_id (n), ==, 0);
-	g_assert_cmpint (notification_get_value (n), ==, 0);
+	// test validity of initialized notification object
+	g_assert_cmpint (notification_get_id (n), ==, -1);
+	g_assert (!notification_get_title (n));
+	g_assert (!notification_get_body (n));
+	g_assert_cmpint (notification_get_value (n), ==, -2);
+	g_assert (!notification_get_icon_themename (n));
+	g_assert (!notification_get_icon_filename (n));
+	g_assert (!notification_get_icon_pixbuf (n));
 	g_assert_cmpint (notification_get_onscreen_time (n), ==, 0);
+	g_assert (!notification_get_sender_name (n));
 	g_assert_cmpint (notification_get_sender_pid (n), ==, 0);
+	timestamp = notification_get_timestamp (n);
+	g_assert_cmpint (timestamp->tv_sec, ==, 0);
+	g_assert_cmpint (timestamp->tv_usec, ==, 0);
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NONE);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
+	n = NULL;
 }
 
 static void
 test_notification_destroy (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -64,27 +76,24 @@ test_notification_destroy (void)
 	g_assert (n != NULL);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// verify destruction notification object
-	g_assert_cmpint (notification_get_id (n), ==, -1);
 }
 
 static void
 test_notification_setget_id (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
 
-	// if nothing has been set yet it should return 0
-	g_assert_cmpint (notification_get_id (n), ==, 0);
+	// if nothing has been set yet it should return -1
+	g_assert_cmpint (notification_get_id (n), ==, -1);
 
 	// a negative id should not be stored
-	notification_set_id (n, -1);
-	g_assert_cmpint (notification_get_id (n), >=, 0);
+	notification_set_id (n, -3);
+	g_assert_cmpint (notification_get_id (n), >=, -1);
 
 	// smallest possible id is 0
 	notification_set_id (n, 0);
@@ -95,19 +104,14 @@ test_notification_setget_id (void)
 	g_assert_cmpint (notification_get_id (n), ==, G_MAXINT);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an id should not crash and it should
-	// yield -1
-	notification_set_id (n, 42);
-	g_assert_cmpint (notification_get_id (n), ==, -1);
 }
 
 static void
 test_notification_setget_title (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -125,19 +129,14 @@ test_notification_setget_title (void)
 	g_assert_cmpstr (notification_get_title (n), ==, "The new summary");
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a title should not crash and it should
-	// yield NULL
-	notification_set_title (n, "Unsettable title");
-	g_assert (notification_get_title (n) == NULL);
 }
 
 static void
 test_notification_setget_body (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -155,25 +154,20 @@ test_notification_setget_body (void)
 	g_assert_cmpstr (notification_get_body (n), ==, "Some new body text");
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a body should not crash and it should
-	// yield NULL
-	notification_set_body (n, "You'll not get this body-text");
-	g_assert (notification_get_body (n) == NULL);
 }
 
 static void
 test_notification_setget_value (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
 
 	// if no value has been set yet it should return 0
-	g_assert_cmpint (notification_get_value (n), ==, 0);
+	g_assert_cmpint (notification_get_value (n), ==, -2);
 
 	// set an initial value and verify it
 	notification_set_value (n, 25);
@@ -189,25 +183,20 @@ test_notification_setget_value (void)
 	g_assert_cmpint (notification_get_value (n),
 			 ==,
 			 NOTIFICATION_VALUE_MAX_ALLOWED);
-	notification_set_value (n, NOTIFICATION_VALUE_MIN_ALLOWED - 1);
+	notification_set_value (n, NOTIFICATION_VALUE_MIN_ALLOWED - 2);
 	g_assert_cmpint (notification_get_value (n),
 			 ==,
 			 NOTIFICATION_VALUE_MIN_ALLOWED);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a value should not crash and it should
-	// yield -2
-	notification_set_value (n, 50);
-	g_assert_cmpint (notification_get_value (n), ==, -2);
 }
 
 static void
 test_notification_setget_icon_themename (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -231,19 +220,14 @@ test_notification_setget_icon_themename (void)
 			 "notification-device-usb");
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an icon-themename should not crash and it
-	// should yield NULL
-	notification_set_icon_themename (n, "notification-printer");
-	g_assert (notification_get_icon_themename (n) == NULL);
 }
 
 static void
 test_notification_setget_icon_filename (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -284,20 +268,15 @@ test_notification_setget_icon_filename (void)
 			 "\0");
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an icon-filename should not crash and it
-	// should yield NULL
-	notification_set_icon_filename (n, "");
-	g_assert (notification_get_icon_filename (n) == NULL);
 }
 
 static void
 test_notification_setget_icon_pixbuf (void)
 {
-	notification_t* n      = NULL;
-	GdkPixbuf*      pixbuf = NULL;
+	Notification* n      = NULL;
+	GdkPixbuf*    pixbuf = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -309,6 +288,7 @@ test_notification_setget_icon_pixbuf (void)
 	pixbuf = gdk_pixbuf_new (GDK_COLORSPACE_RGB, TRUE, 8, 100, 100);
 
 	// set an initial icon-pixbuf and verify it
+	g_assert (pixbuf);
 	notification_set_icon_pixbuf (n, pixbuf);
 	g_assert (notification_get_icon_pixbuf (n) != NULL);
 
@@ -318,22 +298,18 @@ test_notification_setget_icon_pixbuf (void)
 	g_assert (notification_get_icon_pixbuf (n) != NULL);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an icon-pixbuf should not crash and it
-	// should yield NULL
-	notification_set_icon_pixbuf (n, pixbuf);
-	g_assert (notification_get_icon_pixbuf (n) == NULL);
 
 	// more clean up
 	g_object_unref (pixbuf);
+	pixbuf = NULL;
 }
 
 static void
 test_notification_setget_onscreen_time (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -360,19 +336,14 @@ test_notification_setget_onscreen_time (void)
 	g_assert_cmpint (notification_get_onscreen_time (n), ==, 5000);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a value should not crash and it should
-	// yield -1
-	notification_set_onscreen_time (n, 500);
-	g_assert_cmpint (notification_get_onscreen_time (n), ==, -1);
 }
 
 static void
 test_notification_setget_sender_name (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -401,19 +372,14 @@ test_notification_setget_sender_name (void)
 	g_assert_cmpstr (notification_get_sender_name (n), ==, "\0");
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an icon-filename should not crash and it
-	// should yield NULL
-	notification_set_sender_name (n, "banshee");
-	g_assert (notification_get_sender_name (n) == NULL);
 }
 
 static void
 test_notification_setget_sender_pid (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
@@ -439,19 +405,14 @@ test_notification_setget_sender_pid (void)
 	g_assert_cmpint (notification_get_sender_pid (n), ==, G_MAXINT);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a pid should not crash and it should
-	// yield -1
-	notification_set_sender_pid (n, 42);
-	g_assert_cmpint (notification_get_sender_pid (n), ==, -1);
 }
 
 static void
-test_notification_setget_reception_timestamp (void)
+test_notification_setget_timestamp (void)
 {
-	notification_t* n     = NULL;
+	Notification* n     = NULL;
 	GTimeVal*       tvptr = NULL;
 	GTimeVal        tv_old;
 	GTimeVal        tv_new;
@@ -460,7 +421,7 @@ test_notification_setget_reception_timestamp (void)
 	n = notification_new ();
 
 	// if no reception-time has been set yet it should return 0/0
-	tvptr = notification_get_reception_timestamp (n);
+	tvptr = notification_get_timestamp (n);
 	g_assert_cmpint (tvptr->tv_sec, ==, 0);
 	g_assert_cmpint (tvptr->tv_usec, ==, 0);
 
@@ -468,8 +429,8 @@ test_notification_setget_reception_timestamp (void)
 	g_get_current_time (&tv_old);
 
 	// store current time as reception-time and verify it
-	notification_set_reception_timestamp (n, &tv_old);
-	tvptr = notification_get_reception_timestamp (n);
+	notification_set_timestamp (n, &tv_old);
+	tvptr = notification_get_timestamp (n);
 	g_assert_cmpint (tvptr->tv_sec, ==, tv_old.tv_sec);
 	g_assert_cmpint (tvptr->tv_usec, ==, tv_old.tv_usec);
 
@@ -481,15 +442,15 @@ test_notification_setget_reception_timestamp (void)
 
 	// trying to store an older timestamp over a newer one should fail
 	// second-granularity
-	notification_set_reception_timestamp (n, &tv_new);
-	notification_set_reception_timestamp (n, &tv_old);
-	tvptr = notification_get_reception_timestamp (n);
+	notification_set_timestamp (n, &tv_new);
+	notification_set_timestamp (n, &tv_old);
+	tvptr = notification_get_timestamp (n);
 	g_assert_cmpint (tvptr->tv_sec, !=, tv_old.tv_sec);
 	g_assert_cmpint (tvptr->tv_sec, ==, tv_new.tv_sec);
 
 	// get current time
 	g_get_current_time (&tv_old);
-	notification_set_reception_timestamp (n, &tv_old);
+	notification_set_timestamp (n, &tv_old);
 
 	// wait some micro-seconds
 	usleep (10000);
@@ -499,32 +460,27 @@ test_notification_setget_reception_timestamp (void)
 
 	// trying to store an older timestamp over a newer one should fail
 	// microsecond-granularity
-	notification_set_reception_timestamp (n, &tv_new);
-	notification_set_reception_timestamp (n, &tv_old);
-	tvptr = notification_get_reception_timestamp (n);
+	notification_set_timestamp (n, &tv_new);
+	notification_set_timestamp (n, &tv_old);
+	tvptr = notification_get_timestamp (n);
 	g_assert_cmpint (tvptr->tv_usec, !=, tv_old.tv_usec);
 	g_assert_cmpint (tvptr->tv_usec, ==, tv_new.tv_usec);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting a reception-time should not crash and it
-	// should yield NULL
-	notification_set_reception_timestamp (n, &tv_new);
-	g_assert (notification_get_reception_timestamp (n) == NULL);
 }
 
 static void
 test_notification_setget_urgency (void)
 {
-	notification_t* n = NULL;
+	Notification* n = NULL;
 
 	// create new object
 	n = notification_new ();
 
-	// if no urgency has been set yet it should return urgency-low
-	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_LOW);
+	// if no urgency has been set yet it should return urgency-none
+	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NONE);
 
 	// test all three urgency-levels
 	notification_set_urgency (n, URGENCY_HIGH);
@@ -535,21 +491,16 @@ test_notification_setget_urgency (void)
 	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
 
 	// test non-urgency levels, last valid urgency should be returned
-	notification_set_urgency (n, 3);
+	notification_set_urgency (n, 5);
 	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
-	notification_set_urgency (n, 4);
+	notification_set_urgency (n, 23);
 	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
 	notification_set_urgency (n, -2);
 	g_assert_cmpint (notification_get_urgency (n), ==, URGENCY_NORMAL);
 
 	// clean up
-	notification_destroy (n);
+	g_object_unref (n);
 	n = NULL;
-
-	// after destruction setting an urgency should not crash and it should
-	// yield -1 to indicate the error
-	notification_set_urgency (n, URGENCY_NORMAL);
-	g_assert_cmpint (notification_get_urgency (n), ==, -1);
 }
 
 GTestSuite *
@@ -680,11 +631,11 @@ test_notification_create_test_suite (void)
 	g_test_suite_add (
 		ts,
 		g_test_create_case (
-			"can set|get reception-timestamp",
+			"can set|get timestamp",
 			0,
 			NULL,
 			NULL,
-			test_notification_setget_reception_timestamp,
+			test_notification_setget_timestamp,
 			NULL));
 
 	g_test_suite_add (
@@ -699,4 +650,3 @@ test_notification_create_test_suite (void)
 
 	return ts;
 }
-
