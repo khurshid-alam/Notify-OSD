@@ -50,10 +50,10 @@ typedef struct _NotificationPrivate NotificationPrivate;
 
 typedef enum
 {
-	NOTIFICATION_URGENCY_LOW = 0,
-	NOTIFICATION_URGENCY_NORMAL,
-	NOTIFICATION_URGENCY_HIGH,
-	NOTIFICATION_URGENCY_NONE	
+	URGENCY_LOW = 0,
+	URGENCY_NORMAL,
+	URGENCY_HIGH,
+	URGENCY_NONE	
 } Urgency;
 
 // instance structure
@@ -83,86 +83,85 @@ notification_get_id (Notification* n);
 
 void
 notification_set_id (Notification* n,
-		     gint          id);
+		     const gint    id);
 
 gchar*
 notification_get_title (Notification* n);
 
 void
 notification_set_title (Notification* n,
-			gchar*        title);
+			const gchar*  title);
 
 gchar*
 notification_get_body (Notification* n);
 
 void
 notification_set_body (Notification* n,
-		       gchar*        body);
+		       const gchar*  body);
 
 gint
 notification_get_value (Notification* n);
 
 void
 notification_set_value (Notification* n,
-			gint          value);
+			const gint    value);
 
 gchar*
 notification_get_icon_themename (Notification* n);
 
 void
 notification_set_icon_themename (Notification* n,
-				 gchar*        icon_themename);
+				 const gchar*  icon_themename);
 
 gchar*
 notification_get_icon_filename (Notification* n);
 
 void
 notification_set_icon_filename (Notification* n,
-				gchar*        icon_filename);
+				const gchar*  icon_filename);
 
 GdkPixbuf*
 notification_get_icon_pixbuf (Notification* n);
 
 void
-notification_set_icon_pixbuf (Notification* n,
-			      GdkPixbuf*    icon_pixbuf);
+notification_set_icon_pixbuf (Notification*    n,
+			      const GdkPixbuf* icon_pixbuf);
 
 gint
 notification_get_onscreen_time (Notification* n);
 
 void
 notification_set_onscreen_time (Notification* n,
-				gint          onscreen_time);
+				const gint    onscreen_time);
 
 gchar*
 notification_get_sender_name (Notification* n);
 
 void
 notification_set_sender_name (Notification* n,
-			      gchar*        sender_name);
+			      const gchar*  sender_name);
 
 gint
 notification_get_sender_pid (Notification* n);
 
 void
 notification_set_sender_pid (Notification* n,
-			     gint          sender_pid);
+			     const gint    sender_pid);
 
 GTimeVal*
-notification_get_reception_timestamp (Notification* n);
+notification_get_timestamp (Notification* n);
 
 void
-notification_set_reception_timestamp (Notification* n,
-				      GTimeVal*     reception_timestamp);
+notification_set_timestamp (Notification*   n,
+			    const GTimeVal* timestamp);
 
 gint
 notification_get_urgency (Notification* n);
 
 void
 notification_set_urgency (Notification* n,
-			  Urgency       urgency);
+			  const Urgency urgency);
 
 G_END_DECLS
 
 #endif // __NOTIFICATION_H
-
