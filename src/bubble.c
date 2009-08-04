@@ -1795,11 +1795,10 @@ load_icon (const gchar* filename,
 						   &error);
 		if (error)
 		{
-			g_object_unref (buffer);
+			g_print ("loading icon '%s' caused error: '%s'",
+				 filename,
+				 error->message);
 			pixbuf = NULL;
-			g_warning ("loading icon '%s' caused error: '%s'",
-				   filename,
-				   error->message);
 		}
 		else
 		{

@@ -58,6 +58,7 @@ test_modules_CFLAGS =		\
 	$(WNCK_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	$(LIBNOTIFY_CFLAGS)	\
+	-DSRCDIR=\""$(top_srcdir)"\" \
 	-I$(top_srcdir)/src	\
 	-I$(top_srcdir)/
 

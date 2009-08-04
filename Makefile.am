@@ -1,3 +1,4 @@
+EXTRA_DIST = icons
 
 SUBDIRS = src tests data examples
 

@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <libnotify/notify.h>
 #include "dbus.h"
+#include "config.h"
 
 /* #define DBUS_NAME "org.freedesktop.Notifications" */
 
@@ -45,7 +46,7 @@ stop_main_loop (GMainLoop *loop)
 static void
 test_withlib_setup (void)
 {
-	notify_init (__FILE__);
+	notify_init ("libnotify");
 }
 
 static void
@@ -134,7 +135,8 @@ test_withlib_pass_icon_data (void)
 	n = notify_notification_new ("Image Test",
 				     "You should see an image",
 				     "", NULL);
-	pixbuf = gdk_pixbuf_new_from_file_at_scale ("../icons/avatar.png",
+	g_print ("iconpath: %s\n", SRCDIR"/icons/avatar.png");
+	pixbuf = gdk_pixbuf_new_from_file_at_scale (SRCDIR"/icons/avatar.png",
 						    64, 64, TRUE, NULL);
 	notify_notification_set_icon_from_pixbuf (n, pixbuf);
 	notify_notification_show (n, NULL);
@@ -253,7 +255,7 @@ test_withlib_append_hint (void)
 	/* init notification, supply first line of body-text */
 	n = notify_notification_new ("Test (append-hint)",
 				     "The quick brown fox jumps over the lazy dog.",
-				     "./icons/avatar.png",
+				     SRCDIR"/icons/avatar.png",
 				     NULL);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
@@ -311,7 +313,7 @@ test_withlib_swallow_markup (void)
 
 	n = notify_notification_new ("Swallow markup test",
 				     "This text is hopefully neither <b>bold</b>, <i>italic</i> nor <u>underlined</u>.\n\nA little math-notation:\n\n\ta &gt; b &lt; c = 0",
-				     "./icons/avatar.png",
+				     SRCDIR"/icons/avatar.png",
 				     NULL);
 	res = notify_notification_show (n, NULL);
 	g_assert (res);

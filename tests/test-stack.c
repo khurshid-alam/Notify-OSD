@@ -94,4 +94,3 @@ test_stack_create_test_suite (void)
 
 	return ts;
 }
-

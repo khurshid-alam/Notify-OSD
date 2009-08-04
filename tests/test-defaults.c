@@ -152,7 +152,7 @@ test_defaults_create_test_suite (void)
 {
 	GTestSuite *ts = NULL;
 
-	ts = g_test_create_suite (__FILE__);
+	ts = g_test_create_suite ("defaults");
 
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
 
