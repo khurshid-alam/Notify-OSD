@@ -177,7 +177,7 @@ test_scroll_text_LDADD = \
 	$(GTK_LIBS)
 
 check-valgrind:
-	$(MAKE) $(AM_MAKEFLAGS) check G_SLICE=always-malloc G_DEBUG=gc-friendly TESTS_ENVIRONMENT='echo $PATH; $(OLD_ENVIRONMENT) $(top_builddir)/libtool --mode=execute valgrind $(VALGRIND_FLAGS)' 2>&1 | tee valgrind-log
+	$(MAKE) $(AM_MAKEFLAGS) check G_SLICE=always-malloc G_DEBUG=gc-friendly TESTS_ENVIRONMENT='$(OLD_ENVIRONMENT) $(top_builddir)/libtool --mode=execute valgrind $(VALGRIND_FLAGS)' 2>&1 | tee valgrind-log
 test: test-modules
 	gtester -o=test-modules.xml -k ./test-modules
 
