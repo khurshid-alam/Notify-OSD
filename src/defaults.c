@@ -137,7 +137,7 @@ enum
 #define DEFAULT_TEXT_BODY_SIZE       0.8f
 #define DEFAULT_PIXELS_PER_EM        10.0f
 #define DEFAULT_SYSTEM_FONT_SIZE     10.0f
-#define DEFAULT_SCREEN_DPI           72.0f
+#define DEFAULT_SCREEN_DPI           96.0f
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -242,8 +242,8 @@ _get_font_size_dpi (Defaults* self)
 	dpi = gconf_client_get_float (self->context, GCONF_FONT_DPI, &error);
 	if (error)
 	{
-		/* if something went wrong, assume 72 DPI and continue */
-		dpi = 72.0f;
+		// if something went wrong, assume 96 DPI and continue
+		dpi = DEFAULT_SCREEN_DPI;
 	}
 
 	/* update stored DPI-value */
