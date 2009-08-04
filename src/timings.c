@@ -175,9 +175,6 @@ timings_dispose (GObject* gobject)
 static void
 timings_finalize (GObject* gobject)
 {
-	// gee, I wish I knew the difference between foobar_dispose() and
-	// foobar_finalize()
-
 	// chain up to the parent class
 	G_OBJECT_CLASS (timings_parent_class)->finalize (gobject);
 }
