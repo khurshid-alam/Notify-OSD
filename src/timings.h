@@ -87,4 +87,3 @@ timings_extend (Timings* t,
 G_END_DECLS
 
 #endif // __TIMINGS_H
-

@@ -154,19 +154,34 @@ timings_dispose (GObject* gobject)
 
 	// free any allocated resources
 	if (priv->on_screen_timer)
+	{
 		g_timer_destroy (priv->on_screen_timer);
+		priv->on_screen_timer = NULL;
+	}
 
 	if (priv->duration_timer)
+	{
 		g_timer_destroy (priv->duration_timer);
+		priv->duration_timer = NULL;
+	}
 
 	if (priv->paused_timer)
+	{
 		g_timer_destroy (priv->paused_timer);
+		priv->paused_timer = NULL;
+	}
 
 	if (priv->timeout_id != 0)
+	{
 		g_source_remove (priv->timeout_id);
+		priv->timeout_id = 0;
+	}
 
 	if (priv->max_timeout_id != 0)
+	{
 		g_source_remove (priv->max_timeout_id);
+		priv->max_timeout_id = 0;
+	}
 
 	// chain up to the parent class
 	G_OBJECT_CLASS (timings_parent_class)->dispose (gobject);
@@ -526,4 +541,3 @@ timings_extend (Timings* t,
 
 	return TRUE;
 }
-
