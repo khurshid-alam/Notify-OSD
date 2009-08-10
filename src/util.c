@@ -42,6 +42,13 @@
 #define TAG_MATCH_REGEX     "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>(.*?)</\\1>|<(img|span|a)[^>]/>|<(img)[^>]*>"
 #define TAG_REPLACE_REGEX   "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>|</(b|i|u|big|a|img|span|s|sub|small|tt)>"
 
+struct _ReplaceMarkupData
+{
+	gchar* regex;
+	gchar* replacement;
+};
+
+typedef struct _ReplaceMarkupData ReplaceMarkupData;
 
 static gchar*
 strip_html (const gchar *text, const gchar *match_regex, const gchar* replace_regex)
@@ -86,30 +93,26 @@ gchar*
 filter_text (const gchar *text)
 {
 	gchar *text1;
-	gchar *text2;
-	gchar *text3;
-	gchar *text4;
-	gchar *text5;
-	gchar *text6;
 
 	text1 = strip_html (text, TAG_MATCH_REGEX, TAG_REPLACE_REGEX);
 
-	text2 = replace_markup (text1, CHARACTER_AMP_REGEX, "&");
-	g_free (text1);
+	static ReplaceMarkupData data[] = {
+		{ CHARACTER_AMP_REGEX, "&" },
+		{ CHARACTER_LT_REGEX, "<" },
+		{ CHARACTER_GT_REGEX, ">" },
+		{ CHARACTER_APOS_REGEX, "'" },
+		{ CHARACTER_QUOT_REGEX, "\"" }
+		};
 
-	text3 = replace_markup (text2, CHARACTER_LT_REGEX, "<");
-	g_free (text2);
+	ReplaceMarkupData* ptr = data;
+	ReplaceMarkupData* end = data + sizeof(data) / sizeof(ReplaceMarkupData);
+	for (; ptr != end; ++ptr) {
+		gchar* tmp = replace_markup (text1, ptr->regex, ptr->replacement);
+		g_free (text1);
+		text1 = tmp;
+	}
 
-	text4 = replace_markup (text3, CHARACTER_GT_REGEX, ">");
-	g_free (text3);
-
-	text5 = replace_markup (text4, CHARACTER_APOS_REGEX, "'");
-	g_free (text4);
-
-	text6 = replace_markup (text5, CHARACTER_QUOT_REGEX, "\"");
-	g_free (text5);
-
-	return text6;
+	return text1;
 }
 
 gboolean
