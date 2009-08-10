@@ -38,9 +38,10 @@
 #define CHARACTER_AMP_REGEX           "&(amp;|#38;|#x26;)"
 #define CHARACTER_APOS_REGEX          "&apos;"
 #define CHARACTER_QUOT_REGEX          "&quot;"
+#define CHARACTER_NEWLINE_REGEX       " *((<br[^/>]*/?>|\r|\n)+ *)+"
 
-#define TAG_MATCH_REGEX     "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>(.*?)</\\1>|<(img|span|a)[^>]/>|<(img)[^>]*>"
-#define TAG_REPLACE_REGEX   "<(b|i|u|big|a|img|span|s|sub|small|tt)\\b[^>]*>|</(b|i|u|big|a|img|span|s|sub|small|tt)>"
+#define TAG_MATCH_REGEX     "<(b|i|u|big|a|img|span|s|sub|small|tt|html|qt)\\b[^>]*>(.*?)</\\1>|<(img|span|a)[^>]/>|<(img)[^>]*>"
+#define TAG_REPLACE_REGEX   "<(b|i|u|big|a|img|span|s|sub|small|tt|html|qt)\\b[^>]*>|</(b|i|u|big|a|img|span|s|sub|small|tt|html|qt)>"
 
 struct _ReplaceMarkupData
 {
@@ -101,7 +102,8 @@ filter_text (const gchar *text)
 		{ CHARACTER_LT_REGEX, "<" },
 		{ CHARACTER_GT_REGEX, ">" },
 		{ CHARACTER_APOS_REGEX, "'" },
-		{ CHARACTER_QUOT_REGEX, "\"" }
+		{ CHARACTER_QUOT_REGEX, "\"" },
+		{ CHARACTER_NEWLINE_REGEX, "\n" }
 		};
 
 	ReplaceMarkupData* ptr = data;
