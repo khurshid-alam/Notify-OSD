@@ -371,7 +371,7 @@ bubble_window_get_text (AtkText *obj,
 
  	accessible = GTK_ACCESSIBLE (obj);
 
-	g_return_val_if_fail (accessible->widget == NULL, g_strdup(""));
+	g_return_val_if_fail (GTK_IS_WINDOW (accessible->widget), g_strdup(""));
  	
  	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
 
