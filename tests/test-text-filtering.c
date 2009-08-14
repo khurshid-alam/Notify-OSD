@@ -67,6 +67,10 @@ test_text_filter ()
 		{ "<sub>Sandwich</sub>",                           "Sandwich",                               },
 		{ "<small>Fry</small>",                            "Fry"                                     },
 		{ "<tt>Testing tag</tt>",                          "Testing tag"                             },
+		{ "<html>Surrounded by html</html>",               "Surrounded by html"                      },
+		{ "<qt>Surrounded by qt</qt>",                     "Surrounded by qt"                        },
+		{ "First line  <br dumb> \r \n Second line",       "First line\nSecond line"                 },
+		{ "First line\n<br /> <br>\n2nd line\r\n3rd line", "First line\n2nd line\n3rd line"          },
 		{ NULL, NULL }
 	};
 
