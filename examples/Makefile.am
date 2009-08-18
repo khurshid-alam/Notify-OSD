@@ -1,3 +1,5 @@
+EXTRA_DIST = *.py
+
 if BUILD_C_EXAMPLES
 noinst_PROGRAMS = icon-only		  \
 		  sync-icon-only	  \
