@@ -44,6 +44,9 @@ struct _DialogInfo
 static void
 dialog_info_destroy (DialogInfo* dialog_info)
 {
+	if (!dialog_info)
+		return;
+
 	g_free (dialog_info->sender);
 	g_free (dialog_info);
 }
@@ -55,6 +58,9 @@ handle_close (GtkWidget* dialog,
 {
 	DialogInfo* dialog_info = g_object_get_data (G_OBJECT (dialog),
 						     "_dialog_info");
+
+	if (!dialog_info)
+		return;
 
 	dbus_send_close_signal (dialog_info->sender,
 				dialog_info->id,
@@ -73,6 +79,9 @@ handle_response (GtkWidget*      button,
 					   "_libnotify_action");
 	DialogInfo *dialog_info = g_object_get_data (G_OBJECT (dialog),
 					   "_dialog_info");
+
+	if (!dialog_info || !action)
+		return;
 
 	// send a "click" signal... <sigh>
 	dbus_send_action_signal (dialog_info->sender,
@@ -144,7 +153,18 @@ fallback_dialog_show (Defaults*    d,
 	gboolean   success;
 	GError*    error = NULL;
 
-	DialogInfo* dialog_info = g_malloc(sizeof(DialogInfo));
+	if (!IS_DEFAULTS (d) ||
+	    !sender          ||
+	    !app_name        ||
+	    !title_text      ||
+	    !_body_message   ||
+	    !actions)
+		return;
+
+	DialogInfo* dialog_info = g_new0 (DialogInfo, 1);
+	if (!dialog_info)
+		return;
+
 	dialog_info->id = id;
 	dialog_info->sender = g_strdup(sender);
 

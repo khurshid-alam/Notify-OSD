@@ -530,9 +530,6 @@ dialog_check_actions_and_timeout (gchar** actions,
 				break;
 			}
 
-			//if (! g_strcmp0 (actions[i], "default"))
-			//	break;
-
 			turn_into_dialog = TRUE;        
 			g_debug ("notification request turned into a dialog "
 				 "box, because it contains at least one action "
@@ -574,7 +571,7 @@ stack_notify_handler (Stack*                 self,
 
 	turn_into_dialog = dialog_check_actions_and_timeout (actions, timeout);
 
-	if (turn_into_dialog) // || bubble_is_urgent (bubble))
+	if (turn_into_dialog)
 	{
 		// TODO: apport_report (app_name, summary, actions, timeout);
 		gchar* sender = dbus_g_method_get_sender (context);
