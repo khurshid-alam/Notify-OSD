@@ -60,14 +60,17 @@ handle_close (GtkWidget* dialog,
 						     "_dialog_info");
 
 	if (!dialog_info)
+	{
+		gtk_widget_destroy (GTK_WIDGET (dialog));
 		return;
+	}
 
 	dbus_send_close_signal (dialog_info->sender,
 				dialog_info->id,
 				2);
 
 	dialog_info_destroy (dialog_info);
-	gtk_widget_destroy (GTK_WIDGET(dialog));
+	gtk_widget_destroy (GTK_WIDGET (dialog));
 }
 
 static void
@@ -81,7 +84,10 @@ handle_response (GtkWidget*      button,
 					   "_dialog_info");
 
 	if (!dialog_info || !action)
+	{
+		gtk_widget_destroy (GTK_WIDGET (dialog));
 		return;
+	}
 
 	// send a "click" signal... <sigh>
 	dbus_send_action_signal (dialog_info->sender,
