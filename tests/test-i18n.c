@@ -69,7 +69,7 @@ test_stack_layout (void)
 	gtk_widget_set_default_direction (GTK_TEXT_DIR_LTR);
 
 	Bubble *bubble = bubble_new (defaults);
-	bubble_set_icon (bubble, "../icons/chat.svg");
+	bubble_set_icon (bubble, SRCDIR"/icons/chat.svg");
 	bubble_set_title (bubble, "LTR Text");
 	bubble_set_message_body (bubble, "This should be displayed at the right of your screen. Ubuntu Ubuntu  Ubuntu Ubuntu Ubuntu Ubuntu Ubuntu");
 	bubble_determine_layout (bubble);
@@ -93,7 +93,7 @@ test_stack_layout_rtl (void)
 	gtk_widget_set_default_direction (GTK_TEXT_DIR_RTL);
 
 	Bubble *bubble = bubble_new (defaults);
-	bubble_set_icon (bubble, "../icons/chat.svg");
+	bubble_set_icon (bubble, SRCDIR"/icons/chat.svg");
 	bubble_set_title (bubble, "RTL Text");
 	bubble_set_message_body (bubble, "This should be displayed at the left of your screen. Ubuntu Ubuntu  Ubuntu Ubuntu Ubuntu Ubuntu Ubuntu");
 	bubble_determine_layout (bubble);
@@ -109,7 +109,7 @@ test_stack_layout_rtl (void)
 	{					       \
 		Defaults* defaults = defaults_new ();	       \
 		Bubble *bubble = bubble_new (defaults);	       \
-	bubble_set_icon (bubble, "../icons/chat.svg"); \
+	bubble_set_icon (bubble, SRCDIR"/icons/chat.svg"); \
 	bubble_set_title (bubble, y);		       \
 	bubble_set_message_body (bubble, #y#y#y#y#y);  \
 	bubble_determine_layout (bubble);	       \
