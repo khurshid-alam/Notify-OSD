@@ -532,6 +532,20 @@ stack_notify_handler (Stack*                 self,
 	GdkPixbuf* pixbuf     = NULL;
 	gboolean   new_bubble = FALSE;
 
+	// check max. allowed limit queue-size
+	if (g_list_length (self->list) > MAX_STACK_SIZE)
+	{
+		GError* error = NULL;
+
+		error = g_error_new (g_quark_from_string ("notify-osd"),
+		                     1,
+		                     "Reached stack-limit of %d",
+		                     MAX_STACK_SIZE);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return TRUE;
+	}
+
         /* check if a bubble exists with same id */
 	bubble = find_bubble_by_id (self, id);
 	if (bubble == NULL)
@@ -558,7 +572,6 @@ stack_notify_handler (Stack*                 self,
 		bubble_set_title (bubble, summary);
 	if (body)
 		bubble_set_message_body (bubble, body);
-
 
 	if (new_bubble && bubble_is_append_allowed(bubble)) {
 		app_bubble = find_bubble_for_append(self, bubble);
