@@ -541,7 +541,6 @@ stack_notify_handler (Stack*                 self,
 		                     1,
 		                     "Reached stack-limit of %d",
 		                     MAX_STACK_SIZE);
-		g_assert (error);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return TRUE;
