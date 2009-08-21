@@ -3594,5 +3594,3 @@ bubble_sync_with (Bubble *self,
 	bubble_start_timer (other);
 }
 
-// FIXME: This is so nasty! I have to eliminate this ugly trailing include
-#include "dialog.c"

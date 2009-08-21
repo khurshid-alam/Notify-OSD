@@ -1,80 +1,109 @@
-/*******************************************************************************
-**3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
-**      10        20        30        40        50        60        70        80
-**
-** notify-osd
-**
-** dialog.c - fallback to display when a notification is not spec-compliant
-**
-** Copyright 2009 Canonical Ltd.
-**
-** Authors:
-**    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
-**    David Barth <david.barth@canonical.com>
-**
-** This program is free software: you can redistribute it and/or modify it
-** under the terms of the GNU General Public License version 3, as published
-** by the Free Software Foundation.
-**
-** This program is distributed in the hope that it will be useful, but
-** WITHOUT ANY WARRANTY; without even the implied warranties of
-** MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
-** PURPOSE.  See the GNU General Public License for more details.
-**
-** You should have received a copy of the GNU General Public License along
-** with this program.  If not, see <http://www.gnu.org/licenses/>.
-**
-*******************************************************************************/
+////////////////////////////////////////////////////////////////////////////////
+//3456789 123456789 123456789 123456789 123456789 123456789 123456789 123456789
+//      10        20        30        40        50        60        70        80
+//
+// notify-osd
+//
+// dialog.c - fallback to display when a notification is not spec-compliant
+//
+// Copyright 2009 Canonical Ltd.
+//
+// Authors:
+//    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
+//    David Barth <david.barth@canonical.com>
+//
+// This program is free software: you can redistribute it and/or modify it
+// under the terms of the GNU General Public License version 3, as published
+// by the Free Software Foundation.
+//
+// This program is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranties of
+// MERCHANTABILITY, SATISFACTORY QUALITY, or FITNESS FOR A PARTICULAR
+// PURPOSE.  See the GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License along
+// with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+////////////////////////////////////////////////////////////////////////////////
 
-/* Note: this file is actually #include'd as a part of bubble.c
-   but kept separate because this is not really a true "bubble".
- */
+#include "dialog.h"
+
+#include <gtk/gtk.h>
+
+#include "dbus.h"
+#include "util.h"
+
+typedef struct _DialogInfo DialogInfo;
+
+struct _DialogInfo
+{
+	int    id;
+	gchar* sender;
+};
 
 static void
-handle_close (GtkWidget *dialog,
-	      guint response_id,
-	      gpointer user_data)
+dialog_info_destroy (DialogInfo* dialog_info)
 {
-	Bubble *bubble = g_object_get_data (G_OBJECT (dialog),
-					   "_bubble");
+	if (!dialog_info)
+		return;
 
-	GET_PRIVATE (bubble)->visible = FALSE;
-
-	dbus_send_close_signal (bubble_get_sender (bubble),
-				bubble_get_id (bubble),
-				2);
-
-	gtk_widget_destroy (GTK_WIDGET(dialog));
+	g_free (dialog_info->sender);
+	g_free (dialog_info);
 }
 
 static void
-handle_response (GtkWidget *button,
-		 GdkEventButton *event,
-		 GtkDialog *dialog)
+handle_close (GtkWidget* dialog,
+	      guint      response_id,
+	      gpointer   user_data)
+{
+	DialogInfo* dialog_info = g_object_get_data (G_OBJECT (dialog),
+						     "_dialog_info");
+
+	if (!dialog_info)
+	{
+		gtk_widget_destroy (GTK_WIDGET (dialog));
+		return;
+	}
+
+	dbus_send_close_signal (dialog_info->sender,
+				dialog_info->id,
+				2);
+
+	dialog_info_destroy (dialog_info);
+	gtk_widget_destroy (GTK_WIDGET (dialog));
+}
+
+static void
+handle_response (GtkWidget*      button,
+		 GdkEventButton* event,
+		 GtkDialog*      dialog)
 {
 	gchar *action = g_object_get_data (G_OBJECT (button),
 					   "_libnotify_action");
-	Bubble *bubble = g_object_get_data (G_OBJECT (dialog),
-					   "_bubble");
+	DialogInfo *dialog_info = g_object_get_data (G_OBJECT (dialog),
+					   "_dialog_info");
 
-	GET_PRIVATE (bubble)->visible = FALSE;
+	if (!dialog_info || !action)
+	{
+		gtk_widget_destroy (GTK_WIDGET (dialog));
+		return;
+	}
 
-	/* send a "click" signal... <sigh> */
-	dbus_send_action_signal (bubble_get_sender (bubble),
-				 bubble_get_id (bubble),
+	// send a "click" signal... <sigh>
+	dbus_send_action_signal (dialog_info->sender,
+				 dialog_info->id,
 				 action);
 
-	dbus_send_close_signal (bubble_get_sender (bubble),
-				bubble_get_id (bubble),
+	dbus_send_close_signal (dialog_info->sender,
+				dialog_info->id,
 				3);
 
-	gtk_widget_destroy (GTK_WIDGET(dialog));
+	gtk_widget_destroy (GTK_WIDGET (dialog));
 }
 
-
 static void
-add_pathological_action_buttons (GtkWidget *dialog,
-				 gchar **actions)
+add_pathological_action_buttons (GtkWidget* dialog,
+				 gchar**    actions)
 {
 	int i;
 
@@ -109,65 +138,41 @@ add_pathological_action_buttons (GtkWidget *dialog,
 	}
 }
 
-/* control if there are non-default actions requested with this
-   notification
-*/
-gboolean
-dialog_check_actions_and_timeout (gchar **actions, gint timeout)
+void
+fallback_dialog_show (Defaults*    d,
+		      const gchar* sender,
+		      const gchar* app_name,
+		      int          id,
+		      const gchar* title_text,
+		      const gchar* _body_message,
+		      gchar**      actions)
 {
-	int i = 0;
-	gboolean turn_into_dialog = FALSE;
+	GtkWidget* dialog;
+	GtkWidget* hbox;
+	GtkWidget* vbox;
+	GtkWidget* title;
+	GtkWidget* body;
+	GtkWidget* image;
+	gchar*     body_message;
+	gchar*     new_body_message;
+	guint      gap = EM2PIXELS (defaults_get_margin_size (d), d);
+	gboolean   success;
+	GError*    error = NULL;
 
-	if (actions != NULL)
-	{
-		for (i = 0; actions[i] != NULL; i += 2)
-		{
-			if (actions[i+1] == NULL)
-			{
-				g_debug ("incorrect action callback with no label");
-				break;
-			}
+	if (!IS_DEFAULTS (d) ||
+	    !sender          ||
+	    !app_name        ||
+	    !title_text      ||
+	    !_body_message   ||
+	    !actions)
+		return;
 
-/*			if (! g_strcmp0 (actions[i], "default"))
-				break;
-*/
-			turn_into_dialog = TRUE;	
-			g_debug ("notification request turned into a dialog "
-				 "box, because it contains at least one action "
-				 "callback (%s: \"%s\")",
-				 actions[i], actions[i+1]);
-		}
+	DialogInfo* dialog_info = g_new0 (DialogInfo, 1);
+	if (!dialog_info)
+		return;
 
-		if (timeout == 0)
-		{
-			turn_into_dialog = TRUE;
-			g_debug ("notification request turned into a dialog "
-				 "box, because of its infinite timeout");
-		}	
-	}
-
-	return turn_into_dialog;
-}
-
-
-GObject*
-bubble_show_dialog (Bubble *bubble,
-		    const char *app_name,
-		    gchar **actions)
-{
-	GtkWidget*     dialog;
-	GtkWidget*     hbox;
-	GtkWidget*     vbox;
-	GtkWidget*     title;
-	GtkWidget*     body;
-	GtkWidget*     image;
-	Defaults*      d = bubble->defaults;
-	gchar*         body_message;
-	gchar*         new_body_message;
-	guint          gap = EM2PIXELS (defaults_get_margin_size (d), d);
-	BubblePrivate* priv;
-	gboolean       success;
-	GError*        error = NULL;
+	dialog_info->id = id;
+	dialog_info->sender = g_strdup(sender);
 
 	dialog = gtk_dialog_new ();
 	gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
@@ -177,13 +182,10 @@ bubble_show_dialog (Bubble *bubble,
 			     "border-width", 12,
 			     NULL);
 
-	priv = GET_PRIVATE (bubble);
-
-	/* We deliberately use the gtk-dialog-warning icon rather than
-	 * the specified one to discourage people from trying to use
-	 * the notification system as a way of showing custom alert
-	 * dialogs.
-	 */
+	// We deliberately use the gtk-dialog-warning icon rather than
+	// the specified one to discourage people from trying to use
+	// the notification system as a way of showing custom alert
+	// dialogs.
 	image = gtk_image_new_from_stock (GTK_STOCK_DIALOG_WARNING,
 					  GTK_ICON_SIZE_DIALOG);
 	gtk_misc_set_alignment (GTK_MISC (image), 0.5, 0.0);
@@ -193,12 +195,12 @@ bubble_show_dialog (Bubble *bubble,
 			     NULL);
 
 	title = gtk_label_new (NULL);
-	gtk_label_set_text (GTK_LABEL (title), priv->title->str);
+	gtk_label_set_text (GTK_LABEL (title), title_text);
 
 	gtk_label_set_line_wrap (GTK_LABEL (title), TRUE);
 
 	body = gtk_label_new (NULL);
-	body_message = filter_text (priv->message_body->str);
+	body_message = filter_text (_body_message);
 	success = pango_parse_markup (body_message,
 				      -1,
 				      0,
@@ -235,9 +237,8 @@ bubble_show_dialog (Bubble *bubble,
 	gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
 	gtk_window_set_title (GTK_WINDOW (dialog), app_name);
 	gtk_window_set_urgency_hint (GTK_WINDOW (dialog), TRUE);
-				     /* bubble_is_urgent (bubble)); */
 
-	/* is it a bad notification with actions? */
+	// is it a bad notification with actions?
 	if (actions[0] != NULL)
 		add_pathological_action_buttons (dialog, actions);
 
@@ -270,8 +271,8 @@ bubble_show_dialog (Bubble *bubble,
 			  dialog);
 
 	g_object_set_data (G_OBJECT (dialog),
-			   "_bubble",
-			   bubble);
+			   "_dialog_info",
+			   dialog_info);
 
 	g_signal_connect (G_OBJECT (dialog),
 			  "button-release-event",
@@ -284,10 +285,5 @@ bubble_show_dialog (Bubble *bubble,
 				NULL);
 
 	gtk_widget_show_all (dialog);
-
-	/* pretend its visible, so that the purge algorithm
-	   does not try to unreference the bubble */
-	priv->visible = TRUE;
-
-	return G_OBJECT (dialog);
 }
+

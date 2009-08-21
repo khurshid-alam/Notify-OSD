@@ -37,6 +37,7 @@
 #include "stack.h"
 #include "bubble.h"
 #include "apport.h"
+#include "dialog.h"
 #include "dnd.h"
 #include "log.h"
 
@@ -299,9 +300,6 @@ value_changed_handler (Defaults* defaults,
 		g_list_foreach (stack->list, _trigger_bubble_redraw, NULL);
 }
 
-/* this is in dialog.c */
-gboolean dialog_check_actions_and_timeout (gchar **actions, gint timeout);
-
 static Bubble *sync_bubble = NULL;
 
 #include "display.c"
@@ -513,6 +511,44 @@ process_dbus_icon_data (GValue *data)
 	return pixbuf;
 }
 
+// control if there are non-default actions requested with this notification
+static gboolean
+dialog_check_actions_and_timeout (gchar** actions,
+				  gint    timeout)
+{
+	int      i                = 0;
+	gboolean turn_into_dialog = FALSE;
+
+	if (actions != NULL)
+	{
+		for (i = 0; actions[i] != NULL; i += 2)
+		{
+			if (actions[i+1] == NULL)
+			{
+				g_debug ("incorrect action callback "
+					 "with no label");
+				break;
+			}
+
+			turn_into_dialog = TRUE;        
+			g_debug ("notification request turned into a dialog "
+				 "box, because it contains at least one action "
+				 "callback (%s: \"%s\")",
+				 actions[i],
+				 actions[i+1]);
+		}
+
+		if (timeout == 0)
+		{
+			turn_into_dialog = TRUE;
+			g_debug ("notification request turned into a dialog "
+				 "box, because of its infinite timeout");
+		}
+	}
+
+	return turn_into_dialog;
+}
+
 gboolean
 stack_notify_handler (Stack*                 self,
 		      const gchar*           app_name,
@@ -527,10 +563,11 @@ stack_notify_handler (Stack*                 self,
 {
 	Bubble*    bubble     = NULL;
 	Bubble*    app_bubble = NULL;
-	GValue*      data     = NULL;
+	GValue*    data       = NULL;
 	GValue*    compat     = NULL;
 	GdkPixbuf* pixbuf     = NULL;
 	gboolean   new_bubble = FALSE;
+	gboolean   turn_into_dialog;
 
 	// check max. allowed limit queue-size
 	if (g_list_length (self->list) > MAX_STACK_SIZE)
@@ -543,10 +580,32 @@ stack_notify_handler (Stack*                 self,
 		                     MAX_STACK_SIZE);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+
 		return TRUE;
 	}
 
-        /* check if a bubble exists with same id */
+	// see if pathological actions or timeouts are used by an app issuing a
+	// notification
+	turn_into_dialog = dialog_check_actions_and_timeout (actions, timeout);
+	if (turn_into_dialog)
+	{
+		// TODO: apport_report (app_name, summary, actions, timeout);
+		gchar* sender = dbus_g_method_get_sender (context);
+
+		fallback_dialog_show (self->defaults,
+				      sender,
+				      app_name,
+				      id,
+				      summary,
+				      body,
+				      actions);
+		g_free (sender);
+		dbus_g_method_return (context, id);
+
+		return TRUE;
+	}
+
+        // check if a bubble exists with same id
 	bubble = find_bubble_by_id (self, id);
 	if (bubble == NULL)
 	{
@@ -668,25 +727,6 @@ stack_notify_handler (Stack*                 self,
 	log_bubble_debug (bubble, app_name,
 			  (*icon == '\0' && data != NULL) ?
 			  "..." : icon);
-
-	gboolean turn_into_dialog = dialog_check_actions_and_timeout (actions, timeout);
-
-	if (turn_into_dialog)
-		/* || bubble_is_urgent (bubble)) */
-	{
-		/* TODO: apport_report (app_name, summary, actions, timeout); */
-
-		GObject *dialog = G_OBJECT (
-			bubble_show_dialog (bubble, app_name, actions));
-		g_signal_connect (dialog,
-				  "destroy-event",
-				  G_CALLBACK (close_handler),
-				  self);
-
-		dbus_g_method_return (context, bubble_get_id (bubble));
-
-		return TRUE;
-	}
 
 	bubble_determine_layout (bubble);
 
