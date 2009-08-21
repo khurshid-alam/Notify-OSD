@@ -30,6 +30,7 @@
 #include <unistd.h>
 #include <libnotify/notify.h>
 #include "dbus.h"
+#include "stack.h"
 #include "config.h"
 
 /* #define DBUS_NAME "org.freedesktop.Notifications" */
@@ -322,6 +323,46 @@ test_withlib_swallow_markup (void)
 	g_object_unref(G_OBJECT(n));
 }
 
+static void
+test_withlib_throttle (void)
+{
+	NotifyNotification* n;
+	gint                i;
+	gboolean            res;
+	gchar               buf[20];
+	GError*             error = NULL;
+
+	// see https://wiki.ubuntu.com/NotifyOSD#Flood%20prevention
+	for (i = 0; i < MAX_STACK_SIZE + 10; i++)
+	{
+		// pretty-ify the output a bit
+		if (i == 0)
+			g_print ("\n");
+
+		// create dummy notification
+		snprintf (buf, 19, "Test #%.2d", i);
+		n = notify_notification_new (buf, buf, "", NULL);
+
+		// inject it into the queue
+		res = notify_notification_show (n, &error);
+
+		// spit out error from notification-daemon
+		if (!res && error)
+		{
+			g_print ("Error \"%s\" while trying to show #%.2d\n",
+				 error->message,
+				 i);
+			error = NULL;
+		}
+
+		// check if reaching limit causes error
+		if (i > MAX_STACK_SIZE)
+			g_assert (!res);
+
+		g_object_unref (n);
+	}
+}
+
 GTestSuite *
 test_withlib_create_test_suite (void)
 {
@@ -343,6 +384,7 @@ test_withlib_create_test_suite (void)
 	ADD_TEST(test_withlib_icon_only_hint);
 	ADD_TEST(test_withlib_swallow_markup);
 	ADD_TEST(test_withlib_actions);
+	ADD_TEST(test_withlib_throttle);
 
 	return ts;
 }
