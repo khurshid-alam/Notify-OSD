@@ -87,7 +87,7 @@ AM_CFLAGS = \
 	$(GLIB_CFLAGS)		\
 	-I$(top_srcdir)/src -I$(top_srcdir)/egg -I$(top_srcdir)
 
-LDADD = $(GLIB_LIBS)
+LDADD = $(GLIB_LIBS) -lm
 
 test_timeline_SOURCES = $(top_srcdir)/egg/test-timeline.c \
 	$(EGG_MODULES)

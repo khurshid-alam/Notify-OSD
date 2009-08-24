@@ -103,7 +103,7 @@ notify_osd_CFLAGS = 		\
 	$(NULL)
 
 notify_osd_LDFLAGS = 		\
-	-Xlinker -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions \
+	-Xlinker -lm -export-dynamic -Wl,-O1 -Wl,-Bsymbolic-functions \
 	$(NULL)
 
 # this comes from distutils.sysconfig.get_config_var('LINKFORSHARED')

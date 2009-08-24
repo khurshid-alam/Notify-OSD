@@ -197,3 +197,5 @@ tests/test-timeline-smoothness.gcno
 tests/*.gcno
 tests/*.gcda
 tests/*.gcov
+build/autotools/shave
+build/autotools/shave-libtool

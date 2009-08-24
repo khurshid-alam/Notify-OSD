@@ -124,10 +124,16 @@ AM_CONDITIONAL(BUILD_C_EXAMPLES, test "x$c_examples" != "xno")
 AM_CONDITIONAL(BUILD_MONO_EXAMPLES, test "x$csharp_examples" != "xno")
 
 dnl CFLAGS
-CFLAGS="$CFLAGS -lm -Wall -Werror -std=c99"
+CFLAGS="$CFLAGS -Wall -Werror -std=c99"
+
+SHAVE_INIT([build/autotools], [enable])
 
 AC_OUTPUT([
 Makefile
+build/Makefile
+build/autotools/Makefile
+build/autotools/shave-libtool
+build/autotools/shave
 src/Makefile
 tests/Makefile
 examples/Makefile
