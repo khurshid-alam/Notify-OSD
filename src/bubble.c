@@ -82,6 +82,7 @@ struct _BubblePrivate {
 	gboolean         append;
 	gboolean         icon_only;
 	gint             future_height;
+	gboolean         prevent_fade;
 
 	// these will be replaced by notification_t* later on
 	GString*         title;
@@ -145,7 +146,10 @@ enum
 #define INDICATOR_LIT_B    1.0f
 #define INDICATOR_LIT_A    1.0f
 
-#define FPS                60
+#define FPS                 60
+#define PROXIMITY_THRESHOLD 40
+#define WINDOW_MIN_OPACITY  0.2f
+#define WINDOW_MAX_OPACITY  1.0f
 
 // text drop-shadow should _never_ be bigger than content blur-radius!!!
 #define BUBBLE_CONTENT_BLUR_RADIUS 4
@@ -1703,11 +1707,28 @@ expose_handler (GtkWidget*      window,
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-        // render drop-shadow and bubble-background
-	_render_background (bubble, cr, priv->distance, 1.0f - priv->distance);
+	if (priv->prevent_fade || !priv->composited)
+	{
+	        // render drop-shadow and bubble-background
+		_render_background (bubble, cr, 1.0f, 0.0f);
+
+		// render content of bubble depending on layout
+		_render_layout (bubble, cr, 1.0f, 0.0f);
+	}
+	else
+	{
+	        // render drop-shadow and bubble-background
+		_render_background (bubble,
+		                    cr,
+		                    priv->distance,
+		                    1.0f - priv->distance);
     
-	// render content of bubble depending on layout
-	_render_layout (bubble, cr, priv->distance, 1.0f - priv->distance);
+		// render content of bubble depending on layout
+		_render_layout (bubble,
+		                cr,
+		                priv->distance,
+		                1.0f - priv->distance);
+	}
 
 	cairo_destroy (cr);
 
@@ -1742,13 +1763,17 @@ redraw_handler (Bubble* bubble)
 
 	if (priv->alpha == NULL)
 	{
-		if (priv->distance < 1.0f)
+		if (priv->distance < 1.0f && !priv->prevent_fade)
 		{
-			gtk_window_set_opacity (window, 0.1f + priv->distance * 0.85f);
+			gtk_window_set_opacity (window,
+			                        WINDOW_MIN_OPACITY +
+			                        priv->distance *
+			                        (WINDOW_MAX_OPACITY -
+			                         WINDOW_MIN_OPACITY));
 			bubble_refresh (bubble);
 		}
 		else
-			gtk_window_set_opacity (window, 0.95f);
+			gtk_window_set_opacity (window, WINDOW_MAX_OPACITY);
 	}
 
 	return TRUE;
@@ -1890,15 +1915,18 @@ pointer_update (Bubble* bubble)
 
 		priv->distance = sqrt (distance_x * distance_x +
 				       distance_y * distance_y) /
-				       (double) 40;
+				       (double) PROXIMITY_THRESHOLD;
 
+		// mark mouse-pointer having left bubble and proximity-area
+		// after inital show-up of bubble
+		if (priv->prevent_fade && priv->distance > 1.0f)
+			priv->prevent_fade = FALSE;
 	}
 
 	return TRUE;
 }
 
-
-/*-- internal API ------------------------------------------------------------*/
+//-- internal API --------------------------------------------------------------
 
 static void
 bubble_dispose (GObject* gobject)
@@ -2219,6 +2247,7 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_title           = NULL;
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
+	this->priv->prevent_fade         = FALSE;
 
 	update_input_shape (window, 1, 1);
 
@@ -2549,10 +2578,17 @@ bubble_set_mouse_over (Bubble*  self,
 gboolean
 bubble_is_mouse_over (Bubble* self)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return GET_PRIVATE(self)->mouse_over;
+	priv = GET_PRIVATE (self);
+
+	if (priv->prevent_fade)
+		return FALSE;
+
+	return priv->mouse_over;
 }
 
 void
@@ -2651,13 +2687,19 @@ bubble_show (Bubble* self)
 	priv->visible = TRUE;
 	gtk_widget_show_all (priv->widget);
 
-	/* FIXME: do nasty busy-polling rendering in the drawing-area */
+	// check if mouse-pointer is over bubble (and proximity-area) initially
+	pointer_update (self);
+	if (priv->distance <= 1.0f)
+		priv->prevent_fade = TRUE;
+	else
+		priv->prevent_fade = FALSE;
+
+	// FIXME: do nasty busy-polling rendering in the drawing-area
 	priv->draw_handler_id = g_timeout_add (1000/FPS,
 					       (GSourceFunc) redraw_handler,
 					       self);
 
-	/* FIXME: read out current mouse-pointer position every 1/25 second */
-
+	// FIXME: read out current mouse-pointer position every 1/25 second
         priv->pointer_update_id = g_timeout_add (1000/FPS,
 						 (GSourceFunc) pointer_update,
 						 self);
@@ -2701,10 +2743,11 @@ fade_cb (EggTimeline *timeline,
 
 	opacity = (float)egg_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
 		/ (float)EGG_ALPHA_MAX_ALPHA
-		* 0.95f;
+		* WINDOW_MAX_OPACITY;
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_window_set_opacity (bubble_get_window (bubble), 0.1f);
+		gtk_window_set_opacity (bubble_get_window (bubble),
+		                        WINDOW_MIN_OPACITY);
 	else
 		gtk_window_set_opacity (bubble_get_window (bubble), opacity);
 }
@@ -2748,9 +2791,11 @@ fade_in_completed_cb (EggTimeline* timeline,
 	}
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_window_set_opacity (bubble_get_window (bubble), 0.1f);
+		gtk_window_set_opacity (bubble_get_window (bubble),
+		                        WINDOW_MIN_OPACITY);
 	else
-		gtk_window_set_opacity (bubble_get_window (bubble), 0.95f);
+		gtk_window_set_opacity (bubble_get_window (bubble),
+		                        WINDOW_MAX_OPACITY);
 
 	bubble_start_timer (bubble);
 }
