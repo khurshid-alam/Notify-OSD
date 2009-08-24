@@ -134,7 +134,7 @@ enum
 #define DEFAULT_TEXT_TITLE_SIZE      1.0f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
 #define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
-#define DEFAULT_TEXT_BODY_SIZE       0.8f
+#define DEFAULT_TEXT_BODY_SIZE       0.9f
 #define DEFAULT_PIXELS_PER_EM        10.0f
 #define DEFAULT_SYSTEM_FONT_SIZE     10.0f
 #define DEFAULT_SCREEN_DPI           96.0f
