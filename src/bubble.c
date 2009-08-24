@@ -148,7 +148,7 @@ enum
 
 #define FPS                 60
 #define PROXIMITY_THRESHOLD 40
-#define WINDOW_MIN_OPACITY  0.2f
+#define WINDOW_MIN_OPACITY  0.4f
 #define WINDOW_MAX_OPACITY  1.0f
 
 // text drop-shadow should _never_ be bigger than content blur-radius!!!
