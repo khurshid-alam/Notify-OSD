@@ -75,24 +75,19 @@ stack_is_at_top_corner (Stack *self, Bubble *bubble)
 static void
 stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 {
-	Defaults* d;
-	gint      y      = 0;
-	gint      x      = 0;
+	Defaults* d = self->defaults;
+	gint      y = 0;
+	gint      x = 0;
 
-	defaults_get_top_corner (self->defaults, &x, &y);
+	defaults_get_top_corner (d, &x, &y);
 
-	/* TODO: with multi-head, in focus follow mode, there may be enough
-	         space left on the top monitor
-	*/
+	// TODO: with multi-head, in focus follow mode, there may be enough
+	// space left on the top monitor
 	   
-	Bubble *async = stack_find_bubble_on_display (self);
-	if (async != NULL)
-	{
-		d = self->defaults;
-		y += bubble_get_future_height (async);
-		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
-		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	}
+	y += defaults_get_desktop_height (d) / 2 -
+	     EM2PIXELS (defaults_get_bubble_vert_gap (d)/2.0f, d) -
+	     bubble_get_height (bubble) +
+	     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
 	bubble_move (bubble, x, y);
 }
@@ -223,7 +218,22 @@ stack_layout (Stack* self)
 
 	defaults_get_top_corner (self->defaults, &x, &y);
 
-	if (sync_bubble != NULL
+	d = self->defaults;
+	if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
+	{
+		y += defaults_get_desktop_height (d) / 2 -
+		     EM2PIXELS (defaults_get_bubble_vert_gap (d)/2.0f, d) -
+		     bubble_get_height (sync_bubble) +
+		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	}
+	else
+	{
+		y += defaults_get_desktop_height (d) / 2 +
+		     EM2PIXELS (defaults_get_bubble_vert_gap (d), d) / 2 -
+		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	}
+
+	/*if (sync_bubble != NULL
 	    && bubble_is_visible (sync_bubble))
 	{
 		d = self->defaults;
@@ -231,11 +241,11 @@ stack_layout (Stack* self)
 		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
 		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
-		/* synchronize the sync bubble with 
-		   the timeout of the bubble at the bottom */
+		* synchronize the sync bubble with 
+		   the timeout of the bubble at the bottom *
 		if (stack_is_at_top_corner (self, sync_bubble))
 			bubble_sync_with (sync_bubble, bubble);
-	}
+	}*/
 
 	bubble_move (bubble, x, y);
 
