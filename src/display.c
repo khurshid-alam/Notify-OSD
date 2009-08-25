@@ -85,7 +85,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 	// space left on the top monitor
 	   
 	y += defaults_get_desktop_height (d) / 2 -
-	     EM2PIXELS (defaults_get_bubble_vert_gap (d)/2.0f, d) -
+	     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 	     bubble_get_height (bubble) +
 	     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
@@ -222,14 +222,14 @@ stack_layout (Stack* self)
 	if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
 	{
 		y += defaults_get_desktop_height (d) / 2 -
-		     EM2PIXELS (defaults_get_bubble_vert_gap (d)/2.0f, d) -
+		     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 		     bubble_get_height (sync_bubble) +
 		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	}
 	else
 	{
 		y += defaults_get_desktop_height (d) / 2 +
-		     EM2PIXELS (defaults_get_bubble_vert_gap (d), d) / 2 -
+		     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 	}
 
