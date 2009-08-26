@@ -78,16 +78,37 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 	Defaults* d = self->defaults;
 	gint      y = 0;
 	gint      x = 0;
+	Bubble*   async;
 
 	defaults_get_top_corner (d, &x, &y);
 
 	// TODO: with multi-head, in focus follow mode, there may be enough
 	// space left on the top monitor
-	   
-	y += defaults_get_desktop_height (d) / 2 -
-	     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-	     bubble_get_height (bubble) +
-	     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
+	switch (bubble_get_placement (bubble))
+	{
+		case PLACEMENT_NORTH_EAST:
+			async = stack_find_bubble_on_display (self);
+			if (async != NULL)
+			{
+				d = self->defaults;
+				y += bubble_get_future_height (async);
+				y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
+				2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			}
+		break;
+
+		case PLACEMENT_EAST:
+			y += defaults_get_desktop_height (d) / 2 -
+			     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
+			     bubble_get_height (bubble) +
+			     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		break;
+
+		default:
+			g_warning ("Unhandled bubble placement!\n");
+		break;
+	}
 
 	bubble_move (bubble, x, y);
 }
@@ -219,33 +240,44 @@ stack_layout (Stack* self)
 	defaults_get_top_corner (self->defaults, &x, &y);
 
 	d = self->defaults;
-	if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
-	{
-		y += defaults_get_desktop_height (d) / 2 -
-		     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-		     bubble_get_height (sync_bubble) +
-		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	}
-	else
-	{
-		y += defaults_get_desktop_height (d) / 2 +
-		     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-		     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-	}
 
-	/*if (sync_bubble != NULL
-	    && bubble_is_visible (sync_bubble))
+	switch (bubble_get_placement (bubble))
 	{
-		d = self->defaults;
-		y += bubble_get_height (sync_bubble);
-		y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
-		     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		case PLACEMENT_NORTH_EAST:
+			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
+			{
+				d = self->defaults;
+				y += bubble_get_height (sync_bubble);
+				y += EM2PIXELS (defaults_get_bubble_vert_gap (d), d)
+				     - 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 
-		* synchronize the sync bubble with 
-		   the timeout of the bubble at the bottom *
-		if (stack_is_at_top_corner (self, sync_bubble))
-			bubble_sync_with (sync_bubble, bubble);
-	}*/
+				// synchronize the sync bubble with the timeout of the bubble at
+				// the bottom
+				if (stack_is_at_top_corner (self, sync_bubble))
+					bubble_sync_with (sync_bubble, bubble);
+			}
+		break;
+
+		case PLACEMENT_EAST:
+			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
+			{
+				y += defaults_get_desktop_height (d) / 2 -
+				     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
+				     bubble_get_height (sync_bubble) +
+				     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			}
+			else
+			{
+				y += defaults_get_desktop_height (d) / 2 +
+				     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
+				     EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			}
+		break;
+
+		default:
+			g_warning ("Unhandled bubble placement!\n");
+		break;
+	}
 
 	bubble_move (bubble, x, y);
 

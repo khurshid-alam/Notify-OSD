@@ -83,6 +83,7 @@ struct _BubblePrivate {
 	gboolean         icon_only;
 	gint             future_height;
 	gboolean         prevent_fade;
+	BubblePlacement  placement;
 
 	// these will be replaced by notification_t* later on
 	GString*         title;
@@ -2248,6 +2249,7 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
 	this->priv->prevent_fade         = FALSE;
+	this->priv->placement		 = PLACEMENT_EAST;
 
 	update_input_shape (window, 1, 1);
 
@@ -3639,3 +3641,11 @@ bubble_sync_with (Bubble *self,
 	bubble_start_timer (other);
 }
 
+BubblePlacement
+bubble_get_placement (Bubble* self)
+{
+	if (!self || !IS_BUBBLE (self))
+		return PLACEMENT_NONE;
+
+	return GET_PRIVATE (self)->placement;
+}
