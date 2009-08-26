@@ -580,6 +580,7 @@ stack_notify_handler (Stack*                 self,
 		                     MAX_STACK_SIZE);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+		error = NULL;
 
 		return TRUE;
 	}

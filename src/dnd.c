@@ -128,6 +128,15 @@ dnd_is_screensaver_inhibited ()
 		    G_TYPE_STRV, &list,
 		    G_TYPE_INVALID))
 	{
+		if (error)
+		{
+			g_warning ("dnd_is_screensaver_inhibited(): "
+			           "got error \"%s\"\n",
+			           error->message);
+			g_error_free (error);
+			error = NULL;
+		}
+
 		/* if the list is not empty, the screensaver is inhibited */
 		if (*list)
 		{
@@ -154,6 +163,14 @@ dnd_is_screensaver_active ()
 		G_TYPE_INVALID,
 		G_TYPE_BOOLEAN, &active,
 		G_TYPE_INVALID);
+
+	if (error)
+	{
+		g_warning ("dnd_is_screensaver_active(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		error = NULL;
+	}
 
 	if (active)
 		g_debug ("Gnome screensaver is active");

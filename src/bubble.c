@@ -1824,6 +1824,8 @@ load_icon (const gchar* filename,
 			g_print ("loading icon '%s' caused error: '%s'",
 				 filename,
 				 error->message);
+			g_error_free (error);
+			error = NULL;
 			pixbuf = NULL;
 		}
 		else
@@ -3616,6 +3618,13 @@ bubble_append_message_body (Bubble*      self,
 				     &text,
 				     NULL, /* no accel-marker-return needed */
 				     &error);
+	if (error)
+	{
+		g_warning ("bubble_append_message_body(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		error = NULL;
+	}
 
 	/* append text to current message-body */
 	g_string_append (GET_PRIVATE (self)->message_body, text);

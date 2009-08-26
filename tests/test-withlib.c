@@ -352,6 +352,7 @@ test_withlib_throttle (void)
 			g_print ("Error \"%s\" while trying to show #%.2d\n",
 				 error->message,
 				 i);
+			g_error_free (error);
 			error = NULL;
 		}
 
