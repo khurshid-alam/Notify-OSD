@@ -54,10 +54,13 @@ dbus_create_service_instance (const char *service_name)
 	guint            request_name_result;
 	GError*          error      = NULL;
 
+	error = NULL;
 	connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
 	if (error)
 	{
-		g_print ("%s", error->message);
+		g_warning ("dbus_create_service_instance(): "
+		           "Got error \"%s\"\n",
+		           error->message);
 		g_error_free (error);
 		return NULL;
 	}
@@ -66,6 +69,7 @@ dbus_create_service_instance (const char *service_name)
 					   "org.freedesktop.DBus",
 					   "/org/freedesktop/Dbus",
 					   "org.freedesktop.DBus");
+	error = NULL;
 	if (!dbus_g_proxy_call (proxy,
 				"RequestName",
 				&error,
@@ -75,7 +79,10 @@ dbus_create_service_instance (const char *service_name)
 				G_TYPE_UINT, &request_name_result,
 				G_TYPE_INVALID))
 	{
-		g_warning ("Could not acquire name: %s", error->message);
+		g_warning ("dbus_create_service_instance(): "
+		           "Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return NULL;
 	}
 

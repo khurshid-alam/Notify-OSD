@@ -51,7 +51,9 @@ push_notification (gchar* title,
 	{
 		g_print ("That did not work ... \"%s\".\n",
 			 error->message);
+		g_error_free (error);
 	}
+
 	g_signal_connect (G_OBJECT (notification),
 			  "closed",
 			  G_CALLBACK (closed_handler),

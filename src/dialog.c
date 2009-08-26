@@ -208,6 +208,15 @@ fallback_dialog_show (Defaults*    d,
 				      &new_body_message,
 				      NULL,
 				      &error);
+
+	if (error)
+	{
+		g_warning ("fallback_dialog_show(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		error = NULL;
+	}
+
 	gtk_label_set_text (GTK_LABEL (body), new_body_message);
 	g_free (body_message);
 	g_free (new_body_message);

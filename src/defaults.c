@@ -187,6 +187,10 @@ _get_font_size_dpi (Defaults* self)
 	{
 		/* if something went wrong, assume "Sans 10" and continue */
 		string = g_string_assign (string, "Sans 10");
+
+		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 	}
 
 	/* extract font-family-name and font-size */
@@ -244,6 +248,10 @@ _get_font_size_dpi (Defaults* self)
 	{
 		// if something went wrong, assume 96 DPI and continue
 		dpi = DEFAULT_SCREEN_DPI;
+
+		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 	}
 
 	/* update stored DPI-value */
@@ -667,7 +675,9 @@ defaults_init (Defaults* self)
 	if (error)
 	{
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 
@@ -681,7 +691,9 @@ defaults_init (Defaults* self)
 	{
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 
@@ -698,7 +710,9 @@ defaults_init (Defaults* self)
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 
@@ -716,7 +730,9 @@ defaults_init (Defaults* self)
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 
@@ -735,7 +751,9 @@ defaults_init (Defaults* self)
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 	
@@ -755,7 +773,9 @@ defaults_init (Defaults* self)
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 
@@ -776,7 +796,9 @@ defaults_init (Defaults* self)
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
-		g_warning ("%s\n", error->message);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
 		return;
 	}
 }
@@ -2285,8 +2307,12 @@ defaults_multihead_does_focus_follow (Defaults *self)
 		if (! g_strcmp0 (mode_str, "focus-follow"))
 			mode = TRUE;
 	} else if (error != NULL)
-		g_warning ("error getting multihead mode: %s\n",
-			   error->message);
+	{
+		g_warning ("defaults_multihead_does_focus_follow(): "
+		           "Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+	}
 	
 	return mode;
 }
