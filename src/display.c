@@ -87,7 +87,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 
 	switch (bubble_get_placement (bubble))
 	{
-		case PLACEMENT_NORTH_EAST:
+		case PLACEMENT_OLD:
 			async = stack_find_bubble_on_display (self);
 			if (async != NULL)
 			{
@@ -98,7 +98,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 			}
 		break;
 
-		case PLACEMENT_EAST:
+		case PLACEMENT_NEW:
 			y += defaults_get_desktop_height (d) / 2 -
 			     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 			     bubble_get_height (bubble) +
@@ -243,7 +243,7 @@ stack_layout (Stack* self)
 
 	switch (bubble_get_placement (bubble))
 	{
-		case PLACEMENT_NORTH_EAST:
+		case PLACEMENT_OLD:
 			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
 			{
 				d = self->defaults;
@@ -258,7 +258,7 @@ stack_layout (Stack* self)
 			}
 		break;
 
-		case PLACEMENT_EAST:
+		case PLACEMENT_NEW:
 			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
 			{
 				y += defaults_get_desktop_height (d) / 2 -

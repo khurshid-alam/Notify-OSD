@@ -2249,7 +2249,7 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
 	this->priv->prevent_fade         = FALSE;
-	this->priv->placement		 = PLACEMENT_EAST;
+	this->priv->placement		 = PLACEMENT_NEW;
 
 	update_input_shape (window, 1, 1);
 

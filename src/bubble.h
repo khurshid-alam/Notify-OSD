@@ -51,8 +51,8 @@ typedef enum
 typedef enum
 {
 	PLACEMENT_NONE = 0,
-	PLACEMENT_NORTH_EAST, // top-right of screen
-	PLACEMENT_EAST        // vertically centered at right of screen
+	PLACEMENT_OLD, // top-right of screen
+	PLACEMENT_NEW  // vertically centered at right of screen
 } BubblePlacement;
 
 G_BEGIN_DECLS
