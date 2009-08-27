@@ -77,7 +77,7 @@ struct _Stack
 	Observer* observer;
 	GList*    list;
 	guint     next_id;
-	gboolean  slots[2]; // TRUE: vacant, FALSE: occupied
+	Bubble*   slots[2]; // NULL: vacant, non-NULL: occupied
 	Placement placement;
 };
 
@@ -144,6 +144,15 @@ stack_get_slot_position (Stack* self,
                          Slot   slot,
                          gint*  x,
                          gint*  y);
+
+gboolean
+stack_allocate_slot (Stack*  self,
+		     Bubble* bubble,
+                     Slot    slot);
+
+gboolean
+stack_free_slot (Stack*  self,
+		 Bubble* bubble);
 
 G_END_DECLS
 

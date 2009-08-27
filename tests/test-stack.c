@@ -108,6 +108,8 @@ test_stack_slots ()
 	Observer* observer = observer_new ();
 	gint      x;
 	gint      y;
+	Bubble*   one;
+	Bubble*   two;
 
 	stack = stack_new (defaults, observer);
 
@@ -125,9 +127,78 @@ test_stack_slots ()
 	g_assert_cmpint (y, ==, -1);
 	stack_get_slot_position (NULL, 42, NULL, NULL);
 
+	// check if stack_allocate_slot() can take "crap" without crashing
+	one = bubble_new (defaults);
+	two = bubble_new (defaults);
+	g_assert_cmpint (stack_allocate_slot (NULL, one, SLOT_TOP), ==, FALSE);
+	g_assert_cmpint (stack_allocate_slot (stack, NULL, SLOT_TOP), ==, FALSE);
+	g_assert_cmpint (stack_allocate_slot (stack, one, 4711), ==, FALSE);
+
+	// check if stack_free_slot() can take "crap" without crashing
+	g_assert_cmpint (stack_free_slot (NULL, two), ==, FALSE);
+	g_assert_cmpint (stack_free_slot (stack, NULL), ==, FALSE);
+
 	// initially both slots should be empty
-	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, TRUE);
-	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, VACANT);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, VACANT);
+	g_object_unref (one);
+	g_object_unref (two);
+
+	// fill top slot, verify it's occupied, free it, verify again
+	one = bubble_new (defaults);
+	g_assert_cmpint (stack_allocate_slot (stack, one, SLOT_TOP), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, OCCUPIED);
+	g_assert_cmpint (stack_free_slot (stack, one), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, VACANT);
+	g_object_unref (one);
+
+	// fill bottom slot, verify it's occupied, free it, verify again
+	two = bubble_new (defaults);
+	g_assert_cmpint (stack_allocate_slot (stack, two, SLOT_BOTTOM), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, OCCUPIED);
+	g_assert_cmpint (stack_free_slot (stack, two), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, VACANT);
+	g_object_unref (two);
+
+	// try to free vacant slots
+	one = bubble_new (defaults);
+	two = bubble_new (defaults);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, VACANT);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, VACANT);
+	g_assert_cmpint (stack_free_slot (stack, one), ==, FALSE);
+	g_assert_cmpint (stack_free_slot (stack, two), ==, FALSE);
+	g_object_unref (one);
+	g_object_unref (two);
+
+	// allocate top slot, verify, try to allocate top slot again
+	one = bubble_new (defaults);
+	two = bubble_new (defaults);
+	g_assert_cmpint (stack_allocate_slot (stack, one, SLOT_TOP), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, OCCUPIED);
+	g_assert_cmpint (stack_allocate_slot (stack, two, SLOT_TOP), ==, FALSE);
+	g_assert_cmpint (stack_free_slot (stack, one), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, VACANT);
+	g_object_unref (one);
+	g_object_unref (two);
+
+	// allocate bottom slot, verify, try to allocate bottom slot again
+	one = bubble_new (defaults);
+	two = bubble_new (defaults);
+	g_assert_cmpint (stack_allocate_slot (stack, one, SLOT_BOTTOM), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, OCCUPIED);
+	g_assert_cmpint (stack_allocate_slot (stack, two, SLOT_BOTTOM), ==, FALSE);
+	g_assert_cmpint (stack_free_slot (stack, one), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, VACANT);
+	g_object_unref (one);
+	g_object_unref (two);
+
+	// check if we can get reasonable values from stack_get_slot_position()
+	stack_get_slot_position (stack, SLOT_TOP, &x, &y);
+	g_assert_cmpint (x, >, -1);
+	g_assert_cmpint (y, >, -1);
+	stack_get_slot_position (stack, SLOT_BOTTOM, &x, &y);
+	g_assert_cmpint (x, >, -1);
+	g_assert_cmpint (y, >, -1);
 
 	g_object_unref (G_OBJECT (stack));
 }
