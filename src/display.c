@@ -85,7 +85,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 	// TODO: with multi-head, in focus follow mode, there may be enough
 	// space left on the top monitor
 
-	switch (bubble_get_placement (bubble))
+	switch (stack_get_placement (self))
 	{
 		case PLACEMENT_OLD:
 			async = stack_find_bubble_on_display (self);
@@ -106,7 +106,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 		break;
 
 		default:
-			g_warning ("Unhandled bubble placement!\n");
+			g_warning ("Unhandled placement!\n");
 		break;
 	}
 
@@ -241,7 +241,7 @@ stack_layout (Stack* self)
 
 	d = self->defaults;
 
-	switch (bubble_get_placement (bubble))
+	switch (stack_get_placement (self))
 	{
 		case PLACEMENT_OLD:
 			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
@@ -275,7 +275,7 @@ stack_layout (Stack* self)
 		break;
 
 		default:
-			g_warning ("Unhandled bubble placement!\n");
+			g_warning ("Unhandled placement!\n");
 		break;
 	}
 

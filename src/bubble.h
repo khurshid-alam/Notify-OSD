@@ -48,13 +48,6 @@ typedef enum
 	LAYOUT_TITLE_ONLY
 } BubbleLayout;
 
-typedef enum
-{
-	PLACEMENT_NONE = 0,
-	PLACEMENT_OLD, // top-right of screen
-	PLACEMENT_NEW  // vertically centered at right of screen
-} BubblePlacement;
-
 G_BEGIN_DECLS
 
 #define BUBBLE_TYPE             (bubble_get_type ())
@@ -266,9 +259,6 @@ GObject*
 bubble_show_dialog (Bubble *bubble,
 		    const char *process_name,
 		    gchar **actions);
-
-BubblePlacement
-bubble_get_placement (Bubble* self);
 
 G_END_DECLS
 

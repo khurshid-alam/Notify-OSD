@@ -48,8 +48,24 @@ G_BEGIN_DECLS
 
 #define MAX_STACK_SIZE 50
 
+#define VACANT   TRUE
+#define OCCUPIED FALSE
+
 typedef struct _Stack      Stack;
 typedef struct _StackClass StackClass;
+
+typedef enum
+{
+	SLOT_TOP = 0,
+	SLOT_BOTTOM
+} Slot;
+
+typedef enum
+{
+	PLACEMENT_NONE = 0,
+	PLACEMENT_OLD, // top-right of screen
+	PLACEMENT_NEW  // vertically centered at right of screen
+} Placement;
 
 /* instance structure */
 struct _Stack
@@ -61,7 +77,8 @@ struct _Stack
 	Observer* observer;
 	GList*    list;
 	guint     next_id;
-
+	gboolean  slots[2]; // TRUE: vacant, FALSE: occupied
+	Placement placement;
 };
 
 /* class structure */
@@ -114,6 +131,19 @@ stack_get_server_information (Stack*  self,
 			      gchar** out_vendor,
 			      gchar** out_version,
 			      gchar** out_spec_ver);
+
+Placement
+stack_get_placement (Stack* self);
+
+gboolean
+stack_is_slot_vacant (Stack* self,
+                      Slot   slot);
+
+void
+stack_get_slot_position (Stack* self,
+                         Slot   slot,
+                         gint*  x,
+                         gint*  y);
 
 G_END_DECLS
 

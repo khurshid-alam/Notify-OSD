@@ -79,6 +79,59 @@ test_stack_push ()
 	g_object_unref (G_OBJECT (stack));
 }
 
+static void
+test_stack_placement ()
+{
+	Stack*       stack = NULL;
+	Defaults* defaults = defaults_new ();
+	Observer* observer = observer_new ();
+
+	stack = stack_new (defaults, observer);
+
+	// upon creation the placement method should not be unset
+	g_assert_cmpint (stack_get_placement (stack), !=, PLACEMENT_NONE);
+
+	// currently the default value should be the new placement method
+	g_assert_cmpint (stack_get_placement (stack), ==, PLACEMENT_NEW);
+
+	// check if we can pass "crap" to the call without causing a crash
+	g_assert_cmpint (stack_get_placement (NULL), ==, PLACEMENT_NONE);
+
+	g_object_unref (G_OBJECT (stack));
+}
+
+static void
+test_stack_slots ()
+{
+	Stack*    stack = NULL;
+	Defaults* defaults = defaults_new ();
+	Observer* observer = observer_new ();
+	gint      x;
+	gint      y;
+
+	stack = stack_new (defaults, observer);
+
+	// check if stack_is_slot_vacant() can take "crap" without crashing
+	g_assert_cmpint (stack_is_slot_vacant (NULL, SLOT_TOP), ==, FALSE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, 832), ==, FALSE);
+	g_assert_cmpint (stack_is_slot_vacant (NULL, 4321), ==, FALSE);
+
+	// check if stack_get_slot_position can take "crap" without crashing
+	stack_get_slot_position (NULL, SLOT_TOP, &x, &y);
+	g_assert_cmpint (x, ==, -1);
+	g_assert_cmpint (y, ==, -1);
+	stack_get_slot_position (stack, 4711, &x, &y);
+	g_assert_cmpint (x, ==, -1);
+	g_assert_cmpint (y, ==, -1);
+	stack_get_slot_position (NULL, 42, NULL, NULL);
+
+	// initially both slots should be empty
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_TOP), ==, TRUE);
+	g_assert_cmpint (stack_is_slot_vacant (stack, SLOT_BOTTOM), ==, TRUE);
+
+	g_object_unref (G_OBJECT (stack));
+}
+
 GTestSuite *
 test_stack_create_test_suite (void)
 {
@@ -91,6 +144,8 @@ test_stack_create_test_suite (void)
 	g_test_suite_add(ts, TC(test_stack_new));
 	g_test_suite_add(ts, TC(test_stack_del));
 	g_test_suite_add(ts, TC(test_stack_push));
+	g_test_suite_add(ts, TC(test_stack_placement));
+	g_test_suite_add(ts, TC(test_stack_slots));
 
 	return ts;
 }

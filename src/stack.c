@@ -319,10 +319,13 @@ stack_new (Defaults* defaults,
 	if (!this)
 		return NULL;
 
-	this->defaults = defaults;
-	this->observer = observer;
-	this->list     = NULL;
-	this->next_id  = 1;
+	this->defaults           = defaults;
+	this->observer           = observer;
+	this->list               = NULL;
+	this->next_id            = 1;
+	this->placement          = PLACEMENT_NEW;
+	this->slots[SLOT_TOP]    = VACANT;
+	this->slots[SLOT_BOTTOM] = VACANT;
 
 	/* hook up handler to act on changes of defaults/settings */
 	g_signal_connect (G_OBJECT (defaults),
@@ -828,4 +831,88 @@ stack_get_server_information (Stack*  self,
 	*out_spec_ver = g_strdup ("0.10");
 
 	return TRUE;
+}
+
+Placement
+stack_get_placement (Stack* self)
+{
+	if (!self || !IS_STACK (self))
+		return PLACEMENT_NONE;
+
+	return self->placement;
+}
+
+gboolean
+stack_is_slot_vacant (Stack* self,
+                      Slot   slot)
+{
+	// sanity checks
+	if (!self || !IS_STACK (self))
+		return FALSE;
+
+	if (slot != SLOT_TOP && slot != SLOT_BOTTOM)
+		return FALSE;
+
+	return self->slots[slot];
+}
+
+// return values of -1 for x and y indicate an error by the caller
+void
+stack_get_slot_position (Stack* self,
+                         Slot   slot,
+                         gint*  x,
+                         gint*  y)
+{
+	// sanity checks
+	if (!x && !y)
+		return;
+
+	if (!self || !IS_STACK (self))
+	{
+		*x = -1;
+		*y = -1;
+		return;
+	}
+
+	if (slot != SLOT_TOP && slot != SLOT_BOTTOM)
+	{
+		*x = -1;
+		*y = -1;
+		return;
+	}
+
+	// differentiate returned top-left corner for top and bottom slot
+	// depending on the placement 
+	switch (stack_get_placement (self))
+	{
+		case PLACEMENT_NEW:
+			if (slot == SLOT_TOP)
+			{
+				*x = 1;
+				*y = 1;
+			}
+			else if (slot == SLOT_BOTTOM)
+			{
+				*x = 1;
+				*y = 1;
+			}
+		break;
+
+		case PLACEMENT_OLD:
+			if (slot == SLOT_TOP)
+			{
+				*x = 1;
+				*y = 1;
+			}
+			else if (slot == SLOT_BOTTOM)
+			{
+				*x = 1;
+				*y = 1;
+			}
+		break;
+
+		default:
+			g_warning ("Unhandled placement!\n");
+		break;
+	}
 }
