@@ -61,7 +61,6 @@ struct _Stack
 	Observer* observer;
 	GList*    list;
 	guint     next_id;
-
 };
 
 /* class structure */

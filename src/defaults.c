@@ -84,7 +84,8 @@ enum
 	PROP_TEXT_BODY_SIZE,
 	PROP_PIXELS_PER_EM,
 	PROP_SYSTEM_FONT_SIZE,
-	PROP_SCREEN_DPI
+	PROP_SCREEN_DPI,
+	PROP_GRAVITY
 };
 
 enum
@@ -138,6 +139,7 @@ enum
 #define DEFAULT_PIXELS_PER_EM        10.0f
 #define DEFAULT_SYSTEM_FONT_SIZE     10.0f
 #define DEFAULT_SCREEN_DPI           96.0f
+#define DEFAULT_GRAVITY              GRAVITY_NORTH_EAST
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
@@ -155,9 +157,11 @@ enum
 /* GConf-trees to watch */
 #define GCONF_UI_TREE             "/desktop/gnome/interface"
 #define GCONF_FONT_TREE           "/desktop/gnome/font_rendering"
+#define GCONF_NOSD_TREE           "/apps/notify-osd"
 
 /* notify-osd settings */
 #define GCONF_MULTIHEAD_MODE "/apps/notify-osd/multihead_mode"
+#define GCONF_GRAVITY        "/apps/notify-osd/gravity"
 
 static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 
@@ -590,8 +594,10 @@ defaults_dispose (GObject* gobject)
 	gconf_client_notify_remove (defaults->context, defaults->notifier[2]);
 	gconf_client_notify_remove (defaults->context, defaults->notifier[3]);
 	gconf_client_notify_remove (defaults->context, defaults->notifier[4]);
+	gconf_client_notify_remove (defaults->context, defaults->notifier[5]);
 	gconf_client_remove_dir (defaults->context, GCONF_UI_TREE, NULL);
 	gconf_client_remove_dir (defaults->context, GCONF_FONT_TREE, NULL);
+	gconf_client_remove_dir (defaults->context, GCONF_NOSD_TREE, NULL);
 	g_object_unref (defaults->context);
 
 	if (defaults->bubble_shadow_color)
@@ -697,6 +703,23 @@ defaults_init (Defaults* self)
 		return;
 	}
 
+	/* register watching all settings for notify-osd */
+	error = NULL;
+	gconf_client_add_dir (self->context,
+			      GCONF_NOSD_TREE,
+			      GCONF_CLIENT_PRELOAD_NONE,
+			      &error);
+	if (error)
+	{
+		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
+		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
+		g_object_unref (self->context);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		return;
+	}
+
 	/* hook up notifier for font-name/size changes */
 	error = NULL;
 	self->notifier[0] = gconf_client_notify_add (self->context,
@@ -793,6 +816,30 @@ defaults_init (Defaults* self)
 		gconf_client_notify_remove (self->context, self->notifier[1]);
 		gconf_client_notify_remove (self->context, self->notifier[2]);
 		gconf_client_notify_remove (self->context, self->notifier[3]);
+		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
+		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
+		g_object_unref (self->context);
+		g_warning ("defaults_init(): Got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		return;
+	}
+
+	// hook up notifiier for gravity changes
+	error = NULL;
+	self->notifier[5] = gconf_client_notify_add (self->context,
+						     GCONF_,
+						     _gravity_changed,
+						     (gpointer) self,
+						     NULL,
+						     &error);
+	if (error)
+	{
+		gconf_client_notify_remove (self->context, self->notifier[0]);
+		gconf_client_notify_remove (self->context, self->notifier[1]);
+		gconf_client_notify_remove (self->context, self->notifier[2]);
+		gconf_client_notify_remove (self->context, self->notifier[3]);
+		gconf_client_notify_remove (self->context, self->notifier[4]);
 		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
 		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
 		g_object_unref (self->context);
@@ -973,6 +1020,10 @@ defaults_get_property (GObject*    gobject,
 
 		case PROP_SCREEN_DPI:
 			g_value_set_double (value, defaults->screen_dpi);
+		break;
+
+		case PROP_GRAVITY:
+			g_value_set_int (value, defaults->gravity);
 		break;
 
 		default :
@@ -1191,6 +1242,10 @@ defaults_set_property (GObject*      gobject,
 			defaults->screen_dpi = g_value_get_double (value);
 		break;
 
+		case PROP_GRAVITY:
+			defaults->gravity = g_value_get_int (value);
+		break;
+
 		default :
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (gobject, prop, spec);
 		break;
@@ -1241,6 +1296,7 @@ defaults_class_init (DefaultsClass* klass)
 	GParamSpec*   property_pixels_per_em;
 	GParamSpec*   property_system_font_size;
 	GParamSpec*   property_screen_dpi;
+	GParamSpec*   property_gravity;
 
 	gobject_class->constructed  = defaults_constructed;
 	gobject_class->dispose      = defaults_dispose;
@@ -1737,6 +1793,18 @@ defaults_class_init (DefaultsClass* klass)
 					 PROP_SCREEN_DPI,
 					 property_screen_dpi);
 
+	property_gravity = g_param_spec_int (
+				"gravity",
+				"gravity",
+				"Positional hint for placing bubbles",
+				0,
+				2,
+				DEFAULT_GRAVITY,
+				G_PARAM_CONSTRUCT |
+				G_PARAM_READWRITE);
+	g_object_class_install_property (gobject_class,
+					 PROP_GRAVITY,
+					 property_gravity);
 }
 
 /*-- public API --------------------------------------------------------------*/
@@ -2499,4 +2567,17 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	}
 
 	g_debug ("top corner at: %d, %d", *x, *y);
+}
+
+Gravity
+defaults_get_gravity (Defaults* self)
+{
+	if (!self || !IS_DEFAULTS (self))
+		return GRAVITY_NONE;
+
+	Gravity gravity;
+
+	g_object_get (self, "gravity", &gravity, NULL);
+
+	return gravity;
 }
