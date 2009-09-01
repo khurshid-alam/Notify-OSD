@@ -54,6 +54,13 @@ G_BEGIN_DECLS
 typedef struct _Defaults      Defaults;
 typedef struct _DefaultsClass DefaultsClass;
 
+typedef enum
+{
+        GRAVITY_NONE = 0,
+        GRAVITY_NORTH_EAST, // top-right of screen
+        GRAVITY_EAST        // vertically centered at right of screen
+} Gravity;
+
 /* instance structure */
 struct _Defaults
 {
@@ -61,7 +68,7 @@ struct _Defaults
 
 	/* private */
 	GConfClient* context;
-	guint        notifier[5];
+	guint        notifier[6];
 	gint         desktop_width;
 	gint         desktop_height;
 	gint         desktop_top;
@@ -100,6 +107,7 @@ struct _Defaults
 	gdouble      pixels_per_em;
 	gdouble      system_font_size;
 	gdouble      screen_dpi;
+	Gravity      gravity;
 };
 
 /* class structure */
@@ -111,6 +119,9 @@ struct _DefaultsClass
 	void (*value_changed) (Defaults* defaults); /* used to "inform" bubble
 						    ** about any changes in
 						    ** rendering and position */
+	void (*gravity_changed) (Defaults* defaults); // used to "inform" about
+						      // gravity/position change
+						      // for bubbles
 };
 
 GType defaults_get_type (void);
@@ -237,6 +248,9 @@ defaults_refresh_screen_dimension_properties (Defaults *self);
 
 void
 defaults_get_top_corner (Defaults *self, gint *x, gint *y);
+
+Gravity
+defaults_get_gravity (Defaults *self);
 
 G_END_DECLS
 

@@ -85,9 +85,9 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 	// TODO: with multi-head, in focus follow mode, there may be enough
 	// space left on the top monitor
 
-	switch (bubble_get_placement (bubble))
+	switch (defaults_get_gravity (d))
 	{
-		case PLACEMENT_OLD:
+		case GRAVITY_NORTH_EAST:
 			async = stack_find_bubble_on_display (self);
 			if (async != NULL)
 			{
@@ -98,7 +98,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 			}
 		break;
 
-		case PLACEMENT_NEW:
+		case GRAVITY_EAST:
 			y += defaults_get_desktop_height (d) / 2 -
 			     EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 			     bubble_get_height (bubble) +
@@ -106,7 +106,7 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 		break;
 
 		default:
-			g_warning ("Unhandled bubble placement!\n");
+			g_warning ("Unhandled gravity!\n");
 		break;
 	}
 
@@ -241,9 +241,9 @@ stack_layout (Stack* self)
 
 	d = self->defaults;
 
-	switch (bubble_get_placement (bubble))
+	switch (defaults_get_gravity (d))
 	{
-		case PLACEMENT_OLD:
+		case GRAVITY_NORTH_EAST:
 			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
 			{
 				d = self->defaults;
@@ -258,7 +258,7 @@ stack_layout (Stack* self)
 			}
 		break;
 
-		case PLACEMENT_NEW:
+		case GRAVITY_EAST:
 			if (sync_bubble != NULL && bubble_is_visible (sync_bubble))
 			{
 				y += defaults_get_desktop_height (d) / 2 -
@@ -275,7 +275,7 @@ stack_layout (Stack* self)
 		break;
 
 		default:
-			g_warning ("Unhandled bubble placement!\n");
+			g_warning ("Unhandled gravity!\n");
 		break;
 	}
 
