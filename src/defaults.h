@@ -119,6 +119,9 @@ struct _DefaultsClass
 	void (*value_changed) (Defaults* defaults); /* used to "inform" bubble
 						    ** about any changes in
 						    ** rendering and position */
+	void (*gravity_changed) (Defaults* defaults); // used to "inform" about
+						      // gravity/position change
+						      // for bubbles
 };
 
 GType defaults_get_type (void);

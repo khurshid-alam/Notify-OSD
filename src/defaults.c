@@ -91,6 +91,7 @@ enum
 enum
 {
 	VALUE_CHANGED,
+	GRAVITY_CHANGED,
 	LAST_SIGNAL
 };
 
@@ -276,6 +277,37 @@ _get_font_size_dpi (Defaults* self)
 }
 
 static void
+_get_gravity (Defaults* self)
+{
+	GError* error = NULL;
+	Gravity gravity;
+
+	if (!IS_DEFAULTS (self))
+		return;
+
+	// grab current gravity-setting for notify-osd from gconf
+	error = NULL;
+	gravity = gconf_client_get_int (self->context, GCONF_GRAVITY, &error);
+	if (error)
+	{
+		// if something went wrong, assume "Sans 10" and continue
+		gravity = DEFAULT_GRAVITY;
+
+		g_warning ("%s(): Got error \"%s\"\n",
+		           G_STRFUNC,
+		           error->message);
+		g_error_free (error);
+	}
+
+	// protect against out-of-bounds values for gravity
+	if (gravity != GRAVITY_EAST && gravity != GRAVITY_NORTH_EAST)
+		gravity = DEFAULT_GRAVITY;
+
+	// update stored DPI-value
+	g_object_set (self, "gravity", gravity, NULL);
+}
+
+static void
 _font_changed (GConfClient* client,
 	       guint        cnxn_id,
 	       GConfEntry*  entry,
@@ -375,6 +407,27 @@ _subpixel_order_changed (GConfClient* client,
 	/* just triggering a redraw by emitting the "value-changed" signal is
 	** enough in this case, no need to update any stored values */
 	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
+}
+
+static void
+_gravity_changed (GConfClient* client,
+                  guint        cnxn_id,
+                  GConfEntry*  entry,
+                  gpointer     data)
+{
+	Defaults* defaults;
+
+	if (!data)
+		return;
+
+	defaults = (Defaults*) data;
+	if (!IS_DEFAULTS (defaults))
+		return;
+
+    	// grab gravity setting for notify-osd from gconf
+	_get_gravity (defaults);
+
+	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
 }
 
 static gdouble
@@ -828,7 +881,7 @@ defaults_init (Defaults* self)
 	// hook up notifiier for gravity changes
 	error = NULL;
 	self->notifier[5] = gconf_client_notify_add (self->context,
-						     GCONF_,
+						     GCONF_NOSD_TREE,
 						     _gravity_changed,
 						     (gpointer) self,
 						     NULL,
@@ -1309,6 +1362,17 @@ defaults_class_init (DefaultsClass* klass)
 		G_OBJECT_CLASS_TYPE (gobject_class),
 		G_SIGNAL_RUN_LAST,
 		G_STRUCT_OFFSET (DefaultsClass, value_changed),
+		NULL,
+		NULL,
+		g_cclosure_marshal_VOID__VOID,
+		G_TYPE_NONE,
+		0);
+
+	g_defaults_signals[GRAVITY_CHANGED] = g_signal_new (
+		"gravity-changed",
+		G_OBJECT_CLASS_TYPE (gobject_class),
+		G_SIGNAL_RUN_LAST,
+		G_STRUCT_OFFSET (DefaultsClass, gravity_changed),
 		NULL,
 		NULL,
 		g_cclosure_marshal_VOID__VOID,
