@@ -290,7 +290,7 @@ _get_gravity (Defaults* self)
 	gravity = gconf_client_get_int (self->context, GCONF_GRAVITY, &error);
 	if (error)
 	{
-		// if something went wrong, assume "Sans 10" and continue
+		// make sure we use a sane default for the gravity
 		gravity = DEFAULT_GRAVITY;
 
 		g_warning ("%s(): Got error \"%s\"\n",
@@ -713,6 +713,26 @@ defaults_finalize (GObject* gobject)
 }
 
 static void
+_handle_error (Defaults* self,
+               GError*   error)
+{
+	// no sanity-checks here
+
+	gconf_client_notify_remove (self->context, self->notifier[0]);
+	gconf_client_notify_remove (self->context, self->notifier[1]);
+	gconf_client_notify_remove (self->context, self->notifier[2]);
+	gconf_client_notify_remove (self->context, self->notifier[3]);
+	gconf_client_notify_remove (self->context, self->notifier[4]);
+	gconf_client_notify_remove (self->context, self->notifier[5]);
+	gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
+	gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
+	gconf_client_remove_dir (self->context, GCONF_NOSD_TREE, NULL);
+	g_object_unref (self->context);
+	g_warning ("%s(): Got error \"%s\"\n", G_STRFUNC, error->message);
+	g_error_free (error);
+}
+
+static void
 defaults_init (Defaults* self)
 {
 	GError* error;
@@ -733,10 +753,7 @@ defaults_init (Defaults* self)
 			      &error);
 	if (error)
 	{
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -748,11 +765,7 @@ defaults_init (Defaults* self)
 			      &error);
 	if (error)
 	{
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -764,12 +777,7 @@ defaults_init (Defaults* self)
 			      &error);
 	if (error)
 	{
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -783,12 +791,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -802,13 +805,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_notify_remove (self->context, self->notifier[0]);
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -822,14 +819,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_notify_remove (self->context, self->notifier[0]);
-		gconf_client_notify_remove (self->context, self->notifier[1]);
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 	
@@ -843,15 +833,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_notify_remove (self->context, self->notifier[0]);
-		gconf_client_notify_remove (self->context, self->notifier[1]);
-		gconf_client_notify_remove (self->context, self->notifier[2]);
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -865,16 +847,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_notify_remove (self->context, self->notifier[0]);
-		gconf_client_notify_remove (self->context, self->notifier[1]);
-		gconf_client_notify_remove (self->context, self->notifier[2]);
-		gconf_client_notify_remove (self->context, self->notifier[3]);
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 
@@ -888,17 +861,7 @@ defaults_init (Defaults* self)
 						     &error);
 	if (error)
 	{
-		gconf_client_notify_remove (self->context, self->notifier[0]);
-		gconf_client_notify_remove (self->context, self->notifier[1]);
-		gconf_client_notify_remove (self->context, self->notifier[2]);
-		gconf_client_notify_remove (self->context, self->notifier[3]);
-		gconf_client_notify_remove (self->context, self->notifier[4]);
-		gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-		gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-		g_object_unref (self->context);
-		g_warning ("defaults_init(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
+		_handle_error (self, error);
 		return;
 	}
 }
