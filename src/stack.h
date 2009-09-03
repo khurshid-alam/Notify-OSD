@@ -142,6 +142,7 @@ stack_is_slot_vacant (Stack* self,
 void
 stack_get_slot_position (Stack* self,
                          Slot   slot,
+			 gint   bubble_height,
                          gint*  x,
                          gint*  y);
 

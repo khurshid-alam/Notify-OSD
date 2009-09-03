@@ -92,7 +92,7 @@ test_stack_placement ()
 	g_assert_cmpint (stack_get_placement (stack), !=, PLACEMENT_NONE);
 
 	// currently the default value should be the new placement method
-	g_assert_cmpint (stack_get_placement (stack), ==, PLACEMENT_NEW);
+	g_assert_cmpint (stack_get_placement (stack), ==, PLACEMENT_OLD);
 
 	// check if we can pass "crap" to the call without causing a crash
 	g_assert_cmpint (stack_get_placement (NULL), ==, PLACEMENT_NONE);
@@ -119,13 +119,13 @@ test_stack_slots ()
 	g_assert_cmpint (stack_is_slot_vacant (NULL, 4321), ==, FALSE);
 
 	// check if stack_get_slot_position can take "crap" without crashing
-	stack_get_slot_position (NULL, SLOT_TOP, &x, &y);
+	stack_get_slot_position (NULL, SLOT_TOP, 0, &x, &y);
 	g_assert_cmpint (x, ==, -1);
 	g_assert_cmpint (y, ==, -1);
-	stack_get_slot_position (stack, 4711, &x, &y);
+	stack_get_slot_position (stack, 4711, 0, &x, &y);
 	g_assert_cmpint (x, ==, -1);
 	g_assert_cmpint (y, ==, -1);
-	stack_get_slot_position (NULL, 42, NULL, NULL);
+	stack_get_slot_position (NULL, 42, 0, NULL, NULL);
 
 	// check if stack_allocate_slot() can take "crap" without crashing
 	one = bubble_new (defaults);

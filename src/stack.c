@@ -323,7 +323,7 @@ stack_new (Defaults* defaults,
 	this->observer           = observer;
 	this->list               = NULL;
 	this->next_id            = 1;
-	this->placement          = PLACEMENT_NEW;
+	this->placement          = PLACEMENT_OLD;
 	this->slots[SLOT_TOP]    = NULL;
 	this->slots[SLOT_BOTTOM] = NULL;
 
@@ -357,6 +357,9 @@ close_handler (GObject *n,
 
 	if (n != NULL)
 	{
+		if (IS_BUBBLE (n))
+			stack_free_slot (stack, BUBBLE (n))
+
 		if (IS_BUBBLE (n)
 		    && bubble_is_synchronous (BUBBLE (n)))
 		{
@@ -739,7 +742,6 @@ stack_notify_handler (Stack*                 self,
 	if (bubble_is_synchronous (bubble))
 	{
 		stack_display_sync_bubble (self, bubble);
-
 	} else {
 		stack_push_bubble (self, bubble);
 
@@ -753,9 +755,10 @@ stack_notify_handler (Stack*                 self,
 		/* make sure the sync. bubble is positioned correctly
 		   even for the append case
 		*/
-		if (sync_bubble != NULL
-		    && bubble_is_visible (sync_bubble))
-			stack_display_position_sync_bubble (self, sync_bubble);
+		// no longer needed since we have the two-slots mechanism now
+		//if (sync_bubble != NULL
+		//    && bubble_is_visible (sync_bubble))
+		//	stack_display_position_sync_bubble (self, sync_bubble);
 
 		/* update the layout of the stack;
 		 * this will also open the new bubble */
@@ -860,6 +863,7 @@ stack_is_slot_vacant (Stack* self,
 void
 stack_get_slot_position (Stack* self,
                          Slot   slot,
+                         gint   bubble_height,
                          gint*  x,
                          gint*  y)
 {
@@ -897,7 +901,7 @@ stack_get_slot_position (Stack* self,
 			if (slot == SLOT_TOP)
 				*y += defaults_get_desktop_height (d) / 2 -
 				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-				      EM2PIXELS (defaults_get_bubble_min_height (d), d) +
+				      bubble_height +
 				      EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
 			// the position for the async. bubble
 			else if (slot == SLOT_BOTTOM)
