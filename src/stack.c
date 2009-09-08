@@ -319,10 +319,12 @@ stack_new (Defaults* defaults,
 	if (!this)
 		return NULL;
 
-	this->defaults = defaults;
-	this->observer = observer;
-	this->list     = NULL;
-	this->next_id  = 1;
+	this->defaults           = defaults;
+	this->observer           = observer;
+	this->list               = NULL;
+	this->next_id            = 1;
+	this->slots[SLOT_TOP]    = NULL;
+	this->slots[SLOT_BOTTOM] = NULL;
 
 	/* hook up handler to act on changes of defaults/settings */
 	g_signal_connect (G_OBJECT (defaults),
@@ -354,6 +356,9 @@ close_handler (GObject *n,
 
 	if (n != NULL)
 	{
+		if (IS_BUBBLE (n))
+			stack_free_slot (stack, BUBBLE (n));
+
 		if (IS_BUBBLE (n)
 		    && bubble_is_synchronous (BUBBLE (n)))
 		{
@@ -736,7 +741,6 @@ stack_notify_handler (Stack*                 self,
 	if (bubble_is_synchronous (bubble))
 	{
 		stack_display_sync_bubble (self, bubble);
-
 	} else {
 		stack_push_bubble (self, bubble);
 
@@ -750,9 +754,10 @@ stack_notify_handler (Stack*                 self,
 		/* make sure the sync. bubble is positioned correctly
 		   even for the append case
 		*/
-		if (sync_bubble != NULL
-		    && bubble_is_visible (sync_bubble))
-			stack_display_position_sync_bubble (self, sync_bubble);
+		// no longer needed since we have the two-slots mechanism now
+		//if (sync_bubble != NULL
+		//    && bubble_is_visible (sync_bubble))
+		//	stack_display_position_sync_bubble (self, sync_bubble);
 
 		/* update the layout of the stack;
 		 * this will also open the new bubble */
@@ -828,4 +833,147 @@ stack_get_server_information (Stack*  self,
 	*out_spec_ver = g_strdup ("0.10");
 
 	return TRUE;
+}
+
+gboolean
+stack_is_slot_vacant (Stack* self,
+                      Slot   slot)
+{
+	// sanity checks
+	if (!self || !IS_STACK (self))
+		return FALSE;
+
+	if (slot != SLOT_TOP && slot != SLOT_BOTTOM)
+		return FALSE;
+
+	return self->slots[slot] == NULL ? VACANT : OCCUPIED;
+}
+
+// return values of -1 for x and y indicate an error by the caller
+void
+stack_get_slot_position (Stack* self,
+                         Slot   slot,
+                         gint   bubble_height,
+                         gint*  x,
+                         gint*  y)
+{
+	// sanity checks
+	if (!x && !y)
+		return;
+
+	if (!self || !IS_STACK (self))
+	{
+		*x = -1;
+		*y = -1;
+		return;
+	}
+
+	if (slot != SLOT_TOP && slot != SLOT_BOTTOM)
+	{
+		*x = -1;
+		*y = -1;
+		return;
+	}
+
+	// initialize x and y
+	defaults_get_top_corner (self->defaults, x, y);
+
+	// differentiate returned top-left corner for top and bottom slot
+	// depending on the placement 
+	switch (defaults_get_gravity (self->defaults))
+	{
+		Defaults* d;
+
+		case GRAVITY_EAST:
+			d = self->defaults;
+
+			// the position for the sync./feedback bubble
+			if (slot == SLOT_TOP)
+				*y += defaults_get_desktop_height (d) / 2 -
+				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
+				      bubble_height +
+				      EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+			// the position for the async. bubble
+			else if (slot == SLOT_BOTTOM)
+				*y += defaults_get_desktop_height (d) / 2 +
+				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
+				      EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		break;
+
+		case GRAVITY_NORTH_EAST:
+			d = self->defaults;
+
+			// there's nothing to do for slot == SLOT_TOP as we
+			// already have correct x and y from the call to
+			// defaults_get_top_corner() earlier
+
+			// this needs to look at the height of the bubble in the
+			// top slot
+			if (slot == SLOT_BOTTOM)
+			{
+				g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
+				*y += bubble_get_height (self->slots[SLOT_TOP]) +
+				      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
+				      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
+			}
+		break;
+
+		default:
+			g_warning ("Unhandled placement!\n");
+		break;
+	}
+}
+
+// call this _before_ the fade-in animation of the bubble starts
+gboolean
+stack_allocate_slot (Stack*  self,
+		     Bubble* bubble,
+                     Slot    slot)
+{
+	// sanity checks
+	if (!self || !IS_STACK (self))
+		return FALSE;
+
+	if (!bubble || !IS_BUBBLE (bubble))
+		return FALSE;
+
+	if (slot != SLOT_TOP && slot != SLOT_BOTTOM)
+		return FALSE;
+
+	if (stack_is_slot_vacant (self, slot))
+		self->slots[slot] = BUBBLE (g_object_ref ((gpointer) bubble));
+	else
+		return FALSE;
+
+	return TRUE;
+}
+
+// call this _after_ the fade-out animation of the bubble is finished
+gboolean
+stack_free_slot (Stack*  self,
+		 Bubble* bubble)
+{
+	// sanity checks
+	if (!self || !IS_STACK (self))
+		return FALSE;
+
+	if (!bubble || !IS_BUBBLE (bubble))
+		return FALSE;
+
+	// check top and bottom slots for bubble pointer equality
+	if (bubble == self->slots[SLOT_TOP])
+	{
+		g_object_unref (self->slots[SLOT_TOP]);
+		self->slots[SLOT_TOP] = NULL;
+	}
+	else if (bubble == self->slots[SLOT_BOTTOM])
+	{
+		g_object_unref (self->slots[SLOT_BOTTOM]);
+		self->slots[SLOT_BOTTOM] = NULL;
+	}
+	else
+		return FALSE;
+
+	return TRUE;	
 }
