@@ -60,7 +60,7 @@ test_withlib_get_server_information (void)
 	
 	g_assert (ret);
 	g_assert (g_strrstr (name, "notify-osd"));
-	g_assert (g_strrstr (specver, "0.10"));
+	g_assert (g_strrstr (specver, "1.1"));
 }
 
 static void

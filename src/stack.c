@@ -830,7 +830,7 @@ stack_get_server_information (Stack*  self,
 	*out_name     = g_strdup ("notify-osd");
 	*out_vendor   = g_strdup ("Canonical Ltd");
 	*out_version  = g_strdup ("1.0");
-	*out_spec_ver = g_strdup ("0.10");
+	*out_spec_ver = g_strdup ("1.1");
 
 	return TRUE;
 }
