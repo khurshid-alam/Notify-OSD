@@ -89,7 +89,7 @@ test_dbus_get_server_information (void)
 					    &version, &specver);
 	g_assert (ret);
 	g_assert (g_strrstr (name, "notify-osd"));
-	g_assert (g_strrstr (specver, "0.10"));
+	g_assert (g_strrstr (specver, "1.1"));
 }
 
 GTestSuite *
