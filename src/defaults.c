@@ -866,7 +866,7 @@ defaults_init (Defaults* self)
 	}
 
 	// use fixed slot-allocation for async. and sync. bubbles
-	self->slot_allocation = SLOT_ALLOCATION_DYNAMIC;
+	self->slot_allocation = SLOT_ALLOCATION_FIXED;
 }
 
 static void
