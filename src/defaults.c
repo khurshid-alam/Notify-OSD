@@ -864,6 +864,9 @@ defaults_init (Defaults* self)
 		_handle_error (self, error);
 		return;
 	}
+
+	// use fixed slot-allocation for async. and sync. bubbles
+	self->slot_allocation = SLOT_ALLOCATION_DYNAMIC;
 }
 
 static void
@@ -2607,4 +2610,13 @@ defaults_get_gravity (Defaults* self)
 	g_object_get (self, "gravity", &gravity, NULL);
 
 	return gravity;
+}
+
+SlotAllocation
+defaults_get_slot_allocation (Defaults *self)
+{
+	if (!self || !IS_DEFAULTS (self))
+		return SLOT_ALLOCATION_NONE;
+
+	return self->slot_allocation;
 }

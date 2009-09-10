@@ -911,10 +911,25 @@ stack_get_slot_position (Stack* self,
 			// top slot
 			if (slot == SLOT_BOTTOM)
 			{
-				g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
-				*y += bubble_get_height (self->slots[SLOT_TOP]) +
-				      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-				      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				switch (defaults_get_slot_allocation (d))
+				{
+					case SLOT_ALLOCATION_FIXED:
+						*y += EM2PIXELS (defaults_get_icon_size (d), d) +
+						      2 * EM2PIXELS (defaults_get_margin_size (d), d) +
+						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d); /* +
+						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);*/
+					break;
+
+					case SLOT_ALLOCATION_DYNAMIC:
+						g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
+						*y += bubble_get_height (self->slots[SLOT_TOP]) +
+						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
+						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+					break;
+
+					default:
+					break;
+				}
 
 			}
 		break;

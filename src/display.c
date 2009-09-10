@@ -83,16 +83,39 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 	// TODO: with multi-head, in focus follow mode, there may be enough
 	// space left on the top monitor
 
-	switch (defaults_get_gravity (d))
+	switch (defaults_get_slot_allocation (d))
 	{
-		case GRAVITY_NORTH_EAST:
+		case SLOT_ALLOCATION_FIXED:
+			if (stack_is_slot_vacant (self, SLOT_TOP))
+			{
+				stack_get_slot_position (self,
+							 SLOT_TOP,
+							 bubble_get_height (bubble),
+							 &x,
+							 &y);
+				if (x == -1 || y == -1)
+					g_warning ("%s(): No slot-coords!\n",
+						   G_STRFUNC);
+				else
+					stack_allocate_slot (self,
+							     bubble,
+							     SLOT_TOP);
+			}
+			else
+			{
+				g_warning ("%s(): Top slot taken!\n",
+				           G_STRFUNC);
+			}
+		break;
+
+		case SLOT_ALLOCATION_DYNAMIC:
 			// see if we're call at the wrong moment, when both
 			// slots are occupied by bubbles
 			if (!stack_is_slot_vacant (self, SLOT_TOP) &&
 			    !stack_is_slot_vacant (self, SLOT_BOTTOM))
 			{
 				g_warning ("%s(): Both slots taken!\n",
-				           G_STRFUNC);
+					   G_STRFUNC);
 			}
 			else
 			{
@@ -104,31 +127,31 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 				    stack_is_slot_vacant (self, SLOT_BOTTOM))
 				{
 					stack_get_slot_position (self,
-						                 SLOT_TOP,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
+								 SLOT_TOP,
+								 bubble_get_height (bubble),
+								 &x,
+								 &y);
 					if (x == -1 || y == -1)
 						g_warning ("%s(): No coords!\n",
 							   G_STRFUNC);
 					else
 						stack_allocate_slot (self,
-							             bubble,
-							             SLOT_TOP);
+								     bubble,
+								     SLOT_TOP);
 				}
 				// next check if top is occupied and bottom is
 				// still vacant, then place sync. bubble in
 				// bottom slot
 				else if (!stack_is_slot_vacant (self,
-				                                SLOT_TOP) &&
-				         stack_is_slot_vacant (self,
-				                               SLOT_BOTTOM))
+								SLOT_TOP) &&
+					 stack_is_slot_vacant (self,
+							       SLOT_BOTTOM))
 				{
 					stack_get_slot_position (self,
-						                 SLOT_BOTTOM,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
+								 SLOT_BOTTOM,
+								 bubble_get_height (bubble),
+								 &x,
+								 &y);
 					if (x == -1 || y == -1)
 						g_warning ("%s(): No coords!\n",
 							   G_STRFUNC);
@@ -149,44 +172,18 @@ stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 				// we want to avoid the "gap" between the bottom
 				// bubble and the panel
 				else if (stack_is_slot_vacant (self,
-				                               SLOT_TOP) &&
-				         !stack_is_slot_vacant (self,
-				                                SLOT_BOTTOM))
+							       SLOT_TOP) &&
+					 !stack_is_slot_vacant (self,
+								SLOT_BOTTOM))
 				{
 					g_warning ("%s(): Gap, gap, gap!!!\n",
-					           G_STRFUNC);
+						   G_STRFUNC);
 				}
 			}
 		break;
 
-		case GRAVITY_EAST:
-			// see if reserved top slot for sync. bubble is really
-			// vacant
-			if (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED)
-			{
-				g_warning ("%s(): Top slot taken!\n",
-				           G_STRFUNC);
-			}
-			// if not just put sync. bubble in top slot
-			else
-			{
-				stack_get_slot_position (self,
-				                         SLOT_TOP,
-				                         bubble_get_height (bubble),
-				                         &x,
-				                         &y);
-				if (x == -1 || y == -1)
-					g_warning ("%s(): No slot-coords!\n",
-					           G_STRFUNC);
-				else
-					stack_allocate_slot (self,
-					                     bubble,
-					                     SLOT_TOP);
-			}
-		break;
-
-		default:
-			g_warning ("Unhandled gravity!\n");
+		default :
+			g_warning ("Unhandled slot-allocation!\n");
 		break;
 	}
 
@@ -322,124 +319,104 @@ stack_layout (Stack* self)
 
 	d = self->defaults;
 
-	switch (defaults_get_gravity (d))
+	switch (defaults_get_slot_allocation (d))
 	{
-		case GRAVITY_NORTH_EAST:
-			if (!stack_is_slot_vacant (self, SLOT_TOP) &&
-			    !stack_is_slot_vacant (self, SLOT_BOTTOM))
+		case SLOT_ALLOCATION_FIXED:
+			if (stack_is_slot_vacant (self, SLOT_TOP) &&
+			    bubble_is_synchronous (bubble))
 			{
-				g_warning ("%s(): Both slots taken!\n",
+				stack_get_slot_position (self,
+						         SLOT_TOP,
+					                 bubble_get_height (bubble),
+						         &x,
+						         &y);
+				if (x == -1 || y == -1)
+					g_warning ("%s(): No coords!\n",
+						   G_STRFUNC);
+				else
+					stack_allocate_slot (self,
+							     bubble,
+							     SLOT_TOP);
+			}
+			else if (stack_is_slot_vacant (self, SLOT_BOTTOM) &&
+				 !bubble_is_synchronous (bubble))
+			{
+				stack_get_slot_position (self,
+						         SLOT_BOTTOM,
+					                 bubble_get_height (bubble),
+						         &x,
+						         &y);
+				if (x == -1 || y == -1)
+					g_warning ("%s(): No coords!\n",
+						   G_STRFUNC);
+				else
+					stack_allocate_slot (self,
+							     bubble,
+							     SLOT_BOTTOM);
+			}
+			else
+			{
+				g_warning ("%s(): Error while handling fixed "
+				           "slot-allocation!\n",
 				           G_STRFUNC);
 			}
-			else
+		break;
+
+		case SLOT_ALLOCATION_DYNAMIC:
+			if (stack_is_slot_vacant (self, SLOT_TOP) &&
+			    stack_is_slot_vacant (self, SLOT_BOTTOM))
 			{
-				if (stack_is_slot_vacant (self, SLOT_TOP))
+				stack_get_slot_position (self,
+						         SLOT_TOP,
+					                 bubble_get_height (bubble),
+						         &x,
+						         &y);
+				if (x == -1 || y == -1)
+					g_warning ("%s(): No coords!\n",
+						   G_STRFUNC);
+				else
+					stack_allocate_slot (self,
+							     bubble,
+							     SLOT_TOP);
+			}
+			else if (!stack_is_slot_vacant (self, SLOT_TOP) &&
+				 stack_is_slot_vacant (self, SLOT_BOTTOM))
+			{
+				stack_get_slot_position (self,
+						         SLOT_BOTTOM,
+					                 bubble_get_height (bubble),
+						         &x,
+						         &y);
+				if (x == -1 || y == -1)
+					g_warning ("%s(): No coords!\n",
+						   G_STRFUNC);
+				else
 				{
-					stack_get_slot_position (self,
-						                 SLOT_TOP,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
-					if (x == -1 || y == -1)
-						g_warning ("%s(): No coords!\n",
-							   G_STRFUNC);
-					else
-						stack_allocate_slot (self,
-							             bubble,
-							             SLOT_TOP);
-				}
-				else if (stack_is_slot_vacant (self,
-				                               SLOT_BOTTOM))
-				{
-					stack_get_slot_position (self,
-						                 SLOT_BOTTOM,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
-					if (x == -1 || y == -1)
-						g_warning ("%s(): No coords!\n",
-							   G_STRFUNC);
-					else
-						stack_allocate_slot (self,
-							             bubble,
-							             SLOT_BOTTOM);
+					stack_allocate_slot (self,
+							     bubble,
+							     SLOT_BOTTOM);
+
+					if (sync_bubble != NULL &&
+					    bubble_is_visible (sync_bubble))
+					{
+						// synchronize the sync bubble with the timeout
+						// of the bubble at the bottom
+						bubble_sync_with (self->slots[SLOT_TOP],
+						                  self->slots[SLOT_BOTTOM]);
+					}
 				}
 			}
-
-			if (sync_bubble != NULL &&
-			    bubble_is_visible (sync_bubble) &&
-			    sync_bubble == self->slots[SLOT_TOP])
+			else
 			{
-				// synchronize the sync bubble with the timeout
-				// of the bubble at the bottom
-				bubble_sync_with (sync_bubble, bubble);
+				g_warning ("%s(): Error while handling dynamic "
+				           "slot-allocation!\n",
+				           G_STRFUNC);
 			}
 		break;
 
-		case GRAVITY_EAST:
-			// with the new placement sync. bubbles are always to be
-			// placed in the top slot (above the "half-line")
-			if (bubble_is_synchronous (bubble))
-			{
-				// verify that the top slot is really vacant
-				if (stack_is_slot_vacant (self, SLOT_TOP))
-				{
-					stack_get_slot_position (self,
-						                 SLOT_TOP,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
-					if (x == -1 || y == -1)
-						g_warning ("%s(): No coords!\n",
-							   G_STRFUNC);
-					else
-						stack_allocate_slot (self,
-							             bubble,
-							             SLOT_TOP);
-				}
-				// otherwise there's still an error in the
-				// layout- and queue-logic
-				else
-				{
-					g_warning ("%s(): Can't put sync. "
-					           "bubble in top slot!\n",
-					           G_STRFUNC);
-				}
-			}
-			// an async. bubble is always meant to be put in the
-			// bottom slot (below the "half-line")
-			else
-			{
-				// verify that the bottom slot is really vacant
-				if (stack_is_slot_vacant (self, SLOT_BOTTOM))
-				{
-					stack_get_slot_position (self,
-						                 SLOT_BOTTOM,
-					                         bubble_get_height (bubble),
-						                 &x,
-						                 &y);
-					if (x == -1 || y == -1)
-						g_warning ("%s(): No coords!\n",
-							   G_STRFUNC);
-					else
-						stack_allocate_slot (
-							self,
-							bubble,
-							SLOT_BOTTOM);
-				}
-				// otherwise there's still an error in the
-				// layout- and queue-logic
-				else
-				{
-					g_warning ("%s(): Can't put async. "
-					           "bubble in bottom slot!\n",
-					           G_STRFUNC);
-				}
-			}
-		break;
-
-		default:
-			g_warning ("Unhandled gravity!\n");
+		default :
+			g_warning ("%s(): Unhandled slot-allocation scheme!\n",
+			           G_STRFUNC);
 		break;
 	}
 
