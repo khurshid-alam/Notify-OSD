@@ -164,6 +164,29 @@ test_defaults_get_gravity ()
         g_object_unref (G_OBJECT (defaults));
 }
 
+static void
+test_defaults_get_slot_allocation ()
+{
+        Defaults* defaults = defaults_new ();
+
+        // upon creation slot-allocation should not be unset
+        g_assert_cmpint (defaults_get_slot_allocation (defaults),
+                         !=,
+                         SLOT_ALLOCATION_NONE);
+
+        // currently the default value should be SLOT_ALLOCATION_FIXED
+        g_assert_cmpint (defaults_get_slot_allocation (defaults),
+                         ==,
+                         SLOT_ALLOCATION_FIXED);
+
+        // check if we can pass "crap" to the call without causing a crash
+        g_assert_cmpint (defaults_get_slot_allocation (NULL),
+                         ==,
+                         SLOT_ALLOCATION_NONE);
+
+        g_object_unref (G_OBJECT (defaults));
+}
+
 GTestSuite *
 test_defaults_create_test_suite (void)
 {
@@ -184,6 +207,7 @@ test_defaults_create_test_suite (void)
 	g_test_suite_add(ts, TC(test_defaults_get_stack_height));
 	g_test_suite_add(ts, TC(test_defaults_get_bubble_width));
 	g_test_suite_add(ts, TC(test_defaults_get_gravity));
+	g_test_suite_add(ts, TC(test_defaults_get_slot_allocation));
 
 	return ts;
 }

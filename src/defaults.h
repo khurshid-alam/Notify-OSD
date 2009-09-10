@@ -61,53 +61,61 @@ typedef enum
         GRAVITY_EAST        // vertically centered at right of screen
 } Gravity;
 
+typedef enum
+{
+        SLOT_ALLOCATION_NONE = 0,
+        SLOT_ALLOCATION_FIXED,  // async. always in top, sync. always in bottom
+        SLOT_ALLOCATION_DYNAMIC // async. and sync can take top or bottom
+} SlotAllocation;
+
 /* instance structure */
 struct _Defaults
 {
 	GObject parent;
 
 	/* private */
-	GConfClient* context;
-	guint        notifier[6];
-	gint         desktop_width;
-	gint         desktop_height;
-	gint         desktop_top;
-	gint         desktop_bottom;
-	gint         desktop_left;
-	gint         desktop_right;
-	gdouble      desktop_bottom_gap;
-	gdouble      stack_height;
-	gdouble      bubble_vert_gap;
-	gdouble      bubble_horz_gap;
-	gdouble      bubble_width;
-	gdouble      bubble_min_height;
-	gdouble      bubble_max_height;
-	gdouble      bubble_shadow_size;
-	GString*     bubble_shadow_color;
-	GString*     bubble_bg_color;
-	GString*     bubble_bg_opacity;
-	GString*     bubble_hover_opacity;
-	gdouble      bubble_corner_radius;
-	gdouble      content_shadow_size;
-	GString*     content_shadow_color;
-	gdouble      margin_size;
-	gdouble      icon_size;
-	gdouble      gauge_size;
-	gdouble      gauge_outline_width;
-	gint         fade_in_timeout;
-	gint         fade_out_timeout;
-	gint         on_screen_timeout;
-	GString*     text_font_face;
-	GString*     text_title_color;
-	gint         text_title_weight;
-	gdouble      text_title_size;
-	GString*     text_body_color;
-	gint         text_body_weight;
-	gdouble      text_body_size;
-	gdouble      pixels_per_em;
-	gdouble      system_font_size;
-	gdouble      screen_dpi;
-	Gravity      gravity;
+	GConfClient*   context;
+	guint          notifier[6];
+	gint           desktop_width;
+	gint           desktop_height;
+	gint           desktop_top;
+	gint           desktop_bottom;
+	gint           desktop_left;
+	gint           desktop_right;
+	gdouble        desktop_bottom_gap;
+	gdouble        stack_height;
+	gdouble        bubble_vert_gap;
+	gdouble        bubble_horz_gap;
+	gdouble        bubble_width;
+	gdouble        bubble_min_height;
+	gdouble        bubble_max_height;
+	gdouble        bubble_shadow_size;
+	GString*       bubble_shadow_color;
+	GString*       bubble_bg_color;
+	GString*       bubble_bg_opacity;
+	GString*       bubble_hover_opacity;
+	gdouble        bubble_corner_radius;
+	gdouble        content_shadow_size;
+	GString*       content_shadow_color;
+	gdouble        margin_size;
+	gdouble        icon_size;
+	gdouble        gauge_size;
+	gdouble        gauge_outline_width;
+	gint           fade_in_timeout;
+	gint           fade_out_timeout;
+	gint           on_screen_timeout;
+	GString*       text_font_face;
+	GString*       text_title_color;
+	gint           text_title_weight;
+	gdouble        text_title_size;
+	GString*       text_body_color;
+	gint           text_body_weight;
+	gdouble        text_body_size;
+	gdouble        pixels_per_em;
+	gdouble        system_font_size;
+	gdouble        screen_dpi;
+	Gravity        gravity;
+	SlotAllocation slot_allocation;
 };
 
 /* class structure */
@@ -251,6 +259,9 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y);
 
 Gravity
 defaults_get_gravity (Defaults *self);
+
+SlotAllocation
+defaults_get_slot_allocation (Defaults *self);
 
 G_END_DECLS
 
