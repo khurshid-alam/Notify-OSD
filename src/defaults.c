@@ -1350,7 +1350,7 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-width",
 				"Width of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				gdk_screen_get_width (screen),
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1363,7 +1363,7 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-height",
 				"Height of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				gdk_screen_get_height (screen),
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1376,7 +1376,7 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-top",
 				"Top of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				0,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1389,8 +1389,8 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-bottom",
 				"Bottom of desktop in pixels",
 				0,
-				4096,
-				4096,
+				G_MAXINT,
+				G_MAXINT,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
@@ -1402,7 +1402,7 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-left",
 				"Left of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				0,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
@@ -1415,8 +1415,8 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-right",
 				"Right of desktop in pixels",
 				0,
-				4096,
-				4096,
+				G_MAXINT,
+				G_MAXINT,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE);
 	g_object_class_install_property (gobject_class,
