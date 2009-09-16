@@ -58,7 +58,7 @@ test_defaults_get_desktop_width ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_width (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_width (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_width (defaults), >=, 640);
 	g_object_unref (defaults);
 }
@@ -70,7 +70,7 @@ test_defaults_get_desktop_height ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_height (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_height (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_height (defaults), >=, 600);
 	g_object_unref (defaults);
 }
@@ -82,7 +82,7 @@ test_defaults_get_desktop_top ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_top (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_top (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_top (defaults), >=, 0);
 	g_object_unref (defaults);
 }
@@ -94,7 +94,7 @@ test_defaults_get_desktop_bottom ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_bottom (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_bottom (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_bottom (defaults), >=, 0);
 	g_object_unref (defaults);
 }
@@ -106,7 +106,7 @@ test_defaults_get_desktop_left ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_left (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_left (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_left (defaults), >=, 0);
 	g_object_unref (defaults);
 }
@@ -118,7 +118,7 @@ test_defaults_get_desktop_right ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_desktop_right (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_desktop_right (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_desktop_right (defaults), >=, 0);
 	g_object_unref (defaults);
 }
@@ -130,7 +130,7 @@ test_defaults_get_stack_height ()
 	Defaults* defaults = NULL;
 
 	defaults = defaults_new ();
-	g_assert_cmpint (defaults_get_stack_height (defaults), <=, 4096);
+	g_assert_cmpint (defaults_get_stack_height (defaults), <=, G_MAXINT);
 	g_assert_cmpint (defaults_get_stack_height (defaults), >=, 0);
 	g_object_unref (defaults);
 }

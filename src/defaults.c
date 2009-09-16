@@ -1350,10 +1350,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-width",
 				"Width of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				gdk_screen_get_width (screen),
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_WIDTH,
 					 property_desktop_width);
@@ -1363,10 +1364,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-height",
 				"Height of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				gdk_screen_get_height (screen),
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_HEIGHT,
 					 property_desktop_height);
@@ -1376,10 +1378,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-top",
 				"Top of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				0,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_TOP,
 					 property_desktop_top);
@@ -1389,10 +1392,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-bottom",
 				"Bottom of desktop in pixels",
 				0,
-				4096,
-				4096,
+				G_MAXINT,
+				G_MAXINT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_BOTTOM,
 					 property_desktop_bottom);
@@ -1402,10 +1406,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-left",
 				"Left of desktop in pixels",
 				0,
-				4096,
+				G_MAXINT,
 				0,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_LEFT,
 					 property_desktop_left);
@@ -1415,10 +1420,11 @@ defaults_class_init (DefaultsClass* klass)
 				"desktop-right",
 				"Right of desktop in pixels",
 				0,
-				4096,
-				4096,
+				G_MAXINT,
+				G_MAXINT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_RIGHT,
 					 property_desktop_right);
@@ -1431,7 +1437,8 @@ defaults_class_init (DefaultsClass* klass)
 				16.0f,
 				DEFAULT_DESKTOP_BOTTOM_GAP,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_DESKTOP_BOTTOM_GAP,
 					 property_desktop_bottom_gap);
@@ -1444,7 +1451,8 @@ defaults_class_init (DefaultsClass* klass)
 				256.0f,
 				50.0f,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_STACK_HEIGHT,
 					 property_stack_height);
@@ -1457,7 +1465,8 @@ defaults_class_init (DefaultsClass* klass)
 				10.0f,
 				DEFAULT_BUBBLE_VERT_GAP,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_VERT_GAP,
 					 property_bubble_vert_gap);
@@ -1470,7 +1479,8 @@ defaults_class_init (DefaultsClass* klass)
 				10.0f,
 				DEFAULT_BUBBLE_HORZ_GAP,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_HORZ_GAP,
 					 property_bubble_horz_gap);
@@ -1483,7 +1493,8 @@ defaults_class_init (DefaultsClass* klass)
 				256.0f,
 				DEFAULT_BUBBLE_WIDTH,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_WIDTH,
 					 property_bubble_width);
@@ -1496,7 +1507,8 @@ defaults_class_init (DefaultsClass* klass)
 				256.0f,
 				DEFAULT_BUBBLE_MIN_HEIGHT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_MIN_HEIGHT,
 					 property_bubble_min_height);
@@ -1509,7 +1521,8 @@ defaults_class_init (DefaultsClass* klass)
 				256.0f,
 				DEFAULT_BUBBLE_MAX_HEIGHT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_MAX_HEIGHT,
 					 property_bubble_max_height);
@@ -1522,7 +1535,8 @@ defaults_class_init (DefaultsClass* klass)
 				32.0f,
 				DEFAULT_BUBBLE_SHADOW_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_SHADOW_SIZE,
 					 property_bubble_shadow_size);
@@ -1533,7 +1547,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Color of bubble drop-shadow",
 				DEFAULT_BUBBLE_SHADOW_COLOR,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_SHADOW_COLOR,
 					 property_bubble_shadow_color);
@@ -1544,7 +1559,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Color of bubble-background",
 				DEFAULT_BUBBLE_BG_COLOR,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_BG_COLOR,
 					 property_bubble_bg_color);
@@ -1555,7 +1571,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Opacity of bubble-background",
 				DEFAULT_BUBBLE_BG_OPACITY,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_BG_OPACITY,
 					 property_bubble_bg_opacity);
@@ -1566,7 +1583,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Opacity of bubble in mouse-over case",
 				DEFAULT_BUBBLE_HOVER_OPACITY,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_HOVER_OPACITY,
 					 property_bubble_hover_opacity);
@@ -1579,7 +1597,8 @@ defaults_class_init (DefaultsClass* klass)
 				16.0f,
 				DEFAULT_BUBBLE_CORNER_RADIUS,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_BUBBLE_CORNER_RADIUS,
 					 property_bubble_corner_radius);
@@ -1592,7 +1611,8 @@ defaults_class_init (DefaultsClass* klass)
 				8.0f,
 				DEFAULT_CONTENT_SHADOW_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_CONTENT_SHADOW_SIZE,
 					 property_content_shadow_size);
@@ -1603,7 +1623,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Color of icon/text drop-shadow",
 				DEFAULT_CONTENT_SHADOW_COLOR,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_CONTENT_SHADOW_COLOR,
 					 property_content_shadow_color);
@@ -1616,7 +1637,8 @@ defaults_class_init (DefaultsClass* klass)
 				32.0f,
 				DEFAULT_MARGIN_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_MARGIN_SIZE,
 					 property_margin_size);
@@ -1629,7 +1651,8 @@ defaults_class_init (DefaultsClass* klass)
 				64.0f,
 				DEFAULT_ICON_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_ICON_SIZE,
 					 property_icon_size);
@@ -1642,7 +1665,8 @@ defaults_class_init (DefaultsClass* klass)
 				1.0f,
 				DEFAULT_GAUGE_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_GAUGE_SIZE,
 					 property_gauge_size);
@@ -1655,7 +1679,8 @@ defaults_class_init (DefaultsClass* klass)
 				0.2f,
 				DEFAULT_GAUGE_OUTLINE_WIDTH,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_GAUGE_OUTLINE_WIDTH,
 					 property_gauge_outline_width);
@@ -1668,7 +1693,8 @@ defaults_class_init (DefaultsClass* klass)
 				10000,
 				DEFAULT_FADE_IN_TIMEOUT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_FADE_IN_TIMEOUT,
 					 property_fade_in_timeout);
@@ -1681,7 +1707,8 @@ defaults_class_init (DefaultsClass* klass)
 				10000,
 				DEFAULT_FADE_OUT_TIMEOUT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_FADE_OUT_TIMEOUT,
 					 property_fade_out_timeout);
@@ -1694,7 +1721,8 @@ defaults_class_init (DefaultsClass* klass)
 				10000,
 				DEFAULT_ON_SCREEN_TIMEOUT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_ON_SCREEN_TIMEOUT,
 					 property_on_screen_timeout);
@@ -1705,7 +1733,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Font-face to use of any rendered text",
 				DEFAULT_TEXT_FONT_FACE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_FONT_FACE,
 					 property_text_font_face);
@@ -1716,7 +1745,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Color to use for content title-text",
 				DEFAULT_TEXT_TITLE_COLOR,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_TITLE_COLOR,
 					 property_text_title_color);
@@ -1729,7 +1759,8 @@ defaults_class_init (DefaultsClass* klass)
 				1000,
 				DEFAULT_TEXT_TITLE_WEIGHT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_TITLE_WEIGHT,
 					 property_text_title_weight);
@@ -1742,7 +1773,8 @@ defaults_class_init (DefaultsClass* klass)
 				32.0f,
 				DEFAULT_TEXT_TITLE_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_TITLE_SIZE,
 					 property_text_title_size);
@@ -1753,7 +1785,8 @@ defaults_class_init (DefaultsClass* klass)
 				"Color to use for content body-text",
 				DEFAULT_TEXT_BODY_COLOR,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_BODY_COLOR,
 					 property_text_body_color);
@@ -1766,7 +1799,8 @@ defaults_class_init (DefaultsClass* klass)
 				1000,
 				DEFAULT_TEXT_BODY_WEIGHT,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_BODY_WEIGHT,
 					 property_text_body_weight);
@@ -1779,7 +1813,8 @@ defaults_class_init (DefaultsClass* klass)
 				32.0f,
 				DEFAULT_TEXT_BODY_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_TEXT_BODY_SIZE,
 					 property_text_body_size);
@@ -1792,7 +1827,8 @@ defaults_class_init (DefaultsClass* klass)
 				100.0f,
 				DEFAULT_PIXELS_PER_EM,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_PIXELS_PER_EM,
 					 property_pixels_per_em);
@@ -1805,7 +1841,8 @@ defaults_class_init (DefaultsClass* klass)
 				100.0f,
 				DEFAULT_SYSTEM_FONT_SIZE,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_SYSTEM_FONT_SIZE,
 					 property_system_font_size);
@@ -1818,7 +1855,8 @@ defaults_class_init (DefaultsClass* klass)
 				600.0f,
 				DEFAULT_SCREEN_DPI,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_SCREEN_DPI,
 					 property_screen_dpi);
@@ -1831,7 +1869,8 @@ defaults_class_init (DefaultsClass* klass)
 				2,
 				DEFAULT_GRAVITY,
 				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE);
+				G_PARAM_READWRITE |
+				G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property (gobject_class,
 					 PROP_GRAVITY,
 					 property_gravity);
