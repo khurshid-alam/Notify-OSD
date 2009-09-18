@@ -2431,19 +2431,22 @@ defaults_get_screen_dpi (Defaults* self)
 static gboolean
 defaults_multihead_does_focus_follow (Defaults *self)
 {
-	GError *error = NULL;
-	gboolean mode = FALSE;
+	GError*  error = NULL;
+	gboolean mode  = FALSE;
 
 	g_return_val_if_fail (self != NULL && IS_DEFAULTS (self), FALSE);
 
-	gchar *mode_str = gconf_client_get_string (self->context,
+	gchar* mode_str = gconf_client_get_string (self->context,
 						   GCONF_MULTIHEAD_MODE,
 						   &error);
 	if (mode_str != NULL)
 	{
 		if (! g_strcmp0 (mode_str, "focus-follow"))
 			mode = TRUE;
-	} else if (error != NULL)
+
+		g_free ((gpointer) mode_str);
+	}
+	else if (error != NULL)
 	{
 		g_warning ("defaults_multihead_does_focus_follow(): "
 		           "Got error \"%s\"\n",
