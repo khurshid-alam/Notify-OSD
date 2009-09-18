@@ -475,41 +475,6 @@ _draw_shadow (cairo_t* cr,
 	cairo_surface_destroy (new_surface);
 }
 
-cairo_surface_t*
-_copy_surface (cairo_surface_t* orig)
-{
-	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
-	cairo_format_t   format;
-	gint             width;
-	gint             height;
-	gint             stride;
-
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
-	width  = cairo_image_surface_get_width (orig);
-	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
-
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
-
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
-
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
-
-	return copy;
-}
-
 static void
 _draw_layout_grid (cairo_t* cr,
 		  Bubble*  bubble)
@@ -665,9 +630,11 @@ _refresh_background (Bubble* self)
 
 	g_return_if_fail (scratch);
 
-	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS) {
+	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS)
+	{
 		if (scratch)
 			cairo_surface_destroy (scratch);
+
 		return;
 	}
 
@@ -676,8 +643,10 @@ _refresh_background (Bubble* self)
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (scratch);
+
 		if (cr)
 			cairo_destroy (cr);
+
 		return;
 	}
 
@@ -766,7 +735,7 @@ _refresh_background (Bubble* self)
 			cairo_image_surface_get_stride (clone));
 	blurred = copy_surface (dummy);
 	cairo_surface_destroy (dummy);
-	cairo_surface_destroy (clone);
+	destroy_cloned_surface (clone);
 
 	// finally create tile with top-left shadow/background part
 	if (priv->tile_background_part)
@@ -782,9 +751,13 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (scratch);
+
 			if (normal)
 				cairo_surface_destroy (normal);
+
 			return;
 		}
 
@@ -793,9 +766,12 @@ _refresh_background (Bubble* self)
 						      height);
 		if (cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
 		{
+			cairo_surface_destroy (normal);
+			cairo_surface_destroy (scratch);
+
 			if (blurred)
 				cairo_surface_destroy (blurred);
-			cairo_surface_destroy (normal);
+
 			return;
 		}
 	}
@@ -805,9 +781,13 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (scratch);
+
 			if (normal)
 				cairo_surface_destroy (normal);
+
 			return;
 		}
 	}
@@ -821,8 +801,11 @@ _refresh_background (Bubble* self)
 		{
 			cairo_surface_destroy (normal);
 			cairo_surface_destroy (blurred);
+			cairo_surface_destroy (scratch);
+
 			if (cr)
 				cairo_destroy (cr);
+
 			return;
 		}
 
@@ -851,6 +834,7 @@ _refresh_background (Bubble* self)
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (normal);
+		cairo_surface_destroy (scratch);
 
 		if (priv->composited)
 			cairo_surface_destroy (blurred);
@@ -890,6 +874,7 @@ _refresh_background (Bubble* self)
 		cairo_surface_destroy (blurred);
 
 	cairo_surface_destroy (normal);
+	cairo_surface_destroy (scratch);
 }
 
 void
