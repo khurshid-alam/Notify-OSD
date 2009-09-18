@@ -932,13 +932,14 @@ _refresh_icon (Bubble* self)
 void
 _refresh_title (Bubble* self)
 {
-	BubblePrivate*        priv   = GET_PRIVATE (self);
-	Defaults*             d      = self->defaults;
-	cairo_surface_t*      normal = NULL;
-	cairo_t*              cr     = NULL;
-	PangoFontDescription* desc   = NULL;
-	PangoLayout*          layout = NULL;
-	raico_blur_t*         blur   = NULL;
+	BubblePrivate*        priv           = GET_PRIVATE (self);
+	Defaults*             d              = self->defaults;
+	cairo_surface_t*      normal         = NULL;
+	cairo_t*              cr             = NULL;
+	PangoFontDescription* desc           = NULL;
+	PangoLayout*          layout         = NULL;
+	raico_blur_t*         blur           = NULL;
+	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -971,8 +972,9 @@ _refresh_title (Bubble* self)
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (desc,
-						  defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
+	g_free ((gpointer) text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
@@ -1036,13 +1038,14 @@ _refresh_title (Bubble* self)
 void
 _refresh_body (Bubble* self)
 {
-	BubblePrivate*        priv      = GET_PRIVATE (self);
-	Defaults*             d         = self->defaults;
-	cairo_surface_t*      normal    = NULL;
-	cairo_t*              cr        = NULL;
-	PangoFontDescription* desc      = NULL;
-	PangoLayout*          layout    = NULL;
-	raico_blur_t*         blur      = NULL;
+	BubblePrivate*        priv           = GET_PRIVATE (self);
+	Defaults*             d              = self->defaults;
+	cairo_surface_t*      normal         = NULL;
+	cairo_t*              cr             = NULL;
+	PangoFontDescription* desc           = NULL;
+	PangoLayout*          layout         = NULL;
+	raico_blur_t*         blur           = NULL;
+	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -1075,8 +1078,9 @@ _refresh_body (Bubble* self)
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (desc,
-						  defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
+	g_free ((gpointer) text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
@@ -3034,6 +3038,7 @@ _calc_title_height (Bubble* self,
 	PangoRectangle        log_rect = {0, 0, 0, 0};
 	gint                  title_height;
 	BubblePrivate*        priv;
+	gchar*                text_font_face = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -3074,9 +3079,9 @@ _calc_title_height (Bubble* self,
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
@@ -3112,6 +3117,7 @@ _calc_body_height (Bubble* self,
 	PangoRectangle        log_rect;
 	gint                  body_height;
 	BubblePrivate*        priv;
+	gchar*                text_font_face = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -3144,9 +3150,9 @@ _calc_body_height (Bubble* self,
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_weight (
 		desc,

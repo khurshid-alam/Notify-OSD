@@ -441,6 +441,7 @@ _get_average_char_width (Defaults* self)
 	PangoLanguage*        language;
 	PangoFontMetrics*     metrics;
 	gint                  char_width;
+	gchar*                text_font_face = NULL;
 
 	if (!self || !IS_DEFAULTS (self))
 		return 0;
@@ -461,9 +462,9 @@ _get_average_char_width (Defaults* self)
 		EM2PIXELS (defaults_get_text_title_size (self), self) *
 		PANGO_SCALE);
 
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (self));
+	text_font_face = defaults_get_text_font_face (self);
+	pango_font_description_set_family_static (desc, text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
