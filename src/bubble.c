@@ -1776,7 +1776,6 @@ load_icon (const gchar* filename,
 	GdkPixbuf*    buffer = NULL;
 	GdkPixbuf*    pixbuf = NULL;
 	GtkIconTheme* theme  = NULL;
-	GFile*        file   = NULL;
 	GError*       error  = NULL;
 
 	/* sanity check */
@@ -1786,9 +1785,7 @@ load_icon (const gchar* filename,
 	if (!strncmp (filename, "file://", 7))
 		filename += 7;
 
-	file = g_file_new_for_path (filename);
-	if (g_file_query_exists (file, NULL))
-	/* Implementation note: blocking I/O; could be cancellable though */
+	if (filename[0] == '/')
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
