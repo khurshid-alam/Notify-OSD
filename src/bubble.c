@@ -1786,7 +1786,6 @@ load_icon (const gchar* filename,
 		filename += 7;
 
 	if (filename[0] == '/')
-	/* Implementation note: blocking I/O; could be cancellable though */
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
