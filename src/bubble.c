@@ -974,12 +974,12 @@ _refresh_title (Bubble* self)
 
 	text_font_face = defaults_get_text_font_face (d);
 	pango_font_description_set_family_static (desc, text_font_face);
-	g_free ((gpointer) text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -1080,12 +1080,12 @@ _refresh_body (Bubble* self)
 
 	text_font_face = defaults_get_text_font_face (d);
 	pango_font_description_set_family_static (desc, text_font_face);
-	g_free ((gpointer) text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -3081,7 +3081,6 @@ _calc_title_height (Bubble* self,
 
 	text_font_face = defaults_get_text_font_face (d);
 	pango_font_description_set_family_static (desc, text_font_face);
-	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
@@ -3090,6 +3089,7 @@ _calc_title_height (Bubble* self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3152,7 +3152,6 @@ _calc_body_height (Bubble* self,
 
 	text_font_face = defaults_get_text_font_face (d);
 	pango_font_description_set_family_static (desc, text_font_face);
-	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
@@ -3213,6 +3212,7 @@ _calc_body_height (Bubble* self,
 	body_height = PANGO_PIXELS (log_rect.height);
 
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
