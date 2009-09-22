@@ -245,12 +245,30 @@ find_bubble_for_append(Stack* self,
 	return (Bubble*) entry->data;
 }
 
+static void
+_weak_notify_cb (gpointer data,
+		 GObject* former_object)
+{
+	Stack* stack = STACK (data);
+
+	g_print ("--- %s(): finalizing bubble %p ---\n",
+		 G_STRFUNC,
+		 former_object);
+
+	stack->list = g_list_remove (stack->list, data);
+
+	g_print ("--- %s(): %d bubbles still in queue ---\n",
+		 G_STRFUNC,
+		 g_list_length (stack->list));
+}
 
 static void
 stack_purge_old_bubbles (Stack* self)
 {
 	Bubble* bubble = NULL;
 	GList*    list = NULL;
+
+	return;
 
 	g_return_if_fail (self != NULL);
 
@@ -259,7 +277,8 @@ stack_purge_old_bubbles (Stack* self)
 	{
 		bubble = (Bubble*) list->data;
 		
-		if (! IS_BUBBLE (bubble))
+		//if (! IS_BUBBLE (bubble))
+		if (!bubble)
 		{
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
@@ -268,7 +287,11 @@ stack_purge_old_bubbles (Stack* self)
 		{
 			self->list = g_list_delete_link (self->list, list);
 			list = self->list;
-			g_object_unref (bubble);
+			g_object_weak_unref (G_OBJECT (bubble),
+					     _weak_notify_cb,
+					     (gpointer) self);
+
+			//g_object_unref (bubble);
 		} else {
 			list = g_list_next (list);
 		}
@@ -618,6 +641,10 @@ stack_notify_handler (Stack*                 self,
 		gchar *sender;
 		new_bubble = TRUE;
 		bubble = bubble_new (self->defaults);
+		g_object_weak_ref (G_OBJECT (bubble),
+				   _weak_notify_cb,
+				   (gpointer) self);
+		
 		sender = dbus_g_method_get_sender (context);
 		bubble_set_sender (bubble, sender);
 		g_free (sender);
