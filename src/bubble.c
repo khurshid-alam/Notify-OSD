@@ -475,41 +475,6 @@ _draw_shadow (cairo_t* cr,
 	cairo_surface_destroy (new_surface);
 }
 
-cairo_surface_t*
-_copy_surface (cairo_surface_t* orig)
-{
-	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
-	cairo_format_t   format;
-	gint             width;
-	gint             height;
-	gint             stride;
-
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
-	width  = cairo_image_surface_get_width (orig);
-	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
-
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
-
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
-
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
-
-	return copy;
-}
-
 static void
 _draw_layout_grid (cairo_t* cr,
 		  Bubble*  bubble)
@@ -665,9 +630,11 @@ _refresh_background (Bubble* self)
 
 	g_return_if_fail (scratch);
 
-	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS) {
+	if (cairo_surface_status (scratch) != CAIRO_STATUS_SUCCESS)
+	{
 		if (scratch)
 			cairo_surface_destroy (scratch);
+
 		return;
 	}
 
@@ -676,8 +643,10 @@ _refresh_background (Bubble* self)
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (scratch);
+
 		if (cr)
 			cairo_destroy (cr);
+
 		return;
 	}
 
@@ -766,7 +735,7 @@ _refresh_background (Bubble* self)
 			cairo_image_surface_get_stride (clone));
 	blurred = copy_surface (dummy);
 	cairo_surface_destroy (dummy);
-	cairo_surface_destroy (clone);
+	destroy_cloned_surface (clone);
 
 	// finally create tile with top-left shadow/background part
 	if (priv->tile_background_part)
@@ -782,9 +751,13 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (scratch);
+
 			if (normal)
 				cairo_surface_destroy (normal);
+
 			return;
 		}
 
@@ -793,9 +766,12 @@ _refresh_background (Bubble* self)
 						      height);
 		if (cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
 		{
+			cairo_surface_destroy (normal);
+			cairo_surface_destroy (scratch);
+
 			if (blurred)
 				cairo_surface_destroy (blurred);
-			cairo_surface_destroy (normal);
+
 			return;
 		}
 	}
@@ -805,9 +781,13 @@ _refresh_background (Bubble* self)
 		normal = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
 						     width,
 						     height);
-		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS) {
+		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
+		{
+			cairo_surface_destroy (scratch);
+
 			if (normal)
 				cairo_surface_destroy (normal);
+
 			return;
 		}
 	}
@@ -821,8 +801,11 @@ _refresh_background (Bubble* self)
 		{
 			cairo_surface_destroy (normal);
 			cairo_surface_destroy (blurred);
+			cairo_surface_destroy (scratch);
+
 			if (cr)
 				cairo_destroy (cr);
+
 			return;
 		}
 
@@ -851,6 +834,7 @@ _refresh_background (Bubble* self)
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		cairo_surface_destroy (normal);
+		cairo_surface_destroy (scratch);
 
 		if (priv->composited)
 			cairo_surface_destroy (blurred);
@@ -890,6 +874,7 @@ _refresh_background (Bubble* self)
 		cairo_surface_destroy (blurred);
 
 	cairo_surface_destroy (normal);
+	cairo_surface_destroy (scratch);
 }
 
 void
@@ -947,13 +932,14 @@ _refresh_icon (Bubble* self)
 void
 _refresh_title (Bubble* self)
 {
-	BubblePrivate*        priv   = GET_PRIVATE (self);
-	Defaults*             d      = self->defaults;
-	cairo_surface_t*      normal = NULL;
-	cairo_t*              cr     = NULL;
-	PangoFontDescription* desc   = NULL;
-	PangoLayout*          layout = NULL;
-	raico_blur_t*         blur   = NULL;
+	BubblePrivate*        priv           = GET_PRIVATE (self);
+	Defaults*             d              = self->defaults;
+	cairo_surface_t*      normal         = NULL;
+	cairo_t*              cr             = NULL;
+	PangoFontDescription* desc           = NULL;
+	PangoLayout*          layout         = NULL;
+	raico_blur_t*         blur           = NULL;
+	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -986,13 +972,14 @@ _refresh_title (Bubble* self)
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (desc,
-						  defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_title_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -1051,13 +1038,14 @@ _refresh_title (Bubble* self)
 void
 _refresh_body (Bubble* self)
 {
-	BubblePrivate*        priv      = GET_PRIVATE (self);
-	Defaults*             d         = self->defaults;
-	cairo_surface_t*      normal    = NULL;
-	cairo_t*              cr        = NULL;
-	PangoFontDescription* desc      = NULL;
-	PangoLayout*          layout    = NULL;
-	raico_blur_t*         blur      = NULL;
+	BubblePrivate*        priv           = GET_PRIVATE (self);
+	Defaults*             d              = self->defaults;
+	cairo_surface_t*      normal         = NULL;
+	cairo_t*              cr             = NULL;
+	PangoFontDescription* desc           = NULL;
+	PangoLayout*          layout         = NULL;
+	raico_blur_t*         blur           = NULL;
+	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
 	normal = cairo_image_surface_create (
@@ -1090,13 +1078,14 @@ _refresh_body (Bubble* self)
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (desc,
-						  defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -1787,7 +1776,6 @@ load_icon (const gchar* filename,
 	GdkPixbuf*    buffer = NULL;
 	GdkPixbuf*    pixbuf = NULL;
 	GtkIconTheme* theme  = NULL;
-	GFile*        file   = NULL;
 	GError*       error  = NULL;
 
 	/* sanity check */
@@ -1797,9 +1785,7 @@ load_icon (const gchar* filename,
 	if (!strncmp (filename, "file://", 7))
 		filename += 7;
 
-	file = g_file_new_for_path (filename);
-	if (g_file_query_exists (file, NULL))
-	/* Implementation note: blocking I/O; could be cancellable though */
+	if (filename[0] == '/')
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
@@ -2226,7 +2212,7 @@ bubble_new (Defaults* defaults)
 	this->priv->layout               = LAYOUT_NONE;
 	this->priv->widget               = window;
 	this->priv->title                = g_string_new ("");
-	this->priv->message_body         = g_string_new ("");
+	this->priv->message_body         = NULL;
 	this->priv->icon_pixbuf          = NULL;
 	this->priv->value                = -2;
 	this->priv->visible              = FALSE;
@@ -2314,7 +2300,7 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->message_body->len != 0)
+	if (priv->message_body && priv->message_body->len != 0)
 	{
 		g_signal_emit (self,
 			       g_bubble_signals[MESSAGE_BODY_DELETED], 
@@ -3049,6 +3035,7 @@ _calc_title_height (Bubble* self,
 	PangoRectangle        log_rect = {0, 0, 0, 0};
 	gint                  title_height;
 	BubblePrivate*        priv;
+	gchar*                text_font_face = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -3089,9 +3076,8 @@ _calc_title_height (Bubble* self,
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
@@ -3100,6 +3086,7 @@ _calc_title_height (Bubble* self,
 	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3127,6 +3114,7 @@ _calc_body_height (Bubble* self,
 	PangoRectangle        log_rect;
 	gint                  body_height;
 	BubblePrivate*        priv;
+	gchar*                text_font_face = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return 0;
@@ -3159,9 +3147,8 @@ _calc_body_height (Bubble* self,
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (d));
+	text_font_face = defaults_get_text_font_face (d);
+	pango_font_description_set_family_static (desc, text_font_face);
 
 	pango_font_description_set_weight (
 		desc,
@@ -3222,6 +3209,7 @@ _calc_body_height (Bubble* self,
 	body_height = PANGO_PIXELS (log_rect.height);
 
 	pango_font_description_free (desc);
+	g_free ((gpointer) text_font_face);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 

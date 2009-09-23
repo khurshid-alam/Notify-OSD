@@ -179,15 +179,17 @@ _get_font_size_dpi (Defaults* self)
 	GString*   font_face     = NULL;
 	gdouble    dpi           = 0.0f;
 	gdouble    pixels_per_em = 0;
+	gchar*     font_name     = NULL;
 
 	if (!IS_DEFAULTS (self))
 		return;
 
 	/* determine current system font-name/size */
 	error = NULL;
-	string = g_string_new (gconf_client_get_string (self->context,
-							GCONF_UI_FONT_NAME,
-							&error));
+	font_name = gconf_client_get_string (self->context,
+					     GCONF_UI_FONT_NAME,
+					     &error);
+	string = g_string_new (font_name);
 	if (error)
 	{
 		/* if something went wrong, assume "Sans 10" and continue */
@@ -197,6 +199,7 @@ _get_font_size_dpi (Defaults* self)
 		           error->message);
 		g_error_free (error);
 	}
+	g_free ((gpointer) font_name);
 
 	/* extract font-family-name and font-size */
 	scanner = g_scanner_new (NULL);
@@ -430,63 +433,6 @@ _gravity_changed (GConfClient* client,
 	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
 }
 
-static gdouble
-_get_average_char_width (Defaults* self)
-{
-	cairo_surface_t*      surface;
-	cairo_t*              cr;
-	PangoFontDescription* desc;
-	PangoLayout*          layout;
-	PangoContext*         context;
-	PangoLanguage*        language;
-	PangoFontMetrics*     metrics;
-	gint                  char_width;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
-	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS)
-		return 0;
-
-	cr = cairo_create (surface);
-	cairo_surface_destroy (surface);
-	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
-		return 0;
-
-	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
-	pango_font_description_set_size (
-		desc,
-		EM2PIXELS (defaults_get_text_title_size (self), self) *
-		PANGO_SCALE);
-
-	pango_font_description_set_family_static (
-		desc,
-		defaults_get_text_font_face (self));
-
-	pango_font_description_set_weight (
-		desc,
-		defaults_get_text_title_weight (self));
-
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
-	pango_layout_set_wrap (layout, PANGO_WRAP_WORD);
-	pango_layout_set_font_description (layout, desc);
-
-	context  = pango_layout_get_context (layout); /* no need to unref */
-	language = pango_language_get_default ();     /* no need to unref */
-	metrics  = pango_context_get_metrics (context, desc, language);
-	char_width = pango_font_metrics_get_approximate_char_width (metrics);
-
-	/* clean up */
-	pango_font_metrics_unref (metrics);
-	pango_font_description_free (desc);
-	g_object_unref (layout);
-	cairo_destroy (cr);
-
-	return PIXELS2EM (char_width / PANGO_SCALE, self);
-}
-
 void
 defaults_refresh_screen_dimension_properties (Defaults *self)
 {
@@ -562,9 +508,6 @@ defaults_constructed (GObject* gobject)
 	gdouble      icon_size;
 	gdouble      bubble_height;
 	gdouble      new_bubble_height;
-	gdouble      bubble_width;
-	gdouble      new_bubble_width;
-	gdouble      average_char_width;
 
 	self = DEFAULTS (gobject);
 
@@ -604,31 +547,6 @@ defaults_constructed (GObject* gobject)
 			      new_bubble_height,
 			      NULL);
 	}
-
-	/* correct the default bubble-width depending on the average width of a 
-	 * character rendered in the default system-font at the default
-	 * font-size,
-	 * as default layout, we'll take the icon+title+body+message case, thus
-	 * seen from left to right we use:
-	 *
-	 *      margin + icon_size + margin + 20 * avg_char_width + margin
-	 */
-	g_object_get (self,
-		      "bubble-width",
-		      &bubble_width,
-		      NULL);
-	average_char_width = _get_average_char_width (self);
-
-	new_bubble_width = 3.0f * margin_size +
-			   icon_size +
-			   20.0f * average_char_width;
-	/*if (new_bubble_width > bubble_width)
-	{
-		g_object_set (self,
-			      "bubble-width",
-			      new_bubble_width,
-			      NULL);
-	}*/
 
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
@@ -2431,19 +2349,22 @@ defaults_get_screen_dpi (Defaults* self)
 static gboolean
 defaults_multihead_does_focus_follow (Defaults *self)
 {
-	GError *error = NULL;
-	gboolean mode = FALSE;
+	GError*  error = NULL;
+	gboolean mode  = FALSE;
 
 	g_return_val_if_fail (self != NULL && IS_DEFAULTS (self), FALSE);
 
-	gchar *mode_str = gconf_client_get_string (self->context,
+	gchar* mode_str = gconf_client_get_string (self->context,
 						   GCONF_MULTIHEAD_MODE,
 						   &error);
 	if (mode_str != NULL)
 	{
 		if (! g_strcmp0 (mode_str, "focus-follow"))
 			mode = TRUE;
-	} else if (error != NULL)
+
+		g_free ((gpointer) mode_str);
+	}
+	else if (error != NULL)
 	{
 		g_warning ("defaults_multihead_does_focus_follow(): "
 		           "Got error \"%s\"\n",
