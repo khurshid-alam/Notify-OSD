@@ -2044,8 +2044,6 @@ bubble_dispose (GObject* gobject)
 		priv->tile_indicator = NULL;
 	}
 
-	g_print ("--- %s(): called ---\n", G_STRFUNC);
-
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
 }
@@ -2053,8 +2051,6 @@ bubble_dispose (GObject* gobject)
 static void
 bubble_finalize (GObject* gobject)
 {
-	g_print ("--- %s(): called ---\n", G_STRFUNC);
-
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->finalize (gobject);
 }

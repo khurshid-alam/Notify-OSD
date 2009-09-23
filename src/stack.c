@@ -251,54 +251,8 @@ _weak_notify_cb (gpointer data,
 {
 	Stack* stack = STACK (data);
 
-	g_print ("--- %s(): finalizing bubble %p ---\n",
-		 G_STRFUNC,
-		 former_object);
-
 	stack->list = g_list_remove (stack->list, former_object);
-
-	g_print ("--- %s(): %d bubbles still in queue ---\n",
-		 G_STRFUNC,
-		 g_list_length (stack->list));
 }
-
-#if 0
-static void
-stack_purge_old_bubbles (Stack* self)
-{
-	Bubble* bubble = NULL;
-	GList*    list = NULL;
-
-	return;
-
-	g_return_if_fail (self != NULL);
-
-	for (list = g_list_first (self->list);
-	     list != NULL;)
-	{
-		bubble = (Bubble*) list->data;
-		
-		//if (! IS_BUBBLE (bubble))
-		if (!bubble)
-		{
-			self->list = g_list_delete_link (self->list, list);
-			list = self->list;
-		} else if (! bubble_is_visible (bubble) &&
-			   (bubble_get_timeout (bubble) == 0))
-		{
-			self->list = g_list_delete_link (self->list, list);
-			list = self->list;
-			g_object_weak_unref (G_OBJECT (bubble),
-					     _weak_notify_cb,
-					     (gpointer) self);
-
-			//g_object_unref (bubble);
-		} else {
-			list = g_list_next (list);
-		}
-	}
-}
-#endif
 
 static void
 _trigger_bubble_redraw (gpointer data,
