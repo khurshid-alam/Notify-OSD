@@ -759,19 +759,26 @@ stack_close_notification_handler (Stack*   self,
 				  guint    id,
 				  GError** error)
 {
-	//Bubble *bubble = find_bubble_by_id (self, id);
+	if (id == 0)
+		g_warning ("%s(): notification id == 0, likely wrong\n",
+			   G_STRFUNC);
+
+	Bubble* bubble = find_bubble_by_id (self, id);
 
 	// exit but pretend it's ok, for applications
 	// that call us after an action button was clicked
-	//if (bubble == NULL)
-	//	return TRUE;
+	if (bubble == NULL)
+		return TRUE;
 
-	//dbus_send_close_signal (bubble_get_sender (bubble),
-	//			bubble_get_id (bubble),
-	//			3);
+	dbus_send_close_signal (bubble_get_sender (bubble),
+				bubble_get_id (bubble),
+				3);
+
+	// do not trigger any closure of a notification-bubble here, as
+	// this kind of control from outside (DBus) does not comply with
+	// the notify-osd specification
 	//bubble_hide (bubble);
 	//g_object_unref (bubble);
-
 	//stack_layout (self);
 
 	return TRUE;
