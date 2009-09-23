@@ -656,7 +656,12 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		compat = (GValue*) g_hash_table_lookup (hints, "append");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		g_print ("--- %s(): data = %p, compat = %p ---\n",
+			 G_STRFUNC,
+			 data,
+			 compat);
+		if ((data && G_VALUE_HOLDS_STRING (data)) ||
+		    (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_append (bubble, TRUE);
 		else
 			bubble_set_append (bubble, FALSE);
@@ -685,7 +690,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
 		compat = (GValue*) g_hash_table_lookup (hints, "synchronous");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 		{
 			if (sync_bubble != NULL
 			    && IS_BUBBLE (sync_bubble))
@@ -694,10 +699,10 @@ stack_notify_handler (Stack*                 self,
 				bubble = sync_bubble;
 			}
 
-			if (G_VALUE_HOLDS_STRING (data))
+			if (data && G_VALUE_HOLDS_STRING (data))
 				bubble_set_synchronous (bubble, g_value_get_string (data));
 
-			if (G_VALUE_HOLDS_STRING (compat))
+			if (compat && G_VALUE_HOLDS_STRING (compat))
 				bubble_set_synchronous (bubble, g_value_get_string (compat));
 		}
 	}
@@ -705,14 +710,14 @@ stack_notify_handler (Stack*                 self,
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "value");
-		if (G_VALUE_HOLDS_INT (data))
+		if (data && G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
 	}
 
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "urgency");
-		if (G_VALUE_HOLDS_UCHAR (data))
+		if (data && G_VALUE_HOLDS_UCHAR (data))
 			bubble_set_urgency (bubble,
 					   g_value_get_uchar (data));
 		/* Note: urgency was defined as an enum: LOW, NORMAL, CRITICAL
@@ -724,7 +729,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		compat = (GValue*) g_hash_table_lookup (hints, "icon-only");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_icon_only (bubble, TRUE);
 		else
 			bubble_set_icon_only (bubble, FALSE);
