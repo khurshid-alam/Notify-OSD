@@ -798,7 +798,8 @@ stack_notify_handler (Stack*                 self,
 		stack_layout (self);
 	}
 
-	dbus_g_method_return (context, bubble_get_id (bubble));
+	if (bubble)
+		dbus_g_method_return (context, bubble_get_id (bubble));
 
 	return TRUE;
 }
