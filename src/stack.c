@@ -610,10 +610,6 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		compat = (GValue*) g_hash_table_lookup (hints, "append");
-		g_print ("--- %s(): data = %p, compat = %p ---\n",
-			 G_STRFUNC,
-			 data,
-			 compat);
 		if ((data && G_VALUE_HOLDS_STRING (data)) ||
 		    (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_append (bubble, TRUE);
