@@ -64,8 +64,6 @@ render_text_to_surface (gchar*                      text,
 	cairo_t*              cr;
 	PangoFontDescription* desc;
 	PangoLayout*          layout;
-	PangoRectangle        ink_rect;
-	PangoRectangle        log_rect;
 
 	// sanity check
 	if (!text      ||
@@ -112,7 +110,6 @@ render_text_to_surface (gchar*                      text,
 
 	// print and layout string (pango-wise)
 	pango_layout_set_text (layout, text, -1);
-	pango_layout_get_extents (layout, &ink_rect, &log_rect);
 
 	// make sure system-wide font-options like hinting, antialiasing etc.
 	// are taken into account
@@ -126,6 +123,8 @@ render_text_to_surface (gchar*                      text,
 	cairo_move_to (cr, 0.0f, 0.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 	cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 1.0f);
+
+	// this call leaks 3803 bytes, I've no idea how to fix that
 	pango_cairo_show_layout (cr, layout);
 
 	// clean up
@@ -749,6 +748,7 @@ setup_text_tile (const cairo_font_options_t* font_opts,
 	cairo_set_source_surface (cr, text, 0.0f, 0.0f);
 	cairo_paint (cr);
 
+	cairo_destroy (cr);
 	cairo_surface_destroy (text);
 	tile = tile_new (surface, 6);
 	cairo_surface_destroy (surface);
@@ -870,11 +870,13 @@ setup_tile (gint w, gint h)
 
 	// actually create the tile with padding in mind
 	tile = tile_new_for_padding (norm_surf, blur_surf);
+	destroy_cloned_surface (norm_surf);
+	destroy_cloned_surface (blur_surf);
+	destroy_cloned_surface (dummy_surf);
 
 	cairo_destroy (cr);
 	cairo_surface_destroy (cr_surf);
 
-	cairo_surface_destroy (norm_surf);
 	norm_surf = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create (norm_surf);
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -884,7 +886,6 @@ setup_tile (gint w, gint h)
 	tile_paint_with_padding (tile, cr, 0.0f, 0.0f, w, h, 1.0f, 0.0f);
 	cairo_destroy (cr);
 
-	cairo_surface_destroy (blur_surf);
 	blur_surf = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
 	cr = cairo_create (blur_surf);
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -897,7 +898,7 @@ setup_tile (gint w, gint h)
 	g_tile = tile_new_for_padding (norm_surf, blur_surf);
 
 	// clean up
-	cairo_surface_destroy (dummy_surf);
+	tile_destroy (tile);
 	cairo_surface_destroy (norm_surf);
 	cairo_surface_destroy (blur_surf);
 }
