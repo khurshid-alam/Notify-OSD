@@ -801,20 +801,20 @@ stack_close_notification_handler (Stack*   self,
 				  guint    id,
 				  GError** error)
 {
-	Bubble *bubble = find_bubble_by_id (self, id);
+	//Bubble *bubble = find_bubble_by_id (self, id);
 
-	/* exit but pretend it's ok, for applications
-	   that call us after an action button was clicked */
-	if (bubble == NULL)
-		return TRUE;
+	// exit but pretend it's ok, for applications
+	// that call us after an action button was clicked
+	//if (bubble == NULL)
+	//	return TRUE;
 
-	dbus_send_close_signal (bubble_get_sender (bubble),
-				bubble_get_id (bubble),
-				3);
-	bubble_hide (bubble);
-	g_object_unref (bubble);
+	//dbus_send_close_signal (bubble_get_sender (bubble),
+	//			bubble_get_id (bubble),
+	//			3);
+	//bubble_hide (bubble);
+	//g_object_unref (bubble);
 
-	stack_layout (self);
+	//stack_layout (self);
 
 	return TRUE;
 }
