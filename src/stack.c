@@ -43,6 +43,8 @@
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
+#define FORCED_SHUTDOWN_THRESHOLD 500
+
 /* fwd declaration */
 void close_handler (GObject* n, Stack*  stack);
 
@@ -627,7 +629,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		compat = (GValue*) g_hash_table_lookup (hints, "append");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_append (bubble, TRUE);
 		else
 			bubble_set_append (bubble, FALSE);
@@ -656,7 +658,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
 		compat = (GValue*) g_hash_table_lookup (hints, "synchronous");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 		{
 			if (sync_bubble != NULL
 			    && IS_BUBBLE (sync_bubble))
@@ -665,10 +667,10 @@ stack_notify_handler (Stack*                 self,
 				bubble = sync_bubble;
 			}
 
-			if (G_VALUE_HOLDS_STRING (data))
+			if ((data && G_VALUE_HOLDS_STRING (data)))
 				bubble_set_synchronous (bubble, g_value_get_string (data));
 
-			if (G_VALUE_HOLDS_STRING (compat))
+			if ((compat && G_VALUE_HOLDS_STRING (compat)))
 				bubble_set_synchronous (bubble, g_value_get_string (compat));
 		}
 	}
@@ -676,14 +678,14 @@ stack_notify_handler (Stack*                 self,
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "value");
-		if (G_VALUE_HOLDS_INT (data))
+		if ((data && G_VALUE_HOLDS_INT (data)))
 			bubble_set_value (bubble, g_value_get_int (data));
 	}
 
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "urgency");
-		if (G_VALUE_HOLDS_UCHAR (data))
+		if ((data && G_VALUE_HOLDS_UCHAR (data)))
 			bubble_set_urgency (bubble,
 					   g_value_get_uchar (data));
 		/* Note: urgency was defined as an enum: LOW, NORMAL, CRITICAL
@@ -695,7 +697,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		compat = (GValue*) g_hash_table_lookup (hints, "icon-only");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_icon_only (bubble, TRUE);
 		else
 			bubble_set_icon_only (bubble, FALSE);
@@ -712,7 +714,7 @@ stack_notify_handler (Stack*                 self,
 		else if ((data = (GValue*) g_hash_table_lookup (hints, "image_path")))
 		{
 			g_debug("Using image_path hint\n");
-			if (G_VALUE_HOLDS_STRING (data))
+			if ((data && G_VALUE_HOLDS_STRING (data)))
 				bubble_set_icon (bubble, g_value_get_string(data));
 			else
 				g_warning ("image_path hint is not a string\n");
@@ -765,6 +767,14 @@ stack_notify_handler (Stack*                 self,
 	}
 
 	dbus_g_method_return (context, bubble_get_id (bubble));
+
+	// FIXME: this is a temporary work-around, I do not like at all, until
+	// the heavy memory leakage of notify-osd is fully fixed...
+	// after a threshold-value of 500 notifications, forcefully exit
+	// notify-osd in order to get the leaked memory freed again, any new
+	// notification will instruct the session to restart notify-osd
+	if (bubble_get_id (bubble) == FORCED_SHUTDOWN_THRESHOLD)
+		gtk_main_quit ();
 
 	return TRUE;
 }
