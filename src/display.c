@@ -286,7 +286,7 @@ stack_layout (Stack* self)
 
 	g_return_if_fail (self != NULL);
 
-	stack_purge_old_bubbles (self);
+	//stack_purge_old_bubbles (self);
 
 	bubble = stack_select_next_to_display (self);
 	if (bubble == NULL)

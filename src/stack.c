@@ -255,13 +255,14 @@ _weak_notify_cb (gpointer data,
 		 G_STRFUNC,
 		 former_object);
 
-	stack->list = g_list_remove (stack->list, data);
+	stack->list = g_list_remove (stack->list, former_object);
 
 	g_print ("--- %s(): %d bubbles still in queue ---\n",
 		 G_STRFUNC,
 		 g_list_length (stack->list));
 }
 
+#if 0
 static void
 stack_purge_old_bubbles (Stack* self)
 {
@@ -297,6 +298,7 @@ stack_purge_old_bubbles (Stack* self)
 		}
 	}
 }
+#endif
 
 static void
 _trigger_bubble_redraw (gpointer data,
