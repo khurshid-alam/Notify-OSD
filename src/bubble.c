@@ -2212,7 +2212,7 @@ bubble_new (Defaults* defaults)
 	this->priv->layout               = LAYOUT_NONE;
 	this->priv->widget               = window;
 	this->priv->title                = g_string_new ("");
-	this->priv->message_body         = g_string_new ("");
+	this->priv->message_body         = NULL;
 	this->priv->icon_pixbuf          = NULL;
 	this->priv->value                = -2;
 	this->priv->visible              = FALSE;
@@ -2300,7 +2300,7 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->message_body->len != 0)
+	if (priv->message_body && priv->message_body->len != 0)
 	{
 		g_signal_emit (self,
 			       g_bubble_signals[MESSAGE_BODY_DELETED], 
