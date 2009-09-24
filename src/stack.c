@@ -245,34 +245,13 @@ find_bubble_for_append(Stack* self,
 	return (Bubble*) entry->data;
 }
 
-
 static void
-stack_purge_old_bubbles (Stack* self)
+_weak_notify_cb (gpointer data,
+		 GObject* former_object)
 {
-	Bubble* bubble = NULL;
-	GList*    list = NULL;
+	Stack* stack = STACK (data);
 
-	g_return_if_fail (self != NULL);
-
-	for (list = g_list_first (self->list);
-	     list != NULL;)
-	{
-		bubble = (Bubble*) list->data;
-		
-		if (! IS_BUBBLE (bubble))
-		{
-			self->list = g_list_delete_link (self->list, list);
-			list = self->list;
-		} else if (! bubble_is_visible (bubble) &&
-			   (bubble_get_timeout (bubble) == 0))
-		{
-			self->list = g_list_delete_link (self->list, list);
-			list = self->list;
-			g_object_unref (bubble);
-		} else {
-			list = g_list_next (list);
-		}
-	}
+	stack->list = g_list_remove (stack->list, former_object);
 }
 
 static void
@@ -618,6 +597,10 @@ stack_notify_handler (Stack*                 self,
 		gchar *sender;
 		new_bubble = TRUE;
 		bubble = bubble_new (self->defaults);
+		g_object_weak_ref (G_OBJECT (bubble),
+				   _weak_notify_cb,
+				   (gpointer) self);
+		
 		sender = dbus_g_method_get_sender (context);
 		bubble_set_sender (bubble, sender);
 		g_free (sender);
@@ -627,7 +610,8 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		compat = (GValue*) g_hash_table_lookup (hints, "append");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) ||
+		    (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_append (bubble, TRUE);
 		else
 			bubble_set_append (bubble, FALSE);
@@ -656,7 +640,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-synchronous");
 		compat = (GValue*) g_hash_table_lookup (hints, "synchronous");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 		{
 			if (sync_bubble != NULL
 			    && IS_BUBBLE (sync_bubble))
@@ -665,10 +649,10 @@ stack_notify_handler (Stack*                 self,
 				bubble = sync_bubble;
 			}
 
-			if (G_VALUE_HOLDS_STRING (data))
+			if (data && G_VALUE_HOLDS_STRING (data))
 				bubble_set_synchronous (bubble, g_value_get_string (data));
 
-			if (G_VALUE_HOLDS_STRING (compat))
+			if (compat && G_VALUE_HOLDS_STRING (compat))
 				bubble_set_synchronous (bubble, g_value_get_string (compat));
 		}
 	}
@@ -676,14 +660,14 @@ stack_notify_handler (Stack*                 self,
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "value");
-		if (G_VALUE_HOLDS_INT (data))
+		if (data && G_VALUE_HOLDS_INT (data))
 			bubble_set_value (bubble, g_value_get_int (data));
 	}
 
 	if (hints)
 	{
 		data = (GValue*) g_hash_table_lookup (hints, "urgency");
-		if (G_VALUE_HOLDS_UCHAR (data))
+		if (data && G_VALUE_HOLDS_UCHAR (data))
 			bubble_set_urgency (bubble,
 					   g_value_get_uchar (data));
 		/* Note: urgency was defined as an enum: LOW, NORMAL, CRITICAL
@@ -695,7 +679,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-private-icon-only");
 		compat = (GValue*) g_hash_table_lookup (hints, "icon-only");
-		if (G_VALUE_HOLDS_STRING (data) || G_VALUE_HOLDS_STRING (compat))
+		if ((data && G_VALUE_HOLDS_STRING (data)) || (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_icon_only (bubble, TRUE);
 		else
 			bubble_set_icon_only (bubble, FALSE);
@@ -764,7 +748,8 @@ stack_notify_handler (Stack*                 self,
 		stack_layout (self);
 	}
 
-	dbus_g_method_return (context, bubble_get_id (bubble));
+	if (bubble)
+		dbus_g_method_return (context, bubble_get_id (bubble));
 
 	return TRUE;
 }
@@ -774,20 +759,27 @@ stack_close_notification_handler (Stack*   self,
 				  guint    id,
 				  GError** error)
 {
-	Bubble *bubble = find_bubble_by_id (self, id);
+	if (id == 0)
+		g_warning ("%s(): notification id == 0, likely wrong\n",
+			   G_STRFUNC);
 
-	/* exit but pretend it's ok, for applications
-	   that call us after an action button was clicked */
+	Bubble* bubble = find_bubble_by_id (self, id);
+
+	// exit but pretend it's ok, for applications
+	// that call us after an action button was clicked
 	if (bubble == NULL)
 		return TRUE;
 
 	dbus_send_close_signal (bubble_get_sender (bubble),
 				bubble_get_id (bubble),
 				3);
-	bubble_hide (bubble);
-	g_object_unref (bubble);
 
-	stack_layout (self);
+	// do not trigger any closure of a notification-bubble here, as
+	// this kind of control from outside (DBus) does not comply with
+	// the notify-osd specification
+	//bubble_hide (bubble);
+	//g_object_unref (bubble);
+	//stack_layout (self);
 
 	return TRUE;
 }
