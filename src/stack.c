@@ -43,6 +43,8 @@
 
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
+#define FORCED_SHUTDOWN_THRESHOLD 500
+
 /* fwd declaration */
 void close_handler (GObject* n, Stack*  stack);
 
@@ -533,6 +535,31 @@ dialog_check_actions_and_timeout (gchar** actions,
 	return turn_into_dialog;
 }
 
+// FIXME: a intnernal function used for the forcefully-shutdown work-around
+// regarding mem-leaks
+gboolean
+_arm_forced_quit (gpointer data)
+{
+	Stack* stack = NULL;
+
+	// sanity check, "disarming" this forced quit
+	if (!data)
+		return FALSE;
+
+	stack = STACK (data);
+
+	// only forcefully quit if the queue is empty
+	if (g_list_length (stack->list) == 0)
+	{
+		gtk_main_quit ();
+
+		// I don't think this is ever reached :)
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 gboolean
 stack_notify_handler (Stack*                 self,
 		      const gchar*           app_name,
@@ -610,6 +637,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		data   = (GValue*) g_hash_table_lookup (hints, "x-canonical-append");
 		compat = (GValue*) g_hash_table_lookup (hints, "append");
+
 		if ((data && G_VALUE_HOLDS_STRING (data)) ||
 		    (compat && G_VALUE_HOLDS_STRING (compat)))
 			bubble_set_append (bubble, TRUE);
@@ -696,7 +724,7 @@ stack_notify_handler (Stack*                 self,
 		else if ((data = (GValue*) g_hash_table_lookup (hints, "image_path")))
 		{
 			g_debug("Using image_path hint\n");
-			if (G_VALUE_HOLDS_STRING (data))
+			if ((data && G_VALUE_HOLDS_STRING (data)))
 				bubble_set_icon (bubble, g_value_get_string(data));
 			else
 				g_warning ("image_path hint is not a string\n");
@@ -750,6 +778,18 @@ stack_notify_handler (Stack*                 self,
 
 	if (bubble)
 		dbus_g_method_return (context, bubble_get_id (bubble));
+
+	// FIXME: this is a temporary work-around, I do not like at all, until
+	// the heavy memory leakage of notify-osd is fully fixed...
+	// after a threshold-value is reached, "arm" a forceful shutdown of
+	// notify-osd (still allowing notifications in the queue, and coming in,
+	// to be displayed), in order to get the leaked memory freed again, any
+	// new notifications, coming in after the shutdown, will instruct the
+	// session to restart notify-osd
+	if (bubble_get_id (bubble) == FORCED_SHUTDOWN_THRESHOLD)
+		g_timeout_add (defaults_get_on_screen_timeout (self->defaults),
+			       _arm_forced_quit,
+			       (gpointer) self);
 
 	return TRUE;
 }
