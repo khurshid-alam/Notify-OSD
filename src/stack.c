@@ -559,10 +559,26 @@ dialog_check_actions_and_timeout (gchar** actions,
 // FIXME: a intnernal function used for the forcefully-shutdown work-around
 // regarding mem-leaks
 gboolean
-_force_quit (gpointer data)
+_arm_forced_quit (gpointer data)
 {
-	gtk_main_quit ();
-	return FALSE;
+	Stack* stack = NULL;
+
+	// sanity check, "disarming" this forced quit
+	if (!data)
+		return FALSE;
+
+	stack = STACK (data);
+
+	// only forcefully quit if the queue is empty
+	if (g_list_length (stack->list) == 0)
+	{
+		gtk_main_quit ();
+
+		// I don't think this is ever reached :)
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 gboolean
@@ -779,16 +795,15 @@ stack_notify_handler (Stack*                 self,
 
 	// FIXME: this is a temporary work-around, I do not like at all, until
 	// the heavy memory leakage of notify-osd is fully fixed...
-	// after a threshold-value is reached, forcefully exit
-	// notify-osd after a remaining period (to still allow the current
-	// queue to be worked on), in order to get the leaked memory freed
-	// again, any new notification will instruct the session to restart
-	// notify-osd
+	// after a threshold-value is reached, "arm" a forceful shutdown of
+	// notify-osd (still allowing notifications in the queue, and coming in,
+	// to be displayed), in order to get the leaked memory freed again, any
+	// new notifications, coming in after the shutdown, will instruct the
+	// session to restart notify-osd
 	if (bubble_get_id (bubble) == FORCED_SHUTDOWN_THRESHOLD)
-		g_timeout_add (g_list_length (self->list) *
-			       defaults_get_on_screen_timeout (self->defaults),
-			       _force_quit,
-			       NULL);
+		g_timeout_add (defaults_get_on_screen_timeout (self->defaults),
+			       _arm_forced_quit,
+			       (gpointer) self);
 
 	return TRUE;
 }
