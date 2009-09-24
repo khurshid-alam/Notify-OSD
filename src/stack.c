@@ -556,6 +556,15 @@ dialog_check_actions_and_timeout (gchar** actions,
 	return turn_into_dialog;
 }
 
+// FIXME: a intnernal function used for the forcefully-shutdown work-around
+// regarding mem-leaks
+gboolean
+_force_quit (gpointer data)
+{
+	gtk_main_quit ();
+	return FALSE;
+}
+
 gboolean
 stack_notify_handler (Stack*                 self,
 		      const gchar*           app_name,
@@ -770,11 +779,16 @@ stack_notify_handler (Stack*                 self,
 
 	// FIXME: this is a temporary work-around, I do not like at all, until
 	// the heavy memory leakage of notify-osd is fully fixed...
-	// after a threshold-value of 500 notifications, forcefully exit
-	// notify-osd in order to get the leaked memory freed again, any new
-	// notification will instruct the session to restart notify-osd
+	// after a threshold-value is reached, forcefully exit
+	// notify-osd after a remaining period (to still allow the current
+	// queue to be worked on), in order to get the leaked memory freed
+	// again, any new notification will instruct the session to restart
+	// notify-osd
 	if (bubble_get_id (bubble) == FORCED_SHUTDOWN_THRESHOLD)
-		gtk_main_quit ();
+		g_timeout_add (g_list_length (self->list) *
+			       defaults_get_on_screen_timeout (self->defaults),
+			       _force_quit,
+			       NULL);
 
 	return TRUE;
 }
