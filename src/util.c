@@ -103,7 +103,7 @@ filter_text (const gchar *text)
 		{ CHARACTER_GT_REGEX, ">" },
 		{ CHARACTER_APOS_REGEX, "'" },
 		{ CHARACTER_QUOT_REGEX, "\"" },
-		{ CHARACTER_NEWLINE_REGEX, "\n" }
+		{ CHARACTER_NEWLINE_REGEX, " " }
 		};
 
 	ReplaceMarkupData* ptr = data;
