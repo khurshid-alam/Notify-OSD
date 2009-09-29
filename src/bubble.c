@@ -1300,12 +1300,34 @@ _render_icon (Bubble*  self,
 	      gdouble  alpha_normal,
 	      gdouble  alpha_blur)
 {
-	tile_paint (self->priv->tile_icon,
+	BubblePrivate*   priv = GET_PRIVATE (self);
+	cairo_pattern_t* pattern;
+
+	tile_paint (priv->tile_icon,
 		    cr,
 		    x,
 		    y,
 		    alpha_normal,
 		    alpha_blur);
+
+	if (priv->alpha)
+	{
+		cairo_push_group (cr);
+		tile_paint (priv->tile_icon,
+			    cr,
+			    x,
+			    y,
+			    0.0f,
+			    (gfloat) egg_alpha_get_alpha (priv->alpha) /
+			    (gfloat) EGG_ALPHA_MAX_ALPHA);
+		pattern = cairo_pop_group (cr);
+		if (priv->value == -1)
+			cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 1.0f);
+		if (priv->value == 101)
+			cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 1.0f);
+		cairo_mask (cr, pattern);
+		cairo_pattern_destroy (pattern);
+	}
 }
 
 void
@@ -1348,12 +1370,34 @@ _render_indicator (Bubble*  self,
 		   gdouble  alpha_normal,
 		   gdouble  alpha_blur)
 {
-	tile_paint (self->priv->tile_indicator,
+	BubblePrivate*   priv = GET_PRIVATE (self);
+	cairo_pattern_t* pattern;
+
+	tile_paint (priv->tile_indicator,
 		    cr,
 		    x,
 		    y,
 		    alpha_normal,
 		    alpha_blur);
+
+	if (priv->alpha)
+	{
+		cairo_push_group (cr);
+		tile_paint (priv->tile_indicator,
+			    cr,
+			    x,
+			    y,
+			    0.0f,
+			    (gfloat) egg_alpha_get_alpha (priv->alpha) /
+			    (gfloat) EGG_ALPHA_MAX_ALPHA);
+		pattern = cairo_pop_group (cr);
+		if (priv->value == -1)
+			cairo_set_source_rgba (cr, 0.0f, 0.0f, 0.0f, 1.0f);
+		if (priv->value == 101)
+			cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 1.0f);
+		cairo_mask (cr, pattern);
+		cairo_pattern_destroy (pattern);
+	}
 }
 
 void
