@@ -126,7 +126,7 @@ AM_CONDITIONAL(BUILD_C_EXAMPLES, test "x$c_examples" != "xno")
 AM_CONDITIONAL(BUILD_MONO_EXAMPLES, test "x$csharp_examples" != "xno")
 
 dnl CFLAGS
-CFLAGS="$CFLAGS -Wall -Werror"
+CFLAGS="$CFLAGS -Wall"
 
 AC_OUTPUT([
 Makefile
