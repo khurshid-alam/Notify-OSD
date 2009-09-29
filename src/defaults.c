@@ -515,6 +515,7 @@ defaults_constructed (GObject* gobject)
 
 	/* grab system-wide font-face/size and DPI */
 	_get_font_size_dpi (self);
+	_get_gravity (self);
 
 	/* correct the default min. bubble-height, according to the icon-size */
 	g_object_get (self,
