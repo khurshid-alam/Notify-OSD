@@ -54,7 +54,7 @@ test_modules_SOURCES =						\
 
 test_modules_CFLAGS =		\
 	$(GCOV_CFLAGS)		\
-	-Wall -Werror -std=c99  \
+	-Wall -Werror		\
 	$(GLIB_CFLAGS)		\
 	$(GTK_CFLAGS)		\
 	-DWNCK_I_KNOW_THIS_IS_UNSTABLE \
@@ -89,7 +89,7 @@ OLD_ENVIRONMENT = $(ENV)
 
 AM_CFLAGS = \
 	$(GCOV_CFLAGS) \
-	-Wall -Werror -std=c99  \
+	-Wall -Werror	\
 	$(GLIB_CFLAGS)		\
 	-I$(top_srcdir)/src -I$(top_srcdir)/egg -I$(top_srcdir)
 
@@ -120,7 +120,7 @@ test_raico_SOURCES = \
 	test-raico.c
 
 test_raico_CFLAGS = \
-	-Wall -Werror -O0 -ggdb -std=c99  \
+	-Wall -Werror -O0 -ggdb \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/
@@ -138,7 +138,7 @@ test_tile_SOURCES = \
 	test-tile.c
 
 test_tile_CFLAGS = \
-	-Wall -Werror -O0 -ggdb -std=c99  \
+	-Wall -Werror -O0 -ggdb \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)
@@ -155,7 +155,7 @@ test_grow_bubble_SOURCES = \
 	test-grow-bubble.c
 
 test_grow_bubble_CFLAGS = \
-	-Wall -Werror -O0 -ggdb -std=c99  \
+	-Wall -Werror -O0 -ggdb \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)
@@ -172,7 +172,7 @@ test_scroll_text_SOURCES = \
 	test-scroll-text.c
 
 test_scroll_text_CFLAGS = \
-	-Wall -Werror -O0 -ggdb -std=c99  \
+	-Wall -Werror -O0 -ggdb \
 	$(GTK_CFLAGS) \
 	-I$(top_srcdir)/src \
 	-I$(top_srcdir)/
