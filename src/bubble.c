@@ -2306,6 +2306,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
+	gchar*         text;
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
@@ -2316,11 +2317,16 @@ bubble_set_title (Bubble*      self,
 	if (priv->title)
 		g_string_free (priv->title, TRUE);
 
-	priv->title = g_string_new (title);
+	// convert any newline to space
+	text = newline_to_space (title);
+
+	priv->title = g_string_new (text);
 
 	g_object_notify (
 		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
 		"accessible-name");
+
+	g_free (text);
 }
 
 const gchar*

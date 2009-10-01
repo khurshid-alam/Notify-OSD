@@ -117,6 +117,28 @@ filter_text (const gchar *text)
 	return text1;
 }
 
+gchar*
+newline_to_space (const gchar *text)
+{
+	gchar *text1;
+
+	text1 = strip_html (text, TAG_MATCH_REGEX, TAG_REPLACE_REGEX);
+
+	static ReplaceMarkupData data[] = {
+		{ CHARACTER_NEWLINE_REGEX, " " }
+		};
+
+	ReplaceMarkupData* ptr = data;
+	ReplaceMarkupData* end = data + sizeof(data) / sizeof(ReplaceMarkupData);
+	for (; ptr != end; ++ptr) {
+		gchar* tmp = replace_markup (text1, ptr->regex, ptr->replacement);
+		g_free (text1);
+		text1 = tmp;
+	}
+
+	return text1;
+}
+
 gboolean
 destroy_cloned_surface (cairo_surface_t* surface)
 {
