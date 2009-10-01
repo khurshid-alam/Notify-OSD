@@ -69,13 +69,29 @@ test_text_filter ()
 		{ "<tt>Testing tag</tt>",                          "Testing tag"                             },
 		{ "<html>Surrounded by html</html>",               "Surrounded by html"                      },
 		{ "<qt>Surrounded by qt</qt>",                     "Surrounded by qt"                        },
-		{ "First line  <br dumb> \r \n Second line",       "First line\nSecond line"                 },
-		{ "First line\n<br /> <br>\n2nd line\r\n3rd line", "First line\n2nd line\n3rd line"          },
+		{ "First line  <br dumb> \r \n Second line",       "First line Second line"                  },
+		{ "First line\n<br /> <br>\n2nd line\r\n3rd line", "First line 2nd line 3rd line"            },
 		{ NULL, NULL }
 	};
 
 	for (int i = 0; tests[i].before != NULL; i++) {
 		char *filtered = filter_text (tests[i].before);
+		g_assert_cmpstr (filtered, ==, tests[i].expected);
+		g_free (filtered);
+	}
+}
+
+static void
+test_newline_to_space ()
+{
+	static const TextComparisons tests[] = {
+		{ "one\ntwo\nthree\nfour\nfive\nsix", "one two three four five six" },
+		{ "1\n2\n3\n4\n5\n6",                 "1 2 3 4 5 6" },
+		{ NULL, NULL }
+	};
+
+	for (int i = 0; tests[i].before != NULL; i++) {
+		char *filtered = newline_to_space (tests[i].before);
 		g_assert_cmpstr (filtered, ==, tests[i].expected);
 		g_free (filtered);
 	}
@@ -91,6 +107,7 @@ test_filtering_create_test_suite (void)
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
 
 	g_test_suite_add(ts, TC(test_text_filter));
+	g_test_suite_add(ts, TC(test_newline_to_space));
 
 	return ts;
 }
