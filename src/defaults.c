@@ -171,15 +171,15 @@ static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 static void
 _get_font_size_dpi (Defaults* self)
 {
-	GString*   string        = NULL;
-	GError*    error         = NULL;
-	GScanner*  scanner       = NULL;
-	GTokenType token         = G_TOKEN_NONE;
-	gint       points        = 0;
-	GString*   font_face     = NULL;
-	gdouble    dpi           = 0.0f;
-	gdouble    pixels_per_em = 0;
-	gchar*     font_name     = NULL;
+	GString*    string        = NULL;
+	GError*     error         = NULL;
+	gint        points        = 0;
+	GString*    font_face     = NULL;
+	gdouble     dpi           = 0.0f;
+	gdouble     pixels_per_em = 0;
+	gchar*      font_name     = NULL;
+	GRegex*     regex         = NULL;
+	GMatchInfo* match_info    = NULL;
 
 	if (!IS_DEFAULTS (self))
 		return;
@@ -192,7 +192,7 @@ _get_font_size_dpi (Defaults* self)
 	string = g_string_new (font_name);
 	if (error)
 	{
-		/* if something went wrong, assume "Sans 10" and continue */
+		// if something went wrong, assume "Sans 10" and continue
 		string = g_string_assign (string, "Sans 10");
 
 		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
@@ -201,41 +201,35 @@ _get_font_size_dpi (Defaults* self)
 	}
 	g_free ((gpointer) font_name);
 
-	/* extract font-family-name and font-size */
-	scanner = g_scanner_new (NULL);
-	if (scanner)
+	// extract text point-size
+	regex = g_regex_new ("\\d+$", 0, 0, NULL);
+	g_regex_match (regex, string->str, 0, &match_info);
+	while (g_match_info_matches (match_info))
 	{
-		g_scanner_input_text (scanner, string->str, string->len);
-		for (token = g_scanner_get_next_token (scanner);
-		     token != G_TOKEN_EOF;
-		     token = g_scanner_get_next_token (scanner))
-		{
-			switch (token)
-			{
-				case G_TOKEN_INT:
-					points = (gint) scanner->value.v_int;
-				break;
-
-				case G_TOKEN_IDENTIFIER:
-					if (!font_face)
-						font_face = g_string_new (scanner->value.v_string);
-					else
-					{
-						g_string_append (font_face,
-								 " ");
-						g_string_append (font_face,
-								 scanner->value.v_string);
-					}
-				break;
-
-				default:
-				break;
-			}
-		}
-		g_scanner_destroy (scanner);
+		gchar* word = g_match_info_fetch (match_info, 0);
+		g_print ("Found: %s\n", word);
+		sscanf (word, "%d", &points);
+		g_print ("Found: %d\n", points);
+		g_free (word);
+		g_match_info_next (match_info, NULL);
 	}
+	g_match_info_free (match_info);
+	g_regex_unref (regex);
 
-	/* clean up */
+	// extract font-face-name/style
+	font_face = g_string_new ("");
+	regex = g_regex_new ("([A-Z a-z])+", 0, 0, NULL);
+	g_regex_match (regex, string->str, 0, &match_info);
+	while (g_match_info_matches (match_info))
+	{
+		gchar* word = g_match_info_fetch (match_info, 0);
+		g_string_append (font_face, word);
+		g_free (word);
+		g_match_info_next (match_info, NULL);
+	}
+	g_match_info_free (match_info);
+	g_regex_unref (regex);
+
 	if (string != NULL)
 		g_string_free (string, TRUE);
 
