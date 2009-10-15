@@ -2414,8 +2414,11 @@ scale_pixbuf (const GdkPixbuf *pixbuf, gint size)
 
 	max_edge = MAX (w, h);
 
-	new_width = size * (w / max_edge);
-	new_height = size * (h / max_edge);
+	// temporarily cast to float so we don't end up missing fractional parts
+	// from the division, especially nasty for 0.something :)
+	// e.g.: 99 / 100 = 0 but 99.0 / 100.0 = 0.99
+	new_width = size * ((gfloat) w / (gfloat) max_edge);
+	new_height =  size * ((gfloat) h / (gfloat) max_edge);
 
 	/* Scale the pixbuf down, preserving the aspect ratio */
 	scaled_icon = gdk_pixbuf_scale_simple (pixbuf,
@@ -2484,7 +2487,6 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	{
 		scaled = scale_pixbuf (pixbuf, EM2PIXELS (defaults_get_icon_size (d), d));
 		g_object_unref (pixbuf);
-
 		pixbuf = scaled;
 	}
 
