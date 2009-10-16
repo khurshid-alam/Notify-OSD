@@ -3635,22 +3635,22 @@ void
 bubble_append_message_body (Bubble*      self,
 			    const gchar* append_body)
 {
-	gboolean result;
-	gchar*   text;
-	GError*  error = NULL;
+	gboolean result = FALSE;
+	gchar*   text   = NULL;
+	GError*  error  = NULL;
 
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	/* filter out any HTML/markup if possible */
+	// filter out any HTML/markup if possible
     	result = pango_parse_markup (append_body,
 				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
+				     0,    // no accel-marker needed
+				     NULL, // no PangoAttr needed
 				     &text,
-				     NULL, /* no accel-marker-return needed */
+				     NULL, // no accel-marker-return needed
 				     &error);
-	if (error)
+	if (error && !result)
 	{
 		g_warning ("bubble_append_message_body(): Got error \"%s\"\n",
 		           error->message);
@@ -3658,16 +3658,22 @@ bubble_append_message_body (Bubble*      self,
 		error = NULL;
 	}
 
-	/* append text to current message-body */
-	g_string_append (GET_PRIVATE (self)->message_body, text);
+	if (text)
+	{
+		// append text to current message-body
+		g_string_append (GET_PRIVATE (self)->message_body, text);
 
-	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+		g_signal_emit (self,
+			       g_bubble_signals[MESSAGE_BODY_INSERTED],
+			       0,
+			       text);
 
-	g_object_notify (
-		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
-		"accessible-description");
+		g_object_notify (
+			G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+			"accessible-description");
 
-	g_free ((gpointer) text);
+		g_free ((gpointer) text);
+	}
 }
 
 void
