@@ -113,6 +113,12 @@ enum
 	A
 };
 
+#define TEMPORARY_ICON_PREFIX_WORKAROUND 1
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+#warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
+#define NOTIFY_OSD_ICON_PREFIX "notification"
+#endif
+
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
 // for jaunty notifications
@@ -2377,11 +2383,39 @@ bubble_get_message_body (Bubble* self)
 }
 
 void
+bubble_set_icon_from_path (Bubble*      self,
+			   const gchar* filepath)
+{
+	Defaults*      d;
+	BubblePrivate* priv;
+
+	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filepath, ""))
+		return;
+
+	priv = GET_PRIVATE (self);
+
+	if (priv->icon_pixbuf)
+	{
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = NULL;
+	}
+
+	d = self->defaults;
+	priv->icon_pixbuf = load_icon (filepath,
+				       EM2PIXELS (defaults_get_icon_size (d), d));
+
+	_refresh_icon (self);
+}
+
+void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
 	Defaults*      d;
 	BubblePrivate* priv;
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+	gchar*         notify_osd_iconname;
+#endif
 
  	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
@@ -2395,9 +2429,20 @@ bubble_set_icon (Bubble*      self,
 	}
 
 	d = self->defaults;
-	priv->icon_pixbuf = load_icon (filename,
+
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
+					       filename);
+	priv->icon_pixbuf = load_icon (notify_osd_iconname,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
+	g_free (notify_osd_iconname);
+#endif
+
+	// fallback to non-notify-osd name
+	if (!priv->icon_pixbuf)
+		priv->icon_pixbuf = load_icon (filename,
+					       EM2PIXELS (defaults_get_icon_size (d), d));
 
 	_refresh_icon (self);
 }

@@ -725,7 +725,7 @@ stack_notify_handler (Stack*                 self,
 		{
 			g_debug("Using image_path hint\n");
 			if ((data && G_VALUE_HOLDS_STRING (data)))
-				bubble_set_icon (bubble, g_value_get_string(data));
+				bubble_set_icon_from_path (bubble, g_value_get_string(data));
 			else
 				g_warning ("image_path hint is not a string\n");
 		}
