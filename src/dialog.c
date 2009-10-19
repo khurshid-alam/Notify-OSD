@@ -153,10 +153,10 @@ fallback_dialog_show (Defaults*    d,
 	GtkWidget* title;
 	GtkWidget* body;
 	GtkWidget* image;
-	gchar*     body_message;
-	gchar*     new_body_message;
+	gchar*     body_message = NULL;
+	gchar*     new_body_message = NULL;
 	guint      gap = EM2PIXELS (defaults_get_margin_size (d), d);
-	gboolean   success;
+	gboolean   success = FALSE;
 	GError*    error = NULL;
 
 	if (!IS_DEFAULTS (d) ||
@@ -201,25 +201,34 @@ fallback_dialog_show (Defaults*    d,
 
 	body = gtk_label_new (NULL);
 	body_message = filter_text (_body_message);
-	success = pango_parse_markup (body_message,
-				      -1,
-				      0,
-				      NULL,
-				      &new_body_message,
-				      NULL,
-				      &error);
-
-	if (error)
+	if (body_message)
 	{
-		g_warning ("fallback_dialog_show(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
-		error = NULL;
+		success = pango_parse_markup (body_message,
+					      -1,
+					      0,
+					      NULL,
+					      &new_body_message,
+					      NULL,
+					      &error);
+
+		if (error && !success)
+		{
+			g_warning ("fallback_dialog_show(): Got error \"%s\"\n",
+		        	   error->message);
+			g_error_free (error);
+			error = NULL;
+		}
 	}
 
-	gtk_label_set_text (GTK_LABEL (body), new_body_message);
+	if (new_body_message)
+	{
+		gtk_label_set_text (GTK_LABEL (body), new_body_message);
+		g_free (new_body_message);
+	}
+	else
+		gtk_label_set_text (GTK_LABEL (body), body_message);
+
 	g_free (body_message);
-	g_free (new_body_message);
 
 	gtk_label_set_line_wrap (GTK_LABEL (body), TRUE);
 
