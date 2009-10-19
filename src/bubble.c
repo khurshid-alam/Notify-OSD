@@ -113,7 +113,10 @@ enum
 	A
 };
 
+#define TEMPORARY_ICON_PREFIX_WORKAROUND 1
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
 #define NOTIFY_OSD_ICON_PREFIX "notification"
+#endif
 
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
@@ -2407,7 +2410,7 @@ bubble_set_icon (Bubble*      self,
 {
 	Defaults*      d;
 	BubblePrivate* priv;
-#ifdef NOTIFY_OSD_ICON_PREFIX
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
 	gchar*         notify_osd_iconname;
 #endif
 
@@ -2424,7 +2427,7 @@ bubble_set_icon (Bubble*      self,
 
 	d = self->defaults;
 
-#ifdef NOTIFY_OSD_ICON_PREFIX
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
 	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
 					       filename);
 	priv->icon_pixbuf = load_icon (notify_osd_iconname,
