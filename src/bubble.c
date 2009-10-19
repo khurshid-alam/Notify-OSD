@@ -115,6 +115,7 @@ enum
 
 #define TEMPORARY_ICON_PREFIX_WORKAROUND 1
 #ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+#warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
 #define NOTIFY_OSD_ICON_PREFIX "notification"
 #endif
 
