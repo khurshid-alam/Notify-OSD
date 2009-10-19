@@ -34,6 +34,11 @@ typedef struct {
 	const gchar *expected;
 } TextComparisons;
 
+typedef struct {
+	const gchar* before;
+	guint        expected;
+} IntegerExtraction;
+
 static void
 test_text_filter ()
 {
@@ -69,8 +74,8 @@ test_text_filter ()
 		{ "<tt>Testing tag</tt>",                          "Testing tag"                             },
 		{ "<html>Surrounded by html</html>",               "Surrounded by html"                      },
 		{ "<qt>Surrounded by qt</qt>",                     "Surrounded by qt"                        },
-		{ "First line  <br dumb> \r \n Second line",       "First line\nSecond line"                 },
-		{ "First line\n<br /> <br>\n2nd line\r\n3rd line", "First line\n2nd line\n3rd line"          },
+		{ "First line  <br dumb> \r \n Second line",       "First line\nSecond line"                  },
+		{ "First line\n<br /> <br>\n2nd line\r\n3rd line", "First line\n2nd line\n3rd line"            },
 		{ NULL, NULL }
 	};
 
@@ -78,6 +83,65 @@ test_text_filter ()
 		char *filtered = filter_text (tests[i].before);
 		g_assert_cmpstr (filtered, ==, tests[i].expected);
 		g_free (filtered);
+	}
+}
+
+static void
+test_newline_to_space ()
+{
+	static const TextComparisons tests[] = {
+		{ "one\ntwo\nthree\nfour\nfive\nsix", "one two three four five six" },
+		{ "1\n2\n3\n4\n5\n6",                 "1 2 3 4 5 6" },
+		{ NULL, NULL }
+	};
+
+	for (int i = 0; tests[i].before != NULL; i++) {
+		char *filtered = newline_to_space (tests[i].before);
+		g_assert_cmpstr (filtered, ==, tests[i].expected);
+		g_free (filtered);
+	}
+}
+
+static void
+test_extract_point_size ()
+{
+	static const IntegerExtraction tests[] = {
+		{ "", 0 },
+		{ "foobar", 0 },
+		{ "Bla Fasel -12.0", 0 },
+		{ "Sans 10", 10 },
+		{ "Candara 9", 9 },
+		{ "Bitstream Vera Serif Italic 1", 1 },
+		{ "Calibri Italic 100", 100 },
+		{ "Century Schoolbook L Italic 42", 42 },
+		{ NULL, 0 }
+	};
+
+	for (int i = 0; tests[i].before != NULL; i++)
+	{
+		guint extracted = extract_point_size (tests[i].before);
+		g_assert_cmpuint (extracted, ==, tests[i].expected);
+	}
+}
+
+static void
+test_extract_font_face ()
+{
+	static const TextComparisons tests[] = {
+		{ "", "" },
+		{ "Sans 10", "Sans " },
+		{ "Candara 9", "Candara " },
+		{ "Bitstream Vera Serif Italic 1", "Bitstream Vera Serif Italic " },
+		{ "Calibri Italic 100", "Calibri Italic " },
+		{ "Century Schoolbook L Italic 10", "Century Schoolbook L Italic " },
+		{ NULL, NULL }
+	};
+
+	for (int i = 0; tests[i].before != NULL; i++)
+	{
+		GString* filtered = extract_font_face (tests[i].before);
+		g_assert_cmpstr (filtered->str, ==, tests[i].expected);
+		g_string_free (filtered, TRUE);
 	}
 }
 
@@ -91,6 +155,9 @@ test_filtering_create_test_suite (void)
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
 
 	g_test_suite_add(ts, TC(test_text_filter));
+	g_test_suite_add(ts, TC(test_newline_to_space));
+	g_test_suite_add(ts, TC(test_extract_point_size));
+	g_test_suite_add(ts, TC(test_extract_font_face));
 
 	return ts;
 }

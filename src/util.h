@@ -38,7 +38,10 @@
 #define WM_NAME_XMONAD   "xmonad"
 
 gchar*
-filter_text (const gchar* app_name);
+filter_text (const gchar* text);
+
+gchar*
+newline_to_space (const gchar* text);
 
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig);
@@ -49,3 +52,8 @@ destroy_cloned_surface (cairo_surface_t* surface);
 gchar*
 get_wm_name (Display* dpy);
 
+guint
+extract_point_size (const gchar* string);
+
+GString*
+extract_font_face (const gchar* string);

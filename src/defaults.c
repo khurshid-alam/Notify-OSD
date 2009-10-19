@@ -41,6 +41,7 @@
 #include <libwnck/workspace.h>
 
 #include "defaults.h"
+#include "util.h"
 
 G_DEFINE_TYPE (Defaults, defaults, G_TYPE_OBJECT);
 
@@ -171,15 +172,13 @@ static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 static void
 _get_font_size_dpi (Defaults* self)
 {
-	GString*   string        = NULL;
-	GError*    error         = NULL;
-	GScanner*  scanner       = NULL;
-	GTokenType token         = G_TOKEN_NONE;
-	gint       points        = 0;
-	GString*   font_face     = NULL;
-	gdouble    dpi           = 0.0f;
-	gdouble    pixels_per_em = 0;
-	gchar*     font_name     = NULL;
+	GString*    string        = NULL;
+	GError*     error         = NULL;
+	guint       points        = 0;
+	GString*    font_face     = NULL;
+	gdouble     dpi           = 0.0f;
+	gdouble     pixels_per_em = 0;
+	gchar*      font_name     = NULL;
 
 	if (!IS_DEFAULTS (self))
 		return;
@@ -192,7 +191,7 @@ _get_font_size_dpi (Defaults* self)
 	string = g_string_new (font_name);
 	if (error)
 	{
-		/* if something went wrong, assume "Sans 10" and continue */
+		// if something went wrong, assume "Sans 10" and continue
 		string = g_string_assign (string, "Sans 10");
 
 		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
@@ -201,41 +200,12 @@ _get_font_size_dpi (Defaults* self)
 	}
 	g_free ((gpointer) font_name);
 
-	/* extract font-family-name and font-size */
-	scanner = g_scanner_new (NULL);
-	if (scanner)
-	{
-		g_scanner_input_text (scanner, string->str, string->len);
-		for (token = g_scanner_get_next_token (scanner);
-		     token != G_TOKEN_EOF;
-		     token = g_scanner_get_next_token (scanner))
-		{
-			switch (token)
-			{
-				case G_TOKEN_INT:
-					points = (gint) scanner->value.v_int;
-				break;
+	// extract text point-size
+	points = extract_point_size (string->str);
 
-				case G_TOKEN_IDENTIFIER:
-					if (!font_face)
-						font_face = g_string_new (scanner->value.v_string);
-					else
-					{
-						g_string_append (font_face,
-								 " ");
-						g_string_append (font_face,
-								 scanner->value.v_string);
-					}
-				break;
+	// extract font-face-name/style
+	font_face = extract_font_face (string->str);
 
-				default:
-				break;
-			}
-		}
-		g_scanner_destroy (scanner);
-	}
-
-	/* clean up */
 	if (string != NULL)
 		g_string_free (string, TRUE);
 

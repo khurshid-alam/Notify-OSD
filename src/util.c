@@ -103,6 +103,28 @@ filter_text (const gchar *text)
 		{ CHARACTER_GT_REGEX, ">" },
 		{ CHARACTER_APOS_REGEX, "'" },
 		{ CHARACTER_QUOT_REGEX, "\"" },
+		{ CHARACTER_NEWLINE_REGEX, "\n" }
+		};
+
+	ReplaceMarkupData* ptr = data;
+	ReplaceMarkupData* end = data + sizeof(data) / sizeof(ReplaceMarkupData);
+	for (; ptr != end; ++ptr) {
+		gchar* tmp = replace_markup (text1, ptr->regex, ptr->replacement);
+		g_free (text1);
+		text1 = tmp;
+	}
+
+	return text1;
+}
+
+gchar*
+newline_to_space (const gchar *text)
+{
+	gchar *text1;
+
+	text1 = strip_html (text, TAG_MATCH_REGEX, TAG_REPLACE_REGEX);
+
+	static ReplaceMarkupData data[] = {
 		{ CHARACTER_NEWLINE_REGEX, " " }
 		};
 
@@ -234,4 +256,85 @@ get_wm_name (Display* dpy)
 	//  xmonad
 
 	return (gchar*) buffer;
+}
+
+guint
+extract_point_size (const gchar* string)
+{
+	guint       point_size = 0;
+	GRegex*     regex      = NULL;
+	GMatchInfo* match_info = NULL;
+
+	// sanity check
+	if (!string)
+		return 0;
+
+	// setup regular expression to extract an integer from the end of string
+	regex = g_regex_new ("\\d+$", 0, 0, NULL);
+	if (!regex)
+		return 0;
+
+	// walk the string
+	g_regex_match (regex, string, 0, &match_info);
+	while (g_match_info_matches (match_info))
+	{
+		gchar* word = NULL;
+
+		word = g_match_info_fetch (match_info, 0);
+		if (word)
+		{
+			sscanf (word, "%d", &point_size);
+			g_free (word);
+		}
+
+		g_match_info_next (match_info, NULL);
+	}
+
+	// clean up
+	g_match_info_free (match_info);
+	g_regex_unref (regex);
+
+	return point_size;
+}
+
+GString*
+extract_font_face (const gchar* string)
+{
+	GRegex*     regex      = NULL;
+	GMatchInfo* match_info = NULL;
+	GString*    font_face  = NULL;
+
+	// sanity check
+	if (!string)
+		return NULL;
+
+	// extract font-face-name/style
+	font_face = g_string_new ("");
+	if (!font_face)
+		return NULL;
+
+	// setup regular expression to extract leading text before trailing int
+	regex = g_regex_new ("([A-Z a-z])+", 0, 0, NULL);
+
+	// walk the string
+	g_regex_match (regex, string, 0, &match_info);
+	while (g_match_info_matches (match_info))
+	{
+		gchar* word = NULL;
+
+		word = g_match_info_fetch (match_info, 0);
+		if (word)
+		{
+			g_string_append (font_face, word);
+			g_free (word);
+		}
+
+		g_match_info_next (match_info, NULL);
+	}
+
+	// clean up
+	g_match_info_free (match_info);
+	g_regex_unref (regex);
+
+	return font_face;
 }

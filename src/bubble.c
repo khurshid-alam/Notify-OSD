@@ -965,21 +965,19 @@ _refresh_title (Bubble* self)
 
 	// create pango desc/layout
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_title_weight (d));
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -1071,21 +1069,19 @@ _refresh_body (Bubble* self)
 
 	// create pango desc/layout
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -2306,6 +2302,7 @@ void
 bubble_set_title (Bubble*      self,
 		  const gchar* title)
 {
+	gchar*         text;
 	BubblePrivate* priv;
 
 	if (!self || !IS_BUBBLE (self))
@@ -2316,11 +2313,16 @@ bubble_set_title (Bubble*      self,
 	if (priv->title)
 		g_string_free (priv->title, TRUE);
 
-	priv->title = g_string_new (title);
+	// convert any newline to space
+	text = newline_to_space (title);
+
+	priv->title = g_string_new (text);
 
 	g_object_notify (
 		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
 		"accessible-name");
+
+	g_free (text);
 }
 
 const gchar*
@@ -3105,7 +3107,9 @@ _calc_title_height (Bubble* self,
 	}
 
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	// make sure system-wide font-options like hinting, antialiasing etc.
 	// are taken into account
@@ -3122,17 +3126,12 @@ _calc_title_height (Bubble* self,
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
-
 	pango_font_description_set_weight (
 		desc,
 		defaults_get_text_title_weight (d));
 
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3176,7 +3175,9 @@ _calc_body_height (Bubble* self,
 	}
 
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	// make sure system-wide font-options like hinting, antialiasing etc.
 	// are taken into account
@@ -3193,14 +3194,10 @@ _calc_body_height (Bubble* self,
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
-
 	pango_font_description_set_weight (
 		desc,
 		defaults_get_text_body_weight (d));
 
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3255,7 +3252,6 @@ _calc_body_height (Bubble* self,
 	body_height = PANGO_PIXELS (log_rect.height);
 
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
