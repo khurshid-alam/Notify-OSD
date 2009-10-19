@@ -41,6 +41,7 @@
 #include <libwnck/workspace.h>
 
 #include "defaults.h"
+#include "util.h"
 
 G_DEFINE_TYPE (Defaults, defaults, G_TYPE_OBJECT);
 
@@ -173,13 +174,11 @@ _get_font_size_dpi (Defaults* self)
 {
 	GString*    string        = NULL;
 	GError*     error         = NULL;
-	gint        points        = 0;
+	guint       points        = 0;
 	GString*    font_face     = NULL;
 	gdouble     dpi           = 0.0f;
 	gdouble     pixels_per_em = 0;
 	gchar*      font_name     = NULL;
-	GRegex*     regex         = NULL;
-	GMatchInfo* match_info    = NULL;
 
 	if (!IS_DEFAULTS (self))
 		return;
@@ -202,33 +201,10 @@ _get_font_size_dpi (Defaults* self)
 	g_free ((gpointer) font_name);
 
 	// extract text point-size
-	regex = g_regex_new ("\\d+$", 0, 0, NULL);
-	g_regex_match (regex, string->str, 0, &match_info);
-	while (g_match_info_matches (match_info))
-	{
-		gchar* word = g_match_info_fetch (match_info, 0);
-		g_print ("Found: %s\n", word);
-		sscanf (word, "%d", &points);
-		g_print ("Found: %d\n", points);
-		g_free (word);
-		g_match_info_next (match_info, NULL);
-	}
-	g_match_info_free (match_info);
-	g_regex_unref (regex);
+	points = extract_point_size (string->str);
 
 	// extract font-face-name/style
-	font_face = g_string_new ("");
-	regex = g_regex_new ("([A-Z a-z])+", 0, 0, NULL);
-	g_regex_match (regex, string->str, 0, &match_info);
-	while (g_match_info_matches (match_info))
-	{
-		gchar* word = g_match_info_fetch (match_info, 0);
-		g_string_append (font_face, word);
-		g_free (word);
-		g_match_info_next (match_info, NULL);
-	}
-	g_match_info_free (match_info);
-	g_regex_unref (regex);
+	font_face = extract_font_face (string->str);
 
 	if (string != NULL)
 		g_string_free (string, TRUE);
