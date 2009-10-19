@@ -97,7 +97,7 @@ struct _BubblePrivate {
 
 	// used to prevent unneeded updates of the tile-cache, for append-,
 	// update or replace-cases, needs to move into class Notification
-	GString*         old_icon_basename;
+	GString*         old_icon_filename;
 };
 
 enum
@@ -2078,10 +2078,10 @@ bubble_dispose (GObject* gobject)
 		priv->tile_indicator = NULL;
 	}
 
-	if (priv->old_icon_basename)
+	if (priv->old_icon_filename)
 	{
-		g_string_free ((gpointer) priv->old_icon_basename, TRUE);
-		priv->old_icon_basename = NULL;
+		g_string_free ((gpointer) priv->old_icon_filename, TRUE);
+		priv->old_icon_filename = NULL;
 	}
 
 	// chain up to the parent class
@@ -2290,7 +2290,7 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
 	this->priv->prevent_fade         = FALSE;
-	this->priv->old_icon_basename    = g_string_new ("");
+	this->priv->old_icon_filename    = g_string_new ("");
 
 	update_input_shape (window, 1, 1);
 
@@ -2391,27 +2391,22 @@ bubble_set_icon (Bubble*      self,
 {
 	Defaults*      d;
 	BubblePrivate* priv;
-	gchar*         basename = NULL;
 
  	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
 
 	priv = GET_PRIVATE (self);
 
-	basename = g_path_get_basename (filename);
+	//basename = g_path_get_basename (filename);
 
 	// check if an app tries to set the same file as icon again, this check
 	// avoids superfluous regeneration of the tile/blur-cache for the icon,
 	// thus it improves performance in update- and append-cases
-	if (!g_strcmp0 (priv->old_icon_basename->str, basename))
-	{
-		g_free (basename);
+	if (!g_strcmp0 (priv->old_icon_filename->str, filename))
 		return;
-	}
 
 	// store the new icon-basename
-	g_string_assign (priv->old_icon_basename, basename);
-	g_free (basename);
+	g_string_assign (priv->old_icon_filename, filename);
 
 	if (priv->icon_pixbuf)
 	{
