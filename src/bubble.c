@@ -2407,7 +2407,9 @@ bubble_set_icon (Bubble*      self,
 {
 	Defaults*      d;
 	BubblePrivate* priv;
+#ifdef NOTIFY_OSD_ICON_PREFIX
 	gchar*         notify_osd_iconname;
+#endif
 
  	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
@@ -2420,14 +2422,17 @@ bubble_set_icon (Bubble*      self,
 		priv->icon_pixbuf = NULL;
 	}
 
+	d = self->defaults;
+
+#ifdef NOTIFY_OSD_ICON_PREFIX
 	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
 					       filename);
-	d = self->defaults;
 	priv->icon_pixbuf = load_icon (notify_osd_iconname,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
-
 	g_free (notify_osd_iconname);
+#endif
+
 	// fallback to non-notify-osd name
 	if (!priv->icon_pixbuf)
 		priv->icon_pixbuf = load_icon (filename,
