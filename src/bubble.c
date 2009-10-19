@@ -97,8 +97,6 @@ struct _BubblePrivate {
 
 	// used to prevent unneeded updates of the tile-cache, for append-,
 	// update or replace-cases, needs to move into class Notification
-	GString*         old_title;
-	GString*         old_message_body;
 	GString*         old_icon_basename;
 };
 
@@ -2080,18 +2078,6 @@ bubble_dispose (GObject* gobject)
 		priv->tile_indicator = NULL;
 	}
 
-	if (priv->old_title)
-	{
-		g_string_free ((gpointer) priv->old_title, TRUE);
-		priv->old_title = NULL;
-	}
-
-	if (priv->old_message_body)
-	{
-		g_string_free ((gpointer) priv->old_message_body, TRUE);
-		priv->old_message_body = NULL;
-	}
-
 	if (priv->old_icon_basename)
 	{
 		g_string_free ((gpointer) priv->old_icon_basename, TRUE);
@@ -2304,9 +2290,6 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
 	this->priv->prevent_fade         = FALSE;
-
-	this->priv->old_title            = NULL;
-	this->priv->old_message_body     = NULL;
 	this->priv->old_icon_basename    = g_string_new ("");
 
 	update_input_shape (window, 1, 1);
