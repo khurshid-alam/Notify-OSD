@@ -1012,6 +1012,7 @@ _refresh_title (Bubble* self)
 			       TEXT_SHADOW_COLOR_G,
 			       TEXT_SHADOW_COLOR_B,
 			       TEXT_SHADOW_COLOR_A);
+	pango_cairo_show_layout (cr, layout);
 
 	// ... blur it
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
