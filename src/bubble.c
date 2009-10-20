@@ -2879,7 +2879,7 @@ fade_in_completed_cb (EggTimeline* timeline,
 		gtk_window_set_opacity (bubble_get_window (bubble),
 		                        WINDOW_MAX_OPACITY);
 
-	bubble_start_timer (bubble);
+	bubble_start_timer (bubble, TRUE);
 }
 
 void
@@ -2897,7 +2897,7 @@ bubble_fade_in (Bubble* self,
 	    || msecs == 0)
 	{
 		bubble_show (self);
-		bubble_start_timer (self);
+		bubble_start_timer (self, TRUE);
 		return;
 	}
 
@@ -3050,7 +3050,8 @@ bubble_is_visible (Bubble* self)
 }
 
 void
-bubble_start_timer (Bubble* self)
+bubble_start_timer (Bubble*  self,
+		    gboolean trigger)
 {
 	guint          timer_id;
 	BubblePrivate* priv;
@@ -3076,8 +3077,9 @@ bubble_start_timer (Bubble* self)
 
 	/* if the bubble is displaying a value that is out of bounds
 	   trigger a dim/glow animation */
-	if (priv->value == -1 || priv->value == 101)
-		bubble_start_glow_effect (self, 500);
+	if (trigger)
+		if (priv->value == -1 || priv->value == 101)
+			bubble_start_glow_effect (self, 500);
 }
 
 void
@@ -3733,6 +3735,6 @@ bubble_sync_with (Bubble *self,
 
 	bubble_set_timeout (self,
 			    bubble_get_timeout (other));
-	bubble_start_timer (self);
-	bubble_start_timer (other);
+	bubble_start_timer (self, FALSE);
+	bubble_start_timer (other, FALSE);
 }

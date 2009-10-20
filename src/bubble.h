@@ -189,7 +189,8 @@ gboolean
 bubble_is_visible (Bubble* self);
 
 void
-bubble_start_timer (Bubble* self);
+bubble_start_timer (Bubble*  self,
+		    gboolean trigger);
 
 void
 bubble_get_position (Bubble* self,

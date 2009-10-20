@@ -389,7 +389,7 @@ stack_push_bubble (Stack*  self,
 	/* check if this is just an update */
 	if (find_bubble_by_id (self, bubble_get_id (bubble)))
 	{
-		bubble_start_timer (bubble);
+		bubble_start_timer (bubble, TRUE);
 		bubble_refresh (bubble);
 
 		/* resync the synchronous bubble if it's at the top */
