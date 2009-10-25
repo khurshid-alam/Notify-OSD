@@ -258,45 +258,6 @@ get_wm_name (Display* dpy)
 	return (gchar*) buffer;
 }
 
-guint
-extract_point_size (const gchar* string)
-{
-	guint       point_size = 0;
-	GRegex*     regex      = NULL;
-	GMatchInfo* match_info = NULL;
-
-	// sanity check
-	if (!string)
-		return 0;
-
-	// setup regular expression to extract an integer from the end of string
-	regex = g_regex_new ("\\d+$", 0, 0, NULL);
-	if (!regex)
-		return 0;
-
-	// walk the string
-	g_regex_match (regex, string, 0, &match_info);
-	while (g_match_info_matches (match_info))
-	{
-		gchar* word = NULL;
-
-		word = g_match_info_fetch (match_info, 0);
-		if (word)
-		{
-			sscanf (word, "%d", &point_size);
-			g_free (word);
-		}
-
-		g_match_info_next (match_info, NULL);
-	}
-
-	// clean up
-	g_match_info_free (match_info);
-	g_regex_unref (regex);
-
-	return point_size;
-}
-
 GString*
 extract_font_face (const gchar* string)
 {

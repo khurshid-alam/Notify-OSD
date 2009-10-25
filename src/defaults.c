@@ -172,13 +172,14 @@ static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 static void
 _get_font_size_dpi (Defaults* self)
 {
-	GString*    string        = NULL;
-	GError*     error         = NULL;
-	guint       points        = 0;
-	GString*    font_face     = NULL;
-	gdouble     dpi           = 0.0f;
-	gdouble     pixels_per_em = 0;
-	gchar*      font_name     = NULL;
+	GString*              string        = NULL;
+	GError*               error         = NULL;
+	gdouble               points        = 0.0f;
+	GString*              font_face     = NULL;
+	gdouble               dpi           = 0.0f;
+	gdouble               pixels_per_em = 0;
+	gchar*                font_name     = NULL;
+	PangoFontDescription* desc          = NULL;
 
 	if (!IS_DEFAULTS (self))
 		return;
@@ -198,10 +199,16 @@ _get_font_size_dpi (Defaults* self)
 		           error->message);
 		g_error_free (error);
 	}
-	g_free ((gpointer) font_name);
 
 	// extract text point-size
-	points = extract_point_size (string->str);
+	desc = pango_font_description_from_string (font_name);
+	if (pango_font_description_get_size_is_absolute (desc))
+		points = (gdouble) pango_font_description_get_size (desc); 
+	else
+		points = (gdouble) pango_font_description_get_size (desc) /
+			 (gdouble) PANGO_SCALE;
+	pango_font_description_free (desc);
+	g_free ((gpointer) font_name);
 
 	// extract font-face-name/style
 	font_face = extract_font_face (string->str);
@@ -233,12 +240,12 @@ _get_font_size_dpi (Defaults* self)
 	}
 
 	/* update stored DPI-value */
-	pixels_per_em = (gdouble) points * dpi / 72.0f;
+	pixels_per_em = points * dpi / 72.0f;
 	g_object_set (self, "pixels-per-em", pixels_per_em, NULL);
 	g_object_set (self, "screen-dpi", dpi, NULL);
 
 	if (g_getenv ("DEBUG"))
-		g_print ("font-size: %dpt\ndpi: %3.1f\npixels/EM: %2.2f\nwidth: %d px\ntitle-height: %2.2f pt\nbody-height: %2.2f pt\n\n",
+		g_print ("font-size: %fpt\ndpi: %3.1f\npixels/EM: %2.2f\nwidth: %d px\ntitle-height: %2.2f pt\nbody-height: %2.2f pt\n\n",
 			 points,
 			 defaults_get_screen_dpi (self),
 			 pixels_per_em,
