@@ -54,7 +54,7 @@ log_init (void)
 	g_return_if_fail (homedir != NULL);
 
 	// Make sure the cache directory is there, if at all possible
-	char *dirname = g_get_user_cache_dir ();
+	const gchar *dirname = g_get_user_cache_dir ();
 	g_mkdir_with_parents (dirname, 0700);
 
 	char *filename = 
@@ -66,7 +66,6 @@ log_init (void)
 			   filename);
 
 	g_free (filename);
-	g_free (dirname);
 
 	/* discard all debug messages unless DEBUG is set */
 	if (! g_getenv ("DEBUG"))
