@@ -30,6 +30,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdio.h>
+#include <glib.h>
 
 #include "bubble.h"
 
@@ -53,11 +54,11 @@ log_init (void)
 	g_return_if_fail (homedir != NULL);
 
 	// Make sure the cache directory is there, if at all possible
-	char *dirname = g_strdup_printf ("%s/.cache", homedir);
+	char *dirname = g_get_user_cache_dir ();
 	g_mkdir_with_parents (dirname, 0700);
 
 	char *filename = 
-		g_strdup_printf ("%s/.cache/notify-osd.log", homedir);
+		g_strdup_printf ("%s/notify-osd.log", dirname);
 
 	logfile = fopen (filename, "w");
 	if (logfile == NULL)
