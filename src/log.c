@@ -57,8 +57,7 @@ log_init (void)
 	const gchar *dirname = g_get_user_cache_dir ();
 	g_mkdir_with_parents (dirname, 0700);
 
-	char *filename = 
-		g_strdup_printf ("%s/notify-osd.log", dirname);
+	char *filename = g_build_filename (dirname, "notify-osd.log", NULL);
 
 	logfile = fopen (filename, "w");
 	if (logfile == NULL)
