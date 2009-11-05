@@ -36,10 +36,10 @@
 
 static inline void
 _blurinner (guchar* pixel,
-	    gint    zR,
-	    gint    zG,
-	    gint    zB,
-	    gint    zA,
+	    gint   *zR,
+	    gint   *zG,
+	    gint   *zB,
+	    gint   *zA,
 	    gint    alpha,
 	    gint    aprec,
 	    gint    zprec);
@@ -175,10 +175,10 @@ _expblur (guchar* pixels,
 
 static inline void
 _blurinner (guchar* pixel,
-	    gint    zR,
-	    gint    zG,
-	    gint    zB,
-	    gint    zA,
+	    gint   *zR,
+	    gint   *zG,
+	    gint   *zB,
+	    gint   *zA,
 	    gint    alpha,
 	    gint    aprec,
 	    gint    zprec)
@@ -193,15 +193,15 @@ _blurinner (guchar* pixel,
 	B = *(pixel + 2);
 	A = *(pixel + 3);
 
-	zR += (alpha * ((R << zprec) - zR)) >> aprec;
-	zG += (alpha * ((G << zprec) - zG)) >> aprec;
-	zB += (alpha * ((B << zprec) - zB)) >> aprec;
-	zA += (alpha * ((A << zprec) - zA)) >> aprec;
+	*zR += (alpha * ((R << zprec) - *zR)) >> aprec;
+	*zG += (alpha * ((G << zprec) - *zG)) >> aprec;
+	*zB += (alpha * ((B << zprec) - *zB)) >> aprec;
+	*zA += (alpha * ((A << zprec) - *zA)) >> aprec;
 
-	*pixel       = zR >> zprec;
-	*(pixel + 1) = zG >> zprec;
-	*(pixel + 2) = zB >> zprec;
-	*(pixel + 3) = zA >> zprec;
+	*pixel       = *zR >> zprec;
+	*(pixel + 1) = *zG >> zprec;
+	*(pixel + 2) = *zB >> zprec;
+	*(pixel + 3) = *zA >> zprec;
 } 
 
 static inline void
@@ -228,22 +228,22 @@ _blurrow (guchar* pixels,
 	zB = *(scanline + 2) << zprec;
 	zA = *(scanline + 3) << zprec;
 
-	for (index = 0; index < width * channels; index += channels)
-		_blurinner (&scanline[index],
-			    zR,
-			    zG,
-			    zB,
-			    zA,
+	for (index = 0; index < width; index ++)
+		_blurinner (&scanline[index * channels],
+			    &zR,
+			    &zG,
+			    &zB,
+			    &zA,
 			    alpha,
 			    aprec,
 			    zprec);
 
 	for (index = width - 2; index >= 0; index--)
-		_blurinner (&scanline[index],
-			    zR,
-			    zG,
-			    zB,
-			    zA,
+		_blurinner (&scanline[index * channels],
+			    &zR,
+			    &zG,
+			    &zB,
+			    &zA,
 			    alpha,
 			    aprec,
 			    zprec);
@@ -276,21 +276,21 @@ _blurcol (guchar* pixels,
 	zA = *((guchar*) ptr + 3) << zprec;
 
 	for (index = width; index < (height - 1) * width; index += width)
-		_blurinner ((guchar*) &ptr[index],
-			    zR,
-			    zG,
-			    zB,
-			    zA,
+		_blurinner ((guchar*) &ptr[index * channels],
+			    &zR,
+			    &zG,
+			    &zB,
+			    &zA,
 			    alpha,
 			    aprec,
 			    zprec);
 
 	for (index = (height - 2) * width; index >= 0; index -= width)
-		_blurinner ((guchar*) &ptr[index],
-			    zR,
-			    zG,
-			    zB,
-			    zA,
+		_blurinner ((guchar*) &ptr[index * channels],
+			    &zR,
+			    &zG,
+			    &zB,
+			    &zA,
 			    alpha,
 			    aprec,
 			    zprec);
