@@ -10,6 +10,7 @@
 //
 // Authors:
 //    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
+//    Jason Smith <jason.smith@canonical.com>
 //
 // Notes:
 //    based on exponential-blur algorithm by Jani Huhtanen
