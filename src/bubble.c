@@ -407,7 +407,7 @@ _draw_shadow (cairo_t* cr,
 	cairo_destroy (cr_surf);
 
 	// create and setup blur
-	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
 	raico_blur_set_radius (blur, shadow_radius);
 
 	// now blur it
