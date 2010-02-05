@@ -103,28 +103,6 @@ test_newline_to_space ()
 }
 
 static void
-test_extract_point_size ()
-{
-	static const IntegerExtraction tests[] = {
-		{ "", 0 },
-		{ "foobar", 0 },
-		{ "Bla Fasel -12.0", 0 },
-		{ "Sans 10", 10 },
-		{ "Candara 9", 9 },
-		{ "Bitstream Vera Serif Italic 1", 1 },
-		{ "Calibri Italic 100", 100 },
-		{ "Century Schoolbook L Italic 42", 42 },
-		{ NULL, 0 }
-	};
-
-	for (int i = 0; tests[i].before != NULL; i++)
-	{
-		guint extracted = extract_point_size (tests[i].before);
-		g_assert_cmpuint (extracted, ==, tests[i].expected);
-	}
-}
-
-static void
 test_extract_font_face ()
 {
 	static const TextComparisons tests[] = {
@@ -156,7 +134,6 @@ test_filtering_create_test_suite (void)
 
 	g_test_suite_add(ts, TC(test_text_filter));
 	g_test_suite_add(ts, TC(test_newline_to_space));
-	g_test_suite_add(ts, TC(test_extract_point_size));
 	g_test_suite_add(ts, TC(test_extract_font_face));
 
 	return ts;

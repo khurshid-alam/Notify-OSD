@@ -52,8 +52,5 @@ destroy_cloned_surface (cairo_surface_t* surface);
 gchar*
 get_wm_name (Display* dpy);
 
-guint
-extract_point_size (const gchar* string);
-
 GString*
 extract_font_face (const gchar* string);
