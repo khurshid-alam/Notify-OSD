@@ -84,7 +84,7 @@ struct _BubblePrivate {
 	gint             future_height;
 	gboolean         prevent_fade;
 
-	// these will be replaced by notification_t* later on
+	// these will be replaced by class Notification later on
 	GString*         title;
 	GString*         message_body;
 	guint            id;
@@ -94,6 +94,10 @@ struct _BubblePrivate {
 	guint            timeout;
 	guint            urgency;
 	//notification_t* notification;
+
+	// used to prevent unneeded updates of the tile-cache, for append-,
+	// update or replace-cases, needs to move into class Notification
+	GString*         old_icon_filename;
 };
 
 enum
@@ -2077,6 +2081,12 @@ bubble_dispose (GObject* gobject)
 		priv->tile_indicator = NULL;
 	}
 
+	if (priv->old_icon_filename)
+	{
+		g_string_free ((gpointer) priv->old_icon_filename, TRUE);
+		priv->old_icon_filename = NULL;
+	}
+
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
 }
@@ -2283,6 +2293,7 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body            = NULL;
 	this->priv->tile_indicator       = NULL;
 	this->priv->prevent_fade         = FALSE;
+	this->priv->old_icon_filename    = g_string_new ("");
 
 	update_input_shape (window, 1, 1);
 
@@ -2423,6 +2434,17 @@ bubble_set_icon (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
+	//basename = g_path_get_basename (filename);
+
+	// check if an app tries to set the same file as icon again, this check
+	// avoids superfluous regeneration of the tile/blur-cache for the icon,
+	// thus it improves performance in update- and append-cases
+	if (!g_strcmp0 (priv->old_icon_filename->str, filename))
+		return;
+
+	// store the new icon-basename
+	g_string_assign (priv->old_icon_filename, filename);
+
 	if (priv->icon_pixbuf)
 	{
 		g_object_unref (priv->icon_pixbuf);
@@ -2555,14 +2577,25 @@ void
 bubble_set_value (Bubble* self,
 		  gint    value)
 {
+	BubblePrivate* priv;
+
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->value = value;
+	priv = GET_PRIVATE (self);
 
-	g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);
-
-	_refresh_indicator (self);
+	// only really cause a refresh (blur, recreating tile-/blur-cache) if
+	// a different value has been set, this helps improve performance when
+	// a user e.g. presses and holds down keys for Volume-Up/Down or
+	// Brightness-Up/Down and apps like gnome-settings-daemon or
+	// gnome-power-daemon fire continues notification-updates due to the
+	// key-repeat events
+	if (priv->value != value)
+	{
+		priv->value = value;
+		g_signal_emit (self, g_bubble_signals[VALUE_CHANGED], 0, value);
+		_refresh_indicator (self);
+	}
 }
 
 gint
@@ -3309,6 +3342,8 @@ _calc_body_height (Bubble* self,
 void
 bubble_recalc_size (Bubble *self)
 {
+	gint           old_bubble_width  = 0;
+	gint           old_bubble_height = 0;
 	gint           new_bubble_width  = 0;
 	gint           new_bubble_height = 0;
 	Defaults*      d;
@@ -3487,11 +3522,20 @@ bubble_recalc_size (Bubble *self)
 		break;
 	}
 	priv->future_height = new_bubble_height;
+
+	bubble_get_size (self, &old_bubble_width, &old_bubble_height);
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
 
-	_refresh_background (self);
-	_refresh_title (self);
-	_refresh_body (self);
+	// don't refresh tile/blur-caches for background, title or body if the
+	// size of the bubble has not changed, this improves performance for the
+	// update- and replace-cases
+	if (old_bubble_width != new_bubble_width ||
+	    old_bubble_height != new_bubble_height)
+	{
+		_refresh_background (self);
+		_refresh_title (self);
+		_refresh_body (self);
+	}
 
 	update_shape (self);
 }
