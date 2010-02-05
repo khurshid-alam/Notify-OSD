@@ -109,6 +109,10 @@ const gchar*
 bubble_get_message_body (Bubble* self);
 
 void
+bubble_set_icon_from_path (Bubble*      self,
+			   const gchar* filepath);
+
+void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename);
 
@@ -185,7 +189,8 @@ gboolean
 bubble_is_visible (Bubble* self);
 
 void
-bubble_start_timer (Bubble* self);
+bubble_start_timer (Bubble*  self,
+		    gboolean trigger);
 
 void
 bubble_get_position (Bubble* self,

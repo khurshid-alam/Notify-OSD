@@ -113,6 +113,12 @@ enum
 	A
 };
 
+#define TEMPORARY_ICON_PREFIX_WORKAROUND 1
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+#warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
+#define NOTIFY_OSD_ICON_PREFIX "notification"
+#endif
+
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
 // for jaunty notifications
@@ -965,21 +971,19 @@ _refresh_title (Bubble* self)
 
 	// create pango desc/layout
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_title_weight (d));
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -1008,6 +1012,7 @@ _refresh_title (Bubble* self)
 			       TEXT_SHADOW_COLOR_G,
 			       TEXT_SHADOW_COLOR_B,
 			       TEXT_SHADOW_COLOR_A);
+	pango_cairo_show_layout (cr, layout);
 
 	// ... blur it
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
@@ -1071,21 +1076,19 @@ _refresh_body (Bubble* self)
 
 	// create pango desc/layout
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	pango_font_description_set_size (desc,
 					 defaults_get_system_font_size (d) *
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
 	pango_font_description_set_weight (desc,
 					   defaults_get_text_body_weight (d));
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
@@ -2381,11 +2384,39 @@ bubble_get_message_body (Bubble* self)
 }
 
 void
+bubble_set_icon_from_path (Bubble*      self,
+			   const gchar* filepath)
+{
+	Defaults*      d;
+	BubblePrivate* priv;
+
+	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filepath, ""))
+		return;
+
+	priv = GET_PRIVATE (self);
+
+	if (priv->icon_pixbuf)
+	{
+		g_object_unref (priv->icon_pixbuf);
+		priv->icon_pixbuf = NULL;
+	}
+
+	d = self->defaults;
+	priv->icon_pixbuf = load_icon (filepath,
+				       EM2PIXELS (defaults_get_icon_size (d), d));
+
+	_refresh_icon (self);
+}
+
+void
 bubble_set_icon (Bubble*      self,
 		 const gchar* filename)
 {
 	Defaults*      d;
 	BubblePrivate* priv;
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+	gchar*         notify_osd_iconname;
+#endif
 
  	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
@@ -2399,9 +2430,20 @@ bubble_set_icon (Bubble*      self,
 	}
 
 	d = self->defaults;
-	priv->icon_pixbuf = load_icon (filename,
+
+#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
+	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
+					       filename);
+	priv->icon_pixbuf = load_icon (notify_osd_iconname,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
+	g_free (notify_osd_iconname);
+#endif
+
+	// fallback to non-notify-osd name
+	if (!priv->icon_pixbuf)
+		priv->icon_pixbuf = load_icon (filename,
+					       EM2PIXELS (defaults_get_icon_size (d), d));
 
 	_refresh_icon (self);
 }
@@ -2420,8 +2462,11 @@ scale_pixbuf (const GdkPixbuf *pixbuf, gint size)
 
 	max_edge = MAX (w, h);
 
-	new_width = size * (w / max_edge);
-	new_height = size * (h / max_edge);
+	// temporarily cast to float so we don't end up missing fractional parts
+	// from the division, especially nasty for 0.something :)
+	// e.g.: 99 / 100 = 0 but 99.0 / 100.0 = 0.99
+	new_width = size * ((gfloat) w / (gfloat) max_edge);
+	new_height =  size * ((gfloat) h / (gfloat) max_edge);
 
 	/* Scale the pixbuf down, preserving the aspect ratio */
 	scaled_icon = gdk_pixbuf_scale_simple (pixbuf,
@@ -2490,7 +2535,6 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	{
 		scaled = scale_pixbuf (pixbuf, EM2PIXELS (defaults_get_icon_size (d), d));
 		g_object_unref (pixbuf);
-
 		pixbuf = scaled;
 	}
 
@@ -2835,7 +2879,7 @@ fade_in_completed_cb (EggTimeline* timeline,
 		gtk_window_set_opacity (bubble_get_window (bubble),
 		                        WINDOW_MAX_OPACITY);
 
-	bubble_start_timer (bubble);
+	bubble_start_timer (bubble, TRUE);
 }
 
 void
@@ -2853,7 +2897,7 @@ bubble_fade_in (Bubble* self,
 	    || msecs == 0)
 	{
 		bubble_show (self);
-		bubble_start_timer (self);
+		bubble_start_timer (self, TRUE);
 		return;
 	}
 
@@ -3006,7 +3050,8 @@ bubble_is_visible (Bubble* self)
 }
 
 void
-bubble_start_timer (Bubble* self)
+bubble_start_timer (Bubble*  self,
+		    gboolean trigger)
 {
 	guint          timer_id;
 	BubblePrivate* priv;
@@ -3032,8 +3077,9 @@ bubble_start_timer (Bubble* self)
 
 	/* if the bubble is displaying a value that is out of bounds
 	   trigger a dim/glow animation */
-	if (priv->value == -1 || priv->value == 101)
-		bubble_start_glow_effect (self, 500);
+	if (trigger)
+		if (priv->value == -1 || priv->value == 101)
+			bubble_start_glow_effect (self, 500);
 }
 
 void
@@ -3109,7 +3155,9 @@ _calc_title_height (Bubble* self,
 	}
 
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	// make sure system-wide font-options like hinting, antialiasing etc.
 	// are taken into account
@@ -3126,17 +3174,12 @@ _calc_title_height (Bubble* self,
 					 defaults_get_text_title_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
-
 	pango_font_description_set_weight (
 		desc,
 		defaults_get_text_title_weight (d));
 
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 
 	pango_layout_set_ellipsize (layout, PANGO_ELLIPSIZE_END);
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3180,7 +3223,9 @@ _calc_body_height (Bubble* self,
 	}
 
 	layout = pango_cairo_create_layout (cr);
-	desc = pango_font_description_new ();
+	text_font_face = defaults_get_text_font_face (d);
+	desc = pango_font_description_from_string (text_font_face);
+	g_free ((gpointer) text_font_face);
 
 	// make sure system-wide font-options like hinting, antialiasing etc.
 	// are taken into account
@@ -3197,14 +3242,10 @@ _calc_body_height (Bubble* self,
 					 defaults_get_text_body_size (d) *
 					 PANGO_SCALE);
 
-	text_font_face = defaults_get_text_font_face (d);
-	pango_font_description_set_family_static (desc, text_font_face);
-
 	pango_font_description_set_weight (
 		desc,
 		defaults_get_text_body_weight (d));
 
-	pango_font_description_set_style (desc, PANGO_STYLE_NORMAL);
 	pango_layout_set_font_description (layout, desc);
 
 	pango_layout_set_wrap (layout, PANGO_WRAP_WORD_CHAR);
@@ -3259,7 +3300,6 @@ _calc_body_height (Bubble* self,
 	body_height = PANGO_PIXELS (log_rect.height);
 
 	pango_font_description_free (desc);
-	g_free ((gpointer) text_font_face);
 	g_object_unref (layout);
 	cairo_destroy (cr);
 
@@ -3639,39 +3679,52 @@ void
 bubble_append_message_body (Bubble*      self,
 			    const gchar* append_body)
 {
-	gboolean result;
-	gchar*   text;
-	GError*  error = NULL;
+	gboolean       result = FALSE;
+	gchar*         text   = NULL;
+	GError*        error  = NULL;
+	BubblePrivate* priv   = NULL;
 
-	if (!self || !IS_BUBBLE (self))
+	if (!self || !IS_BUBBLE (self) || !append_body)
 		return;
 
-	/* filter out any HTML/markup if possible */
+	priv = GET_PRIVATE (self);
+
+	// filter out any HTML/markup if possible
     	result = pango_parse_markup (append_body,
 				     -1,
-				     0,    /* no accel-marker needed */
-				     NULL, /* no PangoAttr needed */
+				     0,    // no accel-marker needed
+				     NULL, // no PangoAttr needed
 				     &text,
-				     NULL, /* no accel-marker-return needed */
+				     NULL, // no accel-marker-return needed
 				     &error);
-	if (error)
+	if (error && !result)
 	{
-		g_warning ("bubble_append_message_body(): Got error \"%s\"\n",
-		           error->message);
+		g_warning ("%s(): Got error \"%s\"\n",
+			   G_STRFUNC,
+			   error->message);
 		g_error_free (error);
 		error = NULL;
+
+		if (text)
+			g_free (text);
 	}
 
-	/* append text to current message-body */
-	g_string_append (GET_PRIVATE (self)->message_body, text);
+	if (text)
+	{
+		// append text to current message-body
+		g_string_append (priv->message_body, text);
 
-	g_signal_emit (self, g_bubble_signals[MESSAGE_BODY_INSERTED], 0, text);
+		g_signal_emit (self,
+			       g_bubble_signals[MESSAGE_BODY_INSERTED],
+			       0,
+			       text);
 
-	g_object_notify (
-		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
-		"accessible-description");
+		g_object_notify (
+			G_OBJECT (gtk_widget_get_accessible (priv->widget)),
+				  "accessible-description");
 
-	g_free ((gpointer) text);
+		g_free (text);
+	}
 }
 
 void
@@ -3682,6 +3735,6 @@ bubble_sync_with (Bubble *self,
 
 	bubble_set_timeout (self,
 			    bubble_get_timeout (other));
-	bubble_start_timer (self);
-	bubble_start_timer (other);
+	bubble_start_timer (self, FALSE);
+	bubble_start_timer (other, FALSE);
 }

@@ -215,7 +215,7 @@ stack_display_sync_bubble (Stack *self, Bubble *bubble)
 	/* is the notification reusing the current bubble? */
 	if (sync_bubble == bubble)
 	{
-		bubble_start_timer (bubble);
+		bubble_start_timer (bubble, TRUE);
 		bubble_refresh (bubble);
 		return;
 	}
