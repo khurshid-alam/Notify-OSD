@@ -59,7 +59,7 @@ main (int    argc,
 	}
 
 	// create and setup blur
-	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
 	raico_blur_set_radius (blur, 5);
 
 	// draw something

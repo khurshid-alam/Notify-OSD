@@ -359,7 +359,7 @@ draw_shadow (cairo_t* cr,
 	cairo_destroy (cr_surf);
 
 	// create and setup blur
-	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
 	raico_blur_set_radius (blur, shadow_radius);
 
 	// now blur it
@@ -724,7 +724,7 @@ setup_text_tile (const cairo_font_options_t* font_opts,
 			dpi);
 
 	// create and setup blur
-	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
 	raico_blur_set_radius (blur, 4);
 
 	// now blur it
@@ -853,7 +853,7 @@ setup_tile (gint w, gint h)
 	cairo_surface_destroy (tmp);
 
 	// blur tmp. copy of scratch-surface 
-	blur = raico_blur_create (RAICO_BLUR_QUALITY_HIGH);
+	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
 	raico_blur_set_radius (blur, 6);
 	raico_blur_apply (blur, dummy_surf);
 	raico_blur_destroy (blur);
