@@ -155,8 +155,7 @@ raico_blur_apply (raico_blur_t*    blur,
 	switch (blur->priv->quality)
 	{
 		case RAICO_BLUR_QUALITY_LOW:
-			//surface_exponential_blur (surface, blur->priv->radius);
-			surface_gaussian_blur (surface, blur->priv->radius);
+			surface_exponential_blur (surface, blur->priv->radius);
 		break;
 
 		case RAICO_BLUR_QUALITY_MEDIUM:
