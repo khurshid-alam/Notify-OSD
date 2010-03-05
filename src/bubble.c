@@ -932,7 +932,7 @@ _refresh_icon (Bubble* self)
 	// create the surface/blur-cache from the normal surface
 	if (priv->tile_icon)
 		tile_destroy (priv->tile_icon);
-	priv->tile_icon = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
+	priv->tile_icon = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS/2);
 
 	// clean up
 	cairo_destroy (cr);
@@ -1199,7 +1199,7 @@ _refresh_indicator (Bubble* self)
 	// create the surface/blur-cache from the normal surface
 	if (priv->tile_indicator)
 		tile_destroy (priv->tile_indicator);
-	priv->tile_indicator = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS);
+	priv->tile_indicator = tile_new (normal, BUBBLE_CONTENT_BLUR_RADIUS/2);
 
 	// clean up
 	cairo_destroy (cr);
