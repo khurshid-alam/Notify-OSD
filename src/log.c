@@ -12,6 +12,9 @@
 **    Mirco "MacSlow" Mueller <mirco.mueller@canonical.com>
 **    David Barth <david.barth@canonical.com>
 **
+** Contributor(s):
+**    Sense "qense" Hofstede <qense@ubuntu.com> (fix LP: #465801, rev. 415)
+**
 ** This program is free software: you can redistribute it and/or modify it
 ** under the terms of the GNU General Public License version 3, as published
 ** by the Free Software Foundation.
@@ -30,6 +33,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <stdio.h>
+#include <glib.h>
 
 #include "bubble.h"
 
@@ -53,11 +57,10 @@ log_init (void)
 	g_return_if_fail (homedir != NULL);
 
 	// Make sure the cache directory is there, if at all possible
-	char *dirname = g_strdup_printf ("%s/.cache", homedir);
+	const gchar *dirname = g_get_user_cache_dir ();
 	g_mkdir_with_parents (dirname, 0700);
 
-	char *filename = 
-		g_strdup_printf ("%s/.cache/notify-osd.log", homedir);
+	char *filename = g_build_filename (dirname, "notify-osd.log", NULL);
 
 	logfile = fopen (filename, "w");
 	if (logfile == NULL)
@@ -65,7 +68,6 @@ log_init (void)
 			   filename);
 
 	g_free (filename);
-	g_free (dirname);
 
 	/* discard all debug messages unless DEBUG is set */
 	if (! g_getenv ("DEBUG"))
