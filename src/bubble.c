@@ -3780,6 +3780,7 @@ bubble_append_message_body (Bubble*      self,
 	{
 		// append text to current message-body
 		g_string_append (priv->message_body, text);
+		priv->message_body_needs_refresh = TRUE;
 
 		g_signal_emit (self,
 			       g_bubble_signals[MESSAGE_BODY_INSERTED],
