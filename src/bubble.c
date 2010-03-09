@@ -87,6 +87,8 @@ struct _BubblePrivate {
 	// these will be replaced by class Notification later on
 	GString*         title;
 	GString*         message_body;
+	gboolean         title_needs_refresh;
+	gboolean         message_body_needs_refresh;
 	guint            id;
 	GdkPixbuf*       icon_pixbuf;
 	gint             value; // "empty": -2, valid range: -1..101, -1/101 trigger "over/undershoot"-effect
@@ -1042,6 +1044,9 @@ _refresh_title (Bubble* self)
 	// clean up
 	cairo_destroy (cr);
 	cairo_surface_destroy (normal);
+
+	// reset refresh-flag
+	priv->title_needs_refresh = FALSE;
 }
 
 void
@@ -1149,6 +1154,9 @@ _refresh_body (Bubble* self)
 	// clean up
 	cairo_destroy (cr);
 	cairo_surface_destroy (normal);
+
+	// reset refresh-flag
+	priv->message_body_needs_refresh = FALSE;
 }
 
 void
@@ -2107,17 +2115,19 @@ bubble_init (Bubble* self)
 
 	BubblePrivate *priv;
 
-	self->priv = priv       = GET_PRIVATE (self);
-	priv->layout            = LAYOUT_NONE;
-	priv->title             = NULL;
-	priv->message_body      = NULL;
-	priv->visible           = FALSE;
-	priv->icon_pixbuf       = NULL;
-	priv->value             = -2;
-	priv->synchronous       = NULL;
-	priv->sender            = NULL;
-	priv->draw_handler_id   = 0;
-	priv->pointer_update_id = 0;
+	self->priv = priv                = GET_PRIVATE (self);
+	priv->layout                     = LAYOUT_NONE;
+	priv->title                      = NULL;
+	priv->message_body               = NULL;
+	priv->title_needs_refresh        = FALSE;
+	priv->message_body_needs_refresh = FALSE;
+	priv->visible                    = FALSE;
+	priv->icon_pixbuf                = NULL;
+	priv->value                      = -2;
+	priv->synchronous                = NULL;
+	priv->sender                     = NULL;
+	priv->draw_handler_id            = 0;
+	priv->pointer_update_id          = 0;
 }
 
 static void
@@ -2266,34 +2276,36 @@ bubble_new (Defaults* defaults)
 
 	// TODO: fold some of that back into bubble_init
 	this->priv = GET_PRIVATE (this);
-	this->priv->layout               = LAYOUT_NONE;
-	this->priv->widget               = window;
-	this->priv->title                = g_string_new ("");
-	this->priv->message_body         = NULL;
-	this->priv->icon_pixbuf          = NULL;
-	this->priv->value                = -2;
-	this->priv->visible              = FALSE;
-	this->priv->timeout              = 5000;
-	this->priv->mouse_over           = FALSE;
-	this->priv->distance             = 1.0f;
-	this->priv->composited           = gdk_screen_is_composited (
+	this->priv->layout                     = LAYOUT_NONE;
+	this->priv->widget                     = window;
+	this->priv->title                      = g_string_new ("");
+	this->priv->message_body               = g_string_new ("");
+	this->priv->title_needs_refresh        = FALSE;
+	this->priv->message_body_needs_refresh = FALSE;
+	this->priv->icon_pixbuf                = NULL;
+	this->priv->value                      = -2;
+	this->priv->visible                    = FALSE;
+	this->priv->timeout                    = 5000;
+	this->priv->mouse_over                 = FALSE;
+	this->priv->distance                   = 1.0f;
+	this->priv->composited                 = gdk_screen_is_composited (
 						gtk_widget_get_screen (window));
-	this->priv->alpha                = NULL;
-	this->priv->timeline             = NULL;
-	this->priv->title_width          = 0;
-	this->priv->title_height         = 0;
-	this->priv->body_width           = 0;
-	this->priv->body_height          = 0;
-	this->priv->append               = FALSE;
-	this->priv->icon_only            = FALSE;
-	this->priv->tile_background_part = NULL;
-	this->priv->tile_background      = NULL;
-	this->priv->tile_icon            = NULL;
-	this->priv->tile_title           = NULL;
-	this->priv->tile_body            = NULL;
-	this->priv->tile_indicator       = NULL;
-	this->priv->prevent_fade         = FALSE;
-	this->priv->old_icon_filename    = g_string_new ("");
+	this->priv->alpha                      = NULL;
+	this->priv->timeline                   = NULL;
+	this->priv->title_width                = 0;
+	this->priv->title_height               = 0;
+	this->priv->body_width                 = 0;
+	this->priv->body_height                = 0;
+	this->priv->append                     = FALSE;
+	this->priv->icon_only                  = FALSE;
+	this->priv->tile_background_part       = NULL;
+	this->priv->tile_background            = NULL;
+	this->priv->tile_icon                  = NULL;
+	this->priv->tile_title                 = NULL;
+	this->priv->tile_body                  = NULL;
+	this->priv->tile_indicator             = NULL;
+	this->priv->prevent_fade               = FALSE;
+	this->priv->old_icon_filename          = g_string_new ("");
 
 	update_input_shape (window, 1, 1);
 
@@ -2328,11 +2340,16 @@ bubble_set_title (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
-	if (priv->title)
-		g_string_free (priv->title, TRUE);
-
 	// convert any newline to space
 	text = newline_to_space (title);
+
+	if (priv->title)
+	{
+		if (g_strcmp0 (priv->title->str, text))
+			priv->title_needs_refresh = TRUE;
+
+		g_string_free (priv->title, TRUE);
+	}
 
 	priv->title = g_string_new (text);
 
@@ -2364,6 +2381,13 @@ bubble_set_message_body (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
+	// filter out any HTML/markup if possible
+	text = filter_text (body);
+
+	if (priv->message_body)
+		if (g_strcmp0 (priv->message_body->str, text))
+			priv->message_body_needs_refresh = TRUE;
+
 	if (priv->message_body && priv->message_body->len != 0)
 	{
 		g_signal_emit (self,
@@ -2372,9 +2396,6 @@ bubble_set_message_body (Bubble*      self,
 			       priv->message_body->str);
 		g_string_free (priv->message_body, TRUE);
 	}
-
-	/* filter out any HTML/markup if possible */
-	text = filter_text (body);
 
 	priv->message_body = g_string_new (text);
 
@@ -3527,15 +3548,17 @@ bubble_recalc_size (Bubble *self)
 	bubble_set_size (self, new_bubble_width, new_bubble_height);
 
 	// don't refresh tile/blur-caches for background, title or body if the
-	// size of the bubble has not changed, this improves performance for the
+	// size or contents have not changed, this improves performance for the
 	// update- and replace-cases
 	if (old_bubble_width != new_bubble_width ||
 	    old_bubble_height != new_bubble_height)
-	{
 		_refresh_background (self);
+
+	if (priv->title_needs_refresh)
 		_refresh_title (self);
+
+	if (priv->message_body_needs_refresh)
 		_refresh_body (self);
-	}
 
 	update_shape (self);
 }
