@@ -1591,34 +1591,41 @@ screen_changed_handler (GtkWidget* window,
 
 static
 void
-update_input_shape (GtkWidget* window,
-		    gint       width,
-		    gint       height)
+update_input_shape (GtkWidget* window)
 {
-	GdkBitmap* mask = NULL;
-	cairo_t*   cr   = NULL;
+	GdkBitmap* mask   = NULL;
+	cairo_t*   cr     = NULL;
+	gint       width  = 0;
+	gint       height = 0;
 
+	// sanity check
+	if (!window)
+		return;
+
+	width  = window->allocation.width;
+	height = window->allocation.height;
+
+	// sanity check, avoiding division by zero
+	if (width == 0 || height == 0)
+		return;
+	
 	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 	if (mask)
 	{
 		cr = gdk_cairo_create (mask);
 		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
 		{
-			cairo_scale (cr, 1.0f, 1.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
+			cairo_scale (cr, (double) width, (double) height);
+			cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.0f);
+			cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
 			cairo_paint (cr);
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
-
-			// just draw something
-			draw_round_rect (cr,
-					 1.0f,
-					 0.0f, 0.0f,
-					 10.0f,
-					 10.0f, 10.0f);
-
+			cairo_set_source_rgba (cr, 1.0f, 0.0f, 0.0f, 0.75f);
+			cairo_rectangle (cr,
+					 0.0f,
+					 0.0f,
+					 1.0f / (double) width,
+					 1.0f / (double) height);
 			cairo_fill (cr);
-
 			cairo_destroy (cr);
 
 			gtk_widget_input_shape_combine_mask (window,
@@ -2307,7 +2314,7 @@ bubble_new (Defaults* defaults)
 	this->priv->prevent_fade               = FALSE;
 	this->priv->old_icon_filename          = g_string_new ("");
 
-	update_input_shape (window, 1, 1);
+	update_input_shape (window);
 
 	return this;
 }
