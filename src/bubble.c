@@ -1593,53 +1593,16 @@ static
 void
 update_input_shape (GtkWidget* window)
 {
-	GdkBitmap* mask   = NULL;
-	cairo_t*   cr     = NULL;
-	gint       width  = 0;
-	gint       height = 0;
+	GdkRegion*   region = NULL;
 
 	// sanity check
 	if (!window)
 		return;
 
-	width  = window->allocation.width;
-	height = window->allocation.height;
-
-	// sanity check, avoiding division by zero
-	if (width == 0 || height == 0)
-		return;
-	
-	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-	if (mask)
-	{
-		cr = gdk_cairo_create (mask);
-		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
-		{
-			cairo_scale (cr, (double) width, (double) height);
-			cairo_set_source_rgba (cr, 1.0f, 1.0f, 1.0f, 0.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-			cairo_paint (cr);
-			cairo_set_source_rgba (cr, 1.0f, 0.0f, 0.0f, 0.75f);
-			cairo_rectangle (cr,
-					 0.0f,
-					 0.0f,
-					 1.0f / (double) width,
-					 1.0f / (double) height);
-			cairo_fill (cr);
-			cairo_destroy (cr);
-
-			gtk_widget_input_shape_combine_mask (window,
-							     NULL,
-							     0,
-							     0);
-			gtk_widget_input_shape_combine_mask (window,
-							     mask,
-							     0,
-							     0);
-		}
-
-		g_object_unref ((gpointer) mask);
-	}
+	// set an empty input-mask to allow click-through 
+	region = gdk_region_new ();
+	gdk_window_input_shape_combine_region (window->window, region, 0, 0);
+	gdk_region_destroy (region);
 }
 
 static void
