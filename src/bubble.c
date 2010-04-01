@@ -1591,48 +1591,18 @@ screen_changed_handler (GtkWidget* window,
 
 static
 void
-update_input_shape (GtkWidget* window,
-		    gint       width,
-		    gint       height)
+update_input_shape (GtkWidget* window)
 {
-	GdkBitmap* mask = NULL;
-	cairo_t*   cr   = NULL;
+	GdkRegion*   region = NULL;
 
-	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-	if (mask)
-	{
-		cr = gdk_cairo_create (mask);
-		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
-		{
-			cairo_scale (cr, 1.0f, 1.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-			cairo_paint (cr);
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+	// sanity check
+	if (!window)
+		return;
 
-			// just draw something
-			draw_round_rect (cr,
-					 1.0f,
-					 0.0f, 0.0f,
-					 10.0f,
-					 10.0f, 10.0f);
-
-			cairo_fill (cr);
-
-			cairo_destroy (cr);
-
-			gtk_widget_input_shape_combine_mask (window,
-							     NULL,
-							     0,
-							     0);
-			gtk_widget_input_shape_combine_mask (window,
-							     mask,
-							     0,
-							     0);
-		}
-
-		g_object_unref ((gpointer) mask);
-	}
+	// set an empty input-mask to allow click-through 
+	region = gdk_region_new ();
+	gdk_window_input_shape_combine_region (window->window, region, 0, 0);
+	gdk_region_destroy (region);
 }
 
 static void
@@ -1659,61 +1629,57 @@ update_shape (Bubble* self)
 		return;
 	}
 
-	// guess we need one
-	gtk_widget_get_size_request (priv->widget, &width, &height);
-	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-	if (mask)
+	// we're not-composited, so deal with mouse-over differently
+	if (bubble_is_mouse_over (self))
 	{
-		// create context from mask/pixmap
-		cr = gdk_cairo_create (mask);
-		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
+		gtk_widget_hide (priv->widget);
+	}
+	else
+	{
+		gtk_widget_show (priv->widget);
+		gtk_widget_get_size_request (priv->widget, &width, &height);
+		mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
+		if (mask)
 		{
-			// clear mask/context
-			cairo_scale (cr, 1.0f, 1.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-			cairo_paint (cr);
-
-			width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-			height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-
-			// draw rounded rectangle shape/mask
-			if (bubble_is_mouse_over (self))
+			// create context from mask/pixmap
+			cr = gdk_cairo_create (mask);
+			if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
+			{
+				// clear mask/context
+				cairo_scale (cr, 1.0f, 1.0f);
 				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-			else
+				cairo_paint (cr);
+
+				width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+
+				// draw rounded rectangle shape/mask
 				cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
-			draw_round_rect (cr,
+				cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
+				draw_round_rect (cr,
 					 1.0f,
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
 					 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
 					 width,
 					 height);
-			cairo_fill (cr);
-			/*if (bubble_is_mouse_over (self))
-			{
-				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-				draw_round_rect (
-					cr,
-					1.0f,
-					2 + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-					2 + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-					EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-					width - 4,
-					height - 4);
 				cairo_fill (cr);
-			}*/
+				cairo_destroy (cr);
 
-			cairo_destroy (cr);
+				// remove any current shape-mask
+				gtk_widget_shape_combine_mask (priv->widget,
+							       NULL,
+							       0,
+							       0);
 
-			// remove any current shape-mask
-			gtk_widget_shape_combine_mask (priv->widget,NULL, 0, 0);
-
-			// set new shape-mask
-			gtk_widget_shape_combine_mask (priv->widget,mask, 0, 0);
+				// set new shape-mask
+				gtk_widget_shape_combine_mask (priv->widget,
+							       mask,
+							       0,
+							       0);
+			}
+			g_object_unref ((gpointer) mask);
 		}
-
-		g_object_unref ((gpointer) mask);
 	}
 }
 
@@ -2307,7 +2273,7 @@ bubble_new (Defaults* defaults)
 	this->priv->prevent_fade               = FALSE;
 	this->priv->old_icon_filename          = g_string_new ("");
 
-	update_input_shape (window, 1, 1);
+	update_input_shape (window);
 
 	return this;
 }
