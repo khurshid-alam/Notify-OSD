@@ -197,3 +197,4 @@ tests/test-timeline-smoothness.gcno
 tests/*.gcno
 tests/*.gcda
 tests/*.gcov
+examples/icon-updating
