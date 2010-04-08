@@ -2393,6 +2393,15 @@ bubble_set_icon_from_path (Bubble*      self,
 
 	priv = GET_PRIVATE (self);
 
+	// check if an app tries to set the same file as icon again, this check
+	// avoids superfluous regeneration of the tile/blur-cache for the icon,
+	// thus it improves performance in update- and append-cases
+	if (!g_strcmp0 (priv->old_icon_filename->str, filepath))
+		return;
+
+	// store the new icon-basename
+	g_string_assign (priv->old_icon_filename, filepath);
+
 	if (priv->icon_pixbuf)
 	{
 		g_object_unref (priv->icon_pixbuf);
@@ -2527,6 +2536,9 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 		return;
 
 	priv = GET_PRIVATE (self);
+
+	// "reset" the stored the icon-filename, fixes LP: #451086
+	g_string_assign (priv->old_icon_filename, "\0");
 
 	if (priv->icon_pixbuf)
 	{

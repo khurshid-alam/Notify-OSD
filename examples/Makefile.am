@@ -20,7 +20,8 @@ noinst_PROGRAMS = icon-only		  \
 		  summary-body		  \
 		  summary-only		  \
 		  append-hint-example	  \
-		  update-notifications
+		  update-notifications	  \
+		  icon-updating
 
 icon_only_SOURCES		 = example-util.c example-util.h icon-only.c
 sync_icon_only_SOURCES		 = sync-icon-only.c example-util.h example-util.c
@@ -31,6 +32,7 @@ summary_body_SOURCES		 = summary-body.c example-util.c example-util.h
 summary_only_SOURCES		 = summary-only.c example-util.c example-util.h
 append_hint_example_SOURCES	 = append-hint-example.c example-util.c example-util.h
 update_notifications_SOURCES	 = update-notifications.c example-util.c example-util.h
+icon_updating_SOURCES		 = icon-updating.c example-util.c example-util.h
 
 icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 sync_icon_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
@@ -41,6 +43,7 @@ summary_body_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libno
 summary_only_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 append_hint_example_CFLAGS  = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 update_notifications_CFLAGS = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
+icon_updating_CFLAGS	    = -I. -O0 -ggdb -Wall -Werror `pkg-config --cflags libnotify glib-2.0`
 
 icon_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
 sync_icon_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
@@ -51,6 +54,7 @@ summary_body_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
 summary_only_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
 append_hint_example_LDFLAGS  = `pkg-config --libs libnotify glib-2.0`
 update_notifications_LDFLAGS = `pkg-config --libs libnotify glib-2.0`
+icon_updating_LDFLAGS	     = `pkg-config --libs libnotify glib-2.0`
 endif
 
 if BUILD_MONO_EXAMPLES
