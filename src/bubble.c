@@ -1632,11 +1632,17 @@ update_shape (Bubble* self)
 	// we're not-composited, so deal with mouse-over differently
 	if (bubble_is_mouse_over (self))
 	{
-		gtk_widget_hide (priv->widget);
+		GdkRegion* region = NULL;
+
+		region = gdk_region_new ();
+		gdk_window_shape_combine_region (priv->widget->window,
+						 region,
+						 0,
+						 0);
+		gdk_region_destroy (region);
 	}
 	else
 	{
-		gtk_widget_show (priv->widget);
 		gtk_widget_get_size_request (priv->widget, &width, &height);
 		mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
 		if (mask)
