@@ -268,6 +268,7 @@ fallback_dialog_show (Defaults*    d,
 				  "button-release-event",
 				  G_CALLBACK (handle_close),
 				  dialog);
+	gtk_widget_set_can_default(GTK_WIDGET(cancel), FALSE);
 
 	g_signal_connect (G_OBJECT (dialog),
 			  "response",
@@ -287,6 +288,7 @@ fallback_dialog_show (Defaults*    d,
 			  "button-release-event",
 			  G_CALLBACK (handle_response),
 			  dialog);
+	gtk_widget_set_can_default(GTK_WIDGET(ok), FALSE);
 
 	g_object_set_data (G_OBJECT (dialog),
 			   "_dialog_info",
