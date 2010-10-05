@@ -420,14 +420,16 @@ defaults_refresh_screen_dimension_properties (Defaults *self)
 	gulong       items_left;
 	glong*       coords;
 	Atom         workarea_atom;
+	Display*     display;
 
 	g_return_if_fail ((self != NULL) && IS_DEFAULTS (self));
 
 	/* get real desktop-area without the panels */
 	workarea_atom = gdk_x11_get_xatom_by_name ("_NET_WORKAREA");
+	display = gdk_x11_display_get_xdisplay (gdk_display_get_default ());
   
 	gdk_error_trap_push ();
-	result = XGetWindowProperty (GDK_DISPLAY (),
+	result = XGetWindowProperty (display,
 				     GDK_ROOT_WINDOW (),
 				     workarea_atom,
 				     0L,
@@ -2365,7 +2367,7 @@ _window_look_for_top_panel_attributes (GdkWindow *win)
 
 	gdk_error_trap_push ();
 
-	result = XGetClassHint (GDK_DISPLAY (),
+	result = XGetClassHint (gdk_x11_display_get_xdisplay (gdk_display_get_default ()),
 				GDK_WINDOW_XWINDOW (win),
 				&class_hints);
 

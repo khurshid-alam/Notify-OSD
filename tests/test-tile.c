@@ -138,7 +138,7 @@ on_expose (GtkWidget*      widget,
 	cairo_t*         cr      = NULL;
 
 	// create and setup result-surface and context
-	cr = gdk_cairo_create (widget->window);
+	cr = gdk_cairo_create (gtk_widget_get_window (widget));
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS)
 	{
 		g_debug ("Could not create context for rendering to window!");

@@ -1530,32 +1530,32 @@ _set_bg_blur (GtkWidget* window,
 	      gint       shadow_size)
 {
 	glong data[8];
-	gint  width;
-	gint  height;
+	GtkAllocation a;
+	GdkWindow *gdkwindow;
 
 	// sanity check
 	if (!window)
 		return;
 
-	width  = window->allocation.width;
-	height = window->allocation.height;
+	gtk_widget_get_allocation (window, &a);
+	gdkwindow = gtk_widget_get_window (window);
 
 	// this is meant to tell the blur-plugin what and how to blur, somehow
 	// the y-coords are interpreted as being CenterGravity, I wonder why
-	data[0] = 2;                           // threshold
-	data[1] = 0;                           // filter
-	data[2] = NorthWestGravity;            // gravity of top-left
-	data[3] = shadow_size;                 // x-coord of top-left
-	data[4] = (-height / 2) + shadow_size; // y-coord of top-left
-	data[5] = NorthWestGravity;            // gravity of bottom-right
-	data[6] = width - shadow_size;         // bottom-right x-coord
-	data[7] = (height / 2) - shadow_size;  // bottom-right y-coord
+	data[0] = 2;                             // threshold
+	data[1] = 0;                             // filter
+	data[2] = NorthWestGravity;              // gravity of top-left
+	data[3] = shadow_size;                   // x-coord of top-left
+	data[4] = (-a.height / 2) + shadow_size; // y-coord of top-left
+	data[5] = NorthWestGravity;              // gravity of bottom-right
+	data[6] = a.width - shadow_size;         // bottom-right x-coord
+	data[7] = (a.height / 2) - shadow_size;  // bottom-right y-coord
 
 	if (set_blur)
 	{
-		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
-				 GDK_WINDOW_XID (window->window),
-				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+		XChangeProperty (GDK_WINDOW_XDISPLAY (gdkwindow),
+				 GDK_WINDOW_XID (gdkwindow),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (gdkwindow),
 					      "_COMPIZ_WM_WINDOW_BLUR",
 					      FALSE),
 				 XA_INTEGER,
@@ -1566,9 +1566,9 @@ _set_bg_blur (GtkWidget* window,
 	}
 	else
 	{
-		XDeleteProperty (GDK_WINDOW_XDISPLAY (window->window),
-				 GDK_WINDOW_XID (window->window),
-				 XInternAtom (GDK_WINDOW_XDISPLAY (window->window),
+		XDeleteProperty (GDK_WINDOW_XDISPLAY (gdkwindow),
+				 GDK_WINDOW_XID (gdkwindow),
+				 XInternAtom (GDK_WINDOW_XDISPLAY (gdkwindow),
 					      "_COMPIZ_WM_WINDOW_BLUR",
 					      FALSE));
 	}
@@ -1601,7 +1601,7 @@ update_input_shape (GtkWidget* window)
 
 	// set an empty input-mask to allow click-through 
 	region = gdk_region_new ();
-	gdk_window_input_shape_combine_region (window->window, region, 0, 0);
+	gdk_window_input_shape_combine_region (gtk_widget_get_window (window), region, 0, 0);
 	gdk_region_destroy (region);
 }
 
@@ -1635,7 +1635,7 @@ update_shape (Bubble* self)
 		GdkRegion* region = NULL;
 
 		region = gdk_region_new ();
-		gdk_window_shape_combine_region (priv->widget->window,
+		gdk_window_shape_combine_region (gtk_widget_get_window (priv->widget),
 						 region,
 						 0,
 						 0);
@@ -1719,7 +1719,7 @@ expose_handler (GtkWidget*      window,
 	d    = bubble->defaults;
 	priv = GET_PRIVATE (bubble);
 
-	cr = gdk_cairo_create (window->window);
+	cr = gdk_cairo_create (gtk_widget_get_window (window));
 
         // clear bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -1886,7 +1886,7 @@ pointer_update (Bubble* bubble)
 	if (!GTK_IS_WINDOW (window))
 		return FALSE;
 
-	if (GTK_WIDGET_REALIZED (window))
+	if (gtk_widget_get_realized (window))
 	{
 		gint distance_x = 0;
 		gint distance_y = 0;
@@ -2228,7 +2228,7 @@ bubble_new (Defaults* defaults)
 	// make sure the window opens with a RGBA-visual
 	screen_changed_handler (window, NULL, NULL);
 	gtk_widget_realize (window);
-	gdk_window_set_back_pixmap (window->window, NULL, FALSE);
+	gdk_window_set_back_pixmap (gtk_widget_get_window (window), NULL, FALSE);
 
 	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
@@ -3253,7 +3253,7 @@ _calc_body_height (Bubble* self,
 	d    = self->defaults;
 	priv = GET_PRIVATE (self);
 
-	cr = gdk_cairo_create (priv->widget->window);
+	cr = gdk_cairo_create (gtk_widget_get_window (priv->widget));
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
 		if (cr)
 			cairo_destroy (cr);
