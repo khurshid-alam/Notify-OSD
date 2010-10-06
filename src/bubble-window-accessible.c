@@ -211,14 +211,12 @@ bubble_window_accessible_new (GtkWidget *widget)
 {
 	GObject       *object;
 	AtkObject     *aobj;
-	GtkAccessible *gtk_accessible;
 	
 	object = g_object_new (BUBBLE_WINDOW_TYPE_ACCESSIBLE, NULL);
 	
 	aobj = ATK_OBJECT (object);
 	
-	gtk_accessible = GTK_ACCESSIBLE (aobj);
-	gtk_accessible->widget = widget;
+	gtk_accessible_set_widget (GTK_ACCESSIBLE (aobj), widget);
 	
 	atk_object_initialize (aobj, widget);
 	
@@ -228,18 +226,18 @@ bubble_window_accessible_new (GtkWidget *widget)
 static const char* 
 bubble_window_accessible_get_name (AtkObject* obj)
 {
-    GtkAccessible* accessible;
+	GtkWidget*     widget;
  	Bubble*        bubble;
     const gchar*   title;
  
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
  	
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
     
-    if (accessible->widget == NULL)
-        return "";
+	if (widget == NULL)
+		return "";
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+ 	bubble = g_object_get_data (G_OBJECT (widget), "bubble");
 
     g_return_val_if_fail (IS_BUBBLE (bubble), "");
     
@@ -264,17 +262,17 @@ bubble_window_accessible_get_name (AtkObject* obj)
 static const char*
 bubble_window_accessible_get_description (AtkObject* obj)
 {
-    GtkAccessible *accessible;
+	GtkWidget     *widget;
  	Bubble        *bubble;
  
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), "");
  	
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
     
-    if (accessible->widget == NULL)
-        return "";
+	if (widget == NULL)
+		return "";
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+ 	bubble = g_object_get_data (G_OBJECT (widget), "bubble");
 
     g_return_val_if_fail (IS_BUBBLE (bubble), "");
     
@@ -286,18 +284,18 @@ bubble_window_get_current_value (AtkValue* obj,
                                  GValue*   value)
 {
     gdouble        current_value;
-    GtkAccessible* accessible;
+	GtkWidget*     widget;
  	Bubble*        bubble;
  
  	g_return_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj));
  	
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
     
-    if (accessible->widget == NULL)
-        return;
+	if (widget == NULL)
+		return;
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
-    
+ 	bubble = g_object_get_data (G_OBJECT (widget), "bubble");
+
     current_value = (gdouble) bubble_get_value(bubble);
     
     memset (value,  0, sizeof (GValue));
@@ -361,7 +359,7 @@ bubble_window_get_text (AtkText *obj,
 						gint    start_offset,
 						gint    end_offset)
 {
-    GtkAccessible* accessible;
+	GtkWidget*     widget;
  	Bubble*        bubble;
 	const gchar*   body_text;
     gsize          char_length;
@@ -369,11 +367,11 @@ bubble_window_get_text (AtkText *obj,
 
 	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), g_strdup(""));
 
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
 
-	g_return_val_if_fail (GTK_IS_WINDOW (accessible->widget), g_strdup(""));
+	g_return_val_if_fail (GTK_IS_WINDOW (widget), g_strdup(""));
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+ 	bubble = g_object_get_data (G_OBJECT(widget), "bubble");
 
 	if (end_offset <= start_offset)
 		return g_strdup("");
@@ -399,17 +397,17 @@ bubble_window_get_text (AtkText *obj,
 static gint
 bubble_window_get_character_count (AtkText *obj)
 {
-	GtkAccessible* accessible;
+	GtkWidget*     widget;
  	Bubble*        bubble;
 
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
  	
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
     
-    if (accessible->widget == NULL)
-        return 0;
+	if (widget == NULL)
+		return 0;
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+ 	bubble = g_object_get_data (G_OBJECT (widget), "bubble");
 
 	return g_utf8_strlen(bubble_get_message_body (bubble), -1);
 }
@@ -418,18 +416,18 @@ static gunichar
 bubble_window_get_character_at_offset (AtkText *obj,
                                        gint    offset)
 {
-	GtkAccessible* accessible;
+	GtkWidget*     widget;
  	Bubble*        bubble;
     const gchar*   body_text;
 
  	g_return_val_if_fail (BUBBLE_WINDOW_IS_ACCESSIBLE (obj), 0);
  	
- 	accessible = GTK_ACCESSIBLE (obj);
+ 	widget = gtk_accessible_get_widget (GTK_ACCESSIBLE (obj));
     
-    if (accessible->widget == NULL)
-        return 0;
+	if (widget == NULL)
+		return 0;
  	
- 	bubble = g_object_get_data (G_OBJECT(accessible->widget), "bubble");
+ 	bubble = g_object_get_data (G_OBJECT (widget), "bubble");
 
 	body_text = bubble_get_message_body (bubble);
 

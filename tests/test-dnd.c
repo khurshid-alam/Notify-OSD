@@ -126,7 +126,7 @@ test_dnd_create_test_suite (void)
 
 	// FIXME: test_dnd_fullscreen() fails under compiz because of it using
 	// viewports instead of workspaces
-	wm_name = get_wm_name (GDK_DISPLAY ());
+	wm_name = get_wm_name (gdk_x11_display_get_xdisplay (gdk_display_get_default ()));
 	if (wm_name && g_ascii_strcasecmp (WM_NAME_COMPIZ, wm_name))
 		g_test_suite_add (ts, TC(test_dnd_fullscreen));
 	else

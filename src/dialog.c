@@ -175,7 +175,6 @@ fallback_dialog_show (Defaults*    d,
 	dialog_info->sender = g_strdup(sender);
 
 	dialog = gtk_dialog_new ();
-	gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
 
 	hbox = g_object_new (GTK_TYPE_HBOX,
 			     "spacing", gap,

@@ -176,10 +176,15 @@ update_shape (GtkWidget* window,
 	      gint       radius,
 	      gint       shadow_size)
 {
-	GdkBitmap* mask   = NULL;
-	cairo_t*   cr     = NULL;
-	gdouble    width  = (gdouble) window->allocation.width;
-	gdouble    height = (gdouble) window->allocation.height;
+	GdkBitmap*    mask   = NULL;
+	cairo_t*      cr     = NULL;
+	GtkAllocation allocation;
+	gdouble       width;
+	gdouble       height;
+
+	gtk_widget_get_allocation (window, &allocation);
+	width = (gdouble) allocation.width;
+	height = (gdouble) allocation.height;
 
 	if (g_composited)
 	{
@@ -353,11 +358,12 @@ expose_handler (GtkWidget*      window,
 		GdkEventExpose* event,
 		gpointer        data)
 {
-	cairo_t* cr     = NULL;
-	guint    width  = window->allocation.width;
-	guint    height = window->allocation.height;
+	cairo_t*      cr     = NULL;
+	GtkAllocation a;
 
-	cr = gdk_cairo_create (window->window);
+	gtk_widget_get_allocation (window, &a);
+
+	cr = gdk_cairo_create (gtk_widget_get_window (window));
 
         /* clear and render drop-shadow and bubble-background */
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -371,8 +377,8 @@ expose_handler (GtkWidget*      window,
 					 cr,
 					 0.0f,
 					 0.0f,
-					 width,
-					 height,
+					 a.width,
+					 a.height,
 					 g_distance,
 					 1.0f - g_distance);
 		gtk_window_set_opacity (GTK_WINDOW (window), 0.3f + g_distance * 0.7f);
@@ -383,8 +389,8 @@ expose_handler (GtkWidget*      window,
 					 cr,
 					 0.0f,
 					 0.0f,
-					 width,
-					 height,
+					 a.width,
+					 a.height,
 					 g_distance,
 					 0.0f);
 		gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
@@ -399,31 +405,31 @@ void
 set_bg_blur (GtkWidget* window,
 	     gboolean   blur)
 {
-	gint width;
-	gint height;
+	GtkAllocation a;
+	GdkWindow *gdkwindow;
 	gint shadow = BUBBLE_SHADOW_SIZE;
 
 	if (!window)
 		return;
 
-	width  = window->allocation.width;
-	height = window->allocation.height;
+	gtk_widget_get_allocation (window, &a);
+	gdkwindow = gtk_widget_get_window (window);
 
 	if (blur)
 	{
 		glong data[] = {
-			2,                 /* threshold               */
-			0,                 /* filter                  */
-			NorthWestGravity,  /* gravity of top-left     */
-			shadow,            /* x-coord of top-left     */
-			-height/2 + shadow,/* y-coord of top-left     */
-			NorthWestGravity,  /* gravity of bottom-right */
-			width - shadow,    /* bottom-right x-coord    */
-			height/2 - shadow  /* bottom-right y-coord    */};
+			2,                   /* threshold               */
+			0,                   /* filter                  */
+			NorthWestGravity,    /* gravity of top-left     */
+			shadow,              /* x-coord of top-left     */
+			-a.height/2 + shadow,/* y-coord of top-left     */
+			NorthWestGravity,    /* gravity of bottom-right */
+			a.width - shadow,    /* bottom-right x-coord    */
+			a.height/2 - shadow  /* bottom-right y-coord    */};
 
-		XChangeProperty (GDK_WINDOW_XDISPLAY (window->window),
-				 GDK_WINDOW_XID (window->window),
-				XInternAtom(GDK_WINDOW_XDISPLAY(window->window),
+		XChangeProperty (GDK_WINDOW_XDISPLAY (gdkwindow),
+				 GDK_WINDOW_XID (gdkwindow),
+				XInternAtom(GDK_WINDOW_XDISPLAY(gdkwindow),
 					      "_COMPIZ_WM_WINDOW_BLUR",
 					      FALSE),
 				 XA_INTEGER,
@@ -434,9 +440,9 @@ set_bg_blur (GtkWidget* window,
 	}
 	else
 	{
-		XDeleteProperty (GDK_WINDOW_XDISPLAY (window->window),
-				 GDK_WINDOW_XID (window->window),
-				XInternAtom(GDK_WINDOW_XDISPLAY(window->window),
+		XDeleteProperty (GDK_WINDOW_XDISPLAY (gdkwindow),
+				 GDK_WINDOW_XID (gdkwindow),
+				XInternAtom(GDK_WINDOW_XDISPLAY(gdkwindow),
 					      "_COMPIZ_WM_WINDOW_BLUR",
 					      FALSE));
 	}
@@ -529,7 +535,7 @@ pointer_update (GtkWidget* window)
 
 	old_mouse_over = g_mouse_over;
 
-	if (GTK_WIDGET_REALIZED (window))
+	if (gtk_widget_get_realized (window))
 	{
 		gint distance_x = 0;
 		gint distance_y = 0;
@@ -735,7 +741,7 @@ main (int    argc,
 	// make sure the window opens with a RGBA-visual
 	screen_changed_handler (window, NULL, NULL);
 	gtk_widget_realize (window);
-	gdk_window_set_back_pixmap (window->window, NULL, FALSE);
+	gdk_window_set_back_pixmap (gtk_widget_get_window (window), NULL, FALSE);
 
 	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
