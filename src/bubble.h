@@ -193,6 +193,9 @@ bubble_start_timer (Bubble*  self,
 		    gboolean trigger);
 
 void
+bubble_clear_timer (Bubble* self);
+
+void
 bubble_get_position (Bubble* self,
 		     gint*   x,
 		     gint*   y);
