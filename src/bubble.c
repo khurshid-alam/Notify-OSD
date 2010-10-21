@@ -2697,6 +2697,7 @@ bubble_set_mouse_over (Bubble*  self,
 			bubble_clear_timer(self);
 		} else {
 			g_debug("mouse left bubble, continuing timeout");
+			bubble_set_timeout(self, 3000);
 			bubble_start_timer(self, TRUE);
 		}
         
