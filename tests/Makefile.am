@@ -66,10 +66,12 @@ test_modules_CFLAGS =		\
 	-I$(top_srcdir)/
 
 test_modules_LDADD =		\
+	$(X_LIBS)		\
 	$(GLIB_LIBS)		\
 	$(WNCK_LIBS)		\
 	$(DBUS_LIBS)		\
 	$(LIBNOTIFY_LIBS)	\
+	$(NOTIFY_OSD_LIBS)	\
 	$(GTK_LIBS)		\
 	-lnotify
 
@@ -126,6 +128,7 @@ test_raico_CFLAGS = \
 	-I$(top_srcdir)/
 
 test_raico_LDADD = \
+	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
 
 TILE_MODULES = \
@@ -144,6 +147,8 @@ test_tile_CFLAGS = \
 	-I$(top_srcdir)
 
 test_tile_LDADD = \
+	$(X_LIBS) \
+	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
 
 GROW_BUBBLE_MODULES = \
@@ -161,6 +166,8 @@ test_grow_bubble_CFLAGS = \
 	-I$(top_srcdir)
 
 test_grow_bubble_LDADD = \
+	$(X_LIBS) \
+	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
 
 SCROLL_TEXT_MODULES = \
@@ -178,6 +185,8 @@ test_scroll_text_CFLAGS = \
 	-I$(top_srcdir)/
 
 test_scroll_text_LDADD = \
+	$(X_LIBS) \
+	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
 
 check-valgrind:
