@@ -2442,6 +2442,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	gint         panel_monitor    = 0;
 	gint         aw_monitor;
 	gboolean     has_panel_window = FALSE;
+	gboolean     follow_focus     = defaults_multihead_does_focus_follow (self);
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
@@ -2469,7 +2470,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 		has_panel_window  = TRUE;
 	}
 
-	if (defaults_multihead_does_focus_follow (self))
+	if (follow_focus)
 	{
 		g_debug ("multi_head_focus_follow mode");
 		monitor = gdk_screen_get_monitor_at_point (screen, mx, my);
@@ -2507,7 +2508,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	{
 		/* position the corner on the selected monitor */
 		rect.y += panel_rect.y + panel_rect.height;
-	} else if (! has_panel_window)
+	} else if (! (has_panel_window || follow_focus))
 	{
 		g_debug ("no panel detetected; using workarea fallback");
 
