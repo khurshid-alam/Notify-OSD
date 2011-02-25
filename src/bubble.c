@@ -2691,6 +2691,16 @@ bubble_set_mouse_over (Bubble*  self,
 	{
 		priv->mouse_over = flag;
 		update_shape (self);
+
+		if (flag) {
+			g_debug("mouse entered bubble, supressing timeout");
+			bubble_clear_timer(self);
+		} else {
+			g_debug("mouse left bubble, continuing timeout");
+			bubble_set_timeout(self, 3000);
+			bubble_start_timer(self, TRUE);
+		}
+        
 	}
 
 }
@@ -3118,6 +3128,22 @@ bubble_start_timer (Bubble*  self,
 	if (trigger)
 		if (priv->value == -1 || priv->value == 101)
 			bubble_start_glow_effect (self, 500);
+}
+
+void
+bubble_clear_timer (Bubble* self) 
+{
+	guint timer_id;
+
+	if (!self || !IS_BUBBLE (self))
+		return;
+    
+	timer_id = GET_PRIVATE(self)->timer_id;
+
+	if (timer_id > 0) {
+		g_source_remove (timer_id);
+		bubble_set_timer_id(self, 0);
+	}
 }
 
 void
