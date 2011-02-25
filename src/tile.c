@@ -180,7 +180,7 @@ _pad_paint (cairo_t*         cr,
 
 	// top right
 	cairo_matrix_init_scale (&matrix, -1.0f, 1.0f);
-	cairo_matrix_translate (&matrix, -width, 0.0f);
+	cairo_matrix_translate (&matrix, -1.0f * width, 0.0f);
 	cairo_pattern_set_matrix (pattern, &matrix);
 	cairo_rectangle (cr,
 			 width - pad_width,
@@ -193,7 +193,7 @@ _pad_paint (cairo_t*         cr,
 
 	// bottom right
 	cairo_matrix_init_scale (&matrix, -1.0f, -1.0f);
-	cairo_matrix_translate (&matrix, -width, -height);
+	cairo_matrix_translate (&matrix, -1.0f * width, -1.0f * height);
 	cairo_pattern_set_matrix (pattern, &matrix);
 	cairo_rectangle (cr,
 			 pad_width,
@@ -206,7 +206,7 @@ _pad_paint (cairo_t*         cr,
 
 	// bottom left
 	cairo_matrix_init_scale (&matrix, 1.0f, -1.0f);
-	cairo_matrix_translate (&matrix, 0.0f, -height);
+	cairo_matrix_translate (&matrix, 0.0f, -1.0f * height);
 	cairo_pattern_set_matrix (pattern, &matrix);
 	cairo_rectangle (cr,
 			 x,
