@@ -710,7 +710,6 @@ main (int    argc,
       char** argv)
 {
 	GtkWidget* window;
-	guint      pointer_update_id;
 
 	gtk_init (&argc, &argv);
 
@@ -750,7 +749,7 @@ main (int    argc,
 			  NULL);       
 
 	// FIXME: read out current mouse-pointer position every 1/25 second
-        pointer_update_id = g_timeout_add (1000/40,
+        g_timeout_add (1000/40,
 					   (GSourceFunc) pointer_update,
 					   (gpointer) window);
 

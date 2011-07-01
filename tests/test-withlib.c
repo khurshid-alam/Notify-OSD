@@ -45,13 +45,13 @@ stop_main_loop (GMainLoop *loop)
 }
 
 static void
-test_withlib_setup (void)
+test_withlib_setup (gpointer fixture, gconstpointer user_data)
 {
 	notify_init ("libnotify");
 }
 
 static void
-test_withlib_get_server_information (void)
+test_withlib_get_server_information (gpointer fixture, gconstpointer user_data)
 {
 	gchar *name = NULL, *vendor = NULL, *version = NULL, *specver = NULL;
 	gboolean ret = FALSE;
@@ -64,7 +64,7 @@ test_withlib_get_server_information (void)
 }
 
 static void
-test_withlib_get_server_caps (void)
+test_withlib_get_server_caps (gpointer fixture, gconstpointer user_data)
 {
 	GList *cap, *caps = NULL;
 	gboolean test = FALSE;
@@ -88,13 +88,13 @@ test_withlib_get_server_caps (void)
 }
 
 static void
-test_withlib_show_notification (void)
+test_withlib_show_notification (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 
 	n = notify_notification_new ("Test",
 				     "You should see a normal notification",
-				     "", NULL);
+				     "");
 	notify_notification_show (n, NULL);
 	sleep (3);
 
@@ -102,14 +102,14 @@ test_withlib_show_notification (void)
 }
 
 static void
-test_withlib_update_notification (void)
+test_withlib_update_notification (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
 
 	n = notify_notification_new ("Test",
 				     "New notification",
-				     "", NULL);
+				     "");
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
 	sleep (1);
@@ -127,7 +127,7 @@ test_withlib_update_notification (void)
 }
 
 static void
-test_withlib_pass_icon_data (void)
+test_withlib_pass_icon_data (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 	GdkPixbuf* pixbuf;
@@ -135,7 +135,7 @@ test_withlib_pass_icon_data (void)
 
 	n = notify_notification_new ("Image Test",
 				     "You should see an image",
-				     "", NULL);
+				     "");
 	g_print ("iconpath: %s\n", SRCDIR"/icons/avatar.png");
 	pixbuf = gdk_pixbuf_new_from_file_at_scale (SRCDIR"/icons/avatar.png",
 						    64, 64, TRUE, NULL);
@@ -150,29 +150,29 @@ test_withlib_pass_icon_data (void)
 }
 
 static void
-test_withlib_priority (void)
+test_withlib_priority (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n1, *n2, *n3, *n4;
         GMainLoop* loop;
 
 	n1 = notify_notification_new ("Dummy Notification",
 				      "This is a test notification",
-				      "", NULL);
+				      "");
 	notify_notification_show (n1, NULL);
 	n2 = notify_notification_new ("Normal Notification",
 				      "You should see this *after* the urgent notification.",
-				      "", NULL);
+				      "");
 	notify_notification_set_urgency (n2, NOTIFY_URGENCY_LOW);
 	notify_notification_show (n2, NULL);
 	n3 = notify_notification_new ("Synchronous Notification",
 				      "You should immediately see this notification.",
-				      "", NULL);
+				      "");
 	notify_notification_set_hint_string (n3, "synchronous", "test");
 	notify_notification_set_urgency (n3, NOTIFY_URGENCY_NORMAL);
 	notify_notification_show (n3, NULL);
 	n4 = notify_notification_new ("Urgent Notification",
 				      "You should see a dialog box, and after, a normal notification.",
-				      "", NULL);
+				      "");
 	notify_notification_set_urgency (n4, NOTIFY_URGENCY_CRITICAL);
 	notify_notification_show (n4, NULL);
 	
@@ -201,13 +201,13 @@ callback (NotifyNotification *n,
 }
 
 static void
-test_withlib_actions (void)
+test_withlib_actions (gpointer fixture, gconstpointer user_data)
 {
 	NotifyNotification *n1;
 
 	n1 = notify_notification_new ("Notification with an action",
 				      "You should see that in a dialog box. Click the 'Action' button for the test to succeed.",
-				      "", NULL);
+				      "");
 	notify_notification_add_action (n1,
 					"action",
 					"Action",
@@ -223,7 +223,7 @@ test_withlib_actions (void)
 }
 
 static void
-test_withlib_close_notification (void)
+test_withlib_close_notification (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
         GMainLoop* loop;
@@ -231,7 +231,7 @@ test_withlib_close_notification (void)
 
 	n = notify_notification_new ("Test Title",
 				     "This notification will be closed prematurely...",
-				     "", NULL);
+				     "");
 	notify_notification_show (n, NULL);
 	
 	loop = g_main_loop_new(NULL, FALSE);
@@ -248,7 +248,7 @@ test_withlib_close_notification (void)
 }
 
 static void
-test_withlib_append_hint (void)
+test_withlib_append_hint (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
@@ -256,8 +256,7 @@ test_withlib_append_hint (void)
 	/* init notification, supply first line of body-text */
 	n = notify_notification_new ("Test (append-hint)",
 				     "The quick brown fox jumps over the lazy dog.",
-				     SRCDIR"/icons/avatar.png",
-				     NULL);
+				     SRCDIR"/icons/avatar.png");
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
 	sleep (1);
@@ -288,7 +287,7 @@ test_withlib_append_hint (void)
 }
 
 static void
-test_withlib_icon_only_hint (void)
+test_withlib_icon_only_hint (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
@@ -296,8 +295,7 @@ test_withlib_icon_only_hint (void)
 	/* init notification, supply first line of body-text */
 	n = notify_notification_new (" ", /* needs this to be non-NULL */
 				     NULL,
-				     "notification-audio-play",
-				     NULL);
+				     "notification-audio-play");
 	notify_notification_set_hint_string (n, "icon-only", "allowed");
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
@@ -307,15 +305,14 @@ test_withlib_icon_only_hint (void)
 }
 
 static void
-test_withlib_swallow_markup (void)
+test_withlib_swallow_markup (gpointer fixture, gconstpointer user_data)
 {
         NotifyNotification *n;
 	gboolean res = FALSE;
 
 	n = notify_notification_new ("Swallow markup test",
 				     "This text is hopefully neither <b>bold</b>, <i>italic</i> nor <u>underlined</u>.\n\nA little math-notation:\n\n\ta &gt; b &lt; c = 0",
-				     SRCDIR"/icons/avatar.png",
-				     NULL);
+				     SRCDIR"/icons/avatar.png");
 	res = notify_notification_show (n, NULL);
 	g_assert (res);
 	sleep (2);
@@ -324,7 +321,7 @@ test_withlib_swallow_markup (void)
 }
 
 static void
-test_withlib_throttle (void)
+test_withlib_throttle (gpointer fixture, gconstpointer user_data)
 {
 	NotifyNotification* n;
 	gint                i;
@@ -341,7 +338,7 @@ test_withlib_throttle (void)
 
 		// create dummy notification
 		snprintf (buf, 19, "Test #%.2d", i);
-		n = notify_notification_new (buf, buf, "", NULL);
+		n = notify_notification_new (buf, buf, "");
 
 		// inject it into the queue
 		res = notify_notification_show (n, &error);

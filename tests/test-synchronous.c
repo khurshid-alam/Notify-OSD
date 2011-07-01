@@ -38,7 +38,7 @@ send_normal (const gchar *message)
         NotifyNotification *n;
 	n = notify_notification_new ("Test notification",
 				     g_strdup (message),
-				     "", NULL);
+				     "");
 	notify_notification_show (n, NULL);
 	g_object_unref(G_OBJECT(n));
 }
@@ -53,8 +53,7 @@ send_synchronous (const char *type,
 	if (n == NULL)
 		n = notify_notification_new (" ",
 					     "",
-					     g_strdup (icon),
-					     NULL);
+					     g_strdup (icon));
 	else
 		notify_notification_update (n,
 					    " ",
@@ -70,9 +69,8 @@ send_synchronous (const char *type,
 #define set_volume(x) send_synchronous ("volume", "notification-audio-volume-medium", x)
 #define set_brightness(x) send_synchronous ("brightness", "notification-display-brightness-medium", x)
 
-
 static void
-test_synchronous_layout (void)
+test_synchronous_layout (gpointer fixture, gconstpointer user_data)
 {
 
         notify_init (__FILE__);
@@ -107,7 +105,7 @@ test_synchronous_create_test_suite (void)
 					     0,
 					     NULL,
 					     NULL,
-					     test_synchronous_layout,
+					     (GTestFixtureFunc) test_synchronous_layout,
 					     NULL)
 		);
 

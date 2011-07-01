@@ -57,7 +57,7 @@ wait_a_little (guint interval)
 }
 
 static void
-test_stack_layout (void)
+test_stack_layout (gpointer fixture, gconstpointer user_data)
 {
 	Stack*    stack = NULL;
 	Defaults* defaults = defaults_new ();
@@ -81,7 +81,7 @@ test_stack_layout (void)
 }
 
 static void
-test_stack_layout_rtl (void)
+test_stack_layout_rtl (gpointer fixture, gconstpointer user_data)
 {
 	Stack*    stack = NULL;
 	Defaults* defaults = defaults_new ();
@@ -105,7 +105,7 @@ test_stack_layout_rtl (void)
 }
 
 #define GENERATE(x, y)			       \
-	static void x (void)	       \
+	static void x (gpointer fixture, gconstpointer user_data)	       \
 	{					       \
 		Defaults* defaults = defaults_new ();	       \
 		Bubble *bubble = bubble_new (defaults);	       \

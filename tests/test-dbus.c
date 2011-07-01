@@ -34,7 +34,7 @@
 
 static
 void
-test_dbus_instance (void)
+test_dbus_instance (gpointer fixture, gconstpointer user_data)
 {
 	DBusGConnection* connection = NULL;
 
@@ -44,9 +44,9 @@ test_dbus_instance (void)
 
 static
 void
-test_dbus_collision (void)
+test_dbus_collision (gpointer fixture, gconstpointer user_data)
 {
-	DBusGConnection* connection = NULL;
+	//DBusGConnection* connection = NULL;
 
 	/* HACK: as we did not destroy the instance after the first test above,
 	   this second creation should fail */
@@ -54,7 +54,7 @@ test_dbus_collision (void)
 	if (g_test_trap_fork (0, G_TEST_TRAP_SILENCE_STDOUT |
                                G_TEST_TRAP_SILENCE_STDERR))
         {
-		connection = dbus_create_service_instance (TEST_DBUS_NAME);
+		dbus_create_service_instance (TEST_DBUS_NAME);
 		exit (0); /* should never be triggered */
         }
 	g_test_trap_assert_failed();
@@ -62,7 +62,7 @@ test_dbus_collision (void)
 
 
 static void
-test_dbus_get_capabilities (void)
+test_dbus_get_capabilities (gpointer fixture, gconstpointer user_data)
 {
 	char **caps = NULL;
 	gboolean ret = FALSE;
@@ -80,7 +80,7 @@ test_dbus_get_capabilities (void)
 }
 
 static void
-test_dbus_get_server_information (void)
+test_dbus_get_server_information (gpointer fixture, gconstpointer user_data)
 {
 	gchar *name = NULL, *vendor = NULL, *version = NULL, *specver = NULL;
 	gboolean ret = FALSE;
@@ -104,7 +104,7 @@ test_dbus_create_test_suite (void)
 					     0,
 					     NULL,
 					     NULL,
-					     test_dbus_instance,
+					     (GTestFixtureFunc) test_dbus_instance,
 					     NULL)
 		);
 
@@ -113,7 +113,7 @@ test_dbus_create_test_suite (void)
 					     0,
 					     NULL,
 					     NULL,
-					     test_dbus_collision,
+					     (GTestFixtureFunc) test_dbus_collision,
 					     NULL)
 		);
 
@@ -122,7 +122,7 @@ test_dbus_create_test_suite (void)
 					     0,
 					     NULL,
 					     NULL,
-					     test_dbus_get_capabilities,
+					     (GTestFixtureFunc) test_dbus_get_capabilities,
 					     NULL)
 		);
 
@@ -131,7 +131,7 @@ test_dbus_create_test_suite (void)
 					     0,
 					     NULL,
 					     NULL,
-					     test_dbus_get_server_information,
+					     (GTestFixtureFunc) test_dbus_get_server_information,
 					     NULL)
 		);
 	return ts;

@@ -39,7 +39,7 @@
 
 static
 void
-test_dnd_screensaver (void)
+test_dnd_screensaver (gpointer fixture, gconstpointer user_data)
 {
 	gboolean test = dnd_is_screensaver_inhibited();
 
@@ -87,7 +87,7 @@ find_free_workspace (WnckScreen *screen)
 
 static
 void
-test_dnd_fullscreen (void)
+test_dnd_fullscreen (gpointer fixture, gconstpointer user_data)
 {
 	g_assert (!dnd_has_one_fullscreen_window());
 

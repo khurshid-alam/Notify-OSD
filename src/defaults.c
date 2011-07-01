@@ -35,10 +35,7 @@
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
 #include <gconf/gconf-client.h>
-#include <libwnck/application.h>
-#include <libwnck/class-group.h>
-#include <libwnck/window.h>
-#include <libwnck/workspace.h>
+#include <libwnck/libwnck.h>
 
 #include "defaults.h"
 #include "util.h"

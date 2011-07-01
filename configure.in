@@ -37,7 +37,7 @@ PKG_CHECK_MODULES([GCONF], [gconf-2.0])
 #
 # libwnck used by the dnd code
 #
-PKG_CHECK_MODULES([WNCK], [libwnck-1.0])
+PKG_CHECK_MODULES([WNCK], [libwnck-3.0])
 
 #
 # libnotify, used unit-tests 
@@ -63,9 +63,9 @@ PKG_CHECK_MODULES([X], [x11])
 AC_SUBST(X_CFLAGS)
 AC_SUBST(X_LIBS)
 
-AM_PATH_GTK_2_0
+AM_PATH_GTK_3_0
 
-PKG_CHECK_MODULES([NOTIFY_OSD], [pixman-1 gtk+-2.0 >= 2.22])
+PKG_CHECK_MODULES([NOTIFY_OSD], [pixman-1 gtk+-3.0 >= 3.1.6])
 AC_SUBST(NOTIFY_OSD_CFLAGS)
 AC_SUBST(NOTIFY_OSD_LIBS)
 

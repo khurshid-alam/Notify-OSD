@@ -122,7 +122,7 @@ _on_limit_reached (gpointer data)
 }
 
 static void
-test_timings_new (void)
+test_timings_new (gpointer fixture, gconstpointer user_data)
 {
 	Timings* t;
 	guint    initial_duration = 1000;
@@ -140,7 +140,7 @@ test_timings_new (void)
 }
 
 static void
-test_timings_start (void)
+test_timings_start (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;
@@ -184,7 +184,7 @@ test_timings_start (void)
 }
 
 static void
-test_timings_extend (void)
+test_timings_extend (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;
@@ -237,7 +237,7 @@ test_timings_extend (void)
 }
 
 static void
-test_timings_pause (void)
+test_timings_pause (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;
@@ -286,7 +286,7 @@ test_timings_pause (void)
 }
 
 static void
-test_timings_continue (void)
+test_timings_continue (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t    = NULL;
 	GMainLoop* loop = NULL;
@@ -340,7 +340,7 @@ test_timings_continue (void)
 }
 
 static void
-test_timings_intercept_pause (void)
+test_timings_intercept_pause (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t    = NULL;
 	GMainLoop* loop = NULL;
@@ -394,7 +394,7 @@ test_timings_intercept_pause (void)
 }
 
 static void
-test_timings_intercept_continue (void)
+test_timings_intercept_continue (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;
@@ -453,7 +453,7 @@ test_timings_intercept_continue (void)
 }
 
 static void
-test_timings_intercept_start (void)
+test_timings_intercept_start (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;
@@ -502,7 +502,7 @@ test_timings_intercept_start (void)
 }
 
 static void
-test_timings_intercept_stop (void)
+test_timings_intercept_stop (gpointer fixture, gconstpointer user_data)
 {
 	Timings*   t;
 	GMainLoop* loop;

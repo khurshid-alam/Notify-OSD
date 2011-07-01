@@ -44,7 +44,7 @@ stop_main_loop (GMainLoop *loop)
 
 static
 void
-test_bubble_new (void)
+test_bubble_new (gpointer fixture, gconstpointer user_data)
 {
 	Bubble* bubble;
 	Defaults* defaults;
@@ -60,7 +60,7 @@ test_bubble_new (void)
 
 static
 void
-test_bubble_del (void)
+test_bubble_del (gpointer fixture, gconstpointer user_data)
 {
 	Bubble* bubble;
 	Defaults* defaults;
@@ -76,7 +76,7 @@ test_bubble_del (void)
 
 static
 void
-test_bubble_set_attributes (void)
+test_bubble_set_attributes (gpointer fixture, gconstpointer user_data)
 {
 	Bubble*    bubble;
         GMainLoop* loop;
@@ -102,7 +102,7 @@ test_bubble_set_attributes (void)
 
 static
 void
-test_bubble_get_attributes (void)
+test_bubble_get_attributes (gpointer fixture, gconstpointer user_data)
 {
 	Bubble*    bubble;
 	Defaults*  defaults;

@@ -35,7 +35,7 @@
 #include <X11/Xatom.h>
 #include <glib.h>
 #include <gtk/gtk.h>
-#include <gdk/gdkx.h>
+//#include <gdk/gdkx.h>
 #include <pixman.h>
 #include <math.h>
 
@@ -255,7 +255,7 @@ _draw_value_indicator (cairo_t* cr,
 	gdouble          outline_height;
 	gdouble          bar_radius;
 	gdouble          bar_width;
-	gdouble          bar_height;
+	//gdouble          bar_height;
 	cairo_pattern_t* gradient;
 
 	outline_radius = outline_thickness;
@@ -316,7 +316,7 @@ _draw_value_indicator (cairo_t* cr,
 
 	bar_radius = outline_radius;
 	bar_width  = outline_width - 2 * outline_radius;
-	bar_height = outline_height - outline_radius;
+	//bar_height = outline_height - outline_radius;
 
 	// draw value-bar
 	if (value > 0)
@@ -2108,10 +2108,6 @@ bubble_get_property (GObject*    gobject,
 		     GValue*     value,
 		     GParamSpec* spec)
 {
-	Bubble* bubble;
-
-	bubble = BUBBLE (gobject);
-
 	switch (prop)
 	{
 		default :

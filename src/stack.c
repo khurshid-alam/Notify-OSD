@@ -98,10 +98,6 @@ stack_get_property (GObject*    gobject,
 		    GValue*     value,
 		    GParamSpec* spec)
 {
-	Stack* stack;
-
-	stack = STACK (gobject);
-
 	switch (prop)
 	{
 		default :

@@ -29,7 +29,7 @@
 #define _BUBBLE_WINDOW_H_
 
 #include <glib-object.h>
-#include <gtk/gtkwindow.h>
+//#include <gtk/gtkwindow.h>
 #include <gtk/gtk.h>
 
 G_BEGIN_DECLS

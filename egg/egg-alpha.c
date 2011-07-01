@@ -103,10 +103,8 @@ egg_alpha_set_property (GObject      *object,
 			    GParamSpec   *pspec)
 {
   EggAlpha *alpha;
-  EggAlphaPrivate *priv;
 
   alpha = EGG_ALPHA (object);
-  priv = alpha->priv;
 
   switch (prop_id) 
     {

@@ -132,9 +132,6 @@ void
 surface_gaussian_blur (cairo_surface_t* surface,
 		       guint            radius)
 {
-	guchar*        pixels;
-	guint          width;
-	guint          height;
 	cairo_format_t format;
 
 	// sanity checks are done in raico-blur.c
@@ -142,9 +139,6 @@ surface_gaussian_blur (cairo_surface_t* surface,
 	// before we mess with the surface execute any pending drawing
 	cairo_surface_flush (surface);
 
-	pixels = cairo_image_surface_get_data (surface);
-	width  = cairo_image_surface_get_width (surface);
-	height = cairo_image_surface_get_height (surface);
 	format = cairo_image_surface_get_format (surface);
 
 	switch (format)

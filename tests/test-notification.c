@@ -32,7 +32,7 @@
 #include "notification.h"
 
 static void
-test_notification_new (void)
+test_notification_new (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 	GTimeVal*     timestamp;
@@ -65,7 +65,7 @@ test_notification_new (void)
 }
 
 static void
-test_notification_destroy (void)
+test_notification_destroy (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -81,7 +81,7 @@ test_notification_destroy (void)
 }
 
 static void
-test_notification_setget_id (void)
+test_notification_setget_id (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -109,7 +109,7 @@ test_notification_setget_id (void)
 }
 
 static void
-test_notification_setget_title (void)
+test_notification_setget_title (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -134,7 +134,7 @@ test_notification_setget_title (void)
 }
 
 static void
-test_notification_setget_body (void)
+test_notification_setget_body (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -159,7 +159,7 @@ test_notification_setget_body (void)
 }
 
 static void
-test_notification_setget_value (void)
+test_notification_setget_value (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -194,7 +194,7 @@ test_notification_setget_value (void)
 }
 
 static void
-test_notification_setget_icon_themename (void)
+test_notification_setget_icon_themename (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -225,7 +225,7 @@ test_notification_setget_icon_themename (void)
 }
 
 static void
-test_notification_setget_icon_filename (void)
+test_notification_setget_icon_filename (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -273,7 +273,7 @@ test_notification_setget_icon_filename (void)
 }
 
 static void
-test_notification_setget_icon_pixbuf (void)
+test_notification_setget_icon_pixbuf (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n      = NULL;
 	GdkPixbuf*    pixbuf = NULL;
@@ -307,7 +307,7 @@ test_notification_setget_icon_pixbuf (void)
 }
 
 static void
-test_notification_setget_onscreen_time (void)
+test_notification_setget_onscreen_time (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -341,7 +341,7 @@ test_notification_setget_onscreen_time (void)
 }
 
 static void
-test_notification_setget_sender_name (void)
+test_notification_setget_sender_name (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -377,7 +377,7 @@ test_notification_setget_sender_name (void)
 }
 
 static void
-test_notification_setget_sender_pid (void)
+test_notification_setget_sender_pid (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 
@@ -410,7 +410,7 @@ test_notification_setget_sender_pid (void)
 }
 
 static void
-test_notification_setget_timestamp (void)
+test_notification_setget_timestamp (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n     = NULL;
 	GTimeVal*       tvptr = NULL;
@@ -472,7 +472,7 @@ test_notification_setget_timestamp (void)
 }
 
 static void
-test_notification_setget_urgency (void)
+test_notification_setget_urgency (gpointer fixture, gconstpointer user_data)
 {
 	Notification* n = NULL;
 

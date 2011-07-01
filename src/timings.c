@@ -208,10 +208,6 @@ timings_get_property (GObject*    gobject,
 		      GValue*     value,
 		      GParamSpec* spec)
 {
-	Timings* timings;
-
-	timings = TIMINGS (gobject);
-
 	switch (prop)
 	{
 		default :
