@@ -18,3 +18,4 @@ Noteworthy changes since last release (0.9.22):
     * looking up gravity-gconf-key upon startup, fixes LP: #431200
     * convert newline characters to spaces, fixes LP: #402247
 
+
