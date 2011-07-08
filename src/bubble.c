@@ -2195,7 +2195,7 @@ bubble_new (Defaults* defaults)
 
 	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
-			  "expose-event",
+			  "draw",
 			  G_CALLBACK (expose_handler),
 			  this);
 
