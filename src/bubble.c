@@ -1576,115 +1576,80 @@ _set_bg_blur (GtkWidget* window,
 
 static
 void
-screen_changed_handler (GtkWidget* window,
-			GdkScreen* old_screen,
-			gpointer   data)
+screen_changed_handler (GtkWindow* window,
+						GdkScreen* old_screen,
+						gpointer   data)
 {
-	GdkScreen*   screen   = gtk_widget_get_screen (window);
-	GdkColormap* colormap = gdk_screen_get_rgba_colormap (screen);
+	GdkScreen* screen = gtk_widget_get_screen (GTK_WIDGET (window));
+	GdkVisual* visual = gdk_screen_get_rgba_visual (screen);
 
-	if (!colormap)
-		colormap = gdk_screen_get_rgb_colormap (screen);
+	if (!visual)
+		visual = gdk_screen_get_system_visual (screen);
 
-	gtk_widget_set_colormap (window, colormap);
+	gtk_widget_set_visual (GTK_WIDGET (window), visual);
 }
 
 static
 void
 update_input_shape (GtkWidget* window)
 {
-	GdkRegion*   region = NULL;
+	cairo_region_t* region = NULL;
 
 	// sanity check
 	if (!window)
 		return;
 
 	// set an empty input-mask to allow click-through 
-	region = gdk_region_new ();
+	region = cairo_region_create ();
 	gdk_window_input_shape_combine_region (gtk_widget_get_window (window), region, 0, 0);
-	gdk_region_destroy (region);
+	cairo_region_destroy (region);
 }
 
 static void
 update_shape (Bubble* self)
 {
-	GdkBitmap*     mask = NULL;
-	cairo_t*       cr   = NULL;
 	gint           width;
 	gint           height;
-	Defaults*      d;
 	BubblePrivate* priv;
 
 	// sanity test
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	d = self->defaults;
 	priv = GET_PRIVATE (self);
 
 	// do we actually need a shape-mask at all?
 	if (priv->composited)
 	{
-		gtk_widget_shape_combine_mask (priv->widget, NULL, 0, 0);
+		gtk_widget_input_shape_combine_region (priv->widget, NULL);
 		return;
 	}
 
 	// we're not-composited, so deal with mouse-over differently
 	if (bubble_is_mouse_over (self))
 	{
-		GdkRegion* region = NULL;
+		cairo_region_t* region = NULL;
 
-		region = gdk_region_new ();
+		region = cairo_region_create ();
 		gdk_window_shape_combine_region (gtk_widget_get_window (priv->widget),
 						 region,
 						 0,
 						 0);
-		gdk_region_destroy (region);
+		cairo_region_destroy (region);
 	}
 	else
 	{
 		gtk_widget_get_size_request (priv->widget, &width, &height);
-		mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-		if (mask)
+		const cairo_rectangle_int_t rects[]   = {{2, 0, width - 4, height},
+												 {1, 1, width - 2, height - 2},
+												 {0, 2, width, height - 4}};
+		cairo_region_t*             region = NULL;
+
+		region = cairo_region_create_rectangles (rects, 3);
+		if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
 		{
-			// create context from mask/pixmap
-			cr = gdk_cairo_create (mask);
-			if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
-			{
-				// clear mask/context
-				cairo_scale (cr, 1.0f, 1.0f);
-				cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-				cairo_paint (cr);
-
-				width  -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-				height -= 2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
-
-				// draw rounded rectangle shape/mask
-				cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-				cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
-				draw_round_rect (cr,
-					 1.0f,
-					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-					 EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-					 EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
-					 width,
-					 height);
-				cairo_fill (cr);
-				cairo_destroy (cr);
-
-				// remove any current shape-mask
-				gtk_widget_shape_combine_mask (priv->widget,
-							       NULL,
-							       0,
-							       0);
-
-				// set new shape-mask
-				gtk_widget_shape_combine_mask (priv->widget,
-							       mask,
-							       0,
-							       0);
-			}
-			g_object_unref ((gpointer) mask);
+			gtk_widget_shape_combine_region (priv->widget, NULL);
+			gtk_widget_shape_combine_region (priv->widget, region);
 		}
 	}
 }
@@ -2180,9 +2145,10 @@ bubble_class_init (BubbleClass* klass)
 Bubble*
 bubble_new (Defaults* defaults)
 {
-	Bubble*        this   = NULL;
-	GtkWidget*     window = NULL;
+	Bubble*        this        = NULL;
+	GtkWidget*     window      = NULL;
 	BubblePrivate* priv;
+	GdkRGBA        transparent = {0.0, 0.0, 0.0, 0.0};
 
 	this = g_object_new (BUBBLE_TYPE, NULL);
 	if (!this)
@@ -2222,9 +2188,10 @@ bubble_new (Defaults* defaults)
 	gtk_window_move (GTK_WINDOW (window), 0, 0);
 
 	// make sure the window opens with a RGBA-visual
-	screen_changed_handler (window, NULL, NULL);
+	screen_changed_handler (GTK_WINDOW (window), NULL, NULL);
 	gtk_widget_realize (window);
-	gdk_window_set_back_pixmap (gtk_widget_get_window (window), NULL, FALSE);
+	gdk_window_set_background_rgba (gtk_widget_get_window (window),
+									&transparent);
 
 	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),

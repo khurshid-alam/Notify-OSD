@@ -123,13 +123,13 @@ screen_changed_handler (GtkWidget* window,
 			GdkScreen* old_screen,
 			gpointer   data)
 {                       
-	GdkScreen*   screen   = gtk_widget_get_screen (window);
-	GdkColormap* colormap = gdk_screen_get_rgba_colormap (screen);
+	GdkScreen* screen = gtk_widget_get_screen (GTK_WIDGET (window));
+	GdkVisual* visual = gdk_screen_get_rgba_visual (screen);
       
-	if (!colormap)
-		colormap = gdk_screen_get_rgb_colormap (screen);
+	if (!visual)
+		visual = gdk_screen_get_system_visual (screen);
 
-	gtk_widget_set_colormap (window, colormap);
+	gtk_widget_set_visual (GTK_WIDGET (window), visual);
 }
 
 static
@@ -138,36 +138,14 @@ update_input_shape (GtkWidget* window,
 		    gint       width,
 		    gint       height)
 {
-	GdkBitmap* mask = NULL;
-	cairo_t*   cr   = NULL;
+	cairo_region_t*             region = NULL;
+	const cairo_rectangle_int_t rect   = {0, 0, 1, 1};
 
-	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-	if (mask)
+	region = cairo_region_create_rectangle (&rect);
+	if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
 	{
-		cr = gdk_cairo_create (mask);
-		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
-		{
-			cairo_scale (cr, 1.0f, 1.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-			cairo_paint (cr);
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
-
-			/* just draw something */
-			draw_round_rect (cr,
-					 1.0f,
-					 0.0f, 0.0f,
-					 1.0f,
-					 1.0f, 1.0f);
-			cairo_fill (cr);
-
-			cairo_destroy (cr);
-
-			gtk_widget_input_shape_combine_mask (window,NULL, 0, 0);
-			gtk_widget_input_shape_combine_mask (window,mask, 0, 0);
-		}
-
-		g_object_unref ((gpointer) mask);
+		gtk_widget_input_shape_combine_region (window, NULL);
+		gtk_widget_input_shape_combine_region (window, region);
 	}
 }
 
@@ -176,55 +154,26 @@ update_shape (GtkWidget* window,
 	      gint       radius,
 	      gint       shadow_size)
 {
-	GdkBitmap*    mask   = NULL;
-	cairo_t*      cr     = NULL;
-	GtkAllocation allocation;
-	gdouble       width;
-	gdouble       height;
-
-	gtk_widget_get_allocation (window, &allocation);
-	width = (gdouble) allocation.width;
-	height = (gdouble) allocation.height;
-
 	if (g_composited)
-	{
+	{		
 		/* remove any current shape-mask */
-		gtk_widget_shape_combine_mask (window, NULL, 0, 0);
+		gtk_widget_input_shape_combine_region (window, NULL);
 		return;
 	}
 
-	mask = (GdkBitmap*) gdk_pixmap_new (NULL, width, height, 1);
-	if (mask)
+	int width;
+	int height;
+	gtk_widget_get_size_request (window, &width, &height);
+	const cairo_rectangle_int_t rects[] = {{2, 0, width - 4, height},
+										   {1, 1, width - 2, height - 2},
+										   {0, 2, width, height - 4}};
+	cairo_region_t* region = NULL;
+
+	region = cairo_region_create_rectangles (rects, 3);
+	if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
 	{
-		cr = gdk_cairo_create (mask);
-		if (cairo_status (cr) == CAIRO_STATUS_SUCCESS)
-		{
-			/* clear mask/context */
-			cairo_scale (cr, 1.0f, 1.0f);
-			cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
-			cairo_paint (cr);
-
-			/* draw rounded rectangle shape/mask */
-			cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-			cairo_set_source_rgb (cr, 1.0f, 1.0f, 1.0f);
-			draw_round_rect (cr,
-					 1.0f,
-					 (gdouble) shadow_size,
-					 (gdouble) shadow_size,
-					 (gdouble) radius,
-					 (gdouble) (width - 2 * shadow_size),
-					 (gdouble) (height - 2 * shadow_size));
-			cairo_fill (cr);
-			cairo_destroy (cr);
-
-			/* remove any current shape-mask */
-			gtk_widget_shape_combine_mask (window, NULL, 0, 0);
-
-			/* set new shape-mask */
-			gtk_widget_shape_combine_mask (window, mask, 0, 0);
-		}
-
-		g_object_unref ((gpointer) mask);
+		gtk_widget_shape_combine_region (window, NULL);
+		gtk_widget_shape_combine_region (window, region);
 	}
 }
 
@@ -355,15 +304,13 @@ draw_shadow (cairo_t* cr,
 
 gboolean
 expose_handler (GtkWidget*      window,
-		GdkEventExpose* event,
+		cairo_t* cr,
 		gpointer        data)
 {
-	cairo_t*      cr     = NULL;
 	GtkAllocation a;
 
 	gtk_widget_get_allocation (window, &a);
 
-	cr = gdk_cairo_create (gtk_widget_get_window (window));
 
         /* clear and render drop-shadow and bubble-background */
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -395,8 +342,6 @@ expose_handler (GtkWidget*      window,
 					 0.0f);
 		gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
 	}
-
-	cairo_destroy (cr);
 
 	return TRUE;
 }
@@ -710,6 +655,7 @@ main (int    argc,
       char** argv)
 {
 	GtkWidget* window;
+	GdkRGBA    transparent = {0.0, 0.0, 0.0, 0.0};
 
 	gtk_init (&argc, &argv);
 
@@ -740,11 +686,12 @@ main (int    argc,
 	// make sure the window opens with a RGBA-visual
 	screen_changed_handler (window, NULL, NULL);
 	gtk_widget_realize (window);
-	gdk_window_set_back_pixmap (gtk_widget_get_window (window), NULL, FALSE);
+	gdk_window_set_background_rgba (gtk_widget_get_window (window),
+									&transparent);
 
 	// hook up window-event handlers to window
 	g_signal_connect (G_OBJECT (window),
-			  "expose-event",
+			  "draw",
 			  G_CALLBACK (expose_handler),
 			  NULL);       
 

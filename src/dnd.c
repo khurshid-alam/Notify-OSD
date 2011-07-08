@@ -76,7 +76,7 @@ dnd_is_xscreensaver_active ()
 				     &type, &format, &nitems, &bytesafter,
 				     (unsigned char **) &data);
 	gdk_flush ();
-	gdk_error_trap_pop ();
+	gdk_error_trap_pop_ignored ();
 
 	if (status == Success
 	    && type == XA_INTEGER

@@ -439,7 +439,7 @@ defaults_refresh_screen_dimension_properties (Defaults *self)
 				     &items_left,
 				     (guchar **) (void*) &coords);
 	gdk_flush ();
-	gdk_error_trap_pop ();
+	gdk_error_trap_pop_ignored ();
 
 	if (result == Success && items_read)
 	{
@@ -2365,7 +2365,7 @@ _window_look_for_top_panel_attributes (GdkWindow *win)
 	gdk_error_trap_push ();
 
 	result = XGetClassHint (gdk_x11_display_get_xdisplay (gdk_display_get_default ()),
-				GDK_WINDOW_XWINDOW (win),
+				GDK_WINDOW_XID (win),
 				&class_hints);
 
 	if (! result || class_hints.res_class == NULL)
@@ -2375,7 +2375,7 @@ _window_look_for_top_panel_attributes (GdkWindow *win)
 		goto failed;
 
 	/* discard dialog windows like panel properties or the applet directory... */
-	if (wnck_window_get_window_type (wnck_window_get (GDK_WINDOW_XWINDOW (win)))
+	if (wnck_window_get_window_type (wnck_window_get (GDK_WINDOW_XID (win)))
 	    != WNCK_WINDOW_DOCK)
 		goto failed;
 
@@ -2395,7 +2395,7 @@ failed:
 	if (class_hints.res_name)
 		XFree (class_hints.res_name);
 
-	gdk_error_trap_pop ();
+	gdk_error_trap_pop_ignored ();
 
 	return is_panel;
 }
