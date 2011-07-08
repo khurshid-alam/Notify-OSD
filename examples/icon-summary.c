@@ -52,8 +52,7 @@ main (int    argc,
 	notification = notify_notification_new (
 				"WiFi connection lost",
 				NULL,
-				"notification-network-wireless-disconnected",
-				NULL);
+				"notification-network-wireless-disconnected");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)

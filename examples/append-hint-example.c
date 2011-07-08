@@ -41,10 +41,10 @@ push_notification (gchar* title,
 	GError*             error = NULL;
 
 	/* initial notification */
-	notification = notify_notification_new (title, body, icon, NULL);
+	notification = notify_notification_new (title, body, icon);
 	notify_notification_set_hint_string (notification,
 					     "x-canonical-append",
-					     "");
+					     "true");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)

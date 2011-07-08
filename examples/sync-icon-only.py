@@ -121,8 +121,8 @@ if __name__ == '__main__':
 		n = pynotify.Notification ("Eject", # for a11y-reasons put something meaningfull here
 					   "",
 					   "notification-device-eject")
-		n.set_hint_string ("x-canonical-private-icon-only", "");
-		n.set_hint_string ("x-canonical-private-synchronous", "");
+		n.set_hint_string ("x-canonical-private-icon-only", "true");
+		n.set_hint_string ("x-canonical-private-synchronous", "true");
 		n.show ()
 	else:
 		print "The daemon does not support sync. icon-only!"

@@ -112,7 +112,7 @@ def pushNotification (icon, value):
 				   "",           # this needs to be empty!
 				   icon);
 	n.set_hint_int32 ("value", value);
-	n.set_hint_string ("x-canonical-private-synchronous", "");
+	n.set_hint_string ("x-canonical-private-synchronous", "true");
 	n.show ()
 	time.sleep (1)
 

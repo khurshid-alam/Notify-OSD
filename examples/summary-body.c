@@ -52,7 +52,6 @@ main (int    argc,
 	notification = notify_notification_new (
 				"Totem",
 				"This is a superfluous notification",
-				NULL,
 				NULL);
 	error = NULL;
 	success = notify_notification_show (notification, &error);

@@ -1,3 +1,12 @@
+Noteworthy changes since last release (0.9.30):
+
+    * Mono-example don't compile (under Oneiric Ocelot)
+    * ported to gtk+ 3.x
+    * ported to libnotify 0.7.x
+    * updated C- and Python-examples
+
+----
+
 This is the inital version of the new notification daemon "notify osd" developed
 by Canonical's dx- and design-teams. It follows the freedesktop notification
 specification and introduces some new policies for streamlining the user-

@@ -42,14 +42,13 @@ push_notification (gchar* icon,
 	notification = notify_notification_new (
 				"Brightness",  /* for a11y-reasons put something meaningfull here */
 				NULL,
-				icon,
-				NULL);
+				icon);
 	notify_notification_set_hint_int32 (notification,
 					    "value",
 					    value);
 	notify_notification_set_hint_string (notification,
 					     "x-canonical-private-synchronous",
-					     "");
+					     "true");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)

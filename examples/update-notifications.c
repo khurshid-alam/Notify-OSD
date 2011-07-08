@@ -53,8 +53,7 @@ main (int    argc,
 				"Inital notification",
 				"This is the original content of "
 				"this notification-bubble.",
-				"notification-message-im",
-				NULL);
+				"notification-message-im");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)
@@ -97,8 +96,7 @@ main (int    argc,
 				"Initial layout",
 				"This bubble uses the icon-title-body "
 				"layout.",
-				"notification-message-im",
-				NULL);
+				"notification-message-im");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)

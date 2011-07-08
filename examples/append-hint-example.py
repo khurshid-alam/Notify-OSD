@@ -109,7 +109,7 @@ def printCaps ():
 
 def pushNotification (title, body, icon):
 	n = pynotify.Notification (title, body, icon);
-	n.set_hint_string ("x-canonical-append", "");
+	n.set_hint_string ("x-canonical-append", "true");
 	n.show ()
 	time.sleep (3) # simulate a user typing
 

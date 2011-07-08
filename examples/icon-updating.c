@@ -53,7 +53,6 @@ main (int    argc,
 	notification = notify_notification_new (
 		"Test 1/3",
 		"Set icon via hint \"image_path\" to logo-icon.",
-		NULL,
 		NULL);
 	notify_notification_set_hint_string (
 		notification,

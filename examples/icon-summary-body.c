@@ -54,8 +54,7 @@ main (int    argc,
 				"Hey pal, what's up with the party "
 				"next weekend? Will you join me "
 				"and Anna?",
-				"notification-message-im",
-				NULL);
+				"notification-message-im");
 	error = NULL;
 	success = notify_notification_show (notification, &error);
 	if (!success)

@@ -118,10 +118,10 @@ if __name__ == '__main__':
 
 	# try the icon-only case
 	if capabilities['x-canonical-private-icon-only']:
-		n = pynotify.Notification ("Eject", # for a11y-reasons put something meaningfull here
-					   "Eject", # for a11y-reasons put something meaningfull here
+		n = pynotify.Notification ("", # for a11y-reasons put something meaningfull here
+					   "", # for a11y-reasons put something meaningfull here
 					   "notification-device-eject")
-		n.set_hint_string ("x-canonical-private-icon-only", "");
+		n.set_hint_string ("x-canonical-private-icon-only", "true");
 		n.show ()
 	else:
 		print "The daemon does not support the x-canonical-private-icon-only hint!"
