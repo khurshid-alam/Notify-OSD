@@ -1593,15 +1593,20 @@ static
 void
 update_input_shape (GtkWidget* window)
 {
-	cairo_region_t* region = NULL;
+	cairo_region_t*             region = NULL;
+	const cairo_rectangle_int_t rect   = {0, 0, 1, 1};
 
 	// sanity check
 	if (!window)
 		return;
 
-	// set an empty input-mask to allow click-through 
-	region = cairo_region_create ();
-	gdk_window_input_shape_combine_region (gtk_widget_get_window (window), region, 0, 0);
+	// set an 1x1 input-region to allow click-through 
+	region = cairo_region_create_rectangle (&rect);
+	if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
+	{
+		gtk_widget_input_shape_combine_region (window, NULL);
+		gtk_widget_input_shape_combine_region (window, region);
+	}
 	cairo_region_destroy (region);
 }
 
@@ -1621,7 +1626,7 @@ update_shape (Bubble* self)
 	// do we actually need a shape-mask at all?
 	if (priv->composited)
 	{
-		gtk_widget_input_shape_combine_region (priv->widget, NULL);
+		gtk_widget_shape_combine_region (priv->widget, NULL);
 		return;
 	}
 
