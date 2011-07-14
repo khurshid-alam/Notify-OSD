@@ -83,7 +83,6 @@ notify_osd_SOURCES =		\
 notify_osd_LDADD =			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS) 		\
-	$(GCONF_LIBS) 		\
 	$(GTK_LIBS) 		\
 	$(NOTIFY_OSD_LIBS)	\
 	$(DBUS_LIBS)     	\
@@ -95,7 +94,6 @@ notify_osd_CFLAGS = 		\
 	$(GTK_CFLAGS) 		\
 	$(NOTIFY_OSD_CFLAGS)	\
 	$(GLIB_CFLAGS) 		\
-	$(GCONF_CFLAGS)		\
 	$(DBUS_CFLAGS)		\
 	-DWNCK_I_KNOW_THIS_IS_UNSTABLE \
 	$(WNCK_CFLAGS)		\
