@@ -34,7 +34,6 @@
 #include <gdk/gdk.h>
 #include <gdk/gdkx.h>
 #include <gtk/gtk.h>
-#include <gconf/gconf-client.h>
 #include <libwnck/libwnck.h>
 
 #include "defaults.h"
@@ -146,21 +145,14 @@ enum
 #define DEFAULT_FADE_OUT_TIMEOUT     1000
 #define DEFAULT_ON_SCREEN_TIMEOUT    10000
 
-/* GConf-keys to watch */
-#define GCONF_UI_FONT_NAME        "/desktop/gnome/interface/font_name"
-#define GCONF_FONT_ANTIALIAS      "/desktop/gnome/font_rendering/antialiasing"
-#define GCONF_FONT_DPI            "/desktop/gnome/font_rendering/dpi"
-#define GCONF_FONT_HINTING        "/desktop/gnome/font_rendering/hinting"
-#define GCONF_FONT_SUBPIXEL_ORDER "/desktop/gnome/font_rendering/rgba_order"
-
-/* GConf-trees to watch */
-#define GCONF_UI_TREE             "/desktop/gnome/interface"
-#define GCONF_FONT_TREE           "/desktop/gnome/font_rendering"
-#define GCONF_NOSD_TREE           "/apps/notify-osd"
-
 /* notify-osd settings */
-#define GCONF_MULTIHEAD_MODE "/apps/notify-osd/multihead_mode"
-#define GCONF_GRAVITY        "/apps/notify-osd/gravity"
+#define NOTIFY_OSD_SCHEMA            "com.canonical.notify-osd"
+#define GSETTINGS_GRAVITY_KEY        "gravity"
+#define GSETTINGS_MULTIHEAD_MODE_KEY "multihead-mode"
+
+/* gnome settings */
+#define GNOME_DESKTOP_SCHEMA         "org.gnome.desktop.interface"
+#define GSETTINGS_FONT_KEY           "font-name"
 
 static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 
@@ -170,32 +162,21 @@ static void
 _get_font_size_dpi (Defaults* self)
 {
 	GString*              string        = NULL;
-	GError*               error         = NULL;
 	gdouble               points        = 0.0f;
 	GString*              font_face     = NULL;
 	gdouble               dpi           = 0.0f;
 	gdouble               pixels_per_em = 0;
 	gchar*                font_name     = NULL;
 	PangoFontDescription* desc          = NULL;
+	GtkSettings*          gtk_settings  = NULL;
+	gint                  value         = 0;
 
 	if (!IS_DEFAULTS (self))
 		return;
 
 	/* determine current system font-name/size */
-	error = NULL;
-	font_name = gconf_client_get_string (self->context,
-					     GCONF_UI_FONT_NAME,
-					     &error);
+	font_name = g_settings_get_string (self->gnome_settings, GSETTINGS_FONT_KEY);
 	string = g_string_new (font_name);
-	if (error)
-	{
-		// if something went wrong, assume "Sans 10" and continue
-		string = g_string_assign (string, "Sans 10");
-
-		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
-	}
 
 	// extract text point-size
 	desc = pango_font_description_from_string (font_name);
@@ -224,17 +205,9 @@ _get_font_size_dpi (Defaults* self)
 	g_object_set (self, "system-font-size", (gdouble) points, NULL);
 
 	/* determine current system DPI-setting */
-	error = NULL;
-	dpi = gconf_client_get_float (self->context, GCONF_FONT_DPI, &error);
-	if (error)
-	{
-		// if something went wrong, assume 96 DPI and continue
-		dpi = DEFAULT_SCREEN_DPI;
-
-		g_warning ("_get_font_size_dpi(): Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
-	}
+	gtk_settings = gtk_settings_get_default (); // not ref'ed
+	g_object_get (gtk_settings, "gtk-xft-dpi", &value, NULL);
+	dpi = (float) value / (float) 1024;
 
 	/* update stored DPI-value */
 	pixels_per_em = points * dpi / 72.0f;
@@ -256,25 +229,13 @@ _get_font_size_dpi (Defaults* self)
 static void
 _get_gravity (Defaults* self)
 {
-	GError* error = NULL;
-	Gravity gravity;
+	Gravity gravity = DEFAULT_GRAVITY;
 
 	if (!IS_DEFAULTS (self))
 		return;
 
-	// grab current gravity-setting for notify-osd from gconf
-	error = NULL;
-	gravity = gconf_client_get_int (self->context, GCONF_GRAVITY, &error);
-	if (error)
-	{
-		// make sure we use a sane default for the gravity
-		gravity = DEFAULT_GRAVITY;
-
-		g_warning ("%s(): Got error \"%s\"\n",
-		           G_STRFUNC,
-		           error->message);
-		g_error_free (error);
-	}
+	// grab current gravity-setting for notify-osd from GSettings
+	gravity = g_settings_get_int (self->nosd_settings, GSETTINGS_GRAVITY_KEY);
 
 	// protect against out-of-bounds values for gravity
 	if (gravity != GRAVITY_EAST && gravity != GRAVITY_NORTH_EAST)
@@ -285,10 +246,9 @@ _get_gravity (Defaults* self)
 }
 
 static void
-_font_changed (GConfClient* client,
-	       guint        cnxn_id,
-	       GConfEntry*  entry,
-               gpointer     data)
+_font_changed (GSettings* settings,
+			   gchar*     key,
+			   gpointer   data)
 {
 	Defaults* defaults;
 
@@ -299,17 +259,16 @@ _font_changed (GConfClient* client,
 	if (!IS_DEFAULTS (defaults))
 		return;
 
-    	/* grab system-wide font-face/size and DPI */
+	/* grab system-wide font-face/size and DPI */
 	_get_font_size_dpi (defaults);
 
 	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
 }
 
 static void
-_antialias_changed (GConfClient* client,
-		    guint        cnxn_id,
-		    GConfEntry*  entry,
-		    gpointer     data)
+_gravity_changed (GSettings* settings,
+				  gchar*     key,
+				  gpointer   data)
 {
 	Defaults* defaults;
 
@@ -320,88 +279,7 @@ _antialias_changed (GConfClient* client,
 	if (!IS_DEFAULTS (defaults))
 		return;
 
-	/* just triggering a redraw by emitting the "value-changed" signal is
-	** enough in this case, no need to update any stored values */
-	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
-}
-
-static void
-_dpi_changed (GConfClient* client,
-	      guint        cnxn_id,
-	      GConfEntry*  entry,
-	      gpointer     data)
-{
-	Defaults* defaults;
-
-	if (!data)
-		return;
-
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
-
-    	/* grab system-wide font-face/size and DPI */
-	_get_font_size_dpi (defaults);
-
-	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
-}
-
-static void
-_hinting_changed (GConfClient* client,
-		  guint        cnxn_id,
-		  GConfEntry*  entry,
-		  gpointer     data)
-{
-	Defaults* defaults;
-
-	if (!data)
-		return;
-
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
-
-	/* just triggering a redraw by emitting the "value-changed" signal is
-	** enough in this case, no need to update any stored values */
-	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
-}
-
-static void
-_subpixel_order_changed (GConfClient* client,
-			 guint        cnxn_id,
-			 GConfEntry*  entry,
-			 gpointer     data)
-{
-	Defaults* defaults;
-
-	if (!data)
-		return;
-
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
-
-	/* just triggering a redraw by emitting the "value-changed" signal is
-	** enough in this case, no need to update any stored values */
-	g_signal_emit (defaults, g_defaults_signals[VALUE_CHANGED], 0);
-}
-
-static void
-_gravity_changed (GConfClient* client,
-                  guint        cnxn_id,
-                  GConfEntry*  entry,
-                  gpointer     data)
-{
-	Defaults* defaults;
-
-	if (!data)
-		return;
-
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
-
-    	// grab gravity setting for notify-osd from gconf
+    // grab gravity setting for notify-osd from gconf
 	_get_gravity (defaults);
 
 	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
@@ -537,16 +415,8 @@ defaults_dispose (GObject* gobject)
 
 	defaults = DEFAULTS (gobject);
 
-	gconf_client_notify_remove (defaults->context, defaults->notifier[0]);
-	gconf_client_notify_remove (defaults->context, defaults->notifier[1]);
-	gconf_client_notify_remove (defaults->context, defaults->notifier[2]);
-	gconf_client_notify_remove (defaults->context, defaults->notifier[3]);
-	gconf_client_notify_remove (defaults->context, defaults->notifier[4]);
-	gconf_client_notify_remove (defaults->context, defaults->notifier[5]);
-	gconf_client_remove_dir (defaults->context, GCONF_UI_TREE, NULL);
-	gconf_client_remove_dir (defaults->context, GCONF_FONT_TREE, NULL);
-	gconf_client_remove_dir (defaults->context, GCONF_NOSD_TREE, NULL);
-	g_object_unref (defaults->context);
+	g_object_unref (defaults->nosd_settings);
+	g_object_unref (defaults->gnome_settings);
 
 	if (defaults->bubble_shadow_color)
 	{
@@ -608,157 +478,21 @@ defaults_finalize (GObject* gobject)
 }
 
 static void
-_handle_error (Defaults* self,
-               GError*   error)
-{
-	// no sanity-checks here
-
-	gconf_client_notify_remove (self->context, self->notifier[0]);
-	gconf_client_notify_remove (self->context, self->notifier[1]);
-	gconf_client_notify_remove (self->context, self->notifier[2]);
-	gconf_client_notify_remove (self->context, self->notifier[3]);
-	gconf_client_notify_remove (self->context, self->notifier[4]);
-	gconf_client_notify_remove (self->context, self->notifier[5]);
-	gconf_client_remove_dir (self->context, GCONF_UI_TREE, NULL);
-	gconf_client_remove_dir (self->context, GCONF_FONT_TREE, NULL);
-	gconf_client_remove_dir (self->context, GCONF_NOSD_TREE, NULL);
-	g_object_unref (self->context);
-	g_warning ("%s(): Got error \"%s\"\n", G_STRFUNC, error->message);
-	g_error_free (error);
-}
-
-static void
 defaults_init (Defaults* self)
 {
-	GError* error;
+	/* "connect" to the required GSettings schemas */
+	self->nosd_settings  = g_settings_new (NOTIFY_OSD_SCHEMA);
+	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);; 
 
-	/* "connect" to the whole gconf-thing */
-	self->context = gconf_client_get_default ();
-	if (!self->context)
-	{
-		g_warning ("Could not get GConf client-context");
-		return;
-	}
+	g_signal_connect (self->gnome_settings,
+					  "changed",
+					  G_CALLBACK (_font_changed),
+					  self);
 
-	/* register watching all relevant GNOME UI-settings */
-	error = NULL;
-	gconf_client_add_dir (self->context,
-			      GCONF_UI_TREE,
-			      GCONF_CLIENT_PRELOAD_NONE,
-			      &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* register watching all font-settings */
-	error = NULL;
-	gconf_client_add_dir (self->context,
-			      GCONF_FONT_TREE,
-			      GCONF_CLIENT_PRELOAD_NONE,
-			      &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* register watching all settings for notify-osd */
-	error = NULL;
-	gconf_client_add_dir (self->context,
-			      GCONF_NOSD_TREE,
-			      GCONF_CLIENT_PRELOAD_NONE,
-			      &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* hook up notifier for font-name/size changes */
-	error = NULL;
-	self->notifier[0] = gconf_client_notify_add (self->context,
-						     GCONF_UI_FONT_NAME,
-						     _font_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* hook up notifier for antialiasing changes */
-	error = NULL;
-	self->notifier[1] = gconf_client_notify_add (self->context,
-						     GCONF_FONT_ANTIALIAS,
-						     _antialias_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* hook up notifier for DPI changes */
-	error = NULL;
-	self->notifier[2] = gconf_client_notify_add (self->context,
-						     GCONF_FONT_DPI,
-						     _dpi_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-	
-	/* hook up notifier for hinting changes */
-	error = NULL;
-	self->notifier[3] = gconf_client_notify_add (self->context,
-						     GCONF_FONT_HINTING,
-						     _hinting_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	/* hook up notifier for subpixel-order changes */
-	error = NULL;
-	self->notifier[4] = gconf_client_notify_add (self->context,
-						     GCONF_FONT_SUBPIXEL_ORDER,
-						     _subpixel_order_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
-
-	// hook up notifiier for gravity changes
-	error = NULL;
-	self->notifier[5] = gconf_client_notify_add (self->context,
-						     GCONF_NOSD_TREE,
-						     _gravity_changed,
-						     (gpointer) self,
-						     NULL,
-						     &error);
-	if (error)
-	{
-		_handle_error (self, error);
-		return;
-	}
+	g_signal_connect (self->nosd_settings,
+					  "changed",
+					  G_CALLBACK (_gravity_changed),
+					  self);
 
 	// use fixed slot-allocation for async. and sync. bubbles
 	self->slot_allocation = SLOT_ALLOCATION_FIXED;
@@ -2326,27 +2060,19 @@ defaults_get_screen_dpi (Defaults* self)
 static gboolean
 defaults_multihead_does_focus_follow (Defaults *self)
 {
-	GError*  error = NULL;
-	gboolean mode  = FALSE;
+	gboolean mode = FALSE;
 
 	g_return_val_if_fail (self != NULL && IS_DEFAULTS (self), FALSE);
 
-	gchar* mode_str = gconf_client_get_string (self->context,
-						   GCONF_MULTIHEAD_MODE,
-						   &error);
+	gchar* mode_str = g_settings_get_string (self->nosd_settings,
+											 GSETTINGS_MULTIHEAD_MODE_KEY);
+
 	if (mode_str != NULL)
 	{
 		if (! g_strcmp0 (mode_str, "focus-follow"))
 			mode = TRUE;
 
 		g_free ((gpointer) mode_str);
-	}
-	else if (error != NULL)
-	{
-		g_warning ("defaults_multihead_does_focus_follow(): "
-		           "Got error \"%s\"\n",
-		           error->message);
-		g_error_free (error);
 	}
 	
 	return mode;

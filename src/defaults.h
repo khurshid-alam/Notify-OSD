@@ -30,7 +30,7 @@
 #define __DEFAULTS_H
 
 #include <glib-object.h>
-#include <gconf/gconf-client.h>
+#include <gio/gio.h>
 
 G_BEGIN_DECLS
 
@@ -74,8 +74,8 @@ struct _Defaults
 	GObject parent;
 
 	/* private */
-	GConfClient*   context;
-	guint          notifier[6];
+	GSettings*     nosd_settings;
+	GSettings*     gnome_settings;
 	gint           desktop_width;
 	gint           desktop_height;
 	gint           desktop_top;
