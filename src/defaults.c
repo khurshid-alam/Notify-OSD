@@ -154,6 +154,10 @@ enum
 #define GNOME_DESKTOP_SCHEMA         "org.gnome.desktop.interface"
 #define GSETTINGS_FONT_KEY           "font-name"
 
+/* unity settings */
+#define UNITY_SCHEMA                 "com.canonical.Unity"
+#define GSETTINGS_AVG_BG_COL_KEY     "average-bg-color"
+
 static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 
 /*-- internal API ------------------------------------------------------------*/
@@ -283,6 +287,26 @@ _gravity_changed (GSettings* settings,
 	_get_gravity (defaults);
 
 	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
+}
+
+static void
+_avg_bg_color_changed (GSettings* settings,
+                       gchar*     key,
+                       gpointer   data)
+{
+	Defaults* defaults     = NULL;
+    gchar*    color_string = NULL;
+
+	if (!data)
+		return;
+
+	defaults = (Defaults*) data;
+	if (!IS_DEFAULTS (defaults))
+		return;
+
+	color_string = g_settings_get_string (settings, GSETTINGS_AVG_BG_COL_KEY);
+	g_object_set (defaults, "bubble-bg-color", color_string, NULL);
+	g_free (color_string);
 }
 
 void
@@ -417,6 +441,7 @@ defaults_dispose (GObject* gobject)
 
 	g_object_unref (defaults->nosd_settings);
 	g_object_unref (defaults->gnome_settings);
+	g_object_unref (defaults->unity_settings);
 
 	if (defaults->bubble_shadow_color)
 	{
@@ -482,7 +507,8 @@ defaults_init (Defaults* self)
 {
 	/* "connect" to the required GSettings schemas */
 	self->nosd_settings  = g_settings_new (NOTIFY_OSD_SCHEMA);
-	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);; 
+	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);
+    self->unity_settings = g_settings_new (UNITY_SCHEMA);
 
 	g_signal_connect (self->gnome_settings,
 					  "changed",
@@ -492,6 +518,11 @@ defaults_init (Defaults* self)
 	g_signal_connect (self->nosd_settings,
 					  "changed",
 					  G_CALLBACK (_gravity_changed),
+					  self);
+
+    g_signal_connect (self->unity_settings,
+					  "changed",
+					  G_CALLBACK (_avg_bg_color_changed),
 					  self);
 
 	// use fixed slot-allocation for async. and sync. bubbles

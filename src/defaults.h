@@ -76,6 +76,7 @@ struct _Defaults
 	/* private */
 	GSettings*     nosd_settings;
 	GSettings*     gnome_settings;
+	GSettings*     unity_settings;
 	gint           desktop_width;
 	gint           desktop_height;
 	gint           desktop_top;
