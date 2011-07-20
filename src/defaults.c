@@ -304,7 +304,7 @@ _avg_bg_color_changed (GSettings* settings,
 	if (!IS_DEFAULTS (defaults))
 		return;
 
-	color_string = g_settings_get_string (settings, GSETTINGS_AVG_BG_COL_KEY);
+	color_string = g_settings_get_string (settings, key);
 	g_object_set (defaults, "bubble-bg-color", color_string, NULL);
 	g_free (color_string);
 }
@@ -524,6 +524,10 @@ defaults_init (Defaults* self)
 					  "changed",
 					  G_CALLBACK (_avg_bg_color_changed),
 					  self);
+
+    _avg_bg_color_changed (self->unity_settings,
+                           GSETTINGS_AVG_BG_COL_KEY,
+                           self);
 
 	// use fixed slot-allocation for async. and sync. bubbles
 	self->slot_allocation = SLOT_ALLOCATION_FIXED;
