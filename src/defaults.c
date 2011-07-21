@@ -427,6 +427,10 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 	}
 
+    _avg_bg_color_changed (self->unity_settings,
+                           GSETTINGS_AVG_BG_COL_KEY,
+                           self);
+
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
 	/*G_OBJECT_CLASS (defaults_parent_class)->constructed (gobject);*/
@@ -524,10 +528,6 @@ defaults_init (Defaults* self)
 					  "changed",
 					  G_CALLBACK (_avg_bg_color_changed),
 					  self);
-
-    _avg_bg_color_changed (self->unity_settings,
-                           GSETTINGS_AVG_BG_COL_KEY,
-                           self);
 
 	// use fixed slot-allocation for async. and sync. bubbles
 	self->slot_allocation = SLOT_ALLOCATION_FIXED;
