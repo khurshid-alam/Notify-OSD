@@ -10,6 +10,10 @@ gsettings_SCHEMAS=com.canonical.NotifyOSD.gschema.xml
 EXTRA_DIST=org.freedesktop.Notifications.service.in \
 	   com.canonical.NotifyOSD.gschema.xml
 
+convertdir = $(datadir)/GConf/gsettings
+convert_DATA = notify-osd.convert
+EXTRA_DIST += $(convert_DATA)
+
 org.freedesktop.Notifications.service: org.freedesktop.Notifications.service.in
 	sed "s,@LIBEXECDIR@,$(libexecdir)," $< > $@
 
