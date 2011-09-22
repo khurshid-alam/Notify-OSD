@@ -87,6 +87,7 @@ notify_osd_LDADD =			\
 	$(NOTIFY_OSD_LIBS)	\
 	$(DBUS_LIBS)     	\
 	$(WNCK_LIBS)     	\
+	-lm			\
 	$(NULL)
 
 notify_osd_CFLAGS = 		\
