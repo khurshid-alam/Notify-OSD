@@ -81,6 +81,7 @@ notify_osd_SOURCES =		\
 	$(NULL)
 
 notify_osd_LDADD =			\
+	$(LIBM)			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS) 		\
 	$(GTK_LIBS) 		\

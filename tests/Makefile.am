@@ -66,6 +66,7 @@ test_modules_CFLAGS =		\
 	-I$(top_srcdir)/
 
 test_modules_LDADD =		\
+	$(LIBM)			\
 	$(X_LIBS)		\
 	$(GLIB_LIBS)		\
 	$(WNCK_LIBS)		\
@@ -128,6 +129,7 @@ test_raico_CFLAGS = \
 	-I$(top_srcdir)/
 
 test_raico_LDADD = \
+	$(LIBM) \
 	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
 
@@ -147,6 +149,7 @@ test_tile_CFLAGS = \
 	-I$(top_srcdir)
 
 test_tile_LDADD = \
+	$(LIBM) \
 	$(X_LIBS) \
 	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
@@ -166,6 +169,7 @@ test_grow_bubble_CFLAGS = \
 	-I$(top_srcdir)
 
 test_grow_bubble_LDADD = \
+	$(LIBM) \
 	$(X_LIBS) \
 	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)
@@ -185,6 +189,7 @@ test_scroll_text_CFLAGS = \
 	-I$(top_srcdir)/
 
 test_scroll_text_LDADD = \
+	$(LIBM) \
 	$(X_LIBS) \
 	$(NOTIFY_OSD_LIBS) \
 	$(GTK_LIBS)

@@ -69,6 +69,13 @@ AC_SUBST(NOTIFY_OSD_CFLAGS)
 AC_SUBST(NOTIFY_OSD_LIBS)
 
 #
+# libm
+#
+
+AC_CHECK_LIBM
+AC_SUBST(LIBM)
+
+#
 # checks for building C- or C#-examples
 #
 AC_DEFUN([CHECK_FOR_MONO_STUFF],
