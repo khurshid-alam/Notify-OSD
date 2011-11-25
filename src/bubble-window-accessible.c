@@ -63,70 +63,9 @@ static gunichar    bubble_window_get_character_at_offset    (AtkText            
 
 static void* bubble_window_accessible_parent_class;
 
-GType
-bubble_window_accessible_get_type (void)
-{
-    static GType type = 0;
-    
-    if (!type) 
-    {
-        GTypeInfo tinfo = 
-        {
-            sizeof (BubbleWindowAccessibleClass),
-            (GBaseInitFunc) bubble_window_accessible_init, /* base init */
-            (GBaseFinalizeFunc) bubble_window_accessible_finalize, /* base finalize */
-            (GClassInitFunc) bubble_window_accessible_class_init, /* class init */
-            (GClassFinalizeFunc) NULL, /* class finalize */
-            NULL, /* class data */
-            sizeof (BubbleWindowAccessible), /* instance size */
-            0, /* nb preallocs */
-            NULL, /* instance init */
-            NULL /* value table */
-        };
-                
-        const GInterfaceInfo atk_value_info = 
-        {
-            (GInterfaceInitFunc) atk_value_interface_init,
-            (GInterfaceFinalizeFunc) NULL,
-            NULL
-        };
-
-        const GInterfaceInfo atk_text_info = 
-        {
-            (GInterfaceInitFunc) atk_text_interface_init,
-            (GInterfaceFinalizeFunc) NULL,
-            NULL
-        };
-        
-        /*
-         * Figure out the size of the class and instance
-         * we are deriving from
-         */
-        AtkObjectFactory *factory;
-        GType derived_type;
-        GTypeQuery query;
-        GType derived_atk_type;
-        
-        derived_type = g_type_parent (BUBBLE_TYPE_WINDOW);  
-        
-        factory = atk_registry_get_factory (atk_get_default_registry (),
-                                            derived_type);
-        derived_atk_type = atk_object_factory_get_accessible_type (factory);
-        
-        g_type_query (derived_atk_type, &query);
-        tinfo.class_size = query.class_size;
-        tinfo.instance_size = query.instance_size;
-        
-        type = g_type_register_static (derived_atk_type,
-                                       "BubbleWindowAccessible", &tinfo, 0);
-
-        g_type_add_interface_static (type, ATK_TYPE_VALUE, &atk_value_info);
-
-        g_type_add_interface_static (type, ATK_TYPE_TEXT, &atk_text_info);
-    }
-    
-    return type;
-}
+G_DEFINE_TYPE_WITH_CODE (BubbleWindowAccessible, bubble_window_accessible, GTK_TYPE_ACCESSIBLE,
+                         G_IMPLEMENT_INTERFACE (ATK_TYPE_TEXT, atk_text_interface_init)
+                         G_IMPLEMENT_INTERFACE (ATK_TYPE_VALUE, atk_value_interface_init))
 
 static void
 atk_value_interface_init (AtkValueIface* iface)
@@ -204,6 +143,7 @@ bubble_window_real_initialize (AtkObject* obj,
                       G_CALLBACK (bubble_message_body_inserted_event),
                       obj);
 
+    atk_object_set_role (obj, ATK_ROLE_NOTIFICATION);
 }
 
 AtkObject*
