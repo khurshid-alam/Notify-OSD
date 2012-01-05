@@ -76,10 +76,10 @@ bubble_window_get_accessible (GtkWidget *widget)
 
   if (first_time) 
     {
-      AtkObjectFactory *factory;
-      AtkRegistry *registry;
-      GType derived_type;
-      GType derived_atk_type;
+      AtkObjectFactory *factory = NULL;
+      AtkRegistry *registry = NULL;
+      GType derived_type = NULL;
+      GType derived_atk_type = NULL;
 
       /*
        * Figure out whether accessibility is enabled by looking at the
@@ -100,10 +100,9 @@ bubble_window_get_accessible (GtkWidget *widget)
     }
 
     AtkRegistry *default_registry = atk_get_default_registry ();
-    AtkObjectFactory *factory;
-    AtkObject *accessible;
-    accessible = g_object_get_qdata (G_OBJECT (widget),
-                                     quark_accessible_object);
+    AtkObjectFactory *factory = NULL;
+    AtkObject *accessible = g_object_get_qdata (G_OBJECT (widget),
+                                                quark_accessible_object);
     if (accessible)
         return accessible;
     factory = atk_registry_get_factory (default_registry,
