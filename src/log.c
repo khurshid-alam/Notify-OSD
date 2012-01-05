@@ -51,6 +51,9 @@ log_logger_null(const char     *domain,
 void
 log_init (void)
 {
+	if (! g_getenv ("LOG")) 
+		return;
+    
 	const char *homedir = g_getenv ("HOME");
 	if (!homedir)
 		homedir = g_get_home_dir ();
