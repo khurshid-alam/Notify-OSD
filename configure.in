@@ -37,6 +37,11 @@ PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0 gthread-2.0 gio-2.0])
 # libwnck used by the dnd code
 #
 PKG_CHECK_MODULES([WNCK], [libwnck-3.0])
+AC_CHECK_LIB(wnck-3,wnck_shutdown, have_wnck_shutdown=yes,)
+if test "$have_wnck_shutdown" = "yes"; then
+  AC_DEFINE(HAVE_WNCK_SHUTDOWN, 1, [Define to 1 if libwnck provides wnck_shutdown()])
+fi
+
 
 #
 # libnotify, used unit-tests 
