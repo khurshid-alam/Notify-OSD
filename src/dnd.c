@@ -201,12 +201,18 @@ is_fullscreen_cb (WnckWindow *window, WnckWorkspace *workspace)
 gboolean
 dnd_has_one_fullscreen_window (void)
 {
+	gboolean result;
+
 	WnckScreen *screen = wnck_screen_get_default ();
 	wnck_screen_force_update (screen);
 	WnckWorkspace *workspace = wnck_screen_get_active_workspace (screen);
 	GList *list = wnck_screen_get_windows (screen);
 	GList *item = g_list_find_custom (list, workspace, (GCompareFunc) is_fullscreen_cb);
-	return item != NULL;
+	result = item != NULL;
+#ifdef HAVE_WNCK_SHUTDOWN
+	wnck_shutdown ();
+#endif
+	return result;
 }
 
 /* Tries to determine whether the user is in "do not disturb" mode */
