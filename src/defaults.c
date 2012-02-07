@@ -154,10 +154,6 @@ enum
 #define GNOME_DESKTOP_SCHEMA         "org.gnome.desktop.interface"
 #define GSETTINGS_FONT_KEY           "font-name"
 
-/* unity settings */
-#define UNITY_SCHEMA                 "com.canonical.Unity"
-#define GSETTINGS_AVG_BG_COL_KEY     "average-bg-color"
-
 static guint g_defaults_signals[LAST_SIGNAL] = { 0 };
 
 /*-- internal API ------------------------------------------------------------*/
@@ -289,61 +285,6 @@ _gravity_changed (GSettings* settings,
 	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
 }
 
-static void
-_avg_bg_color_changed (GSettings* settings,
-                       gchar*     key,
-                       gpointer   data)
-{
-	Defaults* defaults     = NULL;
-	gchar*    color_string = NULL;
-
-	if (!data || !settings)
-		return;
-
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
-
-	color_string = g_settings_get_string (settings, key);
-	g_object_set (defaults, "bubble-bg-color", color_string, NULL);
-	g_free (color_string);
-}
-
-GSettings*
-_get_unity_schema ()
-{
-	// check for availability of unity-schema
-	const gchar* const* schema_list = NULL;
-        int i = 0;
-	gboolean match = FALSE;
-	schema_list = g_settings_list_schemas (); // no need to free/unref list
-        for (i = 0; schema_list[i]; i++)
-		if (g_strcmp0 (UNITY_SCHEMA, schema_list[i]) == 0)
-		{
-			match = TRUE;
-			break;
-		}
-	if (!match)
-		return NULL;
-
-	// be really paranoid and check for "avg. bg-color" key
-	GSettings* settings = g_settings_new (UNITY_SCHEMA);
-	gchar** keys = NULL;
-	keys = g_settings_list_keys (settings);
-	i = 0;
-	match = FALSE;
-	while (keys[i] && !match)
-	{
-		match = g_strcmp0 (keys[i], GSETTINGS_AVG_BG_COL_KEY) == 0 ? TRUE : FALSE;
-		i++;
-	}
-	g_strfreev (keys);
-	if (!match)
-		return NULL;
-
-	return settings;
-}
-
 void
 defaults_refresh_screen_dimension_properties (Defaults *self)
 {
@@ -462,10 +403,6 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 	}
 
-	_avg_bg_color_changed (self->unity_settings,
-			       GSETTINGS_AVG_BG_COL_KEY,
-			       self);
-
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
 	/*G_OBJECT_CLASS (defaults_parent_class)->constructed (gobject);*/
@@ -480,7 +417,6 @@ defaults_dispose (GObject* gobject)
 
 	g_object_unref (defaults->nosd_settings);
 	g_object_unref (defaults->gnome_settings);
-	g_object_unref (defaults->unity_settings);
 
 	if (defaults->bubble_shadow_color)
 	{
@@ -546,8 +482,7 @@ defaults_init (Defaults* self)
 {
 	/* "connect" to the required GSettings schemas */
 	self->nosd_settings  = g_settings_new (NOTIFY_OSD_SCHEMA);
-	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);
-	self->unity_settings = _get_unity_schema ();
+	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);; 
 
 	g_signal_connect (self->gnome_settings,
 					  "changed",
@@ -558,13 +493,6 @@ defaults_init (Defaults* self)
 					  "changed",
 					  G_CALLBACK (_gravity_changed),
 					  self);
-	if (self->unity_settings)
-	{
-		g_signal_connect (self->unity_settings,
-				  "changed",
-				  G_CALLBACK (_avg_bg_color_changed),
-				  self);
-	}
 
 	// use fixed slot-allocation for async. and sync. bubbles
 	self->slot_allocation = SLOT_ALLOCATION_FIXED;

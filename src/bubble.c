@@ -663,17 +663,11 @@ _refresh_background (Bubble* self)
 	}
 
 	// clear, render top-left part of shadow/background in scratch-surface
-    cairo_scale (cr, 1.0f, 1.0f);
+    	cairo_scale (cr, 1.0f, 1.0f);
 	cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	GdkColor color;
-	gchar* color_string = NULL;
-    color_string = defaults_get_bubble_bg_color (d);
-	gdk_color_parse (color_string, &color);
-    g_free (color_string);
-	
 	if (priv->composited)
 	{
 		_draw_shadow (
@@ -695,16 +689,16 @@ _refresh_background (Bubble* self)
 		cairo_fill (cr);
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_set_source_rgba (cr,
-				       0.75 * ((double) color.red / 65535.0),
-				       0.75 * ((double) color.green / 65535.0),
-				       0.75 * ((double) color.blue / 65535.0),
+				       BUBBLE_BG_COLOR_R,
+				       BUBBLE_BG_COLOR_G,
+				       BUBBLE_BG_COLOR_B,
 				       BUBBLE_BG_COLOR_A);
 	}
 	else
 		cairo_set_source_rgb (cr,
-				       0.75 * ((double) color.red / 65535.0),
-				       0.75 * ((double) color.green / 65535.0),
-				       0.75 * ((double) color.blue / 65535.0));
+				      BUBBLE_BG_COLOR_R,
+				      BUBBLE_BG_COLOR_G,
+				      BUBBLE_BG_COLOR_B);
 
 	draw_round_rect (
 		cr,
