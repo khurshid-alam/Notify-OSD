@@ -289,59 +289,50 @@ _gravity_changed (GSettings* settings,
 	g_signal_emit (defaults, g_defaults_signals[GRAVITY_CHANGED], 0);
 }
 
-static void
-_avg_bg_color_changed (GSettings* settings,
-                       gchar*     key,
-                       gpointer   data)
+void
+defaults_refresh_bg_color_property (Defaults *self)
 {
-	Defaults* defaults     = NULL;
-	gchar*    color_string = NULL;
+	Atom         real_type;
+	gint         result;
+	gint         real_format;
+	gulong       items_read;
+	gulong       items_left;
+	gchar*       colors;
+	Atom         representative_colors_atom;
+	Display*     display;
 
-	if (!data || !settings)
-		return;
+	g_return_if_fail ((self != NULL) && IS_DEFAULTS (self));
 
-	defaults = (Defaults*) data;
-	if (!IS_DEFAULTS (defaults))
-		return;
+	representative_colors_atom = gdk_x11_get_xatom_by_name ("_GNOME_BACKGROUND_REPRESENTATIVE_COLORS");
+	display = gdk_x11_display_get_xdisplay (gdk_display_get_default ());
 
-	color_string = g_settings_get_string (settings, key);
-	g_object_set (defaults, "bubble-bg-color", color_string, NULL);
-	g_free (color_string);
-}
+	gdk_error_trap_push ();
+	result = XGetWindowProperty (display,
+				     GDK_ROOT_WINDOW (),
+				     representative_colors_atom,
+				     0L,
+				     G_MAXLONG,
+				     False,
+				     XA_STRING,
+				     &real_type,
+				     &real_format,
+				     &items_read,
+				     &items_left,
+				     (guchar **) &colors);
+	gdk_flush ();
+	gdk_error_trap_pop_ignored ();
 
-GSettings*
-_get_unity_schema ()
-{
-	// check for availability of unity-schema
-	const gchar* const* schema_list = NULL;
-        int i = 0;
-	gboolean match = FALSE;
-	schema_list = g_settings_list_schemas (); // no need to free/unref list
-        for (i = 0; schema_list[i]; i++)
-		if (g_strcmp0 (UNITY_SCHEMA, schema_list[i]) == 0)
-		{
-			match = TRUE;
-			break;
-		}
-	if (!match)
-		return NULL;
-
-	// be really paranoid and check for "avg. bg-color" key
-	GSettings* settings = g_settings_new (UNITY_SCHEMA);
-	gchar** keys = NULL;
-	keys = g_settings_list_keys (settings);
-	i = 0;
-	match = FALSE;
-	while (keys[i] && !match)
+	if (result == Success && items_read)
 	{
-		match = g_strcmp0 (keys[i], GSETTINGS_AVG_BG_COL_KEY) == 0 ? TRUE : FALSE;
-		i++;
+		/* by treating the result as a nul-terminated string, we
+		 * select the first colour in the list.
+		 */
+		g_object_set (self,
+			      "bubble-bg-color",
+			      colors,
+			      NULL);
+		XFree (colors);
 	}
-	g_strfreev (keys);
-	if (!match)
-		return NULL;
-
-	return settings;
 }
 
 void
@@ -425,6 +416,7 @@ defaults_constructed (GObject* gobject)
 	self = DEFAULTS (gobject);
 
 	defaults_refresh_screen_dimension_properties (self);
+	defaults_refresh_bg_color_property (self);
 
 	/* grab system-wide font-face/size and DPI */
 	_get_font_size_dpi (self);
@@ -462,10 +454,6 @@ defaults_constructed (GObject* gobject)
 			      NULL);
 	}
 
-	_avg_bg_color_changed (self->unity_settings,
-			       GSETTINGS_AVG_BG_COL_KEY,
-			       self);
-
 	/* FIXME: calling this here causes a segfault */
 	/* chain up to the parent class */
 	/*G_OBJECT_CLASS (defaults_parent_class)->constructed (gobject);*/
@@ -480,7 +468,6 @@ defaults_dispose (GObject* gobject)
 
 	g_object_unref (defaults->nosd_settings);
 	g_object_unref (defaults->gnome_settings);
-	g_object_unref (defaults->unity_settings);
 
 	if (defaults->bubble_shadow_color)
 	{
@@ -547,7 +534,6 @@ defaults_init (Defaults* self)
 	/* "connect" to the required GSettings schemas */
 	self->nosd_settings  = g_settings_new (NOTIFY_OSD_SCHEMA);
 	self->gnome_settings = g_settings_new (GNOME_DESKTOP_SCHEMA);
-	self->unity_settings = _get_unity_schema ();
 
 	g_signal_connect (self->gnome_settings,
 					  "changed",
@@ -558,13 +544,6 @@ defaults_init (Defaults* self)
 					  "changed",
 					  G_CALLBACK (_gravity_changed),
 					  self);
-	if (self->unity_settings)
-	{
-		g_signal_connect (self->unity_settings,
-				  "changed",
-				  G_CALLBACK (_avg_bg_color_changed),
-				  self);
-	}
 
 	// use fixed slot-allocation for async. and sync. bubbles
 	self->slot_allocation = SLOT_ALLOCATION_FIXED;
@@ -1818,6 +1797,8 @@ defaults_get_bubble_bg_color (Defaults* self)
 
 	if (!self || !IS_DEFAULTS (self))
 		return NULL;
+
+	defaults_refresh_bg_color_property (self);
 
 	g_object_get (self,
 		      "bubble-bg-color",

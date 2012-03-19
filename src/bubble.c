@@ -668,10 +668,10 @@ _refresh_background (Bubble* self)
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	GdkColor color;
+	GdkRGBA color;
 	gchar* color_string = NULL;
     color_string = defaults_get_bubble_bg_color (d);
-	gdk_color_parse (color_string, &color);
+	gdk_rgba_parse (&color, color_string);
     g_free (color_string);
 	
 	if (priv->composited)
@@ -695,16 +695,16 @@ _refresh_background (Bubble* self)
 		cairo_fill (cr);
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_set_source_rgba (cr,
-				       0.75 * ((double) color.red / 65535.0),
-				       0.75 * ((double) color.green / 65535.0),
-				       0.75 * ((double) color.blue / 65535.0),
+				       0.75 * color.red,
+				       0.75 * color.green,
+				       0.75 * color.blue,
 				       BUBBLE_BG_COLOR_A);
 	}
 	else
 		cairo_set_source_rgb (cr,
-				       0.75 * ((double) color.red / 65535.0),
-				       0.75 * ((double) color.green / 65535.0),
-				       0.75 * ((double) color.blue / 65535.0));
+				       0.75 * color.red,
+				       0.75 * color.green,
+				       0.75 * color.blue);
 
 	draw_round_rect (
 		cr,

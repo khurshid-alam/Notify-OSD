@@ -76,7 +76,6 @@ struct _Defaults
 	/* private */
 	GSettings*     nosd_settings;
 	GSettings*     gnome_settings;
-	GSettings*     unity_settings;
 	gint           desktop_width;
 	gint           desktop_height;
 	gint           desktop_top;
@@ -251,6 +250,9 @@ defaults_get_system_font_size (Defaults* self);
 
 gdouble
 defaults_get_screen_dpi (Defaults* self);
+
+void
+defaults_refresh_bg_property (Defaults *self);
 
 void
 defaults_refresh_screen_dimension_properties (Defaults *self);
