@@ -1,0 +1,23 @@
+1.) Verify that the correct X11-property is available with:
+
+  xlsatoms -name _GNOME_BACKGROUND_REPRESENTATIVE_COLORS
+
+If you don't get a reply from that command (it just returns to the prompt) any
+notification you trigger (step 3.) will have a dark grey background.
+
+2.) Right-click on the desktop to bring up the context-menu and select the
+change wallpaper menu-item.
+
+3.) Trigger a dummy notification with:
+
+  notify-send "Test" "This is just a simple test." -i info
+
+Note the tint of the notifications background and wait for the notification to
+close (don't keep the mouse-pointer hovering over the notification).
+
+4.) Change the wallpaper to an image with an overall different tint as the
+current one.
+
+5.) Repeat step 3.)
+
+6.) The tint of the notifications background should now be different.
