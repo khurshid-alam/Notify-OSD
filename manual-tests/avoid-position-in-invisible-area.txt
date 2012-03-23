@@ -1,0 +1,28 @@
+1.) Have a two-monitor setup and configure the displays in such a way that the
+vertical resolution between the two monitors differs by at least 100 pixels.
+Align the displays at the bottom edge! Make the monitor with the lower vertical
+resolution the primary display.
+
+Depending on your GPU/driver combination, you can use the GNOME display-settings
+for setting this up or you have to use a tool like nvidia-settings.
+
+2.) Kill and restart notify-osd by doing...
+
+	killall -15 notify-osd
+	/usr/lib/notify-osd/notify-osd
+
+2.) Set focus-follow off and gravity to 1 with...
+
+	gsettings set com.canonical.notify-osd multihead-mode "dont-focus-follow"
+	gsettings set com.canonical.notify-osd gravity 1
+
+4.) Trigger two notifications (a synchronous one and a regular one) with these
+commands...
+
+	notify-send "Test bubble" "A regular notification used for testing." -i info
+	notify-send " " " " -i info -h string:"x-canonical-private-icon-only":1 -h string:"x-canonical-private-synchronous":1 -i info
+
+5.) You should now see both notifications fully at the visible top-right corner
+of the whole screen area.
+
+6.) For RTL-locales you have to flip 1.) - 5.) side-ways of course.
