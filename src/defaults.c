@@ -2223,7 +2223,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
 	gdk_display_get_pointer (gdk_display_get_default (),
-				 &screen,
+	                         &screen,
 	                         &mx,
 	                         &my,
 	                         NULL);
@@ -2300,6 +2300,40 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
 	       - EM2PIXELS (defaults_get_bubble_shadow_size (self), self);
+
+	/* correct potential offset in multi-monitor setups with two (or more)
+	 * monitors side by side, all having different vertical resolutions and
+	 * being aligned at the bottom edge, thus creating an "invisible" area at
+	 * the top edge of the monitor with the lowest vertical resolution,
+	 * LP: #716458 */
+	GdkRectangle cur_geo      = {0, 0, 0, 0};
+	int          prim_monitor = gdk_screen_get_primary_monitor (screen);
+	int          cur_mon      = 0;
+	int          num_monitors = gdk_screen_get_n_monitors (screen);
+
+	gdk_screen_get_monitor_geometry (screen, prim_monitor, &cur_geo);
+
+	if (!follow_focus && num_monitors > 1)
+	{
+		int vert_offset  = 0;
+
+		prim_monitor = gdk_screen_get_primary_monitor (screen);
+		gdk_screen_get_monitor_geometry (screen, prim_monitor, &cur_geo);
+		if (cur_geo.y != 0)
+		{
+			/* walk the list of monitors... */
+			for (cur_mon = 0; cur_mon < num_monitors; cur_mon++)
+			{
+				/* get current monitor geometry */
+				gdk_screen_get_monitor_geometry (screen, monitor, &cur_geo);
+
+				if (vert_offset < cur_geo.y)
+					vert_offset = cur_geo.y;
+			}
+		}
+
+		*y += vert_offset;
+	}
 
 	if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
 	{
