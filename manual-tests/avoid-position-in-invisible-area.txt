@@ -22,4 +22,7 @@ commands...
 	notify-send "Test bubble" "A regular notification used for testing." -i info
 	notify-send " " " " -i info -h string:"x-canonical-private-icon-only":1 -h string:"x-canonical-private-synchronous":1 -i info
 
-5.) You should now see both notifications fully visible on the primary screen.
+5.) You should now see both notifications fully at the visible top-right corner
+of the whole screen area.
+
+6.) For RTL-locales you have to flip 1.) - 5.) side-ways of course.
