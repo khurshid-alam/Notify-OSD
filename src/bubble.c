@@ -686,7 +686,7 @@ _refresh_background (Bubble* self)
 	NotifyHSVColor hsv_color;
 	gtk_rgb_to_hsv (color.red, color.green, color.blue,
 	                &hsv_color.hue, &hsv_color.saturation, &hsv_color.value);
-	hsv_color.saturation *= 1.3f;
+	hsv_color.saturation *= (2.0f - hsv_color.saturation);
 	hsv_color.value = MIN (hsv_color.value, 0.4f);
 	gtk_hsv_to_rgb (hsv_color.hue, hsv_color.saturation, hsv_color.value,
 	                &color.red, &color.green, &color.blue);
