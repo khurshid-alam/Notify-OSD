@@ -1762,11 +1762,11 @@ defaults_get_bubble_height (Defaults* self)
 }
 
 gdouble
-defaults_get_bubble_shadow_size (Defaults* self)
+defaults_get_bubble_shadow_size (Defaults* self, gboolean is_composited)
 {
 	gdouble bubble_shadow_size;
 
-	if (!self || !IS_DEFAULTS (self))
+	if (!self || !IS_DEFAULTS (self) || !is_composited)
 		return 0.0f;
 
 	g_object_get (self, "bubble-shadow-size", &bubble_shadow_size, NULL);
@@ -1841,11 +1841,11 @@ defaults_get_bubble_hover_opacity (Defaults* self)
 }
 
 gdouble
-defaults_get_bubble_corner_radius (Defaults* self)
+defaults_get_bubble_corner_radius (Defaults* self, gboolean is_composited)
 {
 	gdouble bubble_corner_radius;
 
-	if (!self || !IS_DEFAULTS (self))
+	if (!self || !IS_DEFAULTS (self) || !is_composited)
 		return 0.0f;
 
 	g_object_get (self,
@@ -2205,11 +2205,10 @@ get_panel_window (void)
 }
 
 void
-defaults_get_top_corner (Defaults *self, gint *x, gint *y)
+defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 {
 	GdkRectangle rect;
 	GdkRectangle panel_rect       = {0, 0, 0, 0};
-	GdkScreen*   screen           = NULL;
 	GdkWindow*   active_window    = NULL;
 	GdkWindow*   panel_window     = NULL;
 	gint         mx;
@@ -2219,21 +2218,23 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	gint         aw_monitor;
 	gboolean     has_panel_window = FALSE;
 	gboolean     follow_focus     = defaults_multihead_does_focus_follow (self);
+	gboolean     is_composited    = FALSE;
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
 	gdk_display_get_pointer (gdk_display_get_default (),
-	                         &screen,
+	                         screen,
 	                         &mx,
 	                         &my,
 	                         NULL);
 
+	is_composited = gdk_screen_is_composited (*screen);
 	panel_window = get_panel_window ();
 
 	if (panel_window != NULL)
 	{
 		gdk_window_get_frame_extents (panel_window, &panel_rect);
-		panel_monitor = gdk_screen_get_monitor_at_window (screen,
+		panel_monitor = gdk_screen_get_monitor_at_window (*screen,
 		                                                  panel_window);
 		monitor = panel_monitor;
 		g_debug ("found panel (%d,%d) - %dx%d on monitor %d",
@@ -2249,12 +2250,12 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	if (follow_focus)
 	{
 		g_debug ("multi_head_focus_follow mode");
-		monitor = gdk_screen_get_monitor_at_point (screen, mx, my);
-		active_window = gdk_screen_get_active_window (screen);
+		monitor = gdk_screen_get_monitor_at_point (*screen, mx, my);
+		active_window = gdk_screen_get_active_window (*screen);
 		if (active_window != NULL)
 		{
 			aw_monitor = gdk_screen_get_monitor_at_window (
-					screen,
+					*screen,
 			                active_window);
 
 			if (monitor != aw_monitor)
@@ -2270,7 +2271,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 		}
 	}
 
-	gdk_screen_get_monitor_geometry (screen, monitor, &rect);
+	gdk_screen_get_monitor_geometry (*screen, monitor, &rect);
 	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
 		 monitor,
 	         rect.x,
@@ -2299,7 +2300,7 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 
 	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
-	       - EM2PIXELS (defaults_get_bubble_shadow_size (self), self);
+	       - EM2PIXELS (defaults_get_bubble_shadow_size (self, is_composited), self);
 
 	/* correct potential offset in multi-monitor setups with two (or more)
 	 * monitors side by side, all having different vertical resolutions and
@@ -2307,9 +2308,9 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	 * the top edge of the monitor with the lowest vertical resolution,
 	 * LP: #716458 */
 	GdkRectangle cur_geo       = {0, 0, 0, 0};
-	int          num_monitors  = gdk_screen_get_n_monitors (screen);
-	int          screen_width  = gdk_screen_get_width (screen);
-	int          screen_height = gdk_screen_get_height (screen);
+	int          num_monitors  = gdk_screen_get_n_monitors (*screen);
+	int          screen_width  = gdk_screen_get_width (*screen);
+	int          screen_height = gdk_screen_get_height (*screen);
 
 	if (!follow_focus && num_monitors > 1)
 	{
@@ -2319,10 +2320,10 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 		{
 			int right_most_monitor = 0;
 
-			right_most_monitor = gdk_screen_get_monitor_at_point (screen,
+			right_most_monitor = gdk_screen_get_monitor_at_point (*screen,
 			                                                      screen_width,
 			                                                      screen_height / 2);
-			gdk_screen_get_monitor_geometry (screen,
+			gdk_screen_get_monitor_geometry (*screen,
 			                                 right_most_monitor,
 			                                 &cur_geo);
 			if (cur_geo.y != 0)
@@ -2332,10 +2333,10 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 		{
 			int left_most_monitor = 0;
 
-			left_most_monitor = gdk_screen_get_monitor_at_point (screen,
+			left_most_monitor = gdk_screen_get_monitor_at_point (*screen,
 			                                                     0,
 			                                                     screen_height / 2);
-			gdk_screen_get_monitor_geometry (screen,
+			gdk_screen_get_monitor_geometry (*screen,
 			                                 left_most_monitor,
 			                                 &cur_geo);
 			if (cur_geo.y != 0)
@@ -2348,12 +2349,12 @@ defaults_get_top_corner (Defaults *self, gint *x, gint *y)
 	if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
 	{
 		*x = rect.x + rect.width;
-		*x -= EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+		*x -= EM2PIXELS (defaults_get_bubble_shadow_size (self, is_composited), self)
 			+ EM2PIXELS (defaults_get_bubble_horz_gap (self), self)
 			+ EM2PIXELS (defaults_get_bubble_width (self), self);
 	} else {
 		*x = rect.x
-			- EM2PIXELS (defaults_get_bubble_shadow_size (self), self)
+			- EM2PIXELS (defaults_get_bubble_shadow_size (self, is_composited), self)
 			+ EM2PIXELS (defaults_get_bubble_horz_gap (self), self);
 	}
 
