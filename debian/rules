@@ -1,12 +1,8 @@
 #!/usr/bin/make -f
 export DPKG_GENSYMBOLS_CHECK_LEVEL=4
 
-include /usr/share/cdbs/1/rules/autoreconf.mk
-include /usr/share/cdbs/1/class/gnome.mk
-include /usr/share/cdbs/1/rules/debhelper.mk
-
-LDFLAGS += -Wl,-z,defs -Wl,--as-needed
-# DEB_MAKE_TEST_TARGET := test
+%:
+	dh $@ --with autoreconf
 
 override_dh_install:
 	dh_install --fail-missing
