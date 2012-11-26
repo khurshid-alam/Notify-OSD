@@ -1,4 +1,4 @@
-notify-osd (0.9.35-0ubuntu1) raring; urgency=low
+notify-osd (0.9.35-0ubuntu1) UNRELEASED; urgency=low
 
   * Inline packaging metadata.
 
