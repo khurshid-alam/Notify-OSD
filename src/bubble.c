@@ -119,6 +119,14 @@ enum
 	A
 };
 
+typedef struct _NotifyHSVColor NotifyHSVColor;
+
+struct _NotifyHSVColor {
+	gdouble hue;
+	gdouble saturation;
+	gdouble value;
+};
+
 #define TEMPORARY_ICON_PREFIX_WORKAROUND 1
 #ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
 #warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
@@ -697,7 +705,16 @@ _refresh_background (Bubble* self)
     color_string = defaults_get_bubble_bg_color (d);
 	gdk_rgba_parse (&color, color_string);
     g_free (color_string);
-	
+
+	// Apply color tweaks
+	NotifyHSVColor hsv_color;
+	gtk_rgb_to_hsv (color.red, color.green, color.blue,
+	                &hsv_color.hue, &hsv_color.saturation, &hsv_color.value);
+	hsv_color.saturation *= (2.0f - hsv_color.saturation);
+	hsv_color.value = MIN (hsv_color.value, 0.4f);
+	gtk_hsv_to_rgb (hsv_color.hue, hsv_color.saturation, hsv_color.value,
+	                &color.red, &color.green, &color.blue);
+
 	if (priv->composited)
 	{
 		_draw_shadow (
@@ -719,16 +736,16 @@ _refresh_background (Bubble* self)
 		cairo_fill (cr);
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_set_source_rgba (cr,
-				       0.75 * color.red,
-				       0.75 * color.green,
-				       0.75 * color.blue,
+				       color.red,
+				       color.green,
+				       color.blue,
 				       BUBBLE_BG_COLOR_A);
 	}
 	else
 		cairo_set_source_rgb (cr,
-				       0.75 * color.red,
-				       0.75 * color.green,
-				       0.75 * color.blue);
+				       color.red,
+				       color.green,
+				       color.blue);
 
 	draw_round_rect (
 		cr,
