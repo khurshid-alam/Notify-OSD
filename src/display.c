@@ -60,12 +60,13 @@ stack_find_bubble_on_display (Stack *self)
 static gboolean
 stack_is_at_top_corner (Stack *self, Bubble *bubble)
 {
+  GdkScreen* screen;
 	gint x, y1, y2;
 
 	g_assert (IS_STACK (self));
 	g_assert (IS_BUBBLE (bubble));
 
-	defaults_get_top_corner (self->defaults, &x, &y1);
+	defaults_get_top_corner (self->defaults, &screen, &x, &y1);
 	bubble_get_position (bubble, &x, &y2);
 
 	return y1 == y2;
@@ -74,11 +75,12 @@ stack_is_at_top_corner (Stack *self, Bubble *bubble)
 static void
 stack_display_position_sync_bubble (Stack *self, Bubble *bubble)
 {
-	Defaults* d = self->defaults;
-	gint      y = 0;
-	gint      x = 0;
+	Defaults*  d = self->defaults;
+  GdkScreen* screen;
+	gint       y = 0;
+	gint       x = 0;
 
-	defaults_get_top_corner (d, &x, &y);
+	defaults_get_top_corner (d, &screen, &x, &y);
 
 	// TODO: with multi-head, in focus follow mode, there may be enough
 	// space left on the top monitor
@@ -279,10 +281,11 @@ stack_select_next_to_display (Stack *self)
 static void
 stack_layout (Stack* self)
 {
-	Bubble*   bubble = NULL;
-	Defaults* d;
-	gint      y      = 0;
-	gint      x      = 0;
+	Bubble*    bubble = NULL;
+	Defaults*  d;
+  GdkScreen* screen;
+	gint       y      = 0;
+	gint       x      = 0;
 
 	g_return_if_fail (self != NULL);
 
@@ -313,7 +316,7 @@ stack_layout (Stack* self)
 	bubble_set_timeout (bubble,
 			    defaults_get_on_screen_timeout (self->defaults));
 
-	defaults_get_top_corner (self->defaults, &x, &y);
+	defaults_get_top_corner (self->defaults, &screen, &x, &y);
 
 	d = self->defaults;
 

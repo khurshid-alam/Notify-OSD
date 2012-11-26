@@ -31,6 +31,7 @@
 
 #include <glib-object.h>
 #include <gio/gio.h>
+#include <gdk/gdk.h>
 
 G_BEGIN_DECLS
 
@@ -177,7 +178,7 @@ gdouble
 defaults_get_bubble_horz_gap (Defaults* self);
 
 gdouble
-defaults_get_bubble_shadow_size (Defaults* self);
+defaults_get_bubble_shadow_size (Defaults* self, gboolean is_composited);
 
 gchar*
 defaults_get_bubble_shadow_color (Defaults* self);
@@ -192,7 +193,7 @@ gchar*
 defaults_get_bubble_hover_opacity (Defaults* self);
 
 gdouble
-defaults_get_bubble_corner_radius (Defaults* self);
+defaults_get_bubble_corner_radius (Defaults* self, gboolean is_composited);
 
 gdouble
 defaults_get_content_shadow_size (Defaults* self);
@@ -258,7 +259,7 @@ void
 defaults_refresh_screen_dimension_properties (Defaults *self);
 
 void
-defaults_get_top_corner (Defaults *self, gint *x, gint *y);
+defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y);
 
 Gravity
 defaults_get_gravity (Defaults *self);

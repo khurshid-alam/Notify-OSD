@@ -885,6 +885,9 @@ stack_get_slot_position (Stack* self,
                          gint*  x,
                          gint*  y)
 {
+	GdkScreen* screen        = NULL;
+	gboolean   is_composited = FALSE;
+
 	// sanity checks
 	if (!x && !y)
 		return;
@@ -904,7 +907,9 @@ stack_get_slot_position (Stack* self,
 	}
 
 	// initialize x and y
-	defaults_get_top_corner (self->defaults, x, y);
+	defaults_get_top_corner (self->defaults, &screen, x, y);
+
+	is_composited = gdk_screen_is_composited (screen);
 
 	// differentiate returned top-left corner for top and bottom slot
 	// depending on the placement 
@@ -920,12 +925,12 @@ stack_get_slot_position (Stack* self,
 				*y += defaults_get_desktop_height (d) / 2 -
 				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
 				      bubble_height +
-				      EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				      EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
 			// the position for the async. bubble
 			else if (slot == SLOT_BOTTOM)
 				*y += defaults_get_desktop_height (d) / 2 +
 				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-				      EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				      EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
 		break;
 
 		case GRAVITY_NORTH_EAST:
@@ -945,14 +950,14 @@ stack_get_slot_position (Stack* self,
 						*y += EM2PIXELS (defaults_get_icon_size (d), d) +
 						      2 * EM2PIXELS (defaults_get_margin_size (d), d) +
 						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d); /* +
-						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);*/
+						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);*/
 					break;
 
 					case SLOT_ALLOCATION_DYNAMIC:
 						g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
 						*y += bubble_get_height (self->slots[SLOT_TOP]) +
 						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
 					break;
 
 					default:

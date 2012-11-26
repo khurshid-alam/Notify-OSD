@@ -487,6 +487,22 @@ _draw_shadow (cairo_t* cr,
 	cairo_surface_destroy (new_surface);
 }
 
+static gdouble
+get_shadow_size (Bubble *bubble)
+{
+	BubblePrivate* priv = GET_PRIVATE (bubble);
+	Defaults*      d    = bubble->defaults;
+	return defaults_get_bubble_shadow_size (d, priv->composited);
+}
+
+static gdouble
+get_corner_radius (Bubble *bubble)
+{
+	BubblePrivate* priv = GET_PRIVATE (bubble);
+	Defaults*      d    = bubble->defaults;
+	return defaults_get_bubble_corner_radius (d, priv->composited);
+}
+
 static void
 _draw_layout_grid (cairo_t* cr,
 		  Bubble*  bubble)
@@ -501,112 +517,112 @@ _draw_layout_grid (cairo_t* cr,
 
 	// all vertical grid lines
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (2 * defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (2 * defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d) -
 		       EM2PIXELS (defaults_get_margin_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d) -
 		       EM2PIXELS (defaults_get_margin_size (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 
 	// all horizontal grid lines
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_margin_size (d), d) +
 		       EM2PIXELS (defaults_get_icon_size (d), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		       EM2PIXELS (get_shadow_size (bubble), d) -
 		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d) -
+		       EM2PIXELS (get_shadow_size (bubble), d) -
 		       EM2PIXELS (defaults_get_margin_size (d), d));
 	cairo_move_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 	cairo_line_to (cr,
-		       0.5f + EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+		       0.5f + EM2PIXELS (get_shadow_size (bubble), d) +
 		       EM2PIXELS (defaults_get_bubble_width (d), d),
 		       0.5f + (gdouble) bubble_get_height (bubble) -
-		       EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		       EM2PIXELS (get_shadow_size (bubble), d));
 
 	cairo_stroke (cr);
 }
@@ -625,20 +641,28 @@ _refresh_background (Bubble* self)
 	raico_blur_t*    blur       = NULL;
 	gint             width;
 	gint             height;
+	gint             scratch_shadow_size;
 
 	bubble_get_size (self, &width, &height);
 
 	// create temp. scratch surface for top-left shadow/background part
 	if (priv->composited)
+	{
+		scratch_shadow_size = EM2PIXELS (get_shadow_size (self), d);
 		scratch = cairo_image_surface_create (
 			CAIRO_FORMAT_ARGB32,
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+			3 * scratch_shadow_size,
+			3 * scratch_shadow_size);
+	}
 	else
+	{
+		// We must have at least some width to this scratch surface.
+		scratch_shadow_size = 1;
 		scratch = cairo_image_surface_create (
 			CAIRO_FORMAT_RGB24,
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+			3 * scratch_shadow_size,
+			3 * scratch_shadow_size);
+	}
 
 	g_return_if_fail (scratch);
 
@@ -680,18 +704,18 @@ _refresh_background (Bubble* self)
 			cr,
 			width,
 			height,
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			EM2PIXELS (defaults_get_bubble_corner_radius (d), d));
+			EM2PIXELS (get_shadow_size (self), d),
+			EM2PIXELS (get_corner_radius (self), d));
 		cairo_set_operator (cr, CAIRO_OPERATOR_CLEAR);
 		draw_round_rect (
 			cr,
 			1.0f,
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+			EM2PIXELS (get_shadow_size (self), d),
+			EM2PIXELS (get_shadow_size (self), d),
+			EM2PIXELS (get_corner_radius (self), d),
 			EM2PIXELS (defaults_get_bubble_width (d), d),
 			(gdouble) bubble_get_height (self) -
-			2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+			2.0f * EM2PIXELS (get_shadow_size (self), d));
 		cairo_fill (cr);
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 		cairo_set_source_rgba (cr,
@@ -709,12 +733,12 @@ _refresh_background (Bubble* self)
 	draw_round_rect (
 		cr,
 		1.0f,
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-		EM2PIXELS (defaults_get_bubble_corner_radius (d), d),
+		EM2PIXELS (get_shadow_size (self), d),
+		EM2PIXELS (get_shadow_size (self), d),
+		EM2PIXELS (get_corner_radius (self), d),
 		EM2PIXELS (defaults_get_bubble_width (d), d),
 		(gdouble) bubble_get_height (self) -
-		2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		2.0f * EM2PIXELS (get_shadow_size (self), d));
 	cairo_fill (cr);
 	cairo_destroy (cr);
 
@@ -722,8 +746,8 @@ _refresh_background (Bubble* self)
 	dummy = cairo_image_surface_create_for_data (
 			cairo_image_surface_get_data (scratch),
 			cairo_image_surface_get_format (scratch),
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			3 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			3 * scratch_shadow_size,
+			3 * scratch_shadow_size,
 			cairo_image_surface_get_stride (scratch));
 	clone = copy_surface (dummy);
 	cairo_surface_destroy (dummy);
@@ -732,8 +756,8 @@ _refresh_background (Bubble* self)
 	dummy = cairo_image_surface_create_for_data (
 			cairo_image_surface_get_data (clone),
 			cairo_image_surface_get_format (clone),
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			2 * scratch_shadow_size,
+			2 * scratch_shadow_size,
 			cairo_image_surface_get_stride (clone));
 	normal = copy_surface (dummy);
 	cairo_surface_destroy (dummy);
@@ -748,8 +772,8 @@ _refresh_background (Bubble* self)
 	dummy = cairo_image_surface_create_for_data (
 			cairo_image_surface_get_data (clone),
 			cairo_image_surface_get_format (clone),
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
-			2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d),
+			2 * scratch_shadow_size,
+			2 * scratch_shadow_size,
 			cairo_image_surface_get_stride (clone));
 	blurred = copy_surface (dummy);
 	cairo_surface_destroy (dummy);
@@ -1265,11 +1289,11 @@ _render_background (Bubble*  self,
 		draw_round_rect (
 			cr,
 			1.0f,
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) + 2.0f,
-			EM2PIXELS (defaults_get_bubble_corner_radius (d), d) - 2.0f,
+			EM2PIXELS (get_shadow_size (self), d) + 2.0f,
+			EM2PIXELS (get_shadow_size (self), d) + 2.0f,
+			EM2PIXELS (get_corner_radius (self), d) - 2.0f,
 			EM2PIXELS (defaults_get_bubble_width (d), d) - 4.0f,
-			2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f);
+			2.0f * EM2PIXELS (get_shadow_size (self), d) - 2.0f);
 		cairo_fill (cr);
 
 		cairo_set_source_rgb (cr, 0.0f, 0.0f, 0.0f);
@@ -1279,12 +1303,12 @@ _render_background (Bubble*  self,
 		cairo_move_to (
 			cr,
 			EM2PIXELS (defaults_get_text_body_size  (d), d) +
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			EM2PIXELS (get_shadow_size (self), d) +
 			2.0f,
 			EM2PIXELS (defaults_get_text_body_size  (d), d) +
-			EM2PIXELS (defaults_get_bubble_shadow_size (d), d) +
+			EM2PIXELS (get_shadow_size (self), d) +
 			2.0f +
-			((2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d) - 2.0f) -
+			((2.0f * EM2PIXELS (get_shadow_size (self), d) - 2.0f) -
 			EM2PIXELS (defaults_get_text_body_size  (d), d)) / 2);
 
 		switch (bubble_get_urgency (self))
@@ -1428,7 +1452,7 @@ _render_layout (Bubble*  self,
 		gdouble  alpha_blur)
 {
 	Defaults* d           = self->defaults;
-	gint      shadow      = EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+	gint      shadow      = EM2PIXELS (get_shadow_size (self), d);
 	gint      icon_half   = EM2PIXELS (defaults_get_icon_size (d), d) / 2;
 	gint      width_half  = EM2PIXELS (defaults_get_bubble_width (d), d) / 2;
 	gint      height_half = EM2PIXELS (defaults_get_bubble_min_height (d), d) / 2;
@@ -1730,7 +1754,7 @@ expose_handler (GtkWidget*      window,
 
 	_set_bg_blur (window,
 		      TRUE,
-		      EM2PIXELS (defaults_get_bubble_shadow_size (d), d));
+		      EM2PIXELS (get_shadow_size (bubble), d));
 
 	return TRUE;
 }
@@ -3379,7 +3403,7 @@ bubble_recalc_size (Bubble *self)
 
 	new_bubble_width =
 		EM2PIXELS (defaults_get_bubble_width (d), d) +
-		2 * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+		2 * EM2PIXELS (get_shadow_size (self), d);
 
 	switch (priv->layout)
 	{
@@ -3397,7 +3421,7 @@ bubble_recalc_size (Bubble *self)
 
 			new_bubble_height =
 				EM2PIXELS (defaults_get_bubble_min_height (d), d) +
-				2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				2.0f * EM2PIXELS (get_shadow_size (self), d);
 		break;
 
 		case LAYOUT_ICON_TITLE_BODY:
@@ -3446,7 +3470,7 @@ bubble_recalc_size (Bubble *self)
 					new_bubble_height =
 						EM2PIXELS (defaults_get_icon_size (d), d) +
 						2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
-						2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+						2.0f * EM2PIXELS (get_shadow_size (self), d);
 				}
 				else
 				{
@@ -3454,7 +3478,7 @@ bubble_recalc_size (Bubble *self)
 						priv->body_height +
 						priv->title_height +
 						2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
-						2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+						2.0f * EM2PIXELS (get_shadow_size (self), d);
 				}
 			}
 		}
@@ -3501,7 +3525,7 @@ bubble_recalc_size (Bubble *self)
 					priv->body_height +
 					priv->title_height +
 					2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
-					2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+					2.0f * EM2PIXELS (get_shadow_size (self), d);
 			}
 		}
 		break;
@@ -3518,7 +3542,7 @@ bubble_recalc_size (Bubble *self)
 
 			new_bubble_height = priv->title_height +
 				2.0f * EM2PIXELS (defaults_get_margin_size (d), d) +
-				2.0f * EM2PIXELS (defaults_get_bubble_shadow_size (d), d);
+				2.0f * EM2PIXELS (get_shadow_size (self), d);
 		}
 		break;
 
