@@ -1,6 +1,11 @@
 notify-osd (0.9.35-0ubuntu1) UNRELEASED; urgency=low
 
+  [ Robert Bruce Park ]
   * Inline packaging metadata.
+
+  [ Didier Roche ]
+  * Automatic snapshot from revision 458 (bootstrap):
+    - add some dep8 test. Thanks mterry
 
  -- Robert Bruce Park <robert.park@canonical.com>  Thu, 22 Nov 2012 15:06:35 -0600
 
