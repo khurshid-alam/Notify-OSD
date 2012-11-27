@@ -1,0 +1,3 @@
+Tests: upstream
+Depends: @, dbus-x11, gnome-screensaver, hicolor-icon-theme, xvfb
+Restrictions: build-needed

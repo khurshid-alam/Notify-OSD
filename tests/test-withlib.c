@@ -381,7 +381,8 @@ test_withlib_create_test_suite (void)
 	ADD_TEST(test_withlib_append_hint);
 	ADD_TEST(test_withlib_icon_only_hint);
 	ADD_TEST(test_withlib_swallow_markup);
-	ADD_TEST(test_withlib_actions);
+	// FIXME: Disable action test until we can make it non-interactive
+	//ADD_TEST(test_withlib_actions);
 	ADD_TEST(test_withlib_throttle);
 
 	return ts;
