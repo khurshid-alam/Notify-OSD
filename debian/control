@@ -15,18 +15,20 @@ Build-Depends: debhelper (>= 9),
 XS-Testsuite: autopkgtest
 Standards-Version: 3.9.2
 Homepage: https://launchpad.net/notify-osd
-# If you aren't a member of ~canonical-dx-team but need to upload packaging changes,
-# just go ahead.  ~canonical-dx-team will notice and sync up the code again.
-Vcs-Bzr: https://code.launchpad.net/~canonical-dx-team/notify-osd/precise
+# If you aren't a member of ~indicator-applet-developers but need to upload 
+# packaging changes, just go ahead. ~indicator-applet-developers will notice
+# and sync up the code again.
+Vcs-Bzr: https://code.launchpad.net/~indicator-applet-developers/notify-osd/trunk
+Vcs-Browser: https://bazaar.launchpad.net/~indicator-applet-developers/notify-osd/trunk/files
 
 Package: notify-osd
 Architecture: any
-Depends: ${misc:Depends},
+Depends: gsettings-desktop-schemas,
+         ${misc:Depends},
          ${shlibs:Depends},
-         gsettings-desktop-schemas,
-Recommends: notify-osd-icons
-Provides: notification-daemon
-Replaces: notification-daemon
+Recommends: notify-osd-icons,
+Provides: notification-daemon,
+Replaces: notification-daemon,
 Description: daemon that displays passive pop-up notifications
  The Desktop Notifications framework provides a standard way of doing
  passive pop-up notifications on the Linux desktop.  These are

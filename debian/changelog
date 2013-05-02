@@ -1,3 +1,10 @@
+notify-osd (0.9.35daily12.11.28-0ubuntu2) UNRELEASED; urgency=low
+
+  * debian/control, debian/copyright, debian/rules:
+    - Modifications related to compliance with our packaging standards
+
+ -- Łukasz 'sil2100' Zemczak <lukasz.zemczak@canonical.com>  Wed, 01 May 2013 22:57:49 +0200
+
 notify-osd (0.9.35daily12.11.28-0ubuntu1) raring; urgency=low
 
   [ Robert Bruce Park ]
