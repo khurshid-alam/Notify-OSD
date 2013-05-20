@@ -1,9 +1,13 @@
-notify-osd (0.9.35daily12.11.28-0ubuntu2) UNRELEASED; urgency=low
+notify-osd (0.9.35daily13.05.20ubuntu.unity.next-0ubuntu1) raring; urgency=low
 
+  [ Łukasz 'sil2100' Zemczak ]
   * debian/control, debian/copyright, debian/rules:
     - Modifications related to compliance with our packaging standards
 
- -- Łukasz 'sil2100' Zemczak <lukasz.zemczak@canonical.com>  Wed, 01 May 2013 22:57:49 +0200
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 462 (ubuntu-unity/next)
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 20 May 2013 00:01:28 +0000
 
 notify-osd (0.9.35daily12.11.28-0ubuntu1) raring; urgency=low
 
