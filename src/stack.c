@@ -575,6 +575,7 @@ stack_notify_handler (Stack*                 self,
 	GdkPixbuf* pixbuf     = NULL;
 	gboolean   new_bubble = FALSE;
 	gboolean   turn_into_dialog;
+	guint      real_id;
 
 	// check max. allowed limit queue-size
 	if (g_list_length (self->list) > MAX_STACK_SIZE)
@@ -659,6 +660,8 @@ stack_notify_handler (Stack*                 self,
 			}
 		}
 	}
+
+	real_id = bubble_get_id (bubble);
 
 	if (hints)
 	{
@@ -769,11 +772,11 @@ stack_notify_handler (Stack*                 self,
 
 		/* update the layout of the stack;
 		 * this will also open the new bubble */
-		stack_layout (self);
+		if (!stack_layout (self))
+			bubble = NULL;
 	}
 
-	if (bubble)
-		dbus_g_method_return (context, bubble_get_id (bubble));
+	dbus_g_method_return (context, real_id);
 
 	// FIXME: this is a temporary work-around, I do not like at all, until
 	// the heavy memory leakage of notify-osd is fully fixed...

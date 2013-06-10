@@ -278,7 +278,8 @@ stack_select_next_to_display (Stack *self)
 	return next_to_display;
 }
 
-static void
+/* Returns true if the next bubble is shown */
+static gboolean
 stack_layout (Stack* self)
 {
 	Bubble*    bubble = NULL;
@@ -294,7 +295,7 @@ stack_layout (Stack* self)
 		/* this actually happens when we're called for a synchronous
 		   bubble or after a bubble timed out, but there where no other
 		   notifications waiting in the queue */
-		return;
+		return FALSE;
 
 	if (dnd_dont_disturb_user ()
 	    && (! bubble_is_urgent (bubble)))
@@ -310,7 +311,7 @@ stack_layout (Stack* self)
 		/* loop, in case there are other bubbles to discard */
 		stack_layout (self);
 
-		return;
+		return FALSE;
 	}
 
 	bubble_set_timeout (bubble,
@@ -428,4 +429,6 @@ stack_layout (Stack* self)
 		bubble_fade_in (bubble, 100);
 	else 
 		bubble_fade_in (bubble, 200);
+
+	return TRUE;
 }
