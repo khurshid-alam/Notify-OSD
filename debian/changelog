@@ -1,3 +1,14 @@
+notify-osd (0.9.35daily13.06.12-0ubuntu1) saucy; urgency=low
+
+  [ Lars Uebernickel ]
+  * Don't crash when an application is fullscreen when a notification
+    arrives. (LP: #1189281)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 466
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 12 Jun 2013 00:02:38 +0000
+
 notify-osd (0.9.35daily13.05.30-0ubuntu1) saucy; urgency=low
 
   * Automatic snapshot from revision 464
