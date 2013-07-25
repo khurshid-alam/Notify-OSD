@@ -1,3 +1,13 @@
+notify-osd (0.9.35+13.10.20130725-0ubuntu1) saucy; urgency=low
+
+  [ Jeremy Bicha ]
+  * Have the tests depend on at-spi2-core.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 468
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 25 Jul 2013 17:40:52 +0000
+
 notify-osd (0.9.35daily13.06.12-0ubuntu1) saucy; urgency=low
 
   [ Lars Uebernickel ]
