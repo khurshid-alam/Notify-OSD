@@ -753,7 +753,7 @@ stack_notify_handler (Stack*                 self,
 	{
 		stack_display_sync_bubble (self, bubble);
 	} else {
-		stack_push_bubble (self, bubble);
+		real_id = stack_push_bubble (self, bubble);
 
 		if (! new_bubble && bubble_is_append_allowed (bubble))
 			log_bubble (bubble, app_name, "appended");
