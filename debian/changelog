@@ -1,3 +1,13 @@
+notify-osd (0.9.35+13.10.20130917.1-0ubuntu1) saucy; urgency=low
+
+  [ Sami Jaktholm ]
+  * Return correct notification ID to clients. (LP: #1191565)
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 470
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 17 Sep 2013 22:04:19 +0000
+
 notify-osd (0.9.35+13.10.20130725-0ubuntu1) saucy; urgency=low
 
   [ Jeremy Bicha ]
