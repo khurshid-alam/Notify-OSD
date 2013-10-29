@@ -70,6 +70,18 @@ main (int    argc,
 		return 0;
 	}
 
+	DBusGProxy* proxy = dbus_g_proxy_new_for_name (connection,
+						       "org.freedesktop.DBus",
+						       "/org/freedesktop/DBus",
+						       "org.freedesktop.DBus");
+
+	dbus_g_proxy_add_signal (proxy, "NameLost", G_TYPE_STRING, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+				     "NameLost",
+				     gtk_main_quit,
+				     NULL,
+				     NULL);
+
 	dbus_g_connection_register_g_object (connection,
 					     DBUS_PATH,
 					     G_OBJECT (stack));
@@ -77,6 +89,7 @@ main (int    argc,
 	gtk_main ();
 
 	stack_del (stack);
+	g_object_unref (proxy);
 
 	return 0;
 }

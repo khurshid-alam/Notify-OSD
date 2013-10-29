@@ -67,7 +67,7 @@ dbus_create_service_instance (const char *service_name)
 
 	proxy = dbus_g_proxy_new_for_name (connection,
 					   "org.freedesktop.DBus",
-					   "/org/freedesktop/Dbus",
+					   "/org/freedesktop/DBus",
 					   "org.freedesktop.DBus");
 	error = NULL;
 	if (!dbus_g_proxy_call (proxy,
@@ -83,8 +83,11 @@ dbus_create_service_instance (const char *service_name)
 		           "Got error \"%s\"\n",
 		           error->message);
 		g_error_free (error);
+		g_object_unref (proxy);
 		return NULL;
 	}
+
+	g_object_unref (proxy);
 
 	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
 	{
