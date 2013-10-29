@@ -74,7 +74,7 @@ dbus_create_service_instance (const char *service_name)
 				"RequestName",
 				&error,
 				G_TYPE_STRING, service_name,
-				G_TYPE_UINT, 0,
+				G_TYPE_UINT, DBUS_NAME_FLAG_ALLOW_REPLACEMENT,
 				G_TYPE_INVALID,
 				G_TYPE_UINT, &request_name_result,
 				G_TYPE_INVALID))
