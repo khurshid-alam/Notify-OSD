@@ -1,3 +1,16 @@
+notify-osd (0.9.35+14.04.20131030.1-0ubuntu1) trusty; urgency=low
+
+  [ Mirco Müller ]
+  * Watch "NameLost" signal on DBus and exit if received.
+
+  [ Lars Uebernickel ]
+  * Allow being replaced by a different notification service.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 473
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Wed, 30 Oct 2013 10:06:24 +0000
+
 notify-osd (0.9.35+13.10.20130917.1-0ubuntu1) saucy; urgency=low
 
   [ Sami Jaktholm ]
