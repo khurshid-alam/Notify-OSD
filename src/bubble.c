@@ -3038,6 +3038,11 @@ bubble_timed_out (Bubble* self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
+	/* This function always returns FALSE, which removes the timer
+	 * source. Unset priv->timer_id so that we don't call
+	 * g_source_remove() on it later. */
+	bubble_set_timer_id (self, 0);
+
 	if (GET_PRIVATE (self)->composited)
 	{
 		bubble_fade_out (self, 300);
