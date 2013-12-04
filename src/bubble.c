@@ -2036,12 +2036,6 @@ bubble_dispose (GObject* gobject)
 		priv->draw_handler_id = 0;
 	}
 
-	if (priv->timer_id)
-	{
-		g_source_remove (priv->timer_id);
-		priv->timer_id = 0;
-	}
-
 	if (priv->tile_background_part)
 	{
 		tile_destroy (priv->tile_background_part);
