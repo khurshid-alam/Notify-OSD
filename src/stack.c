@@ -674,6 +674,12 @@ stack_notify_handler (Stack*                 self,
 			{
 				g_object_unref (bubble);
 				bubble = sync_bubble;
+
+				bubble_set_title (sync_bubble, summary ? summary : "");
+				bubble_set_message_body (sync_bubble, body ? body : "");
+				bubble_set_value (sync_bubble, -2);
+
+				bubble_determine_layout (sync_bubble);
 			}
 
 			if (data && G_VALUE_HOLDS_STRING (data))
