@@ -2036,6 +2036,12 @@ bubble_dispose (GObject* gobject)
 		priv->draw_handler_id = 0;
 	}
 
+	if (priv->timer_id)
+	{
+		g_source_remove (priv->timer_id);
+		priv->timer_id = 0;
+	}
+
 	if (priv->tile_background_part)
 	{
 		tile_destroy (priv->tile_background_part);
@@ -3031,6 +3037,11 @@ gboolean
 bubble_timed_out (Bubble* self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
+
+	/* This function always returns FALSE, which removes the timer
+	 * source. Unset priv->timer_id so that we don't call
+	 * g_source_remove() on it later. */
+	bubble_set_timer_id (self, 0);
 
 	if (GET_PRIVATE (self)->composited)
 	{
