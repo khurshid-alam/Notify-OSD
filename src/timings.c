@@ -358,13 +358,11 @@ timings_stop (Timings* t)
 		// remove timeout for normal scheduled duration
 		removed_successfully = g_source_remove (priv->timeout_id);
 		priv->timeout_id = 0;
-		g_assert (removed_successfully);
 	}
 
 	// remove timeout enforcing max. time-limit
 	removed_successfully = g_source_remove (priv->max_timeout_id);
 	priv->max_timeout_id = 0;
-	g_assert (removed_successfully);
 
 	// halt all timers
 	if (priv->is_paused)
@@ -423,10 +421,9 @@ timings_pause (Timings* t)
 	g_timer_stop (priv->duration_timer);
 	priv->is_paused = TRUE;
 
-	// try to get rid of old timeout
+	// get rid of old timeout
 	removed_successfully = g_source_remove (priv->timeout_id);
 	priv->timeout_id = 0;
-	g_assert (removed_successfully);
 
 	return TRUE;
 }
@@ -516,9 +513,8 @@ timings_extend (Timings* t,
 		return TRUE;
 	}
 
-	// try to get rid of old timeout
+	// get rid of old timeout
 	removed_successfully = g_source_remove (priv->timeout_id);
-	g_assert (removed_successfully);
 
 	// ensure we don't overshoot limit with the on-screen time
 	on_screen_time = _ms_elapsed (priv->duration_timer);
