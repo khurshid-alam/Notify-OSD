@@ -357,11 +357,13 @@ timings_stop (Timings* t)
 	{
 		// remove timeout for normal scheduled duration
 		removed_successfully = g_source_remove (priv->timeout_id);
+		priv->timeout_id = 0;
 		g_assert (removed_successfully);
 	}
 
 	// remove timeout enforcing max. time-limit
 	removed_successfully = g_source_remove (priv->max_timeout_id);
+	priv->max_timeout_id = 0;
 	g_assert (removed_successfully);
 
 	// halt all timers
@@ -423,6 +425,7 @@ timings_pause (Timings* t)
 
 	// try to get rid of old timeout
 	removed_successfully = g_source_remove (priv->timeout_id);
+	priv->timeout_id = 0;
 	g_assert (removed_successfully);
 
 	return TRUE;
