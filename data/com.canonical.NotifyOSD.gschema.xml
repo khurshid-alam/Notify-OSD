@@ -1,7 +1,7 @@
 <schemalist>
   <schema id="com.canonical.notify-osd" path="/apps/notify-osd/">
     <key name="multihead-mode" type="s">
-      <default>'dont-focus-follow'</default>
+      <default>'focus-follow'</default>
       <summary>Multihead position behaviour</summary>
       <description>Should the notification position follow the mouse-focus or not in multi-screen environments. Use values "dont-focus-follow" or "focus-follow".</description>
     </key>
