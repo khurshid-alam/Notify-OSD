@@ -1,3 +1,13 @@
+notify-osd (0.9.35+14.04.20140117.1-0ubuntu1) trusty; urgency=low
+
+  [ Samuel Mehrbrodt ]
+  * Make 'focus-follow' the default for Multihead environments.
+
+  [ Ubuntu daily release ]
+  * Automatic snapshot from revision 480
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Fri, 17 Jan 2014 19:27:26 +0000
+
 notify-osd (0.9.35+14.04.20131209-0ubuntu1) trusty; urgency=low
 
   [ Iain Lane ]
