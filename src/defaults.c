@@ -44,12 +44,6 @@ G_DEFINE_TYPE (Defaults, defaults, G_TYPE_OBJECT);
 enum
 {
 	PROP_DUMMY = 0,
-	PROP_DESKTOP_WIDTH,
-	PROP_DESKTOP_HEIGHT,
-	PROP_DESKTOP_TOP,
-	PROP_DESKTOP_BOTTOM,
-	PROP_DESKTOP_LEFT,
-	PROP_DESKTOP_RIGHT,
 	PROP_DESKTOP_BOTTOM_GAP,
 	PROP_STACK_HEIGHT,
 	PROP_BUBBLE_VERT_GAP,
@@ -335,75 +329,6 @@ defaults_refresh_bg_color_property (Defaults *self)
 	}
 }
 
-void
-defaults_refresh_screen_dimension_properties (Defaults *self)
-{
-	Atom         real_type;
-	gint         result;
-	gint         real_format;
-	gulong       items_read;
-	gulong       items_left;
-	glong*       coords;
-	Atom         workarea_atom;
-	Display*     display;
-
-	g_return_if_fail ((self != NULL) && IS_DEFAULTS (self));
-
-	/* get real desktop-area without the panels */
-	workarea_atom = gdk_x11_get_xatom_by_name ("_NET_WORKAREA");
-	display = gdk_x11_display_get_xdisplay (gdk_display_get_default ());
-  
-	gdk_error_trap_push ();
-	result = XGetWindowProperty (display,
-				     GDK_ROOT_WINDOW (),
-				     workarea_atom,
-				     0L,
-				     4L,
-				     False,
-				     XA_CARDINAL,
-				     &real_type,
-				     &real_format,
-				     &items_read,
-				     &items_left,
-				     (guchar **) (void*) &coords);
-	gdk_flush ();
-	gdk_error_trap_pop_ignored ();
-
-	if (result == Success && items_read)
-	{
-		g_object_set (self,
-			      "desktop-width",
-			      (gint) coords[2],
-			      NULL);
-		g_object_set (self,
-			      "desktop-height",
-			      (gint) coords[3],
-			      NULL);
-		g_object_set (self,
-			      "desktop-top",
-			      (gint) coords[1],
-			      NULL);
-		g_object_set (self,
-			      "desktop-bottom",
-			      (gint) coords[3],
-			      NULL);
-		g_object_set (self,
-			      "desktop-left",
-			      (gint) coords[0],
-			      NULL);
-		g_object_set (self,
-			      "desktop-right",
-			      (gint) coords[2],
-			      NULL);
-		/* FIXME: use new upper and lower threshold/limits for stack */
-		/*g_object_set (self,
-			      "stack-height",
-			      (gint) coords[3] / 2,
-			      NULL);*/
-		XFree (coords);
-	}
-}
-
 static void
 defaults_constructed (GObject* gobject)
 {
@@ -415,7 +340,6 @@ defaults_constructed (GObject* gobject)
 
 	self = DEFAULTS (gobject);
 
-	defaults_refresh_screen_dimension_properties (self);
 	defaults_refresh_bg_color_property (self);
 
 	/* grab system-wide font-face/size and DPI */
@@ -561,30 +485,6 @@ defaults_get_property (GObject*    gobject,
 
 	switch (prop)
 	{
-		case PROP_DESKTOP_WIDTH:
-			g_value_set_int (value, defaults->desktop_width);
-		break;
-
-		case PROP_DESKTOP_HEIGHT:
-			g_value_set_int (value, defaults->desktop_height);
-		break;
-
-		case PROP_DESKTOP_TOP:
-			g_value_set_int (value, defaults->desktop_top);
-		break;
-
-		case PROP_DESKTOP_BOTTOM:
-			g_value_set_int (value, defaults->desktop_bottom);
-		break;
-
-		case PROP_DESKTOP_LEFT:
-			g_value_set_int (value, defaults->desktop_left);
-		break;
-
-		case PROP_DESKTOP_RIGHT:
-			g_value_set_int (value, defaults->desktop_right);
-		break;
-
 		case PROP_DESKTOP_BOTTOM_GAP:
 			g_value_set_double (value, defaults->desktop_bottom_gap);
 		break;
@@ -743,30 +643,6 @@ defaults_set_property (GObject*      gobject,
 
 	switch (prop)
 	{
-		case PROP_DESKTOP_WIDTH:
-			defaults->desktop_width = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_HEIGHT:
-			defaults->desktop_height = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_TOP:
-			defaults->desktop_top = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_BOTTOM:
-			defaults->desktop_bottom = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_LEFT:
-			defaults->desktop_left = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_RIGHT:
-			defaults->desktop_right = g_value_get_int (value);
-		break;
-
 		case PROP_DESKTOP_BOTTOM_GAP:
 			defaults->desktop_bottom_gap = g_value_get_double (value);
 		break;
@@ -956,13 +832,6 @@ defaults_class_init (DefaultsClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
 
-	GdkScreen*    screen = gdk_screen_get_default ();
-	GParamSpec*   property_desktop_width;
-	GParamSpec*   property_desktop_height;
-	GParamSpec*   property_desktop_top;
-	GParamSpec*   property_desktop_bottom;
-	GParamSpec*   property_desktop_left;
-	GParamSpec*   property_desktop_right;
 	GParamSpec*   property_desktop_bottom_gap;
 	GParamSpec*   property_stack_height;
 	GParamSpec*   property_bubble_vert_gap;
@@ -1024,90 +893,6 @@ defaults_class_init (DefaultsClass* klass)
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE,
 		0);
-
-	property_desktop_width = g_param_spec_int (
-				"desktop-width",
-				"desktop-width",
-				"Width of desktop in pixels",
-				0,
-				G_MAXINT,
-				gdk_screen_get_width (screen),
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_WIDTH,
-					 property_desktop_width);
-
-	property_desktop_height = g_param_spec_int (
-				"desktop-height",
-				"desktop-height",
-				"Height of desktop in pixels",
-				0,
-				G_MAXINT,
-				gdk_screen_get_height (screen),
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_HEIGHT,
-					 property_desktop_height);
-
-	property_desktop_top = g_param_spec_int (
-				"desktop-top",
-				"desktop-top",
-				"Top of desktop in pixels",
-				0,
-				G_MAXINT,
-				0,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_TOP,
-					 property_desktop_top);
-
-	property_desktop_bottom = g_param_spec_int (
-				"desktop-bottom",
-				"desktop-bottom",
-				"Bottom of desktop in pixels",
-				0,
-				G_MAXINT,
-				G_MAXINT,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_BOTTOM,
-					 property_desktop_bottom);
-
-	property_desktop_left = g_param_spec_int (
-				"desktop-left",
-				"desktop-left",
-				"Left of desktop in pixels",
-				0,
-				G_MAXINT,
-				0,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_LEFT,
-					 property_desktop_left);
-
-	property_desktop_right = g_param_spec_int (
-				"desktop-right",
-				"desktop-right",
-				"Right of desktop in pixels",
-				0,
-				G_MAXINT,
-				G_MAXINT,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_RIGHT,
-					 property_desktop_right);
 
 	property_desktop_bottom_gap = g_param_spec_double (
 				"desktop-bottom-gap",
@@ -1569,79 +1354,19 @@ defaults_new (void)
 gint
 defaults_get_desktop_width (Defaults* self)
 {
-	gint width;
-
 	if (!self || !IS_DEFAULTS (self))
 		return 0;
 
-	g_object_get (self, "desktop-width", &width, NULL);
-
-	return width;
+	return self->desktop_width;
 }
 
 gint
 defaults_get_desktop_height (Defaults* self)
 {
-	gint height;
-
 	if (!self || !IS_DEFAULTS (self))
 		return 0;
 
-	g_object_get (self, "desktop-height", &height, NULL);
-
-	return height;
-}
-
-gint
-defaults_get_desktop_top (Defaults* self)
-{
-	gint top_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-top", &top_edge, NULL);
-
-	return top_edge;
-}
-
-gint
-defaults_get_desktop_bottom (Defaults* self)
-{
-	gint bottom_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-bottom", &bottom_edge, NULL);
-
-	return bottom_edge;
-}
-
-gint
-defaults_get_desktop_left (Defaults* self)
-{
-	gint left_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-left", &left_edge, NULL);
-
-	return left_edge;
-}
-
-gint
-defaults_get_desktop_right (Defaults* self)
-{
-	gint right_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-right", &right_edge, NULL);
-
-	return right_edge;
+	return self->desktop_height;
 }
 
 gdouble
@@ -2177,7 +1902,7 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 		}
 	}
 
-	gdk_screen_get_monitor_geometry (*screen, monitor, &rect);
+	gdk_screen_get_monitor_workarea (*screen, monitor, &rect);
 	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
 		 monitor,
 	         rect.x,
@@ -2185,18 +1910,8 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	         rect.width,
 	         rect.height);
 
-	/* Position the top left corner of the stack. */
-	{
-		g_debug ("no panel detetected; using workarea fallback");
-
-		defaults_refresh_screen_dimension_properties (self);
-
-		/* workarea rectangle */
-		g_object_get (self, "desktop-left", &rect.x, NULL);
-		g_object_get (self, "desktop-top", &rect.y, NULL);
-		g_object_get (self, "desktop-width", &rect.width, NULL);
-		g_object_get (self, "desktop-height", &rect.height, NULL);
- 	}
+	self->desktop_width = rect.width;
+	self->desktop_height = rect.height;
 
 	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
