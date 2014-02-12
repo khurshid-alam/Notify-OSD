@@ -2131,92 +2131,15 @@ defaults_multihead_does_focus_follow (Defaults *self)
 	return mode;
 }
 
-static gboolean
-_window_look_for_top_panel_attributes (GdkWindow *win)
-{
-	XClassHint class_hints = {0, 0};
-	gboolean is_panel = FALSE;
-	GdkRectangle frame;
-	int result;
-
-	if (win == NULL) return FALSE;
-
-	gdk_error_trap_push ();
-
-	result = XGetClassHint (gdk_x11_display_get_xdisplay (gdk_display_get_default ()),
-				GDK_WINDOW_XID (win),
-				&class_hints);
-
-	if (! result || class_hints.res_class == NULL)
-		goto failed;
-
-	if (g_strcmp0 (class_hints.res_name, "gnome-panel"))
-		goto failed;
-
-	/* discard dialog windows like panel properties or the applet directory... */
-	if (wnck_window_get_window_type (wnck_window_get (GDK_WINDOW_XID (win)))
-	    != WNCK_WINDOW_DOCK)
-		goto failed;
-
-	/* select only the top panel */
-	gdk_window_get_frame_extents (win, &frame);
-	if (frame.x != 0 || frame.y != 0)
-		goto failed;
-
-	if (frame.width < frame.height)
-		goto failed;
-			
-	is_panel = TRUE;
-
-failed:
-	if (class_hints.res_class)
-		XFree (class_hints.res_class);
-	if (class_hints.res_name)
-		XFree (class_hints.res_name);
-
-	gdk_error_trap_pop_ignored ();
-
-	return is_panel;
-}
-
-static GdkWindow*
-get_panel_window (void)
-{
-	GdkWindow *panel_window = NULL;
-	GList     *window;
-	GList     *iter;
-	
-	window = gdk_screen_get_window_stack (gdk_screen_get_default ());
-
-	for (iter = g_list_first (window);
-	     iter != NULL;
-	     iter = g_list_next (iter))
-	{
-		if (_window_look_for_top_panel_attributes (iter->data))
-		{
-			panel_window = iter->data;
-			break;
-		}
-	}
-	
-	g_list_free (window);
-
-	return panel_window;
-}
-
 void
 defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 {
 	GdkRectangle rect;
-	GdkRectangle panel_rect       = {0, 0, 0, 0};
 	GdkWindow*   active_window    = NULL;
-	GdkWindow*   panel_window     = NULL;
 	gint         mx;
 	gint         my;
 	gint         monitor          = 0;
-	gint         panel_monitor    = 0;
 	gint         aw_monitor;
-	gboolean     has_panel_window = FALSE;
 	gboolean     follow_focus     = defaults_multihead_does_focus_follow (self);
 	gboolean     is_composited    = FALSE;
 
@@ -2229,23 +2152,6 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	                         NULL);
 
 	is_composited = gdk_screen_is_composited (*screen);
-	panel_window = get_panel_window ();
-
-	if (panel_window != NULL)
-	{
-		gdk_window_get_frame_extents (panel_window, &panel_rect);
-		panel_monitor = gdk_screen_get_monitor_at_window (*screen,
-		                                                  panel_window);
-		monitor = panel_monitor;
-		g_debug ("found panel (%d,%d) - %dx%d on monitor %d",
-			 panel_rect.x,
-		         panel_rect.y,
-			 panel_rect.width,
-		         panel_rect.height,
-		         monitor);
-
-		has_panel_window  = TRUE;
-	}
 
 	if (follow_focus)
 	{
@@ -2280,12 +2186,6 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	         rect.height);
 
 	/* Position the top left corner of the stack. */
-	if (has_panel_window &&
-	    panel_monitor == monitor)
-	{
-		/* position the corner on the selected monitor */
-		rect.y += panel_rect.y + panel_rect.height;
-	} else if (! (has_panel_window || follow_focus))
 	{
 		g_debug ("no panel detetected; using workarea fallback");
 
