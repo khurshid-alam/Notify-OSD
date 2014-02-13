@@ -337,9 +337,13 @@ defaults_constructed (GObject* gobject)
 	gdouble      icon_size;
 	gdouble      bubble_height;
 	gdouble      new_bubble_height;
+	GdkScreen*   screen;
+	gint         x;
+	gint         y;
 
 	self = DEFAULTS (gobject);
 
+	defaults_get_top_corner (self, &screen, &x, &y);
 	defaults_refresh_bg_color_property (self);
 
 	/* grab system-wide font-face/size and DPI */
