@@ -79,10 +79,6 @@ struct _Defaults
 	GSettings*     gnome_settings;
 	gint           desktop_width;
 	gint           desktop_height;
-	gint           desktop_top;
-	gint           desktop_bottom;
-	gint           desktop_left;
-	gint           desktop_right;
 	gdouble        desktop_bottom_gap;
 	gdouble        stack_height;
 	gdouble        bubble_vert_gap;

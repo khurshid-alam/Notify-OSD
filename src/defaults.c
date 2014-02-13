@@ -44,12 +44,6 @@ G_DEFINE_TYPE (Defaults, defaults, G_TYPE_OBJECT);
 enum
 {
 	PROP_DUMMY = 0,
-	PROP_DESKTOP_WIDTH,
-	PROP_DESKTOP_HEIGHT,
-	PROP_DESKTOP_TOP,
-	PROP_DESKTOP_BOTTOM,
-	PROP_DESKTOP_LEFT,
-	PROP_DESKTOP_RIGHT,
 	PROP_DESKTOP_BOTTOM_GAP,
 	PROP_STACK_HEIGHT,
 	PROP_BUBBLE_VERT_GAP,
@@ -335,75 +329,6 @@ defaults_refresh_bg_color_property (Defaults *self)
 	}
 }
 
-void
-defaults_refresh_screen_dimension_properties (Defaults *self)
-{
-	Atom         real_type;
-	gint         result;
-	gint         real_format;
-	gulong       items_read;
-	gulong       items_left;
-	glong*       coords;
-	Atom         workarea_atom;
-	Display*     display;
-
-	g_return_if_fail ((self != NULL) && IS_DEFAULTS (self));
-
-	/* get real desktop-area without the panels */
-	workarea_atom = gdk_x11_get_xatom_by_name ("_NET_WORKAREA");
-	display = gdk_x11_display_get_xdisplay (gdk_display_get_default ());
-  
-	gdk_error_trap_push ();
-	result = XGetWindowProperty (display,
-				     GDK_ROOT_WINDOW (),
-				     workarea_atom,
-				     0L,
-				     4L,
-				     False,
-				     XA_CARDINAL,
-				     &real_type,
-				     &real_format,
-				     &items_read,
-				     &items_left,
-				     (guchar **) (void*) &coords);
-	gdk_flush ();
-	gdk_error_trap_pop_ignored ();
-
-	if (result == Success && items_read)
-	{
-		g_object_set (self,
-			      "desktop-width",
-			      (gint) coords[2],
-			      NULL);
-		g_object_set (self,
-			      "desktop-height",
-			      (gint) coords[3],
-			      NULL);
-		g_object_set (self,
-			      "desktop-top",
-			      (gint) coords[1],
-			      NULL);
-		g_object_set (self,
-			      "desktop-bottom",
-			      (gint) coords[3],
-			      NULL);
-		g_object_set (self,
-			      "desktop-left",
-			      (gint) coords[0],
-			      NULL);
-		g_object_set (self,
-			      "desktop-right",
-			      (gint) coords[2],
-			      NULL);
-		/* FIXME: use new upper and lower threshold/limits for stack */
-		/*g_object_set (self,
-			      "stack-height",
-			      (gint) coords[3] / 2,
-			      NULL);*/
-		XFree (coords);
-	}
-}
-
 static void
 defaults_constructed (GObject* gobject)
 {
@@ -412,10 +337,13 @@ defaults_constructed (GObject* gobject)
 	gdouble      icon_size;
 	gdouble      bubble_height;
 	gdouble      new_bubble_height;
+	GdkScreen*   screen;
+	gint         x;
+	gint         y;
 
 	self = DEFAULTS (gobject);
 
-	defaults_refresh_screen_dimension_properties (self);
+	defaults_get_top_corner (self, &screen, &x, &y);
 	defaults_refresh_bg_color_property (self);
 
 	/* grab system-wide font-face/size and DPI */
@@ -561,30 +489,6 @@ defaults_get_property (GObject*    gobject,
 
 	switch (prop)
 	{
-		case PROP_DESKTOP_WIDTH:
-			g_value_set_int (value, defaults->desktop_width);
-		break;
-
-		case PROP_DESKTOP_HEIGHT:
-			g_value_set_int (value, defaults->desktop_height);
-		break;
-
-		case PROP_DESKTOP_TOP:
-			g_value_set_int (value, defaults->desktop_top);
-		break;
-
-		case PROP_DESKTOP_BOTTOM:
-			g_value_set_int (value, defaults->desktop_bottom);
-		break;
-
-		case PROP_DESKTOP_LEFT:
-			g_value_set_int (value, defaults->desktop_left);
-		break;
-
-		case PROP_DESKTOP_RIGHT:
-			g_value_set_int (value, defaults->desktop_right);
-		break;
-
 		case PROP_DESKTOP_BOTTOM_GAP:
 			g_value_set_double (value, defaults->desktop_bottom_gap);
 		break;
@@ -743,30 +647,6 @@ defaults_set_property (GObject*      gobject,
 
 	switch (prop)
 	{
-		case PROP_DESKTOP_WIDTH:
-			defaults->desktop_width = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_HEIGHT:
-			defaults->desktop_height = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_TOP:
-			defaults->desktop_top = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_BOTTOM:
-			defaults->desktop_bottom = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_LEFT:
-			defaults->desktop_left = g_value_get_int (value);
-		break;
-
-		case PROP_DESKTOP_RIGHT:
-			defaults->desktop_right = g_value_get_int (value);
-		break;
-
 		case PROP_DESKTOP_BOTTOM_GAP:
 			defaults->desktop_bottom_gap = g_value_get_double (value);
 		break;
@@ -956,13 +836,6 @@ defaults_class_init (DefaultsClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
 
-	GdkScreen*    screen = gdk_screen_get_default ();
-	GParamSpec*   property_desktop_width;
-	GParamSpec*   property_desktop_height;
-	GParamSpec*   property_desktop_top;
-	GParamSpec*   property_desktop_bottom;
-	GParamSpec*   property_desktop_left;
-	GParamSpec*   property_desktop_right;
 	GParamSpec*   property_desktop_bottom_gap;
 	GParamSpec*   property_stack_height;
 	GParamSpec*   property_bubble_vert_gap;
@@ -1024,90 +897,6 @@ defaults_class_init (DefaultsClass* klass)
 		g_cclosure_marshal_VOID__VOID,
 		G_TYPE_NONE,
 		0);
-
-	property_desktop_width = g_param_spec_int (
-				"desktop-width",
-				"desktop-width",
-				"Width of desktop in pixels",
-				0,
-				G_MAXINT,
-				gdk_screen_get_width (screen),
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_WIDTH,
-					 property_desktop_width);
-
-	property_desktop_height = g_param_spec_int (
-				"desktop-height",
-				"desktop-height",
-				"Height of desktop in pixels",
-				0,
-				G_MAXINT,
-				gdk_screen_get_height (screen),
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_HEIGHT,
-					 property_desktop_height);
-
-	property_desktop_top = g_param_spec_int (
-				"desktop-top",
-				"desktop-top",
-				"Top of desktop in pixels",
-				0,
-				G_MAXINT,
-				0,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_TOP,
-					 property_desktop_top);
-
-	property_desktop_bottom = g_param_spec_int (
-				"desktop-bottom",
-				"desktop-bottom",
-				"Bottom of desktop in pixels",
-				0,
-				G_MAXINT,
-				G_MAXINT,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_BOTTOM,
-					 property_desktop_bottom);
-
-	property_desktop_left = g_param_spec_int (
-				"desktop-left",
-				"desktop-left",
-				"Left of desktop in pixels",
-				0,
-				G_MAXINT,
-				0,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_LEFT,
-					 property_desktop_left);
-
-	property_desktop_right = g_param_spec_int (
-				"desktop-right",
-				"desktop-right",
-				"Right of desktop in pixels",
-				0,
-				G_MAXINT,
-				G_MAXINT,
-				G_PARAM_CONSTRUCT |
-				G_PARAM_READWRITE |
-				G_PARAM_STATIC_STRINGS);
-	g_object_class_install_property (gobject_class,
-					 PROP_DESKTOP_RIGHT,
-					 property_desktop_right);
 
 	property_desktop_bottom_gap = g_param_spec_double (
 				"desktop-bottom-gap",
@@ -1569,79 +1358,19 @@ defaults_new (void)
 gint
 defaults_get_desktop_width (Defaults* self)
 {
-	gint width;
-
 	if (!self || !IS_DEFAULTS (self))
 		return 0;
 
-	g_object_get (self, "desktop-width", &width, NULL);
-
-	return width;
+	return self->desktop_width;
 }
 
 gint
 defaults_get_desktop_height (Defaults* self)
 {
-	gint height;
-
 	if (!self || !IS_DEFAULTS (self))
 		return 0;
 
-	g_object_get (self, "desktop-height", &height, NULL);
-
-	return height;
-}
-
-gint
-defaults_get_desktop_top (Defaults* self)
-{
-	gint top_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-top", &top_edge, NULL);
-
-	return top_edge;
-}
-
-gint
-defaults_get_desktop_bottom (Defaults* self)
-{
-	gint bottom_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-bottom", &bottom_edge, NULL);
-
-	return bottom_edge;
-}
-
-gint
-defaults_get_desktop_left (Defaults* self)
-{
-	gint left_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-left", &left_edge, NULL);
-
-	return left_edge;
-}
-
-gint
-defaults_get_desktop_right (Defaults* self)
-{
-	gint right_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	g_object_get (self, "desktop-right", &right_edge, NULL);
-
-	return right_edge;
+	return self->desktop_height;
 }
 
 gdouble
@@ -2131,94 +1860,18 @@ defaults_multihead_does_focus_follow (Defaults *self)
 	return mode;
 }
 
-static gboolean
-_window_look_for_top_panel_attributes (GdkWindow *win)
-{
-	XClassHint class_hints = {0, 0};
-	gboolean is_panel = FALSE;
-	GdkRectangle frame;
-	int result;
-
-	if (win == NULL) return FALSE;
-
-	gdk_error_trap_push ();
-
-	result = XGetClassHint (gdk_x11_display_get_xdisplay (gdk_display_get_default ()),
-				GDK_WINDOW_XID (win),
-				&class_hints);
-
-	if (! result || class_hints.res_class == NULL)
-		goto failed;
-
-	if (g_strcmp0 (class_hints.res_name, "gnome-panel"))
-		goto failed;
-
-	/* discard dialog windows like panel properties or the applet directory... */
-	if (wnck_window_get_window_type (wnck_window_get (GDK_WINDOW_XID (win)))
-	    != WNCK_WINDOW_DOCK)
-		goto failed;
-
-	/* select only the top panel */
-	gdk_window_get_frame_extents (win, &frame);
-	if (frame.x != 0 || frame.y != 0)
-		goto failed;
-
-	if (frame.width < frame.height)
-		goto failed;
-			
-	is_panel = TRUE;
-
-failed:
-	if (class_hints.res_class)
-		XFree (class_hints.res_class);
-	if (class_hints.res_name)
-		XFree (class_hints.res_name);
-
-	gdk_error_trap_pop_ignored ();
-
-	return is_panel;
-}
-
-static GdkWindow*
-get_panel_window (void)
-{
-	GdkWindow *panel_window = NULL;
-	GList     *window;
-	GList     *iter;
-	
-	window = gdk_screen_get_window_stack (gdk_screen_get_default ());
-
-	for (iter = g_list_first (window);
-	     iter != NULL;
-	     iter = g_list_next (iter))
-	{
-		if (_window_look_for_top_panel_attributes (iter->data))
-		{
-			panel_window = iter->data;
-			break;
-		}
-	}
-	
-	g_list_free (window);
-
-	return panel_window;
-}
-
 void
 defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 {
 	GdkRectangle rect;
-	GdkRectangle panel_rect       = {0, 0, 0, 0};
 	GdkWindow*   active_window    = NULL;
-	GdkWindow*   panel_window     = NULL;
 	gint         mx;
 	gint         my;
 	gint         monitor          = 0;
-	gint         panel_monitor    = 0;
 	gint         aw_monitor;
-	gboolean     has_panel_window = FALSE;
 	gboolean     follow_focus     = defaults_multihead_does_focus_follow (self);
 	gboolean     is_composited    = FALSE;
+	gint         primary_monitor;
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
@@ -2229,23 +1882,6 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	                         NULL);
 
 	is_composited = gdk_screen_is_composited (*screen);
-	panel_window = get_panel_window ();
-
-	if (panel_window != NULL)
-	{
-		gdk_window_get_frame_extents (panel_window, &panel_rect);
-		panel_monitor = gdk_screen_get_monitor_at_window (*screen,
-		                                                  panel_window);
-		monitor = panel_monitor;
-		g_debug ("found panel (%d,%d) - %dx%d on monitor %d",
-			 panel_rect.x,
-		         panel_rect.y,
-			 panel_rect.width,
-		         panel_rect.height,
-		         monitor);
-
-		has_panel_window  = TRUE;
-	}
 
 	if (follow_focus)
 	{
@@ -2271,7 +1907,39 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 		}
 	}
 
-	gdk_screen_get_monitor_geometry (*screen, monitor, &rect);
+	/* _NET_WORKAREA is always a rectangle spanning all monitors of
+	 * a screen. As such, it can't properly deal with monitor setups
+	 * that aren't aligned or have different resolutions.
+	 * gdk_screen_get_monitor_workarea() works around this by only
+	 * returning the workarea for the primary screen and the full
+	 * geometry for all other monitors.
+	 *
+	 * This leads to the sync bubbles sometimes overlapping the
+	 * panel on secondary monitors. To work around this, we get the
+	 * panel's height on the primary monitor and use that for all
+	 * other monitors as well.
+	 */
+
+	primary_monitor = gdk_screen_get_primary_monitor (*screen);
+	if (monitor == primary_monitor)
+	{
+		gdk_screen_get_monitor_workarea (*screen, primary_monitor, &rect);
+	}
+	else
+	{
+		GdkRectangle workarea;
+		GdkRectangle primary_geom;
+		gint panel_height;
+
+		gdk_screen_get_monitor_workarea (*screen, primary_monitor, &workarea);
+		gdk_screen_get_monitor_geometry (*screen, primary_monitor, &primary_geom);
+		panel_height = workarea.y - primary_geom.y;
+
+		gdk_screen_get_monitor_geometry (*screen, monitor, &rect);
+		rect.y += panel_height;
+		rect.height -= panel_height;
+	}
+
 	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
 		 monitor,
 	         rect.x,
@@ -2279,72 +1947,12 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	         rect.width,
 	         rect.height);
 
-	/* Position the top left corner of the stack. */
-	if (has_panel_window &&
-	    panel_monitor == monitor)
-	{
-		/* position the corner on the selected monitor */
-		rect.y += panel_rect.y + panel_rect.height;
-	} else if (! (has_panel_window || follow_focus))
-	{
-		g_debug ("no panel detetected; using workarea fallback");
-
-		defaults_refresh_screen_dimension_properties (self);
-
-		/* workarea rectangle */
-		g_object_get (self, "desktop-left", &rect.x, NULL);
-		g_object_get (self, "desktop-top", &rect.y, NULL);
-		g_object_get (self, "desktop-width", &rect.width, NULL);
-		g_object_get (self, "desktop-height", &rect.height, NULL);
- 	}
+	self->desktop_width = rect.width;
+	self->desktop_height = rect.height;
 
 	*y   = rect.y;
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
 	       - EM2PIXELS (defaults_get_bubble_shadow_size (self, is_composited), self);
-
-	/* correct potential offset in multi-monitor setups with two (or more)
-	 * monitors side by side, all having different vertical resolutions and
-	 * being aligned at the bottom edge, thus creating an "invisible" area at
-	 * the top edge of the monitor with the lowest vertical resolution,
-	 * LP: #716458 */
-	GdkRectangle cur_geo       = {0, 0, 0, 0};
-	int          num_monitors  = gdk_screen_get_n_monitors (*screen);
-	int          screen_width  = gdk_screen_get_width (*screen);
-	int          screen_height = gdk_screen_get_height (*screen);
-
-	if (!follow_focus && num_monitors > 1)
-	{
-		int vert_offset  = 0;
-
-		if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
-		{
-			int right_most_monitor = 0;
-
-			right_most_monitor = gdk_screen_get_monitor_at_point (*screen,
-			                                                      screen_width,
-			                                                      screen_height / 2);
-			gdk_screen_get_monitor_geometry (*screen,
-			                                 right_most_monitor,
-			                                 &cur_geo);
-			if (cur_geo.y != 0)
-				vert_offset = cur_geo.y;
-		}
-		else
-		{
-			int left_most_monitor = 0;
-
-			left_most_monitor = gdk_screen_get_monitor_at_point (*screen,
-			                                                     0,
-			                                                     screen_height / 2);
-			gdk_screen_get_monitor_geometry (*screen,
-			                                 left_most_monitor,
-			                                 &cur_geo);
-			if (cur_geo.y != 0)
-				vert_offset = cur_geo.y;
-		}
-
-		*y += vert_offset;
-	}
 
 	if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
 	{
