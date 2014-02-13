@@ -1,3 +1,13 @@
+notify-osd (0.9.35+14.04.20140213-0ubuntu1) trusty; urgency=low
+
+  [ Lars Uebernickel ]
+  * Don't place bubbles over panels on secondary monitors Using
+    heuristics to find panels didn't prove to be very stable. Instead,
+    use _NET_WORKAREA to find out about the panel size on the primary
+    monitor and assume it's the same on every other monitor as well.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Thu, 13 Feb 2014 15:54:34 +0000
+
 notify-osd (0.9.35+14.04.20140117.1-0ubuntu1) trusty; urgency=low
 
   [ Samuel Mehrbrodt ]
