@@ -1950,50 +1950,6 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	*y  += EM2PIXELS (defaults_get_bubble_vert_gap (self), self)
 	       - EM2PIXELS (defaults_get_bubble_shadow_size (self, is_composited), self);
 
-	/* correct potential offset in multi-monitor setups with two (or more)
-	 * monitors side by side, all having different vertical resolutions and
-	 * being aligned at the bottom edge, thus creating an "invisible" area at
-	 * the top edge of the monitor with the lowest vertical resolution,
-	 * LP: #716458 */
-	GdkRectangle cur_geo       = {0, 0, 0, 0};
-	int          num_monitors  = gdk_screen_get_n_monitors (*screen);
-	int          screen_width  = gdk_screen_get_width (*screen);
-	int          screen_height = gdk_screen_get_height (*screen);
-
-	if (!follow_focus && num_monitors > 1)
-	{
-		int vert_offset  = 0;
-
-		if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
-		{
-			int right_most_monitor = 0;
-
-			right_most_monitor = gdk_screen_get_monitor_at_point (*screen,
-			                                                      screen_width,
-			                                                      screen_height / 2);
-			gdk_screen_get_monitor_geometry (*screen,
-			                                 right_most_monitor,
-			                                 &cur_geo);
-			if (cur_geo.y != 0)
-				vert_offset = cur_geo.y;
-		}
-		else
-		{
-			int left_most_monitor = 0;
-
-			left_most_monitor = gdk_screen_get_monitor_at_point (*screen,
-			                                                     0,
-			                                                     screen_height / 2);
-			gdk_screen_get_monitor_geometry (*screen,
-			                                 left_most_monitor,
-			                                 &cur_geo);
-			if (cur_geo.y != 0)
-				vert_offset = cur_geo.y;
-		}
-
-		*y += vert_offset;
-	}
-
 	if (gtk_widget_get_default_direction () == GTK_TEXT_DIR_LTR)
 	{
 		*x = rect.x + rect.width;
