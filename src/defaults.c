@@ -1867,6 +1867,7 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 	gint         aw_monitor;
 	gboolean     follow_focus     = defaults_multihead_does_focus_follow (self);
 	gboolean     is_composited    = FALSE;
+	gint         primary_monitor;
 
 	g_return_if_fail (self != NULL && IS_DEFAULTS (self));
 
@@ -1902,7 +1903,39 @@ defaults_get_top_corner (Defaults *self, GdkScreen **screen, gint *x, gint *y)
 		}
 	}
 
-	gdk_screen_get_monitor_workarea (*screen, monitor, &rect);
+	/* _NET_WORKAREA is always a rectangle spanning all monitors of
+	 * a screen. As such, it can't properly deal with monitor setups
+	 * that aren't aligned or have different resolutions.
+	 * gdk_screen_get_monitor_workarea() works around this by only
+	 * returning the workarea for the primary screen and the full
+	 * geometry for all other monitors.
+	 *
+	 * This leads to the sync bubbles sometimes overlapping the
+	 * panel on secondary monitors. To work around this, we get the
+	 * panel's height on the primary monitor and use that for all
+	 * other monitors as well.
+	 */
+
+	primary_monitor = gdk_screen_get_primary_monitor (*screen);
+	if (monitor == primary_monitor)
+	{
+		gdk_screen_get_monitor_workarea (*screen, primary_monitor, &rect);
+	}
+	else
+	{
+		GdkRectangle workarea;
+		GdkRectangle primary_geom;
+		gint panel_height;
+
+		gdk_screen_get_monitor_workarea (*screen, primary_monitor, &workarea);
+		gdk_screen_get_monitor_geometry (*screen, primary_monitor, &primary_geom);
+		panel_height = workarea.y - primary_geom.y;
+
+		gdk_screen_get_monitor_geometry (*screen, monitor, &rect);
+		rect.y += panel_height;
+		rect.height -= panel_height;
+	}
+
 	g_debug ("selecting monitor %d at (%d,%d) - %dx%d",
 		 monitor,
 	         rect.x,
