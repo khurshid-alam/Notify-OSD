@@ -1,3 +1,11 @@
+notify-osd (0.9.35+14.10.20140819-0ubuntu1) utopic; urgency=low
+
+  [ Martin Pitt ]
+  * Add missing "make" and "libnotify-bin" autopkgtest dependencies, and
+    show test log on failure.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Tue, 19 Aug 2014 13:48:10 +0000
+
 notify-osd (0.9.35+14.04.20140213-0ubuntu1) trusty; urgency=low
 
   [ Lars Uebernickel ]
