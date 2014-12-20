@@ -48,7 +48,6 @@ main (int    argc,
 	Observer*        observer   = NULL;
 	DBusGConnection* connection = NULL;
 
-	g_thread_init (NULL);
 	dbus_g_thread_init ();
 	log_init ();
 
