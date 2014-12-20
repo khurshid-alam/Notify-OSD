@@ -442,7 +442,7 @@ expose_handler (GtkWidget* window,
 		cairo_pattern_destroy (mask);
 		cairo_pattern_destroy (pattern);
 
-		gtk_window_set_opacity (GTK_WINDOW (window),
+		gtk_widget_set_opacity (window,
 					0.3f + g_distance * 0.7f);
 	}
 	else
@@ -461,7 +461,7 @@ expose_handler (GtkWidget* window,
 		cairo_mask (cr, mask);
 		cairo_pattern_destroy (pattern);
 
-		gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
+		gtk_widget_set_opacity (window, 1.0f);
 	}
 
 	return TRUE;
@@ -911,7 +911,7 @@ main (int    argc,
 	gtk_window_set_keep_above (GTK_WINDOW (window), TRUE);
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 1.0f);
+	gtk_widget_set_opacity (window, 1.0f);
 	gtk_widget_set_size_request (window,
 				     (gint) (BUBBLE_WIDTH + 2.0f *
 					     BUBBLE_SHADOW_SIZE),
