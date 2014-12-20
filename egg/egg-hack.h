@@ -52,16 +52,6 @@ egg_threads_enter (void);
 void
 egg_threads_leave (void);
 
-typedef enum {
-  EGG_INIT_SUCCESS        =  1,
-  EGG_INIT_ERROR_UNKNOWN  =  0,
-  EGG_INIT_ERROR_THREADS  = -1,
-  EGG_INIT_ERROR_BACKEND  = -2,
-  EGG_INIT_ERROR_INTERNAL = -3
-} EggInitError;
-
-EggInitError egg_init             (int          *argc,
-                                           char       ***argv);
 void             egg_main                       (void);
 
 

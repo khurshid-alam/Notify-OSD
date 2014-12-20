@@ -84,8 +84,6 @@ main(int argc, char **argv)
 {
   TestState state;
 
-  egg_init (&argc, &argv);
-
   state.timeline = 
     egg_timeline_new (TEST_TIMELINE_FRAME_COUNT,
                           TEST_TIMELINE_FPS);

@@ -56,8 +56,6 @@ main (int argc, char **argv)
   EggTimeline *timeline;
   EggAlpha *alpha;
 
-  egg_init (&argc, &argv);
-
   timeline = egg_timeline_new_for_duration (700);
   alpha = egg_alpha_new_full (timeline,
 				  EGG_ALPHA_SINE_DEC,
