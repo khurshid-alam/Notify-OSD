@@ -482,10 +482,19 @@ pointer_update (GtkWidget* window)
 
 	if (gtk_widget_get_realized (window))
 	{
-		gint distance_x = 0;
-		gint distance_y = 0;
+		GdkDeviceManager *device_manager;
+		GdkDevice        *device;
+		gint              distance_x;
+		gint              distance_y;
 
-		gtk_widget_get_pointer (window, &pointer_rel_x, &pointer_rel_y);
+		device_manager = gdk_display_get_device_manager (gtk_widget_get_display (window));
+		device = gdk_device_manager_get_client_pointer (device_manager);
+		gdk_window_get_device_position (gtk_widget_get_window (window),
+		                                device,
+		                                &pointer_rel_x,
+		                                &pointer_rel_y,
+		                                NULL);
+
 		gtk_window_get_position (GTK_WINDOW (window), &win_x, &win_y);
 		pointer_abs_x = win_x + pointer_rel_x;
 		pointer_abs_y = win_y + pointer_rel_y;
