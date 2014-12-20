@@ -1720,14 +1720,12 @@ composited_changed_handler (GtkWidget* window,
 	update_shape (bubble);
 }
 
-static
-gboolean
-expose_handler (GtkWidget*      window,
-		GdkEventExpose* event,
-		gpointer        data)
+static gboolean
+bubble_draw (GtkWidget* widget,
+             cairo_t*   cr,
+             gpointer   data)
 {
 	Bubble*        bubble;
-	cairo_t*       cr;
 	Defaults*      d;
 	BubblePrivate* priv;
 
@@ -1735,8 +1733,6 @@ expose_handler (GtkWidget*      window,
 
 	d    = bubble->defaults;
 	priv = GET_PRIVATE (bubble);
-
-	cr = gdk_cairo_create (gtk_widget_get_window (window));
 
         // clear bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -1767,9 +1763,7 @@ expose_handler (GtkWidget*      window,
 		                1.0f - priv->distance);
 	}
 
-	cairo_destroy (cr);
-
-	_set_bg_blur (window,
+	_set_bg_blur (widget,
 		      TRUE,
 		      EM2PIXELS (get_shadow_size (bubble), d));
 
@@ -2255,10 +2249,10 @@ bubble_new (Defaults* defaults)
 									&transparent);
 
 	// hook up window-event handlers to window
-	g_signal_connect (G_OBJECT (window),
-			  "draw",
-			  G_CALLBACK (expose_handler),
-			  this);
+	g_signal_connect (window,
+	                  "draw",
+	                  G_CALLBACK (bubble_draw),
+	                  this);
 
 	// "clear" input-mask, set title/icon/attributes
 	gtk_widget_set_app_paintable (window, TRUE);
