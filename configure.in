@@ -31,7 +31,7 @@ GLIB_GSETTINGS
 #
 # glib, we need 2.16.0 for the unit-tests
 #
-PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.16.0 gthread-2.0 gio-2.0])
+PKG_CHECK_MODULES([GLIB], [glib-2.0 >= 2.36.0 gthread-2.0 gio-2.0])
 
 #
 # libwnck used by the dnd code
@@ -69,7 +69,7 @@ AC_SUBST(X_LIBS)
 
 AM_PATH_GTK_3_0
 
-PKG_CHECK_MODULES([NOTIFY_OSD], [pixman-1 gtk+-3.0 >= 3.1.6])
+PKG_CHECK_MODULES([NOTIFY_OSD], [pixman-1 gtk+-3.0 >= 3.8.0])
 AC_SUBST(NOTIFY_OSD_CFLAGS)
 AC_SUBST(NOTIFY_OSD_LIBS)
 
