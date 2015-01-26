@@ -1,3 +1,12 @@
+notify-osd (0.9.35+15.04.20150126-0ubuntu1) vivid; urgency=low
+
+  [ Alberts Muktupāvels ]
+  * Fix some deprecation warnings.
+  * Some improvements: 1) Fix incorrect parameter in widget draw event
+    function. 2) Use G_DEFINE_TYPE_WITH_PRIVATE.
+
+ -- Ubuntu daily release <ps-jenkins@lists.canonical.com>  Mon, 26 Jan 2015 14:16:51 +0000
+
 notify-osd (0.9.35+14.10.20140819-0ubuntu1) utopic; urgency=low
 
   [ Martin Pitt ]
