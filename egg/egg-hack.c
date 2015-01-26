@@ -61,7 +61,6 @@ egg_threads_leave (void)
 
 static guint egg_main_loop_level    = 0;
 static GSList *main_loops               = NULL;
-static gboolean egg_is_initialized  = FALSE;
 
 
 /**
@@ -78,13 +77,6 @@ egg_main (void)
   /* Make sure there is a context */
   EGG_CONTEXT ();
 #endif
-
-  if (!egg_is_initialized)
-    {
-      g_warning ("Called egg_main() but Egg wasn't initialised.  "
-		 "You must call egg_init() first.");
-      return;
-    }
 
   EGG_MARK ();
 
@@ -115,22 +107,6 @@ egg_main (void)
 
   EGG_MARK ();
 }
-
-EggInitError
-egg_init (int    *argc,
-              char ***argv)
-{
-	if (!egg_is_initialized)
-	{
-		/* initialise GLib type system */
-		g_type_init ();
-
-		egg_is_initialized = TRUE;
-	}
-
-	return EGG_INIT_SUCCESS;
-}
-
 
 /* -------------------------------------------------------------------------- */
 

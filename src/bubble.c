@@ -1802,7 +1802,7 @@ redraw_handler (Bubble* bubble)
 	{
 		if (priv->distance < 1.0f && !priv->prevent_fade)
 		{
-			gtk_window_set_opacity (window,
+			gtk_widget_set_opacity (priv->widget,
 			                        WINDOW_MIN_OPACITY +
 			                        priv->distance *
 			                        (WINDOW_MAX_OPACITY -
@@ -1810,7 +1810,7 @@ redraw_handler (Bubble* bubble)
 			bubble_refresh (bubble);
 		}
 		else
-			gtk_window_set_opacity (window, WINDOW_MAX_OPACITY);
+			gtk_widget_set_opacity (priv->widget, WINDOW_MAX_OPACITY);
 	}
 
 	return TRUE;
@@ -1905,10 +1905,19 @@ pointer_update (Bubble* bubble)
 
 	if (gtk_widget_get_realized (window))
 	{
-		gint distance_x = 0;
-		gint distance_y = 0;
+		GdkDeviceManager *device_manager;
+		GdkDevice        *device;
+		gint              distance_x;
+		gint              distance_y;
 
-		gtk_widget_get_pointer (window, &pointer_rel_x, &pointer_rel_y);
+		device_manager = gdk_display_get_device_manager (gtk_widget_get_display (window));
+		device = gdk_device_manager_get_client_pointer (device_manager);
+		gdk_window_get_device_position (gtk_widget_get_window (window),
+		                                device,
+		                                &pointer_rel_x,
+		                                &pointer_rel_y,
+		                                NULL);
+
 		gtk_window_get_position (GTK_WINDOW (window), &win_x, &win_y);
 		pointer_abs_x = win_x + pointer_rel_x;
 		pointer_abs_y = win_y + pointer_rel_y;
@@ -2259,7 +2268,7 @@ bubble_new (Defaults* defaults)
 	gtk_window_set_resizable (GTK_WINDOW (window), FALSE);
 	gtk_window_set_focus_on_map (GTK_WINDOW (window), FALSE);
 	gtk_window_set_accept_focus (GTK_WINDOW (window), FALSE);
-	gtk_window_set_opacity (GTK_WINDOW (window), 0.0f);
+	gtk_widget_set_opacity (window, 0.0f);
 
 	// TODO: fold some of that back into bubble_init
 	this->priv = GET_PRIVATE (this);
@@ -2891,10 +2900,10 @@ fade_cb (EggTimeline *timeline,
 		* WINDOW_MAX_OPACITY;
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_window_set_opacity (bubble_get_window (bubble),
+		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
 		                        WINDOW_MIN_OPACITY);
 	else
-		gtk_window_set_opacity (bubble_get_window (bubble), opacity);
+		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget, opacity);
 }
 
 static void
@@ -2936,10 +2945,10 @@ fade_in_completed_cb (EggTimeline* timeline,
 	}
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_window_set_opacity (bubble_get_window (bubble),
+		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
 		                        WINDOW_MIN_OPACITY);
 	else
-		gtk_window_set_opacity (bubble_get_window (bubble),
+		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
 		                        WINDOW_MAX_OPACITY);
 
 	bubble_start_timer (bubble, TRUE);
@@ -2990,7 +2999,7 @@ bubble_fade_in (Bubble* self,
 
 	egg_timeline_start (timeline);
 
-	gtk_window_set_opacity (bubble_get_window (self), 0.0f);
+	gtk_widget_set_opacity (GET_PRIVATE (self)->widget, 0.0f);
 
 	bubble_show (self);
 }

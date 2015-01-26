@@ -176,7 +176,8 @@ fallback_dialog_show (Defaults*    d,
 
 	dialog = gtk_dialog_new ();
 
-	hbox = g_object_new (GTK_TYPE_HBOX,
+	hbox = g_object_new (GTK_TYPE_BOX,
+	                     "orientation", GTK_ORIENTATION_HORIZONTAL,
 			     "spacing", gap,
 			     "border-width", 12,
 			     NULL);
@@ -190,7 +191,8 @@ fallback_dialog_show (Defaults*    d,
 	gtk_misc_set_alignment (GTK_MISC (image), 0.5, 0.0);
 	gtk_box_pack_start (GTK_BOX (hbox), image, FALSE, FALSE, 0);
 
-	vbox = g_object_new (GTK_TYPE_VBOX,
+	vbox = g_object_new (GTK_TYPE_BOX,
+	                     "orientation", GTK_ORIENTATION_VERTICAL,
 			     NULL);
 
 	title = gtk_label_new (NULL);

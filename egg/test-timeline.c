@@ -72,8 +72,6 @@ main (int argc, char **argv)
   gchar **markers;
   gsize n_markers;
 
-  egg_init (&argc, &argv);
-
   timeline_1 = egg_timeline_new (10, 120);
   egg_timeline_add_marker_at_frame (timeline_1, "foo", 5);
   egg_timeline_add_marker_at_frame (timeline_1, "bar", 5);
