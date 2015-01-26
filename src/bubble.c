@@ -51,11 +51,6 @@
 #include "raico-blur.h"
 #include "tile.h"
 
-G_DEFINE_TYPE (Bubble, bubble, G_TYPE_OBJECT);
-
-#define GET_PRIVATE(o) \
-  (G_TYPE_INSTANCE_GET_PRIVATE ((o), BUBBLE_TYPE, BubblePrivate))
-
 struct _BubblePrivate {
 	BubbleLayout     layout;
 	GtkWidget*       widget;
@@ -101,6 +96,8 @@ struct _BubblePrivate {
 	// update or replace-cases, needs to move into class Notification
 	GString*         old_icon_filename;
 };
+
+G_DEFINE_TYPE_WITH_PRIVATE (Bubble, bubble, G_TYPE_OBJECT);
 
 enum
 {
@@ -498,7 +495,7 @@ _draw_shadow (cairo_t* cr,
 static gdouble
 get_shadow_size (Bubble *bubble)
 {
-	BubblePrivate* priv = GET_PRIVATE (bubble);
+	BubblePrivate* priv = bubble->priv;
 	Defaults*      d    = bubble->defaults;
 	return defaults_get_bubble_shadow_size (d, priv->composited);
 }
@@ -506,7 +503,7 @@ get_shadow_size (Bubble *bubble)
 static gdouble
 get_corner_radius (Bubble *bubble)
 {
-	BubblePrivate* priv = GET_PRIVATE (bubble);
+	BubblePrivate* priv = bubble->priv;
 	Defaults*      d    = bubble->defaults;
 	return defaults_get_bubble_corner_radius (d, priv->composited);
 }
@@ -638,7 +635,7 @@ _draw_layout_grid (cairo_t* cr,
 void
 _refresh_background (Bubble* self)
 {
-	BubblePrivate*   priv       = GET_PRIVATE (self);
+	BubblePrivate*   priv       = self->priv;
 	Defaults*        d          = self->defaults;
 	cairo_t*         cr         = NULL;
 	cairo_surface_t* scratch    = NULL;
@@ -939,7 +936,7 @@ _refresh_background (Bubble* self)
 void
 _refresh_icon (Bubble* self)
 {
-	BubblePrivate*   priv   = GET_PRIVATE (self);
+	BubblePrivate*   priv   = self->priv;
 	Defaults*        d      = self->defaults;
 	cairo_surface_t* normal = NULL;
 	cairo_t*         cr     = NULL;
@@ -991,7 +988,7 @@ _refresh_icon (Bubble* self)
 void
 _refresh_title (Bubble* self)
 {
-	BubblePrivate*        priv           = GET_PRIVATE (self);
+	BubblePrivate*        priv           = self->priv;
 	Defaults*             d              = self->defaults;
 	cairo_surface_t*      normal         = NULL;
 	cairo_t*              cr             = NULL;
@@ -1099,7 +1096,7 @@ _refresh_title (Bubble* self)
 void
 _refresh_body (Bubble* self)
 {
-	BubblePrivate*        priv           = GET_PRIVATE (self);
+	BubblePrivate*        priv           = self->priv;
 	Defaults*             d              = self->defaults;
 	cairo_surface_t*      normal         = NULL;
 	cairo_t*              cr             = NULL;
@@ -1209,7 +1206,7 @@ _refresh_body (Bubble* self)
 void
 _refresh_indicator (Bubble* self)
 {
-	BubblePrivate*   priv   = GET_PRIVATE (self);
+	BubblePrivate*   priv   = self->priv;
 	Defaults*        d      = self->defaults;
 	cairo_surface_t* normal = NULL;
 	cairo_t*         cr     = NULL;
@@ -1362,7 +1359,7 @@ _render_icon (Bubble*  self,
 	      gdouble  alpha_normal,
 	      gdouble  alpha_blur)
 {
-	BubblePrivate*   priv = GET_PRIVATE (self);
+	BubblePrivate*   priv = self->priv;
 	cairo_pattern_t* pattern;
 
 	tile_paint (priv->tile_icon,
@@ -1432,7 +1429,7 @@ _render_indicator (Bubble*  self,
 		   gdouble  alpha_normal,
 		   gdouble  alpha_blur)
 {
-	BubblePrivate*   priv = GET_PRIVATE (self);
+	BubblePrivate*   priv = self->priv;
 	cairo_pattern_t* pattern;
 
 	tile_paint (priv->tile_indicator,
@@ -1533,7 +1530,7 @@ _render_layout (Bubble*  self,
 			_render_body (self,
 				      cr,
 				      shadow + 2 * margin + 2 * icon_half - BUBBLE_CONTENT_BLUR_RADIUS,
-				      shadow + margin + GET_PRIVATE (self)->title_height - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + margin + self->priv->title_height - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 		break;
@@ -1548,7 +1545,7 @@ _render_layout (Bubble*  self,
 			_render_body (self,
 				      cr,
 				      shadow + margin - BUBBLE_CONTENT_BLUR_RADIUS,
-				      shadow + margin + GET_PRIVATE (self)->title_height - BUBBLE_CONTENT_BLUR_RADIUS,
+				      shadow + margin + self->priv->title_height - BUBBLE_CONTENT_BLUR_RADIUS,
 				      alpha_normal,
 				      alpha_blur);
 		break;
@@ -1668,7 +1665,7 @@ update_shape (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// do we actually need a shape-mask at all?
 	if (priv->composited)
@@ -1710,33 +1707,30 @@ static void
 composited_changed_handler (GtkWidget* window,
 			    gpointer   data)
 {
-	Bubble* bubble;
+	Bubble*        bubble;
+	BubblePrivate* priv;
 
-	bubble = (Bubble*) G_OBJECT (data);
+	bubble = BUBBLE (data);
+	priv = bubble->priv;
 
-	GET_PRIVATE (bubble)->composited = gdk_screen_is_composited (
-						gtk_widget_get_screen (window));
+	priv->composited = gdk_screen_is_composited (gtk_widget_get_screen (window));
 
 	update_shape (bubble);
 }
 
-static
-gboolean
-expose_handler (GtkWidget*      window,
-		GdkEventExpose* event,
-		gpointer        data)
+static gboolean
+bubble_draw (GtkWidget* widget,
+             cairo_t*   cr,
+             gpointer   data)
 {
 	Bubble*        bubble;
-	cairo_t*       cr;
 	Defaults*      d;
 	BubblePrivate* priv;
 
 	bubble = (Bubble*) G_OBJECT (data);
 
 	d    = bubble->defaults;
-	priv = GET_PRIVATE (bubble);
-
-	cr = gdk_cairo_create (gtk_widget_get_window (window));
+	priv = bubble->priv;
 
         // clear bubble-background
 	cairo_scale (cr, 1.0f, 1.0f);
@@ -1767,9 +1761,7 @@ expose_handler (GtkWidget*      window,
 		                1.0f - priv->distance);
 	}
 
-	cairo_destroy (cr);
-
-	_set_bg_blur (window,
+	_set_bg_blur (widget,
 		      TRUE,
 		      EM2PIXELS (get_shadow_size (bubble), d));
 
@@ -1788,7 +1780,7 @@ redraw_handler (Bubble* bubble)
 	if (!bubble_is_visible (bubble))
 		return FALSE;
 
-	priv = GET_PRIVATE (bubble);
+	priv = bubble->priv;
 
 	if (!priv->composited)
 		return TRUE;
@@ -1897,7 +1889,7 @@ pointer_update (Bubble* bubble)
 	if (!bubble_is_visible (bubble))
 		return FALSE;
 
-	priv   = GET_PRIVATE (bubble);
+	priv   = bubble->priv;
 	window = priv->widget;
 
 	if (!GTK_IS_WINDOW (window))
@@ -1976,12 +1968,14 @@ pointer_update (Bubble* bubble)
 static void
 bubble_dispose (GObject* gobject)
 {
+	Bubble*        bubble;
 	BubblePrivate* priv;
 
 	if (!gobject || !IS_BUBBLE (gobject))
 		return;
 
-	priv = GET_PRIVATE (gobject);
+	bubble = BUBBLE (gobject);
+	priv = bubble->priv;
 
 	if (GTK_IS_WIDGET (priv->widget))
 	{
@@ -2113,7 +2107,7 @@ bubble_init (Bubble* self)
 
 	BubblePrivate *priv;
 
-	self->priv = priv                = GET_PRIVATE (self);
+	self->priv = priv                = bubble_get_instance_private (self);
 	priv->layout                     = LAYOUT_NONE;
 	priv->title                      = NULL;
 	priv->message_body               = NULL;
@@ -2146,8 +2140,6 @@ static void
 bubble_class_init (BubbleClass* klass)
 {
 	GObjectClass* gobject_class = G_OBJECT_CLASS (klass);
-
-	g_type_class_add_private (klass, sizeof (BubblePrivate));
 
 	gobject_class->dispose      = bubble_dispose;
 	gobject_class->finalize     = bubble_finalize;
@@ -2216,7 +2208,7 @@ bubble_new (Defaults* defaults)
 		return NULL;
 
 	this->defaults = defaults;
-	priv = GET_PRIVATE (this);
+	priv = this->priv;
 
 	priv->widget = bubble_window_new();
 	window = priv->widget;
@@ -2255,10 +2247,10 @@ bubble_new (Defaults* defaults)
 									&transparent);
 
 	// hook up window-event handlers to window
-	g_signal_connect (G_OBJECT (window),
-			  "draw",
-			  G_CALLBACK (expose_handler),
-			  this);
+	g_signal_connect (window,
+	                  "draw",
+	                  G_CALLBACK (bubble_draw),
+	                  this);
 
 	// "clear" input-mask, set title/icon/attributes
 	gtk_widget_set_app_paintable (window, TRUE);
@@ -2271,7 +2263,7 @@ bubble_new (Defaults* defaults)
 	gtk_widget_set_opacity (window, 0.0f);
 
 	// TODO: fold some of that back into bubble_init
-	this->priv = GET_PRIVATE (this);
+	this->priv = this->priv;
 	this->priv->layout                     = LAYOUT_NONE;
 	this->priv->widget                     = window;
 	this->priv->title                      = g_string_new ("");
@@ -2313,7 +2305,7 @@ bubble_get_synchronous (Bubble* self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
-	return GET_PRIVATE (self)->synchronous;
+	return self->priv->synchronous;
 }
 
 gchar*
@@ -2321,7 +2313,7 @@ bubble_get_sender (Bubble* self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
-	return GET_PRIVATE (self)->sender;
+	return self->priv->sender;
 }
 
 void
@@ -2334,7 +2326,7 @@ bubble_set_title (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// convert any newline to space
 	text = newline_to_space (title);
@@ -2350,7 +2342,7 @@ bubble_set_title (Bubble*      self,
 	priv->title = g_string_new (text);
 
 	g_object_notify (
-		G_OBJECT (gtk_widget_get_accessible (GET_PRIVATE(self)->widget)), 
+		G_OBJECT (gtk_widget_get_accessible (self->priv->widget)), 
 		"accessible-name");
 
 	g_free (text);
@@ -2362,7 +2354,7 @@ bubble_get_title (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return NULL;
 
-	return GET_PRIVATE (self)->title->str;
+	return self->priv->title->str;
 }
 
 void
@@ -2375,7 +2367,7 @@ bubble_set_message_body (Bubble*      self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// filter out any HTML/markup if possible
 	text = filter_text (body);
@@ -2408,7 +2400,7 @@ bubble_get_message_body (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return NULL;
 
-	return GET_PRIVATE (self)->message_body->str;
+	return self->priv->message_body->str;
 }
 
 void
@@ -2421,7 +2413,7 @@ bubble_set_icon_from_path (Bubble*      self,
 	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filepath, ""))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// check if an app tries to set the same file as icon again, this check
 	// avoids superfluous regeneration of the tile/blur-cache for the icon,
@@ -2458,7 +2450,7 @@ bubble_set_icon (Bubble*      self,
  	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	//basename = g_path_get_basename (filename);
 
@@ -2565,7 +2557,7 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
  	if (!self || !IS_BUBBLE (self) || !pixbuf)
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// "reset" the stored the icon-filename, fixes LP: #451086
 	g_string_assign (priv->old_icon_filename, "\0");
@@ -2599,7 +2591,7 @@ bubble_get_icon_pixbuf (Bubble *self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), NULL);
 
-	return GET_PRIVATE (self)->icon_pixbuf;
+	return self->priv->icon_pixbuf;
 }
 
 void
@@ -2611,7 +2603,7 @@ bubble_set_value (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// only really cause a refresh (blur, recreating tile-/blur-cache) if
 	// a different value has been set, this helps improve performance when
@@ -2633,7 +2625,7 @@ bubble_get_value (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return -2;
 
-	return GET_PRIVATE (self)->value;
+	return self->priv->value;
 }
 
 void
@@ -2644,7 +2636,7 @@ bubble_set_size (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	gtk_widget_set_size_request (GET_PRIVATE(self)->widget, width, height);
+	gtk_widget_set_size_request (self->priv->widget, width, height);
 }
 
 void
@@ -2655,7 +2647,7 @@ bubble_get_size (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	gtk_widget_get_size_request (GET_PRIVATE(self)->widget, width, height);
+	gtk_widget_get_size_request (self->priv->widget, width, height);
 }
 
 void
@@ -2665,7 +2657,7 @@ bubble_set_timeout (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->timeout = timeout;
+	self->priv->timeout = timeout;
 }
 
 /* a timeout of 0 doesn't make much sense now does it, thus 0 indicates an
@@ -2676,7 +2668,7 @@ bubble_get_timeout (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	return GET_PRIVATE(self)->timeout;
+	return self->priv->timeout;
 }
 
 void
@@ -2686,7 +2678,7 @@ bubble_set_timer_id (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE(self)->timer_id = timer_id;
+	self->priv->timer_id = timer_id;
 }
 
 /* a valid GLib timer-id is always > 0, thus 0 indicates an error */
@@ -2696,7 +2688,7 @@ bubble_get_timer_id (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	return GET_PRIVATE(self)->timer_id;
+	return self->priv->timer_id;
 }
 
 void
@@ -2708,7 +2700,7 @@ bubble_set_mouse_over (Bubble*  self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	/* did anything change? */
 	if (priv->mouse_over != flag)
@@ -2737,7 +2729,7 @@ bubble_is_mouse_over (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	if (priv->prevent_fade)
 		return FALSE;
@@ -2753,7 +2745,7 @@ bubble_move (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	gtk_window_move (GTK_WINDOW (GET_PRIVATE (self)->widget), x, y);
+	gtk_window_move (GTK_WINDOW (self->priv->widget), x, y);
 }
 
 static void
@@ -2764,7 +2756,7 @@ glow_completed_cb (EggTimeline *timeline,
 
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	priv = GET_PRIVATE (bubble);
+	priv = bubble->priv;
 
 	/* get rid of the alpha, so that the mouse-over algorithm notices */
 	if (priv->alpha)
@@ -2799,7 +2791,7 @@ bubble_start_glow_effect (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	timeline = egg_timeline_new_for_duration (msecs);
 	egg_timeline_set_speed (timeline, FPS);
@@ -2836,7 +2828,7 @@ bubble_show (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	priv->visible = TRUE;
 	gtk_widget_show_all (priv->widget);
@@ -2869,7 +2861,7 @@ bubble_refresh (Bubble* self)
 		return;
 
 	/* force a redraw */
-	gtk_widget_queue_draw (GET_PRIVATE (self)->widget);
+	gtk_widget_queue_draw (self->priv->widget);
 }
 
 static inline gboolean
@@ -2877,13 +2869,13 @@ bubble_is_composited (Bubble *bubble)
 {
 	/* no g_return_if_fail(), the caller should have already
 	   checked that */
-	return gtk_widget_is_composited (GET_PRIVATE (bubble)->widget);
+	return gtk_widget_is_composited (bubble->priv->widget);
 }
 
 static inline GtkWindow*
 bubble_get_window (Bubble *bubble)
 {
-	return GTK_WINDOW (GET_PRIVATE (bubble)->widget);
+	return GTK_WINDOW (bubble->priv->widget);
 }
 
 static void
@@ -2895,15 +2887,15 @@ fade_cb (EggTimeline *timeline,
 
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	opacity = (float)egg_alpha_get_alpha (GET_PRIVATE (bubble)->alpha)
+	opacity = (float)egg_alpha_get_alpha (bubble->priv->alpha)
 		/ (float)EGG_ALPHA_MAX_ALPHA
 		* WINDOW_MAX_OPACITY;
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
+		gtk_widget_set_opacity (bubble->priv->widget,
 		                        WINDOW_MIN_OPACITY);
 	else
-		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget, opacity);
+		gtk_widget_set_opacity (bubble->priv->widget, opacity);
 }
 
 static void
@@ -2929,7 +2921,7 @@ fade_in_completed_cb (EggTimeline* timeline,
 
 	g_return_if_fail (IS_BUBBLE (bubble));
 
-	priv = GET_PRIVATE (bubble);
+	priv = bubble->priv;
 
 	/* get rid of the alpha, so that the mouse-over algorithm notices */
 	if (priv->alpha)
@@ -2945,10 +2937,10 @@ fade_in_completed_cb (EggTimeline* timeline,
 	}
 
 	if (bubble_is_mouse_over (bubble))
-		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
+		gtk_widget_set_opacity (bubble->priv->widget,
 		                        WINDOW_MIN_OPACITY);
 	else
-		gtk_widget_set_opacity (GET_PRIVATE (bubble)->widget,
+		gtk_widget_set_opacity (bubble->priv->widget,
 		                        WINDOW_MAX_OPACITY);
 
 	bubble_start_timer (bubble, TRUE);
@@ -2963,7 +2955,7 @@ bubble_fade_in (Bubble* self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	if (!bubble_is_composited (self)
 	    || msecs == 0)
@@ -2999,7 +2991,7 @@ bubble_fade_in (Bubble* self,
 
 	egg_timeline_start (timeline);
 
-	gtk_widget_set_opacity (GET_PRIVATE (self)->widget, 0.0f);
+	gtk_widget_set_opacity (self->priv->widget, 0.0f);
 
 	bubble_show (self);
 }
@@ -3013,7 +3005,7 @@ bubble_fade_out (Bubble* self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	timeline = egg_timeline_new_for_duration (msecs);
 	egg_timeline_set_speed (timeline, FPS);
@@ -3052,7 +3044,7 @@ bubble_timed_out (Bubble* self)
 	 * g_source_remove() on it later. */
 	bubble_set_timer_id (self, 0);
 
-	if (GET_PRIVATE (self)->composited)
+	if (self->priv->composited)
 	{
 		bubble_fade_out (self, 300);
 		return FALSE;
@@ -3077,7 +3069,7 @@ bubble_hide (Bubble* self)
 	if (!self || !IS_BUBBLE (self) || !bubble_is_visible (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	priv->visible = FALSE;
 	gtk_widget_hide (priv->widget);
@@ -3105,7 +3097,7 @@ bubble_set_id (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->id = id;
+	self->priv->id = id;
 }
 
 guint
@@ -3114,7 +3106,7 @@ bubble_get_id (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	return GET_PRIVATE (self)->id;
+	return self->priv->id;
 }
 
 gboolean
@@ -3123,7 +3115,7 @@ bubble_is_visible (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return GET_PRIVATE (self)->visible;
+	return self->priv->visible;
 }
 
 void
@@ -3136,7 +3128,7 @@ bubble_start_timer (Bubble*  self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	timer_id = bubble_get_timer_id (self);
 	if (timer_id > 0)
@@ -3167,7 +3159,7 @@ bubble_clear_timer (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return;
     
-	timer_id = GET_PRIVATE(self)->timer_id;
+	timer_id = self->priv->timer_id;
 
 	if (timer_id > 0) {
 		g_source_remove (timer_id);
@@ -3183,7 +3175,7 @@ bubble_get_position (Bubble* self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	gtk_window_get_position (GTK_WINDOW (GET_PRIVATE (self)->widget),
+	gtk_window_get_position (GTK_WINDOW (self->priv->widget),
 				 x, y);
 }
 
@@ -3196,7 +3188,7 @@ bubble_get_height (Bubble *self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	gtk_window_get_size (GTK_WINDOW (GET_PRIVATE (self)->widget),
+	gtk_window_get_size (GTK_WINDOW (self->priv->widget),
 			     &width,
 			     &height);
 
@@ -3209,7 +3201,7 @@ bubble_get_future_height (Bubble *self)
 	if (!self || !IS_BUBBLE (self))
 		return 0;
 
-	return GET_PRIVATE (self)->future_height;
+	return self->priv->future_height;
 }
 
 gint
@@ -3230,7 +3222,7 @@ _calc_title_height (Bubble* self,
 		return 0;
 
 	d    = self->defaults;
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
@@ -3306,7 +3298,7 @@ _calc_body_height (Bubble* self,
 		return 0;
 
 	d    = self->defaults;
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	cr = gdk_cairo_create (gtk_widget_get_window (priv->widget));
 	if (cairo_status (cr) != CAIRO_STATUS_SUCCESS) {
@@ -3413,7 +3405,7 @@ bubble_recalc_size (Bubble *self)
 		return;
 
 	d    = self->defaults;
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	/* FIXME: a quick fix to rescale an icon (e.g. user changed font-size or
 	** DPI while a bubble is displayed, thus bubble is re-rendered and the
@@ -3448,7 +3440,7 @@ bubble_recalc_size (Bubble *self)
 
 			priv->title_height = _calc_title_height (
 					self,
-					GET_PRIVATE (self)->title_width);
+					self->priv->title_width);
 
 			new_bubble_height =
 				EM2PIXELS (defaults_get_bubble_min_height (d), d) +
@@ -3467,7 +3459,7 @@ bubble_recalc_size (Bubble *self)
 
 			priv->title_height = _calc_title_height (
 					self,
-					GET_PRIVATE (self)->title_width);
+					self->priv->title_width);
 
 			priv->body_width =
 				EM2PIXELS (defaults_get_bubble_width (d), d) -
@@ -3610,7 +3602,7 @@ bubble_set_synchronous (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	if (priv->synchronous != NULL)
 		g_free (priv->synchronous);
@@ -3626,7 +3618,7 @@ bubble_set_sender (Bubble *self,
 
 	g_return_if_fail (IS_BUBBLE (self));
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	if (priv->sender != NULL)
 		g_free (priv->sender);
@@ -3640,7 +3632,7 @@ bubble_is_synchronous (Bubble *self)
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return (GET_PRIVATE (self)->synchronous != NULL);
+	return (self->priv->synchronous != NULL);
 }
 
 gboolean
@@ -3648,7 +3640,7 @@ bubble_is_urgent (Bubble *self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), FALSE);
 
-	return (GET_PRIVATE (self)->urgency == 2);
+	return (self->priv->urgency == 2);
 }
 
 guint
@@ -3656,7 +3648,7 @@ bubble_get_urgency (Bubble *self)
 {
 	g_return_val_if_fail (IS_BUBBLE (self), 0);
 
-	return GET_PRIVATE (self)->urgency;
+	return self->priv->urgency;
 }
 
 void
@@ -3665,7 +3657,7 @@ bubble_set_urgency (Bubble *self,
 {
 	g_return_if_fail (IS_BUBBLE (self));
 
-	GET_PRIVATE (self)->urgency = urgency;
+	self->priv->urgency = urgency;
 }
 
 void
@@ -3677,7 +3669,7 @@ bubble_determine_layout (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	/* set a sane default */
 	priv->layout = LAYOUT_NONE;
@@ -3748,7 +3740,7 @@ bubble_get_layout (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return LAYOUT_NONE;
 
-	return GET_PRIVATE (self)->layout;
+	return self->priv->layout;
 }
 
 void
@@ -3758,7 +3750,7 @@ bubble_set_icon_only (Bubble*  self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->icon_only = allowed;
+	self->priv->icon_only = allowed;
 }
 
 void
@@ -3768,7 +3760,7 @@ bubble_set_append (Bubble*  self,
 	if (!self || !IS_BUBBLE (self))
 		return;
 
-	GET_PRIVATE (self)->append = allowed;
+	self->priv->append = allowed;
 }
 
 
@@ -3778,7 +3770,7 @@ bubble_is_append_allowed (Bubble* self)
 	if (!self || !IS_BUBBLE (self))
 		return FALSE;
 
-	return GET_PRIVATE (self)->append;
+	return self->priv->append;
 }
 
 void
@@ -3793,7 +3785,7 @@ bubble_append_message_body (Bubble*      self,
 	if (!self || !IS_BUBBLE (self) || !append_body)
 		return;
 
-	priv = GET_PRIVATE (self);
+	priv = self->priv;
 
 	// filter out any HTML/markup if possible
     	result = pango_parse_markup (append_body,
