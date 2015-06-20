@@ -1,0 +1,5 @@
+#!/bin/sh
+if ! xvfb-run --server-args="-screen 0 800x600x8" make check; then
+   cat tests/test-suite.log >&2
+   exit 1
+fi

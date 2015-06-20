@@ -1,0 +1,37 @@
+Source: notify-osd
+Section: x11
+Priority: optional
+Maintainer: DX Team <dx-team@lists.ubuntu.com>
+Build-Depends: debhelper (>= 9),
+               dh-autoreconf,
+               gnome-common,
+               intltool,
+               libdbus-1-dev (>= 0.36),
+               libdbus-glib-1-dev (>= 0.60),
+               libglib2.0-dev (>= 2.36),
+               libgtk-3-dev (>= 3.8.0),
+               libnotify-dev (>= 0.6.1),
+               libwnck-3-dev,
+XS-Testsuite: autopkgtest
+Standards-Version: 3.9.2
+Homepage: https://launchpad.net/notify-osd
+# If you aren't a member of ~indicator-applet-developers but need to upload 
+# packaging changes, just go ahead. ~indicator-applet-developers will notice
+# and sync up the code again.
+Vcs-Bzr: https://code.launchpad.net/~indicator-applet-developers/notify-osd/trunk
+Vcs-Browser: https://bazaar.launchpad.net/~indicator-applet-developers/notify-osd/trunk/files
+
+Package: notify-osd
+Architecture: any
+Depends: gsettings-desktop-schemas,
+         ${misc:Depends},
+         ${shlibs:Depends},
+Recommends: notify-osd-icons,
+Provides: notification-daemon,
+Replaces: notification-daemon,
+Description: daemon that displays passive pop-up notifications
+ The Desktop Notifications framework provides a standard way of doing
+ passive pop-up notifications on the Linux desktop.  These are
+ designed to notify the user of something without interrupting their
+ work with a dialog box that they must close.  Passive popups can
+ automatically disappear after a short period of time.
