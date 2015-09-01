@@ -639,7 +639,6 @@ _refresh_background (Bubble* self)
 	Defaults*        d          = self->defaults;
 	cairo_t*         cr         = NULL;
 	cairo_surface_t* scratch    = NULL;
-	cairo_surface_t* dummy      = NULL;
 	cairo_surface_t* clone      = NULL;
 	cairo_surface_t* normal     = NULL;
 	cairo_surface_t* blurred    = NULL;
@@ -757,24 +756,10 @@ _refresh_background (Bubble* self)
 	cairo_destroy (cr);
 
 	// create temp. clone of scratch surface
-	dummy = cairo_image_surface_create_for_data (
-			cairo_image_surface_get_data (scratch),
-			cairo_image_surface_get_format (scratch),
-			3 * scratch_shadow_size,
-			3 * scratch_shadow_size,
-			cairo_image_surface_get_stride (scratch));
-	clone = copy_surface (dummy);
-	cairo_surface_destroy (dummy);
+	clone = copy_surface (scratch);
 
 	// create normal surface from that surface-clone
-	dummy = cairo_image_surface_create_for_data (
-			cairo_image_surface_get_data (clone),
-			cairo_image_surface_get_format (clone),
-			2 * scratch_shadow_size,
-			2 * scratch_shadow_size,
-			cairo_image_surface_get_stride (clone));
-	normal = copy_surface (dummy);
-	cairo_surface_destroy (dummy);
+	normal = copy_surface (clone);
 
 	// now blur the surface-clone
 	blur = raico_blur_create (RAICO_BLUR_QUALITY_LOW);
@@ -783,14 +768,7 @@ _refresh_background (Bubble* self)
 	raico_blur_destroy (blur);
 
 	// create blurred version from that blurred surface-clone 
-	dummy = cairo_image_surface_create_for_data (
-			cairo_image_surface_get_data (clone),
-			cairo_image_surface_get_format (clone),
-			2 * scratch_shadow_size,
-			2 * scratch_shadow_size,
-			cairo_image_surface_get_stride (clone));
-	blurred = copy_surface (dummy);
-	cairo_surface_destroy (dummy);
+	blurred = copy_surface (clone);
 	cairo_surface_destroy (clone);
 
 	// finally create tile with top-left shadow/background part
