@@ -120,8 +120,8 @@ tile_destroy (tile_t* tile)
 	//cairo_surface_write_to_png (tile->priv->normal, "./tile-normal.png");
 	//cairo_surface_write_to_png (tile->priv->blurred, "./tile-blurred.png");
 
-	destroy_cloned_surface (tile->priv->normal);
-	destroy_cloned_surface (tile->priv->blurred);
+	cairo_surface_destroy (tile->priv->normal);
+	cairo_surface_destroy (tile->priv->blurred);
 
 	g_free ((gpointer) tile->priv);
 	g_free ((gpointer) tile);

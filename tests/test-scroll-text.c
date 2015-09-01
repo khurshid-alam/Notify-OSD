@@ -827,9 +827,9 @@ setup_tile (gint w, gint h)
 
 	// actually create the tile with padding in mind
 	tile = tile_new_for_padding (norm_surf, blur_surf);
-	destroy_cloned_surface (norm_surf);
-	destroy_cloned_surface (blur_surf);
-	destroy_cloned_surface (dummy_surf);
+	cairo_surface_destroy (norm_surf);
+	cairo_surface_destroy (blur_surf);
+	cairo_surface_destroy (dummy_surf);
 
 	cairo_destroy (cr);
 	cairo_surface_destroy (cr_surf);

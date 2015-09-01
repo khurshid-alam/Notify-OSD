@@ -46,9 +46,6 @@ newline_to_space (const gchar* text);
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig);
 
-gboolean
-destroy_cloned_surface (cairo_surface_t* surface);
-
 gchar*
 get_wm_name (Display* dpy);
 
