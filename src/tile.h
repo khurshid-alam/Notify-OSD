@@ -44,7 +44,9 @@ tile_new (cairo_surface_t* source,
 
 tile_t*
 tile_new_for_padding (cairo_surface_t* normal,
-		      cairo_surface_t* blurred);
+		      cairo_surface_t* blurred,
+		      gint             width,
+		      gint             height);
 
 void
 tile_destroy (tile_t* tile);

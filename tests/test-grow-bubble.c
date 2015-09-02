@@ -651,7 +651,7 @@ setup_tile (gint w, gint h)
 	cairo_surface_destroy (tmp);
 	cairo_surface_destroy (dummy_surf);
 
-	g_tile = tile_new_for_padding (norm_surf, blur_surf);
+	g_tile = tile_new_for_padding (norm_surf, blur_surf, width, height);
 	cairo_surface_destroy (norm_surf);
 	cairo_surface_destroy (blur_surf);
 

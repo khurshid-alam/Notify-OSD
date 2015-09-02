@@ -177,6 +177,23 @@ struct _NotifyHSVColor {
 static guint g_bubble_signals[LAST_SIGNAL] = { 0 };
 gint         g_pointer[2];
 
+static cairo_surface_t *
+bubble_create_image_surface (Bubble*        self,
+			     cairo_format_t format,
+			     gint           width,
+			     gint           height)
+{
+	cairo_surface_t *surface;
+	gint scale;
+
+	scale = gtk_widget_get_scale_factor (self->priv->widget);
+
+	surface = cairo_image_surface_create (format, scale * width, scale * height);
+	cairo_surface_set_device_scale (surface, scale, scale);
+
+	return surface;
+}
+
 static void
 draw_round_rect (cairo_t* cr,
 		 gdouble  aspect,        // aspect-ratio
@@ -372,7 +389,8 @@ _draw_value_indicator (cairo_t* cr,
 }
 
 void
-_draw_shadow (cairo_t* cr,
+_draw_shadow (Bubble*  self,
+	      cairo_t* cr,
 	      gdouble  width,
 	      gdouble  height,
 	      gint     shadow_radius,
@@ -384,10 +402,13 @@ _draw_shadow (cairo_t* cr,
 	cairo_t*         cr_surf         = NULL;
 	cairo_matrix_t   matrix;
 	raico_blur_t*    blur            = NULL;
+	double           x_scale;
+	double           y_scale;
 
-	tmp_surface = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-						  4 * shadow_radius,
-						  4 * shadow_radius);
+	tmp_surface = bubble_create_image_surface (self,
+						   CAIRO_FORMAT_ARGB32,
+						   4 * shadow_radius,
+						   4 * shadow_radius);
 	if (cairo_surface_status (tmp_surface) != CAIRO_STATUS_SUCCESS) {
 		if (tmp_surface)
 			cairo_surface_destroy (tmp_surface);
@@ -433,6 +454,9 @@ _draw_shadow (cairo_t* cr,
 			cairo_image_surface_get_width (tmp_surface) / 2,
 			cairo_image_surface_get_height (tmp_surface) / 2,
 			cairo_image_surface_get_stride (tmp_surface));
+	cairo_surface_get_device_scale (tmp_surface, &x_scale, &y_scale);
+	cairo_surface_set_device_scale (new_surface, x_scale, y_scale);
+
 	pattern = cairo_pattern_create_for_surface (new_surface);
 	if (cairo_pattern_status (pattern) != CAIRO_STATUS_SUCCESS)
 	{
@@ -653,7 +677,8 @@ _refresh_background (Bubble* self)
 	if (priv->composited)
 	{
 		scratch_shadow_size = EM2PIXELS (get_shadow_size (self), d);
-		scratch = cairo_image_surface_create (
+		scratch = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_ARGB32,
 			3 * scratch_shadow_size,
 			3 * scratch_shadow_size);
@@ -662,7 +687,8 @@ _refresh_background (Bubble* self)
 	{
 		// We must have at least some width to this scratch surface.
 		scratch_shadow_size = 1;
-		scratch = cairo_image_surface_create (
+		scratch = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_RGB24,
 			3 * scratch_shadow_size,
 			3 * scratch_shadow_size);
@@ -714,6 +740,7 @@ _refresh_background (Bubble* self)
 	if (priv->composited)
 	{
 		_draw_shadow (
+			self,
 			cr,
 			width,
 			height,
@@ -774,7 +801,9 @@ _refresh_background (Bubble* self)
 	// finally create tile with top-left shadow/background part
 	if (priv->tile_background_part)
 		tile_destroy (priv->tile_background_part);
-	priv->tile_background_part = tile_new_for_padding (normal, blurred);
+	priv->tile_background_part = tile_new_for_padding (normal, blurred,
+							   3 * scratch_shadow_size,
+							   3 * scratch_shadow_size);
 	cairo_surface_destroy (normal);
 	cairo_surface_destroy (blurred);
 
@@ -782,9 +811,10 @@ _refresh_background (Bubble* self)
 	if (priv->composited)
 	{
 		// we need two RGBA-surfaces
-		normal = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-						     width,
-						     height);
+		normal = bubble_create_image_surface (self,
+						      CAIRO_FORMAT_ARGB32,
+						      width,
+						      height);
 		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
 		{
 			cairo_surface_destroy (scratch);
@@ -795,9 +825,10 @@ _refresh_background (Bubble* self)
 			return;
 		}
 
-		blurred = cairo_image_surface_create (CAIRO_FORMAT_ARGB32,
-						      width,
-						      height);
+		blurred = bubble_create_image_surface (self,
+						       CAIRO_FORMAT_ARGB32,
+						       width,
+						       height);
 		if (cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
 		{
 			cairo_surface_destroy (normal);
@@ -812,9 +843,10 @@ _refresh_background (Bubble* self)
 	else
 	{
 		// we need only one RGB-surface
-		normal = cairo_image_surface_create (CAIRO_FORMAT_RGB24,
-						     width,
-						     height);
+		normal = bubble_create_image_surface (self,
+						      CAIRO_FORMAT_RGB24,
+						      width,
+						      height);
 		if (cairo_surface_status (normal) != CAIRO_STATUS_SUCCESS)
 		{
 			cairo_surface_destroy (scratch);
@@ -899,9 +931,9 @@ _refresh_background (Bubble* self)
 	if (priv->tile_background)
 		tile_destroy (priv->tile_background);
 	if (priv->composited)
-		priv->tile_background = tile_new_for_padding (normal, blurred);
+		priv->tile_background = tile_new_for_padding (normal, blurred, width, height);
 	else
-		priv->tile_background = tile_new_for_padding (normal, normal);
+		priv->tile_background = tile_new_for_padding (normal, normal, width, height);
 
 	// clean up
 	if (priv->composited)
@@ -914,16 +946,18 @@ _refresh_background (Bubble* self)
 void
 _refresh_icon (Bubble* self)
 {
-	BubblePrivate*   priv   = self->priv;
-	Defaults*        d      = self->defaults;
-	cairo_surface_t* normal = NULL;
-	cairo_t*         cr     = NULL;
+	BubblePrivate*   priv         = self->priv;
+	Defaults*        d            = self->defaults;
+	cairo_surface_t* normal       = NULL;
+	cairo_surface_t* icon_surface = NULL;
+	cairo_t*         cr           = NULL;
 
 	if (!priv->icon_pixbuf)
 		return;
 
 	// create temp. scratch surface
-	normal = cairo_image_surface_create (
+	normal = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_ARGB32,
 			EM2PIXELS (defaults_get_icon_size (d), d) +
 			2 * BUBBLE_CONTENT_BLUR_RADIUS,
@@ -947,10 +981,12 @@ _refresh_icon (Bubble* self)
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
 	// render icon into normal surface
-	gdk_cairo_set_source_pixbuf (cr,
-				     priv->icon_pixbuf,
-				     BUBBLE_CONTENT_BLUR_RADIUS,
-				     BUBBLE_CONTENT_BLUR_RADIUS);
+	icon_surface = gdk_cairo_surface_create_from_pixbuf (priv->icon_pixbuf, 0,
+							     gtk_widget_get_window (priv->widget));
+	cairo_set_source_surface (cr,
+				  icon_surface,
+				  BUBBLE_CONTENT_BLUR_RADIUS,
+				  BUBBLE_CONTENT_BLUR_RADIUS);
 	cairo_paint (cr);
 
 	// create the surface/blur-cache from the normal surface
@@ -960,6 +996,7 @@ _refresh_icon (Bubble* self)
 
 	// clean up
 	cairo_destroy (cr);
+	cairo_surface_destroy (icon_surface);
 	cairo_surface_destroy (normal);
 }
 
@@ -976,7 +1013,8 @@ _refresh_title (Bubble* self)
 	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
-	normal = cairo_image_surface_create (
+	normal = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_ARGB32,
 			priv->title_width + 2 * BUBBLE_CONTENT_BLUR_RADIUS,
 			priv->title_height + 2 * BUBBLE_CONTENT_BLUR_RADIUS);
@@ -1084,7 +1122,8 @@ _refresh_body (Bubble* self)
 	gchar*                text_font_face = NULL;
 
 	// create temp. scratch surface
-	normal = cairo_image_surface_create (
+	normal = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_ARGB32,
 			priv->body_width + 2 * BUBBLE_CONTENT_BLUR_RADIUS,
 			priv->body_height + 2 * BUBBLE_CONTENT_BLUR_RADIUS);
@@ -1190,7 +1229,8 @@ _refresh_indicator (Bubble* self)
 	cairo_t*         cr     = NULL;
 
 	// create temp. scratch surface
-	normal = cairo_image_surface_create (
+	normal = bubble_create_image_surface (
+			self,
 			CAIRO_FORMAT_ARGB32,
 			EM2PIXELS (defaults_get_bubble_width (d), d) -
 			3 * EM2PIXELS (defaults_get_margin_size (d), d) -
@@ -1788,13 +1828,15 @@ redraw_handler (Bubble* bubble)
 
 static
 GdkPixbuf*
-load_icon (const gchar* filename,
+load_icon (Bubble*      self,
+	   const gchar* filename,
 	   gint         icon_size)
 {
 	GdkPixbuf*    buffer = NULL;
 	GdkPixbuf*    pixbuf = NULL;
 	GtkIconTheme* theme  = NULL;
 	GError*       error  = NULL;
+	gint          scale;
 
 	/* sanity check */
 	g_return_val_if_fail (filename, NULL);
@@ -1803,25 +1845,28 @@ load_icon (const gchar* filename,
 	if (!strncmp (filename, "file://", 7))
 		filename += 7;
 
+	scale = gtk_widget_get_scale_factor (self->priv->widget);
+
 	if (filename[0] == '/')
 	{
 		/* load image into pixbuf */
 		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-							    icon_size,
-							    icon_size,
+							    scale * icon_size,
+							    scale * icon_size,
 							    TRUE,
 							    NULL);
 	} else {
 		/* TODO: rewrite, check for SVG support, raise apport
 		** notification for low-res icons */
 		theme = gtk_icon_theme_get_default ();
-		buffer = gtk_icon_theme_load_icon (theme,
-						   filename,
-                                                   icon_size,
-						   GTK_ICON_LOOKUP_FORCE_SVG |
-						   GTK_ICON_LOOKUP_GENERIC_FALLBACK |
-						   GTK_ICON_LOOKUP_FORCE_SIZE,
-						   &error);
+		buffer = gtk_icon_theme_load_icon_for_scale (theme,
+							     filename,
+							     icon_size,
+							     scale,
+							     GTK_ICON_LOOKUP_FORCE_SVG |
+							     GTK_ICON_LOOKUP_GENERIC_FALLBACK |
+							     GTK_ICON_LOOKUP_FORCE_SIZE,
+							     &error);
 		if (error)
 		{
 			g_print ("loading icon '%s' caused error: '%s'",
@@ -2409,7 +2454,8 @@ bubble_set_icon_from_path (Bubble*      self,
 	}
 
 	d = self->defaults;
-	priv->icon_pixbuf = load_icon (filepath,
+	priv->icon_pixbuf = load_icon (self,
+				       filepath,
 				       EM2PIXELS (defaults_get_icon_size (d), d));
 
 	_refresh_icon (self);
@@ -2452,7 +2498,8 @@ bubble_set_icon (Bubble*      self,
 #ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
 	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
 					       filename);
-	priv->icon_pixbuf = load_icon (notify_osd_iconname,
+	priv->icon_pixbuf = load_icon (self,
+				       notify_osd_iconname,
 				       EM2PIXELS (defaults_get_icon_size (d),
 						  d));
 	g_free (notify_osd_iconname);
@@ -2460,7 +2507,8 @@ bubble_set_icon (Bubble*      self,
 
 	// fallback to non-notify-osd name
 	if (!priv->icon_pixbuf)
-		priv->icon_pixbuf = load_icon (filename,
+		priv->icon_pixbuf = load_icon (self,
+					       filename,
 					       EM2PIXELS (defaults_get_icon_size (d), d));
 
 	_refresh_icon (self);
@@ -3202,7 +3250,7 @@ _calc_title_height (Bubble* self,
 	d    = self->defaults;
 	priv = self->priv;
 
-	surface = cairo_image_surface_create (CAIRO_FORMAT_A1, 1, 1);
+	surface = bubble_create_image_surface (self, CAIRO_FORMAT_A1, 1, 1);
 	if (cairo_surface_status (surface) != CAIRO_STATUS_SUCCESS) {
 		if (surface)
 			cairo_surface_destroy (surface);
@@ -3396,6 +3444,7 @@ bubble_recalc_size (Bubble *self)
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
         	                        EM2PIXELS (defaults_get_icon_size (d), d),
 					GDK_INTERP_BILINEAR);
+		g_message ("resizing pixbuf to %d", EM2PIXELS (defaults_get_icon_size (d), d) );
 		g_object_unref (priv->icon_pixbuf);
 		priv->icon_pixbuf = pixbuf;
 	}

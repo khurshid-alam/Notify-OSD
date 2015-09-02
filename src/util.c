@@ -147,12 +147,16 @@ copy_surface (cairo_surface_t* orig)
 	gint             width;
 	gint             height;
 	cairo_t*         cr;
+	double           x_scale;
+	double           y_scale;
 
 	width  = cairo_image_surface_get_width (orig);
 	height = cairo_image_surface_get_height (orig);
 	format = cairo_image_surface_get_format (orig);
+	cairo_surface_get_device_scale (orig, &x_scale, &y_scale);
 
 	copy = cairo_surface_create_similar_image (orig, format, width, height);
+	cairo_surface_set_device_scale (copy, x_scale, y_scale);
 
 	cr = cairo_create (copy);
 	cairo_set_source_surface (cr, orig, 0, 0);
