@@ -112,6 +112,9 @@ raico_blur_apply (raico_blur_t*    blur,
 		  cairo_surface_t* surface)
 {
 	cairo_format_t format;
+	double         x_scale;
+	double         y_scale;
+	guint          radius;
 
 	// sanity checks
 	if (!blur)
@@ -151,20 +154,27 @@ raico_blur_apply (raico_blur_t*    blur,
 	if (blur->priv->radius == 0)
 		return;
 
+	/* adjust radius for device scale. We don't support blurring
+	 * different amounts in x and y, so just use the mean value
+	 * between cairo's respective device scales (in practice they
+	 * should always be the same). */
+	cairo_surface_get_device_scale (surface, &x_scale, &y_scale);
+	radius = blur->priv->radius * 0.5 * (x_scale + y_scale);
+
 	// now do the real work
 	switch (blur->priv->quality)
 	{
 		case RAICO_BLUR_QUALITY_LOW:
-			surface_exponential_blur (surface, blur->priv->radius);
+			surface_exponential_blur (surface, radius);
 		break;
 
 		case RAICO_BLUR_QUALITY_MEDIUM:
 			//surface_stack_blur (surface, blur->priv->radius);
-			surface_gaussian_blur (surface, blur->priv->radius);
+			surface_gaussian_blur (surface, radius);
 		break;
 
 		case RAICO_BLUR_QUALITY_HIGH:
-			surface_gaussian_blur (surface, blur->priv->radius);
+			surface_gaussian_blur (surface, radius);
 		break;
 	}
 }

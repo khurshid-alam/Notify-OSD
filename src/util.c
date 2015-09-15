@@ -139,51 +139,30 @@ newline_to_space (const gchar *text)
 	return text1;
 }
 
-gboolean
-destroy_cloned_surface (cairo_surface_t* surface)
-{
-	gboolean finalref = FALSE;
-	g_return_val_if_fail (surface, FALSE);
-
-	if (cairo_surface_get_reference_count  (surface) == 1) {
-		g_free (cairo_image_surface_get_data (surface));
-		finalref = TRUE;
-	}
-	cairo_surface_destroy (surface);
-	return finalref;
-}
-
 cairo_surface_t*
 copy_surface (cairo_surface_t* orig)
 {
 	cairo_surface_t* copy       = NULL;
-	guchar*          pixels_src = NULL;
-	guchar*          pixels_cpy = NULL;
 	cairo_format_t   format;
 	gint             width;
 	gint             height;
-	gint             stride;
+	cairo_t*         cr;
+	double           x_scale;
+	double           y_scale;
 
-	pixels_src = cairo_image_surface_get_data (orig);
-	if (!pixels_src)
-		return NULL;
-
-	format = cairo_image_surface_get_format (orig);
 	width  = cairo_image_surface_get_width (orig);
 	height = cairo_image_surface_get_height (orig);
-	stride = cairo_image_surface_get_stride (orig);
+	format = cairo_image_surface_get_format (orig);
+	cairo_surface_get_device_scale (orig, &x_scale, &y_scale);
 
-	pixels_cpy = g_malloc0 (stride * height);
-	if (!pixels_cpy)
-		return NULL;
+	copy = cairo_surface_create_similar_image (orig, format, width, height);
+	cairo_surface_set_device_scale (copy, x_scale, y_scale);
 
-	memcpy ((void*) pixels_cpy, (void*) pixels_src, height * stride);
+	cr = cairo_create (copy);
+	cairo_set_source_surface (cr, orig, 0, 0);
+	cairo_paint (cr);
 
-	copy = cairo_image_surface_create_for_data (pixels_cpy,
-						    format,
-						    width,
-						    height,
-						    stride);
+	cairo_destroy (cr);
 
 	return copy;
 }

@@ -76,7 +76,9 @@ tile_new (cairo_surface_t* source, guint blur_radius)
 
 tile_t*
 tile_new_for_padding (cairo_surface_t* normal,
-		      cairo_surface_t* blurred)
+		      cairo_surface_t* blurred,
+		      gint             width,
+		      gint             height)
 {
 	tile_private_t* priv = NULL;
 	tile_t*         tile = NULL;
@@ -93,20 +95,14 @@ tile_new_for_padding (cairo_surface_t* normal,
 	    cairo_surface_status (blurred) != CAIRO_STATUS_SUCCESS)
 		return NULL;
 
-	if (cairo_image_surface_get_width (normal) !=
-	    cairo_image_surface_get_width (blurred) &&
-	    cairo_image_surface_get_height (normal) !=
-	    cairo_image_surface_get_height (blurred))
-		return NULL;
-
 	tile->priv = priv;
 
 	tile->priv->normal      = copy_surface (normal);
 	tile->priv->blurred     = copy_surface (blurred);
 	tile->priv->blur_radius = 0;
 	tile->priv->use_padding = TRUE;
-	tile->priv->pad_width   = cairo_image_surface_get_width (normal);
-	tile->priv->pad_height  = cairo_image_surface_get_height (normal);
+	tile->priv->pad_width   = width;
+	tile->priv->pad_height  = height;
 
 	return tile;
 }
@@ -120,8 +116,8 @@ tile_destroy (tile_t* tile)
 	//cairo_surface_write_to_png (tile->priv->normal, "./tile-normal.png");
 	//cairo_surface_write_to_png (tile->priv->blurred, "./tile-blurred.png");
 
-	destroy_cloned_surface (tile->priv->normal);
-	destroy_cloned_surface (tile->priv->blurred);
+	cairo_surface_destroy (tile->priv->normal);
+	cairo_surface_destroy (tile->priv->blurred);
 
 	g_free ((gpointer) tile->priv);
 	g_free ((gpointer) tile);
