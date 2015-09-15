@@ -1,3 +1,10 @@
+notify-osd (0.9.35+15.10.20150915-0ubuntu1) wily; urgency=medium
+
+  [ Lars Uebernickel ]
+  * Render in native resolution on hidpi displays (LP: #1374301)
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Tue, 15 Sep 2015 09:24:19 +0000
+
 notify-osd (0.9.35+15.04.20150126-0ubuntu1) vivid; urgency=low
 
   [ Alberts Muktupāvels ]
