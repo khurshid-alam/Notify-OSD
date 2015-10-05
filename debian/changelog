@@ -1,3 +1,9 @@
+notify-osd (0.9.35+15.10.20151005-0ubuntu1) wily; urgency=medium
+
+  * Remove leftover debug statement and fix identation issue
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Mon, 05 Oct 2015 14:27:28 +0000
+
 notify-osd (0.9.35+15.10.20150915-0ubuntu1) wily; urgency=medium
 
   [ Lars Uebernickel ]
