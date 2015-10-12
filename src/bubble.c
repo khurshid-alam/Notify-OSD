@@ -1643,7 +1643,12 @@ screen_changed_handler (GtkWindow* window,
 						gpointer   data)
 {
 	GdkScreen* screen = gtk_widget_get_screen (GTK_WIDGET (window));
-	GdkVisual* visual = gdk_screen_get_rgba_visual (screen);
+	GdkVisual* visual;
+
+	if (!gdk_screen_is_composited (screen))
+		return;
+
+	visual = gdk_screen_get_rgba_visual (screen);
 
 	if (!visual)
 		visual = gdk_screen_get_system_visual (screen);
