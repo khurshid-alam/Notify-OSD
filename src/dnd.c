@@ -45,6 +45,7 @@
 #include "dbus.h"
 
 static DBusGProxy *gsmgr = NULL;
+static DBusGProxy *gscrsvr = NULL;
 
 gboolean
 dnd_is_xscreensaver_active ()
@@ -98,55 +99,65 @@ dnd_is_xscreensaver_active ()
 }
 
 static DBusGProxy*
-get_screensaver_proxy (void)
+get_gnomesession_proxy (void)
 {
 	if (gsmgr == NULL)
 	{
 		DBusGConnection *connection = dbus_get_connection ();
 		gsmgr = dbus_g_proxy_new_for_name (connection,
+						   "org.gnome.SessionManager",
+						   "/org/gnome/SessionManager",
+						   "org.gnome.SessionManager");
+	}
+
+	return gsmgr;
+}
+
+gboolean
+dnd_is_idle_inhibited ()
+{
+	GError  *error = NULL;
+	gboolean inhibited = FALSE;
+	guint idle = 8; // 8: Inhibit the session being marked as idle
+
+	if (! get_gnomesession_proxy ())
+		return FALSE;
+
+	dbus_g_proxy_call_with_timeout (
+		gsmgr, "IsInhibited", 2000, &error,
+		G_TYPE_UINT, idle,
+		G_TYPE_INVALID,
+		G_TYPE_BOOLEAN, &inhibited,
+		G_TYPE_INVALID);
+
+	if (error)
+	{
+		g_warning ("dnd_is_idle_inhibited(): "
+		           "got error \"%s\"\n",
+		           error->message);
+		g_error_free (error);
+		error = NULL;
+	}
+
+	if (inhibited)
+		g_debug ("Session idleness has been inhibited");
+
+	return inhibited;
+}
+
+static DBusGProxy*
+get_screensaver_proxy (void)
+{
+	if (gscrsvr == NULL)
+	{
+		DBusGConnection *connection = dbus_get_connection ();
+		gscrsvr = dbus_g_proxy_new_for_name (connection,
 						   "org.gnome.ScreenSaver",
 						   "/org/gnome/ScreenSaver",
 						   "org.gnome.ScreenSaver");
 	}
 
-	return gsmgr;
-}	
-
-gboolean
-dnd_is_screensaver_inhibited ()
-{
-	GError  *error = NULL;
-	gboolean inhibited = FALSE;
-	char **list;
-
-	if (! get_screensaver_proxy ())
-		return FALSE;
-
-	if (dbus_g_proxy_call_with_timeout (
-		    gsmgr, "GetInhibitors", 2000, &error,
-		    G_TYPE_INVALID,
-		    G_TYPE_STRV, &list,
-		    G_TYPE_INVALID))
-	{
-		if (error)
-		{
-			g_warning ("dnd_is_screensaver_inhibited(): "
-			           "got error \"%s\"\n",
-			           error->message);
-			g_error_free (error);
-			error = NULL;
-		}
-
-		/* if the list is not empty, the screensaver is inhibited */
-		if (*list)
-		{
-			inhibited = TRUE;
-			g_debug ("Screensaver has been inhibited");
-		}
-		g_strfreev (list);
-	}
-
-	return inhibited;
+	return gscrsvr;
 }
 
 gboolean
@@ -159,7 +170,7 @@ dnd_is_screensaver_active ()
 		return FALSE;
 
 	dbus_g_proxy_call_with_timeout (
-		gsmgr, "GetActive", 2000, &error,
+		gscrsvr, "GetActive", 2000, &error,
 		G_TYPE_INVALID,
 		G_TYPE_BOOLEAN, &active,
 		G_TYPE_INVALID);
@@ -222,7 +233,7 @@ dnd_dont_disturb_user (void)
 	return (dnd_is_online_presence_dnd()
 		|| dnd_is_xscreensaver_active()
 		|| dnd_is_screensaver_active()
-		|| dnd_is_screensaver_inhibited()
+		|| dnd_is_idle_inhibited()
 		|| dnd_has_one_fullscreen_window()
 		);
 }

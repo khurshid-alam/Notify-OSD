@@ -39,7 +39,7 @@ gboolean
 dnd_is_xscreensaver_active (void);
 
 gboolean
-dnd_is_screensaver_inhibited (void);
+dnd_is_idle_inhibited (void);
 
 gboolean
 dnd_is_screensaver_active (void);

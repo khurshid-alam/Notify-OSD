@@ -41,10 +41,10 @@ static
 void
 test_dnd_screensaver (gpointer fixture, gconstpointer user_data)
 {
-	gboolean test = dnd_is_screensaver_inhibited();
+	gboolean test = dnd_is_idle_inhibited();
 
 	if (test)
-		g_debug ("screensaver is inhibited");
+		g_debug ("idleness is inhibited");
 
 	test = dnd_is_screensaver_active();
 
