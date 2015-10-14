@@ -38,21 +38,6 @@
 #define TEST_DBUS_NAME "org.freedesktop.Notificationstest"
 
 static
-void
-test_dnd_screensaver (gpointer fixture, gconstpointer user_data)
-{
-	gboolean test = dnd_is_idle_inhibited();
-
-	if (test)
-		g_debug ("idleness is inhibited");
-
-	test = dnd_is_screensaver_active();
-
-	if (test)
-		g_debug ("screensaver is active");
-}
-
-static
 gboolean
 check_fullscreen (GMainLoop *loop)
 {
@@ -122,7 +107,6 @@ test_dnd_create_test_suite (void)
 
 	ts = g_test_create_suite ("dnd");
 #define TC(x) g_test_create_case(#x, 0, NULL, NULL, x, NULL)
-	g_test_suite_add (ts, TC(test_dnd_screensaver));
 
 	// FIXME: test_dnd_fullscreen() fails under compiz because of it using
 	// viewports instead of workspaces
