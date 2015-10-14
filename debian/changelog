@@ -11,6 +11,13 @@ notify-osd (0.9.35+15.10.20150915-0ubuntu1) wily; urgency=medium
 
  -- Sebastien Bacher <seb128@ubuntu.com>  Tue, 15 Sep 2015 09:24:19 +0000
 
+notify-osd (0.9.35+15.04.20150126-0ubuntu2) UNRELEASED; urgency=medium
+
+  * dnd_is_screensaver_inhibited no longer works due to obsoleted dbus
+    method. replace it by an equivalent dbus call, LP: #1440825
+
+ -- Nobuto Murata <nobuto@ubuntu.com>  Tue, 07 Apr 2015 17:47:18 +0900
+
 notify-osd (0.9.35+15.04.20150126-0ubuntu1) vivid; urgency=low
 
   [ Alberts Muktupāvels ]
