@@ -1,3 +1,10 @@
+notify-osd (0.9.35+15.10.20151014-0ubuntu1) wily; urgency=medium
+
+  [ Lars Uebernickel ]
+  * Only request rgba visuals on composited screens (LP: #1473269)
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 14 Oct 2015 09:50:19 +0000
+
 notify-osd (0.9.35+15.10.20151013.1-0ubuntu1) wily; urgency=medium
 
   [ CI Train Bot ]
