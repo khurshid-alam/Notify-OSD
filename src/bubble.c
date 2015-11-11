@@ -124,11 +124,6 @@ struct _NotifyHSVColor {
 	gdouble value;
 };
 
-#define TEMPORARY_ICON_PREFIX_WORKAROUND 1
-#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
-#warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
-#endif
-
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
 // for jaunty notifications
@@ -2402,24 +2397,19 @@ bubble_set_icon (Bubble*      self,
 		GdkPixbuf *buffer;
 		GtkIconTheme *theme;
 		GtkIconLookupFlags flags;
+		gchar *fallback_name;
 
 		theme = gtk_icon_theme_get_default ();
 		flags = GTK_ICON_LOOKUP_FORCE_SVG | GTK_ICON_LOOKUP_GENERIC_FALLBACK | GTK_ICON_LOOKUP_FORCE_SIZE;
-		buffer = gtk_icon_theme_load_icon_for_scale (theme, name, icon_size, scale, flags, &error);
 
-#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
-		if (buffer == NULL && g_error_matches (error, G_IO_ERROR, G_IO_ERROR_NOT_FOUND))
-		{
-			gchar *fallback_name;
+		fallback_name = g_strconcat ("notification-", name, NULL);
+		buffer = gtk_icon_theme_load_icon_for_scale (theme, fallback_name, icon_size, scale, flags, &error);
+		g_free (fallback_name);
 
+		if (buffer == NULL && g_error_matches (error, GTK_ICON_THEME_ERROR, GTK_ICON_THEME_NOT_FOUND)) {
 			g_clear_error (&error);
-
-			fallback_name = g_strconcat ("notification-", name, NULL);
 			buffer = gtk_icon_theme_load_icon_for_scale (theme, name, icon_size, scale, flags, &error);
-
-			g_free (fallback_name);
 		}
-#endif
 
 		if (buffer == NULL)
 		{
