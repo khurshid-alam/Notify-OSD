@@ -94,7 +94,7 @@ struct _BubblePrivate {
 
 	// used to prevent unneeded updates of the tile-cache, for append-,
 	// update or replace-cases, needs to move into class Notification
-	GString*         old_icon_filename;
+	gchar *          old_icon_filename;
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (Bubble, bubble, G_TYPE_OBJECT);
@@ -123,12 +123,6 @@ struct _NotifyHSVColor {
 	gdouble saturation;
 	gdouble value;
 };
-
-#define TEMPORARY_ICON_PREFIX_WORKAROUND 1
-#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
-#warning "--== Using the icon-name-substitution! This is a temp. workaround not going to be maintained for long! ==--"
-#define NOTIFY_OSD_ICON_PREFIX "notification"
-#endif
 
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
@@ -1832,71 +1826,6 @@ redraw_handler (Bubble* bubble)
 }
 
 static
-GdkPixbuf*
-load_icon (Bubble*      self,
-	   const gchar* filename,
-	   gint         icon_size)
-{
-	GdkPixbuf*    buffer = NULL;
-	GdkPixbuf*    pixbuf = NULL;
-	GtkIconTheme* theme  = NULL;
-	GError*       error  = NULL;
-	gint          scale;
-
-	/* sanity check */
-	g_return_val_if_fail (filename, NULL);
-
-	/* Images referenced must always be local files. */
-	if (!strncmp (filename, "file://", 7))
-		filename += 7;
-
-	scale = gtk_widget_get_scale_factor (self->priv->widget);
-
-	if (filename[0] == '/')
-	{
-		/* load image into pixbuf */
-		pixbuf = gdk_pixbuf_new_from_file_at_scale (filename,
-							    scale * icon_size,
-							    scale * icon_size,
-							    TRUE,
-							    NULL);
-	} else {
-		/* TODO: rewrite, check for SVG support, raise apport
-		** notification for low-res icons */
-		theme = gtk_icon_theme_get_default ();
-		buffer = gtk_icon_theme_load_icon_for_scale (theme,
-							     filename,
-							     icon_size,
-							     scale,
-							     GTK_ICON_LOOKUP_FORCE_SVG |
-							     GTK_ICON_LOOKUP_GENERIC_FALLBACK |
-							     GTK_ICON_LOOKUP_FORCE_SIZE,
-							     &error);
-		if (error)
-		{
-			g_print ("loading icon '%s' caused error: '%s'",
-				 filename,
-				 error->message);
-			g_error_free (error);
-			error = NULL;
-			pixbuf = NULL;
-		}
-		else
-		{
-			/* copy and unref buffer so on an icon-theme change old
-			** icons are not kept in memory due to dangling
-			** references, this also makes sure we do not need to
-			** connect to GtkWidget::style-set signal for the
-			** GdkPixbuf we get from gtk_icon_theme_load_icon() */
-			pixbuf = gdk_pixbuf_copy (buffer);
-			g_object_unref (buffer);
-		}
-	}
-
-	return pixbuf;
-}
-
-static
 gboolean
 pointer_update (Bubble* bubble)
 {
@@ -2109,11 +2038,7 @@ bubble_dispose (GObject* gobject)
 		priv->tile_indicator = NULL;
 	}
 
-	if (priv->old_icon_filename)
-	{
-		g_string_free ((gpointer) priv->old_icon_filename, TRUE);
-		priv->old_icon_filename = NULL;
-	}
+	g_clear_pointer (&priv->old_icon_filename, g_free);
 
 	// chain up to the parent class
 	G_OBJECT_CLASS (bubble_parent_class)->dispose (gobject);
@@ -2321,7 +2246,6 @@ bubble_new (Defaults* defaults)
 	this->priv->tile_body                  = NULL;
 	this->priv->tile_indicator             = NULL;
 	this->priv->prevent_fade               = FALSE;
-	this->priv->old_icon_filename          = g_string_new ("");
 
 	update_input_shape (window);
 
@@ -2432,89 +2356,84 @@ bubble_get_message_body (Bubble* self)
 }
 
 void
-bubble_set_icon_from_path (Bubble*      self,
-			   const gchar* filepath)
-{
-	Defaults*      d;
-	BubblePrivate* priv;
-
-	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filepath, ""))
-		return;
-
-	priv = self->priv;
-
-	// check if an app tries to set the same file as icon again, this check
-	// avoids superfluous regeneration of the tile/blur-cache for the icon,
-	// thus it improves performance in update- and append-cases
-	if (!g_strcmp0 (priv->old_icon_filename->str, filepath))
-		return;
-
-	// store the new icon-basename
-	g_string_assign (priv->old_icon_filename, filepath);
-
-	if (priv->icon_pixbuf)
-	{
-		g_object_unref (priv->icon_pixbuf);
-		priv->icon_pixbuf = NULL;
-	}
-
-	d = self->defaults;
-	priv->icon_pixbuf = load_icon (self,
-				       filepath,
-				       EM2PIXELS (defaults_get_icon_size (d), d));
-
-	_refresh_icon (self);
-}
-
-void
 bubble_set_icon (Bubble*      self,
-		 const gchar* filename)
+		 const gchar* name)
 {
-	Defaults*      d;
-	BubblePrivate* priv;
-#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
-	gchar*         notify_osd_iconname;
-#endif
+	BubblePrivate *priv;
+	gint           scale;
+	gint	       icon_size;
 
- 	if (!self || !IS_BUBBLE (self) || !g_strcmp0 (filename, ""))
-		return;
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (name != NULL);
 
 	priv = self->priv;
-
-	//basename = g_path_get_basename (filename);
+	scale = gtk_widget_get_scale_factor (priv->widget);
+	icon_size = EM2PIXELS (defaults_get_icon_size (self->defaults), self->defaults);
 
 	// check if an app tries to set the same file as icon again, this check
 	// avoids superfluous regeneration of the tile/blur-cache for the icon,
 	// thus it improves performance in update- and append-cases
-	if (!g_strcmp0 (priv->old_icon_filename->str, filename))
+	if (!g_strcmp0 (priv->old_icon_filename, name))
 		return;
 
-	// store the new icon-basename
-	g_string_assign (priv->old_icon_filename, filename);
+	g_clear_object (&priv->icon_pixbuf);
+	g_clear_pointer (&priv->old_icon_filename, g_free);
 
-	if (priv->icon_pixbuf)
+	if (g_str_has_prefix (name, "file://"))
 	{
-		g_object_unref (priv->icon_pixbuf);
-		priv->icon_pixbuf = NULL;
+		gchar *filename;
+		GError *error = NULL;
+
+		filename = g_filename_from_uri (name, NULL, &error);
+		if (filename == NULL)
+		{
+			g_printerr ("%s is not a valid file uri: %s", name, error->message);
+			g_error_free (error);
+			return;
+		}
+
+		priv->icon_pixbuf = gdk_pixbuf_new_from_file_at_scale (filename, scale * icon_size, scale * icon_size, TRUE, NULL);
+
+		g_free (filename);
+	}
+	else
+	{
+		GError *error = NULL;
+		GdkPixbuf *buffer;
+		GtkIconTheme *theme;
+		GtkIconLookupFlags flags;
+		gchar *fallback_name;
+
+		theme = gtk_icon_theme_get_default ();
+		flags = GTK_ICON_LOOKUP_FORCE_SVG | GTK_ICON_LOOKUP_GENERIC_FALLBACK | GTK_ICON_LOOKUP_FORCE_SIZE;
+
+		fallback_name = g_strconcat ("notification-", name, NULL);
+		buffer = gtk_icon_theme_load_icon_for_scale (theme, fallback_name, icon_size, scale, flags, &error);
+		g_free (fallback_name);
+
+		if (buffer == NULL && g_error_matches (error, GTK_ICON_THEME_ERROR, GTK_ICON_THEME_NOT_FOUND)) {
+			g_clear_error (&error);
+			buffer = gtk_icon_theme_load_icon_for_scale (theme, name, icon_size, scale, flags, &error);
+		}
+
+		if (buffer == NULL)
+		{
+			g_print ("Unable to load icon '%s': %s", name, error->message);
+			g_error_free (error);
+			return;
+		}
+
+		/* copy and unref buffer so on an icon-theme change old
+		** icons are not kept in memory due to dangling
+		** references, this also makes sure we do not need to
+		** connect to GtkWidget::style-set signal for the
+		** GdkPixbuf we get from gtk_icon_theme_load_icon() */
+		priv->icon_pixbuf = gdk_pixbuf_copy (buffer);
+		g_object_unref (buffer);
 	}
 
-	d = self->defaults;
-
-#ifdef TEMPORARY_ICON_PREFIX_WORKAROUND
-	notify_osd_iconname = g_strdup_printf (NOTIFY_OSD_ICON_PREFIX "-%s",
-					       filename);
-	priv->icon_pixbuf = load_icon (self,
-				       notify_osd_iconname,
-				       EM2PIXELS (defaults_get_icon_size (d),
-						  d));
-	g_free (notify_osd_iconname);
-#endif
-
-	// fallback to non-notify-osd name
-	if (!priv->icon_pixbuf)
-		priv->icon_pixbuf = load_icon (self,
-					       filename,
-					       EM2PIXELS (defaults_get_icon_size (d), d));
+	// store the new icon-basename
+	priv->old_icon_filename = g_strdup (name);
 
 	_refresh_icon (self);
 }
@@ -2591,7 +2510,7 @@ bubble_set_icon_from_pixbuf (Bubble*    self,
 	priv = self->priv;
 
 	// "reset" the stored the icon-filename, fixes LP: #451086
-	g_string_assign (priv->old_icon_filename, "\0");
+	g_clear_pointer (&priv->old_icon_filename, g_free);
 
 	if (priv->icon_pixbuf)
 	{

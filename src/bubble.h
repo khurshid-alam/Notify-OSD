@@ -109,12 +109,8 @@ const gchar*
 bubble_get_message_body (Bubble* self);
 
 void
-bubble_set_icon_from_path (Bubble*      self,
-			   const gchar* filepath);
-
-void
 bubble_set_icon (Bubble*      self,
-		 const gchar* filename);
+		 const gchar* name);
 
 void
 bubble_set_icon_from_pixbuf (Bubble*      self,
