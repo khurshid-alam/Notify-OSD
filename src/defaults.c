@@ -468,6 +468,11 @@ defaults_init (Defaults* self)
 					  G_CALLBACK (_font_changed),
 					  self);
 
+	g_signal_connect (gtk_settings_get_default (),
+			  "notify::gtk-xft-dpi",
+			  G_CALLBACK (_font_changed),
+			  self);
+
 	g_signal_connect (self->nosd_settings,
 					  "changed",
 					  G_CALLBACK (_gravity_changed),
