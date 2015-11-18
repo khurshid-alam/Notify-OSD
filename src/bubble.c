@@ -3715,7 +3715,6 @@ bubble_determine_layout (Bubble* self)
 	/* icon + indicator layout-case, e.g. volume */
 	if ((priv->icon_pixbuf       != NULL) &&
 	    (priv->title->len        != 0) &&
-	    (priv->message_body->len == 0) &&
 	    (priv->value             >= -1))
 	{
 		priv->layout = LAYOUT_ICON_INDICATOR;
