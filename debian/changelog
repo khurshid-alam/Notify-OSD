@@ -1,3 +1,10 @@
+notify-osd (0.9.35+16.04.20151118-0ubuntu1) xenial; urgency=medium
+
+  [ Lars Uebernickel ]
+  * Ignore body for synchronous notifications
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Wed, 18 Nov 2015 16:39:02 +0000
+
 notify-osd (0.9.35+16.04.20151112-0ubuntu1) xenial; urgency=medium
 
   [ Lars Uebernickel ]
