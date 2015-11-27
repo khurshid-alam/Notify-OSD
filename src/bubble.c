@@ -2396,6 +2396,14 @@ bubble_set_icon (Bubble*      self,
 
 		g_free (filename);
 	}
+	/* According to the spec, only file:// uris are allowed in the
+	 * name field. However, many applications send raw paths.
+	 * Support those as well, but only if they're absolute.
+	 */
+	else if (name[0] == '/')
+	{
+		priv->icon_pixbuf = gdk_pixbuf_new_from_file_at_scale (name, scale * icon_size, scale * icon_size, TRUE, NULL);
+	}
 	else
 	{
 		GError *error = NULL;
