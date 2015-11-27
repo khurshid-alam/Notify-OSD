@@ -2387,7 +2387,7 @@ bubble_set_icon (Bubble*      self,
 		filename = g_filename_from_uri (name, NULL, &error);
 		if (filename == NULL)
 		{
-			g_printerr ("%s is not a valid file uri: %s", name, error->message);
+			g_warning ("%s is not a valid file uri: %s", name, error->message);
 			g_error_free (error);
 			return;
 		}
@@ -2418,7 +2418,7 @@ bubble_set_icon (Bubble*      self,
 
 		if (buffer == NULL)
 		{
-			g_print ("Unable to load icon '%s': %s", name, error->message);
+			g_warning ("Unable to load icon '%s': %s", name, error->message);
 			g_error_free (error);
 			return;
 		}
