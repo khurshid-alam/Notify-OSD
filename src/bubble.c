@@ -2387,7 +2387,7 @@ bubble_set_icon (Bubble*      self,
 		filename = g_filename_from_uri (name, NULL, &error);
 		if (filename == NULL)
 		{
-			g_printerr ("%s is not a valid file uri: %s", name, error->message);
+			g_warning ("%s is not a valid file uri: %s", name, error->message);
 			g_error_free (error);
 			return;
 		}
@@ -2395,6 +2395,14 @@ bubble_set_icon (Bubble*      self,
 		priv->icon_pixbuf = gdk_pixbuf_new_from_file_at_scale (filename, scale * icon_size, scale * icon_size, TRUE, NULL);
 
 		g_free (filename);
+	}
+	/* According to the spec, only file:// uris are allowed in the
+	 * name field. However, many applications send raw paths.
+	 * Support those as well, but only if they're absolute.
+	 */
+	else if (name[0] == '/')
+	{
+		priv->icon_pixbuf = gdk_pixbuf_new_from_file_at_scale (name, scale * icon_size, scale * icon_size, TRUE, NULL);
 	}
 	else
 	{
@@ -2418,7 +2426,7 @@ bubble_set_icon (Bubble*      self,
 
 		if (buffer == NULL)
 		{
-			g_print ("Unable to load icon '%s': %s", name, error->message);
+			g_warning ("Unable to load icon '%s': %s", name, error->message);
 			g_error_free (error);
 			return;
 		}
