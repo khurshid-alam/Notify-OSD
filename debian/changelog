@@ -1,3 +1,14 @@
+notify-osd (0.9.35+16.04.20151201-0ubuntu1) xenial; urgency=medium
+
+  [ CI Train Bot ]
+  * New rebuild forced.
+
+  [ Lars Uebernickel ]
+  * bubble_set_icon: allow absolute paths in the icon name field (LP:
+    #1520667)
+
+ -- Sebastien Bacher <seb128@ubuntu.com>  Tue, 01 Dec 2015 08:28:52 +0000
+
 notify-osd (0.9.35+16.04.20151118-0ubuntu1) xenial; urgency=medium
 
   [ Lars Uebernickel ]
