@@ -590,6 +590,7 @@ stack_notify_handler (Stack*                 self,
 	gboolean   new_bubble = FALSE;
 	gboolean   turn_into_dialog;
 	guint      real_id;
+	gchar     *sender;
 
 	// check max. allowed limit queue-size
 	if (g_list_length (self->list) > MAX_STACK_SIZE)
@@ -628,22 +629,33 @@ stack_notify_handler (Stack*                 self,
 		return TRUE;
 	}
 
-        // check if a bubble exists with same id
+	// check if a bubble exists with same id
 	bubble = find_bubble_by_id (self, id);
+	sender = dbus_g_method_get_sender (context);
+
+	if (bubble)
+	{
+		if (g_strcmp0 (bubble_get_sender (bubble), sender) != 0)
+		{
+			// Another sender is trying to replace a notification, let's block it!
+			id = 0;
+			bubble = NULL;
+		}
+	}
+
 	if (bubble == NULL)
 	{
-		gchar *sender;
 		new_bubble = TRUE;
 		bubble = bubble_new (self->defaults);
 		g_object_weak_ref (G_OBJECT (bubble),
 				   _weak_notify_cb,
 				   (gpointer) self);
 
-		sender = dbus_g_method_get_sender (context);
 		bubble_set_sender (bubble, sender);
 		bubble_set_id (bubble, id);
-		g_free (sender);
 	}
+
+	g_free (sender);
 
 	if (new_bubble && hints)
 	{
