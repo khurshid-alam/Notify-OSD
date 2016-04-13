@@ -388,8 +388,10 @@ stack_push_bubble (Stack*  self,
 	if (!self || !IS_BUBBLE (bubble))
 		return -1;
 
+	notification_id = bubble_get_id (bubble);
+
 	/* check if this is just an update */
-	if (find_bubble_by_id (self, bubble_get_id (bubble)))
+	if (find_bubble_by_id (self, notification_id))
 	{
 		bubble_start_timer (bubble, TRUE);
 		bubble_refresh (bubble);
@@ -400,11 +402,17 @@ stack_push_bubble (Stack*  self,
 			if (stack_is_at_top_corner (self, sync_bubble))
 				bubble_sync_with (sync_bubble, bubble);
 
-		return bubble_get_id (bubble);
+		return notification_id;
 	}
 
 	/* add bubble/id to stack */
-	notification_id = self->next_id++;
+	if (notification_id == 0)
+	{
+	  do
+		{
+			notification_id = self->next_id++;
+		} while (find_bubble_by_id (self, notification_id));
+	}
 
 	// FIXME: migrate stack to use abstract notification object and don't
 	// keep heavy bubble objects around, at anyone time at max. only two
@@ -630,9 +638,10 @@ stack_notify_handler (Stack*                 self,
 		g_object_weak_ref (G_OBJECT (bubble),
 				   _weak_notify_cb,
 				   (gpointer) self);
-		
+
 		sender = dbus_g_method_get_sender (context);
 		bubble_set_sender (bubble, sender);
+		bubble_set_id (bubble, id);
 		g_free (sender);
 	}
 
