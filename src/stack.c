@@ -408,7 +408,7 @@ stack_push_bubble (Stack*  self,
 	/* add bubble/id to stack */
 	if (notification_id == 0)
 	{
-	  do
+		do
 		{
 			notification_id = self->next_id++;
 		} while (find_bubble_by_id (self, notification_id));
