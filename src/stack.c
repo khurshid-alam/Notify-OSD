@@ -682,7 +682,6 @@ stack_notify_handler (Stack*                 self,
 			g_object_unref(bubble);
 			bubble = app_bubble;
 			if (body) {
-				bubble_append_message_body (bubble, "\n");
 				bubble_append_message_body (bubble, body);
 			}
 		}
