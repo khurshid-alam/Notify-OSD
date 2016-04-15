@@ -3771,16 +3771,14 @@ bubble_append_message_body (Bubble*      self,
 
 		if (text[0] == '\0')
 		{
-			if (priv->message_body->len > 0)
+			if (priv->message_body->len > 0 &&
+			    priv->message_body->str[priv->message_body->len-1] != '\n')
 			{
-				if (priv->message_body->str[priv->message_body->len-1] != '\n')
-				{
-					// This is a special combination, that allows us to remember that a
-					// new empty body line has been requested, but we won't show this till
-					// something visible will be appended.
-					g_string_append_c (priv->message_body, '\0');
-					g_string_append_c (priv->message_body, '\n');
-				}
+				// This is a special combination, that allows us to remember that a
+				// new empty body line has been requested, but we won't show this till
+				// something visible will be appended.
+				g_string_append_c (priv->message_body, '\0');
+				g_string_append_c (priv->message_body, '\n');
 			}
 
 			g_free (text);
@@ -3790,13 +3788,14 @@ bubble_append_message_body (Bubble*      self,
 		if (priv->message_body->len > 1)
 		{
 			if (priv->message_body->str[priv->message_body->len-1] == '\n' &&
-				  priv->message_body->str[priv->message_body->len-2] == '\0')
+			    priv->message_body->str[priv->message_body->len-2] == '\0')
 			{
 				// A new message has been appended, let's remove the \0 we put before.
 				g_string_erase (priv->message_body, priv->message_body->len-2, 1);
 			}
 		}
 
+		// append text to current message-body
 		g_string_append_c (priv->message_body, '\n');
 		g_string_append (priv->message_body, text);
 		priv->message_body_needs_refresh = TRUE;
