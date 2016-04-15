@@ -2323,6 +2323,7 @@ bubble_set_message_body (Bubble*      self,
 
 	// filter out any HTML/markup if possible
 	text = filter_text (body);
+	g_strstrip (text);
 
 	if (priv->message_body)
 		if (g_strcmp0 (priv->message_body->str, text))
