@@ -314,10 +314,8 @@ stack_layout (Stack* self)
 		return FALSE;
 	}
 
-    /*
 	bubble_set_timeout (bubble,
 			    defaults_get_on_screen_timeout (self->defaults));
-                */
 
 	defaults_get_top_corner (self->defaults, &screen, &x, &y);
 

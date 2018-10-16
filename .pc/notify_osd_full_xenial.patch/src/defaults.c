@@ -104,41 +104,40 @@ enum
 /* these values are interpreted as em-measurements and do comply to the 
  * visual guide for jaunty-notifications */
 #define DEFAULT_DESKTOP_BOTTOM_GAP    6.0f
-float DEFAULT_BUBBLE_WIDTH  = 24.0f;
-float DEFAULT_BUBBLE_MIN_HEIGHT  = 5.0f;
-float DEFAULT_BUBBLE_MAX_HEIGHT  = 12.2f;
-float DEFAULT_BUBBLE_VERT_GAP  = 0.5f;
-float DEFAULT_BUBBLE_HORZ_GAP  = 0.5f;
+#define DEFAULT_BUBBLE_WIDTH         24.0f
+#define DEFAULT_BUBBLE_MIN_HEIGHT     5.0f
+#define DEFAULT_BUBBLE_MAX_HEIGHT    12.2f
+#define DEFAULT_BUBBLE_VERT_GAP       0.5f
+#define DEFAULT_BUBBLE_HORZ_GAP       0.5f
 #define DEFAULT_BUBBLE_SHADOW_SIZE    0.7f
 #define DEFAULT_BUBBLE_SHADOW_COLOR  "#000000"
 #define DEFAULT_BUBBLE_BG_COLOR      "#131313"
 #define DEFAULT_BUBBLE_BG_OPACITY    "#cc"
 #define DEFAULT_BUBBLE_HOVER_OPACITY "#66"
-float DEFAULT_BUBBLE_CORNER_RADIUS  = 0.375f;
+#define DEFAULT_BUBBLE_CORNER_RADIUS 0.375f
 #define DEFAULT_CONTENT_SHADOW_SIZE  0.125f
 #define DEFAULT_CONTENT_SHADOW_COLOR "#000000"
-float DEFAULT_MARGIN_SIZE  = 1.0f;
-float DEFAULT_ICON_SIZE  = 3.0f;
-float DEFAULT_GAUGE_SIZE  = 0.625f;
-#define DEFAULT_GAUGE_OUTLINE_WIDTH	 0.125f
+#define DEFAULT_MARGIN_SIZE          1.0f
+#define DEFAULT_ICON_SIZE            3.0f
+#define DEFAULT_GAUGE_SIZE           0.625f
+#define DEFAULT_GAUGE_OUTLINE_WIDTH  0.125f
 #define DEFAULT_TEXT_FONT_FACE       "Sans"
 #define DEFAULT_TEXT_TITLE_COLOR     "#ffffff"
-short DEFAULT_TEXT_TITLE_WEIGHT  = TEXT_WEIGHT_BOLD;
-float DEFAULT_TEXT_TITLE_SIZE  = 1.0f;
+#define DEFAULT_TEXT_TITLE_WEIGHT    TEXT_WEIGHT_BOLD
+#define DEFAULT_TEXT_TITLE_SIZE      1.0f
 #define DEFAULT_TEXT_BODY_COLOR      "#eaeaea"
-short DEFAULT_TEXT_BODY_WEIGHT  = TEXT_WEIGHT_NORMAL;
-float DEFAULT_TEXT_BODY_SIZE  = 0.9f;
+#define DEFAULT_TEXT_BODY_WEIGHT     TEXT_WEIGHT_NORMAL
+#define DEFAULT_TEXT_BODY_SIZE       0.9f
 #define DEFAULT_PIXELS_PER_EM        10.0f
 #define DEFAULT_SYSTEM_FONT_SIZE     10.0f
 #define DEFAULT_SCREEN_DPI           96.0f
 #define DEFAULT_GRAVITY              GRAVITY_NORTH_EAST
-short SLOT_ALLOCATION  = SLOT_ALLOCATION_DYNAMIC;
 
 /* these values are interpreted as milliseconds-measurements and do comply to
  * the visual guide for jaunty-notifications */
-float DEFAULT_FADE_IN_TIMEOUT  = 250;
-float DEFAULT_FADE_OUT_TIMEOUT  = 1000;
-float DEFAULT_ON_SCREEN_TIMEOUT  = 10000;
+#define DEFAULT_FADE_IN_TIMEOUT      250
+#define DEFAULT_FADE_OUT_TIMEOUT     1000
+#define DEFAULT_ON_SCREEN_TIMEOUT    10000
 
 /* notify-osd settings */
 #define NOTIFY_OSD_SCHEMA            "com.canonical.notify-osd"
@@ -237,7 +236,7 @@ _get_gravity (Defaults* self)
 	gravity = g_settings_get_int (self->nosd_settings, GSETTINGS_GRAVITY_KEY);
 
 	// protect against out-of-bounds values for gravity
-	if (gravity != GRAVITY_EAST && gravity != GRAVITY_NORTH_EAST && gravity != GRAVITY_WEST && gravity != GRAVITY_NORTH_WEST && gravity != GRAVITY_SOUTH_EAST && gravity != GRAVITY_SOUTH_WEST)
+	if (gravity != GRAVITY_EAST && gravity != GRAVITY_NORTH_EAST)
 		gravity = DEFAULT_GRAVITY;
 
 	// update stored DPI-value
@@ -480,7 +479,7 @@ defaults_init (Defaults* self)
 					  self);
 
 	// use fixed slot-allocation for async. and sync. bubbles
-	self->slot_allocation = SLOT_ALLOCATION;
+	self->slot_allocation = SLOT_ALLOCATION_FIXED;
 }
 
 static void
@@ -1341,7 +1340,7 @@ defaults_class_init (DefaultsClass* klass)
 				"gravity",
 				"Positional hint for placing bubbles",
 				0,
-				6,
+				2,
 				DEFAULT_GRAVITY,
 				G_PARAM_CONSTRUCT |
 				G_PARAM_READWRITE |
@@ -1377,17 +1376,6 @@ defaults_get_desktop_height (Defaults* self)
 		return 0;
 
 	return self->desktop_height;
-}
-
-gint
-defaults_get_desktop_left (Defaults* self)
-{
-	gint left_edge;
-
-	if (!self || !IS_DEFAULTS (self))
-		return 0;
-
-	return self->desktop_left;
 }
 
 gdouble

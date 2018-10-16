@@ -59,13 +59,7 @@ typedef enum
 {
         GRAVITY_NONE = 0,
         GRAVITY_NORTH_EAST, // top-right of screen
-        GRAVITY_EAST,       // vertically centered at right of screen
-        GRAVITY_SOUTH_EAST,  // bottom-right of screen
-        GRAVITY_SOUTH_WEST,  // bottom-left of screen
-        GRAVITY_WEST,  // vertically centered at left of screen
-        GRAVITY_NORTH_WEST		// top-left of screen
-        
-        
+        GRAVITY_EAST        // vertically centered at right of screen
 } Gravity;
 
 typedef enum
@@ -85,7 +79,6 @@ struct _Defaults
 	GSettings*     gnome_settings;
 	gint           desktop_width;
 	gint           desktop_height;
-	gint           desktop_left;
 	gdouble        desktop_bottom_gap;
 	gdouble        stack_height;
 	gdouble        bubble_vert_gap;

@@ -44,7 +44,6 @@
 G_DEFINE_TYPE (Stack, stack, G_TYPE_OBJECT);
 
 #define FORCED_SHUTDOWN_THRESHOLD 500
-#define NOTIFY_EXPIRES_DEFAULT -1
 
 /* fwd declaration */
 void close_handler (GObject* n, Stack*  stack);
@@ -675,15 +674,6 @@ stack_notify_handler (Stack*                 self,
 	if (body)
 		bubble_set_message_body (bubble, body);
 
-    if (timeout == NOTIFY_EXPIRES_DEFAULT) {
-        bubble_set_timeout (bubble,
-                            defaults_get_on_screen_timeout (self->defaults));
-    }
-    else {
-        bubble_set_timeout (bubble, timeout);
-    }
-			    
-
 	if (new_bubble && bubble_is_append_allowed(bubble)) {
 		app_bubble = find_bubble_for_append(self, bubble);
 
@@ -994,7 +984,8 @@ stack_get_slot_position (Stack* self,
 					case SLOT_ALLOCATION_FIXED:
 						*y += EM2PIXELS (defaults_get_icon_size (d), d) +
 						      2 * EM2PIXELS (defaults_get_margin_size (d), d) +
-						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) + 2;
+						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d); /* +
+						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);*/
 					break;
 
 					case SLOT_ALLOCATION_DYNAMIC:
@@ -1009,161 +1000,6 @@ stack_get_slot_position (Stack* self,
 				}
 
 			}
-		break;
-		
-		case GRAVITY_WEST:
-			d = self->defaults;
-
-			*x = defaults_get_desktop_left (d);
-
-			// the position for the sync./feedback bubble
-			if (slot == SLOT_TOP)
-				*y += defaults_get_desktop_height (d) / 2 -
-				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-				      bubble_height +
-				      EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-			// the position for the async. bubble
-			else if (slot == SLOT_BOTTOM)
-				*y += defaults_get_desktop_height (d) / 2 +
-				      EM2PIXELS (defaults_get_bubble_vert_gap (d) / 2.0f, d) -
-				      EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-		break;
-
-		case GRAVITY_NORTH_WEST:
-			d = self->defaults;
-
-			*x = defaults_get_desktop_left (d);
-
-			if (slot == SLOT_BOTTOM)
-			{
-				switch (defaults_get_slot_allocation (d))
-				{
-					case SLOT_ALLOCATION_FIXED:
-						*y += EM2PIXELS (defaults_get_icon_size (d), d) +
-						      2 * EM2PIXELS (defaults_get_margin_size (d), d) +
-						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) + 2;
-					break;
-
-					case SLOT_ALLOCATION_DYNAMIC:
-						g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
-						*y += bubble_get_height (self->slots[SLOT_TOP]) +
-						      EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-					break;
-
-					default:
-					break;
-				}
-
-			}
-		break;
-		
- 		case GRAVITY_SOUTH_EAST:
- 			d = self->defaults;
- 			
-			switch (defaults_get_slot_allocation (d))
-			{
-				case SLOT_ALLOCATION_FIXED:
-					if (slot == SLOT_TOP)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-							  
-					}
-		 
-					if (slot == SLOT_BOTTOM)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  bubble_height -
-							  EM2PIXELS (defaults_get_icon_size (d), d) -
-						      2 * EM2PIXELS (defaults_get_margin_size (d), d) -
-						      3 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) +
-						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d) - 2;
-							  
-					}
-				break;
-
-				case SLOT_ALLOCATION_DYNAMIC:
-					if (slot == SLOT_TOP)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-					}
-		 
-					if (slot == SLOT_BOTTOM)
-					{
-						g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
-						*y += defaults_get_desktop_height (d) -
-							  3 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  4 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d) -
-							  bubble_get_height (self->slots[SLOT_TOP]);
-					}
-				break;
-
-				default:
-				break;
-			}
-				
-		break;
-		
- 		case GRAVITY_SOUTH_WEST:
- 			d = self->defaults;
- 			
- 			*x = defaults_get_desktop_left (d);
- 			
-			switch (defaults_get_slot_allocation (d))
-			{
-				case SLOT_ALLOCATION_FIXED:
-					if (slot == SLOT_TOP)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-							  
-					}
-		 
-					if (slot == SLOT_BOTTOM)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  bubble_height -
-							  EM2PIXELS (defaults_get_icon_size (d), d) -
-						      2 * EM2PIXELS (defaults_get_margin_size (d), d) -
-						      3 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) +
-						      2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d) - 2;
-							  
-					}
-				break;
-
-				case SLOT_ALLOCATION_DYNAMIC:
-					if (slot == SLOT_TOP)
-					{
-						*y += defaults_get_desktop_height (d) -
-							  2 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  2 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d);
-					}
-		 
-					if (slot == SLOT_BOTTOM)
-					{
-						g_assert (stack_is_slot_vacant (self, SLOT_TOP) == OCCUPIED);
-						*y += defaults_get_desktop_height (d) -
-							  3 * EM2PIXELS (defaults_get_bubble_vert_gap (d), d) -
-							  bubble_height +
-							  4 * EM2PIXELS (defaults_get_bubble_shadow_size (d, is_composited), d) -
-							  bubble_get_height (self->slots[SLOT_TOP]);
-					}
-				break;
-
-				default:
-				break;
-			}
-				
 		break;
 
 		default:

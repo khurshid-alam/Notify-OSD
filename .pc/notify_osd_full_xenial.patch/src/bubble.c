@@ -127,25 +127,25 @@ struct _NotifyHSVColor {
 // FIXME: this is in class Defaults already, but not yet hooked up so for the
 // moment we use the macros here, these values reflect the visual-guideline
 // for jaunty notifications
-float TEXT_TITLE_COLOR_R = 1.0f;
-float TEXT_TITLE_COLOR_G = 1.0f;
-float TEXT_TITLE_COLOR_B = 1.0f;
-float TEXT_TITLE_COLOR_A = 1.0f;
+#define TEXT_TITLE_COLOR_R 1.0f
+#define TEXT_TITLE_COLOR_G 1.0f
+#define TEXT_TITLE_COLOR_B 1.0f
+#define TEXT_TITLE_COLOR_A 1.0f
 
-float TEXT_BODY_COLOR_R  = 0.91f;
-float TEXT_BODY_COLOR_G  = 0.91f;
-float TEXT_BODY_COLOR_B  = 0.91f;
-float TEXT_BODY_COLOR_A  = 1.0f;
+#define TEXT_BODY_COLOR_R  0.91f
+#define TEXT_BODY_COLOR_G  0.91f
+#define TEXT_BODY_COLOR_B  0.91f
+#define TEXT_BODY_COLOR_A  1.0f
 
 #define TEXT_SHADOW_COLOR_R 0.0f
 #define TEXT_SHADOW_COLOR_G 0.0f 
 #define TEXT_SHADOW_COLOR_B 0.0f 
-float TEXT_SHADOW_COLOR_A  = 1.0f;
+#define TEXT_SHADOW_COLOR_A 1.0f 
 
-float BUBBLE_BG_COLOR_R  = 0.07f;
-float BUBBLE_BG_COLOR_G  = 0.07f;
-float BUBBLE_BG_COLOR_B  = 0.07f;
-float BUBBLE_BG_COLOR_A  = 0.9f;
+#define BUBBLE_BG_COLOR_R  0.15f
+#define BUBBLE_BG_COLOR_G  0.15f
+#define BUBBLE_BG_COLOR_B  0.15f
+#define BUBBLE_BG_COLOR_A  0.9f
 
 #define INDICATOR_UNLIT_R  1.0f
 #define INDICATOR_UNLIT_G  1.0f
@@ -165,10 +165,6 @@ float BUBBLE_BG_COLOR_A  = 0.9f;
 // text drop-shadow should _never_ be bigger than content blur-radius!!!
 #define BUBBLE_CONTENT_BLUR_RADIUS 4
 #define TEXT_DROP_SHADOW_SIZE      2
-
-gboolean BUBBLE_PREVENT_FADE   = TRUE;
-gboolean BUBBLE_CLOSE_ON_CLICK = FALSE;
-gboolean BUBBLE_AS_DESKTOP_BG = FALSE;
 
 //-- private functions ---------------------------------------------------------
 
@@ -756,32 +752,17 @@ _refresh_background (Bubble* self)
 			2.0f * EM2PIXELS (get_shadow_size (self), d));
 		cairo_fill (cr);
 		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		if (BUBBLE_AS_DESKTOP_BG) {
-			cairo_set_source_rgba (cr,
-						color.red,
-						color.green,
-						color.blue,
-						BUBBLE_BG_COLOR_A);	
-		} else {
-			cairo_set_source_rgba (cr,
-						BUBBLE_BG_COLOR_R,
-						BUBBLE_BG_COLOR_G,
-						BUBBLE_BG_COLOR_B,
-						BUBBLE_BG_COLOR_A);
-		}
+		cairo_set_source_rgba (cr,
+				       color.red,
+				       color.green,
+				       color.blue,
+				       BUBBLE_BG_COLOR_A);
 	}
 	else
-		if (BUBBLE_AS_DESKTOP_BG) {
-			cairo_set_source_rgb (cr,
-						color.red,
-						color.green,
-						color.blue);
-		} else {
-			cairo_set_source_rgb (cr,
-						BUBBLE_BG_COLOR_R,
-						BUBBLE_BG_COLOR_G,
-						BUBBLE_BG_COLOR_B);
-		}
+		cairo_set_source_rgb (cr,
+				       color.red,
+				       color.green,
+				       color.blue);
 
 	draw_round_rect (
 		cr,
@@ -1679,23 +1660,15 @@ update_input_shape (GtkWidget* window)
 	// sanity check
 	if (!window)
 		return;
-	
-	if (!BUBBLE_CLOSE_ON_CLICK)
+
+	// set an 1x1 input-region to allow click-through 
+	region = cairo_region_create_rectangle (&rect);
+	if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
 	{
-		// set an 1x1 input-region to allow click-through 
-		region = cairo_region_create_rectangle (&rect);
-		if (cairo_region_status (region) == CAIRO_STATUS_SUCCESS)
-		{
-			gtk_widget_input_shape_combine_region (window, NULL);
-			gtk_widget_input_shape_combine_region (window, region);
-		}
-		cairo_region_destroy (region);
+		gtk_widget_input_shape_combine_region (window, NULL);
+		gtk_widget_input_shape_combine_region (window, region);
 	}
-	else
-	{
-		GdkWindow *window_ = gtk_widget_get_window (window);
-		gdk_window_set_events (window_, gdk_window_get_events (window_) | GDK_BUTTON_PRESS);
-	}
+	cairo_region_destroy (region);
 }
 
 static void
@@ -1782,7 +1755,7 @@ bubble_draw (GtkWidget* widget,
 	cairo_paint (cr);
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	if (!BUBBLE_PREVENT_FADE || priv->prevent_fade || !priv->composited)
+	if (priv->prevent_fade || !priv->composited)
 	{
 	        // render drop-shadow and bubble-background
 		_render_background (bubble, cr, 1.0f, 0.0f);
@@ -1813,31 +1786,6 @@ bubble_draw (GtkWidget* widget,
 }
 
 static gboolean
-button_press_event_handler (GtkWidget* window G_GNUC_UNUSED, 
-          GdkEventButton* event, 
-          Bubble* bubble)
-{
- BubblePrivate* priv;
-
- priv = bubble->priv;
-
- if (priv->mouse_over && event->button == 1)
- {
-   bubble_hide (bubble);
-
-   dbus_send_close_signal (bubble_get_sender (bubble),
-         bubble_get_id (bubble),
-         1);
-
-   g_signal_emit (bubble, g_bubble_signals[TIMED_OUT], 0);
-
-   return TRUE;
- }
-
- return FALSE;
-}
-
-static gboolean
 redraw_handler (Bubble* bubble)
 {
 	GtkWindow*     window;
@@ -1861,7 +1809,7 @@ redraw_handler (Bubble* bubble)
 
 	if (priv->alpha == NULL)
 	{
-		if (priv->distance < 1.0f && !priv->prevent_fade && BUBBLE_PREVENT_FADE)
+		if (priv->distance < 1.0f && !priv->prevent_fade)
 		{
 			gtk_widget_set_opacity (priv->widget,
 			                        WINDOW_MIN_OPACITY +
@@ -1965,7 +1913,7 @@ pointer_update (Bubble* bubble)
 
 		// mark mouse-pointer having left bubble and proximity-area
 		// after inital show-up of bubble
-		if (BUBBLE_PREVENT_FADE && priv->prevent_fade && priv->distance > 1.0f)
+		if (priv->prevent_fade && priv->distance > 1.0f)
 			priv->prevent_fade = FALSE;
 	}
 
@@ -2256,14 +2204,6 @@ bubble_new (Defaults* defaults)
 	                  "draw",
 	                  G_CALLBACK (bubble_draw),
 	                  this);
-
-	if (BUBBLE_CLOSE_ON_CLICK)
-	{
-	  g_signal_connect (window,
-	        "button-press-event",
-	        G_CALLBACK (button_press_event_handler),
-	        this);
-	}
 
 	// "clear" input-mask, set title/icon/attributes
 	gtk_widget_set_app_paintable (window, TRUE);
@@ -2750,7 +2690,7 @@ bubble_is_mouse_over (Bubble* self)
 
 	priv = self->priv;
 
-	if (BUBBLE_PREVENT_FADE && priv->prevent_fade)
+	if (priv->prevent_fade)
 		return FALSE;
 
 	return priv->mouse_over;
@@ -2854,7 +2794,7 @@ bubble_show (Bubble* self)
 
 	// check if mouse-pointer is over bubble (and proximity-area) initially
 	pointer_update (self);
-	if (priv->distance <= 1.0f || !BUBBLE_PREVENT_FADE)
+	if (priv->distance <= 1.0f)
 		priv->prevent_fade = TRUE;
 	else
 		priv->prevent_fade = FALSE;
@@ -3417,8 +3357,6 @@ bubble_recalc_size (Bubble *self)
 	gint           old_bubble_height = 0;
 	gint           new_bubble_width  = 0;
 	gint           new_bubble_height = 0;
-	gint		   x;
- 	gint		   y;
 	Defaults*      d;
 	BubblePrivate* priv;
 
@@ -3613,13 +3551,6 @@ bubble_recalc_size (Bubble *self)
 		_refresh_body (self);
 
 	update_shape (self);
-	
-	if (defaults_get_gravity (d) == GRAVITY_SOUTH_EAST)
- 	{
- 		bubble_get_position(self, &x, &y);
- 		bubble_move(self, x, y - (new_bubble_height - old_bubble_height));
- 	}
- 	
 }
 
 void
